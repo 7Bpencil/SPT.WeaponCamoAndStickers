@@ -19,10 +19,20 @@ namespace SevenBoldPencil.WeaponCamo
         private static TypedFieldInfo<DeferredDecalRenderer, float> __decalProjectorHeight = new("_decalProjectorHeight");
 		private static TypedFieldInfo<DeferredDecalRenderer, Dictionary<MaterialType, DeferredDecalRenderer.SingleDecal>> __dictionary_1 = new("dictionary_1");
 		private static TypedFieldInfo<DeferredDecalRenderer, Dictionary<Camera, DeferredDecalRenderer.DeferredDecalBufferClass>> __dictionary_2 = new("dictionary_2");
+		private static TypedFieldInfo<DeferredDecalRenderer, List<DynamicDeferredDecalRenderer>> __list_0 = new("list_0");
+		private static TypedFieldInfo<DeferredDecalRenderer, int> __int_3 = new("int_3");
+		private static TypedFieldInfo<DeferredDecalRenderer, Mesh> __cube = new("_cube");
+		private static TypedFieldInfo<DeferredDecalRenderer, BoundingSphere[]> __boundingSphere_0 = new("boundingSphere_0");
+		private static TypedFieldInfo<DeferredDecalRenderer, int> __maxDynamicDecals = new("_maxDynamicDecals");
 
         public float _decalProjectorHeight { get { return __decalProjectorHeight.Get(__instance); } set { __decalProjectorHeight.Set(__instance, value); } }
         public Dictionary<MaterialType, DeferredDecalRenderer.SingleDecal> dictionary_1 { get { return __dictionary_1.Get(__instance); } set { __dictionary_1.Set(__instance, value); } }
         public Dictionary<Camera, DeferredDecalRenderer.DeferredDecalBufferClass> dictionary_2 { get { return __dictionary_2.Get(__instance); } set { __dictionary_2.Set(__instance, value); } }
+        public List<DynamicDeferredDecalRenderer> list_0 { get { return __list_0.Get(__instance); } set { __list_0.Set(__instance, value); } }
+        public int int_3 { get { return __int_3.Get(__instance); } set { __int_3.Set(__instance, value); } }
+        public Mesh _cube { get { return __cube.Get(__instance); } set { __cube.Set(__instance, value); } }
+        public BoundingSphere[] boundingSphere_0 { get { return __boundingSphere_0.Get(__instance); } set { __boundingSphere_0.Set(__instance, value); } }
+        public int _maxDynamicDecals { get { return __maxDynamicDecals.Get(__instance); } set { __maxDynamicDecals.Set(__instance, value); } }
 
         private DeferredDecalRenderer __instance;
 
@@ -107,6 +117,12 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void DrawDecal(RaycastHit hit, BallisticCollider ballisticCollider, MaterialType material)
         {
+			var position = hit.point + hit.normal * EFTHardSettings.Instance.DECAL_SHIFT;
+            DrawDecal(position, hit.normal, ballisticCollider.transform, material);
+        }
+
+        public void DrawDecal(Vector3 position, Vector3 normal, Transform owner, MaterialType material)
+        {
             var effects = Singleton<Effects>.Instance;
             var decalsRenderer = effects.DeferredDecals;
             var _decalsRenderer = new Proxy_DeferredDecalRenderer(decalsRenderer);
@@ -115,14 +131,47 @@ namespace SevenBoldPencil.WeaponCamo
             var decals = _decalsRenderer.dictionary_1;
             var decalProjectorHeight = _decalsRenderer._decalProjectorHeight;
 			var decal = decals[material];
-			var position = hit.point + hit.normal * EFTHardSettings.Instance.DECAL_SHIFT;
 
-			decalsRenderer.method_5(position, hit.normal, ballisticCollider, decal, decal.DynamicDecalMaterial, decalProjectorHeight);
+			method_5(_decalsRenderer, position, normal, owner, decal, decal.DynamicDecalMaterial, decalProjectorHeight);
 			foreach (var (camera, buffer) in decalBuffers)
 			{
 				buffer.IsDynamicBufferDirty = true;
 			}
         }
+
+		public static void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
+		{
+			DynamicDeferredDecalRenderer dynamicDeferredDecalRenderer = instance.list_0[instance.int_3];
+			GameObject gameObject = dynamicDeferredDecalRenderer.gameObject;
+			Transform transformHelper = dynamicDeferredDecalRenderer.TransformHelper;
+			int cullingGroupSphereIndex = dynamicDeferredDecalRenderer.CullingGroupSphereIndex;
+			float num = UnityEngine.Random.Range(currentDecal.DecalSize.x, currentDecal.DecalSize.y);
+			float num2 = num * 2f;
+			float rad = Mathf.Sqrt(num * num + num * num);
+			instance.boundingSphere_0[cullingGroupSphereIndex] = new BoundingSphere(position, rad);
+			if (gameObject != null)
+			{
+				gameObject.transform.localScale = new Vector3(num2, projectorHeight, num2);
+				gameObject.transform.up = normal;
+				gameObject.transform.position = position;
+				if (currentDecal.RandomizeRotation)
+				{
+					gameObject.transform.Rotate(Vector3.up, UnityEngine.Random.Range(0f, 359f), Space.Self);
+				}
+				if (transformHelper != null)
+				{
+					transformHelper.position = position;
+					transformHelper.rotation = gameObject.transform.rotation;
+					transformHelper.parent = owner;
+				}
+			}
+			int num3 = UnityEngine.Random.Range(0, currentDecal.TileSheetColumns);
+			int num4 = UnityEngine.Random.Range(0, currentDecal.TileSheetRows);
+			Vector4 uvStartEnd = new Vector4((float)num4 * currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize, (float)num4 * currentDecal.TileUSize + currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize + currentDecal.TileVSize);
+			dynamicDeferredDecalRenderer.enabled = true;
+			dynamicDeferredDecalRenderer.Init(currentMaterial, instance._cube, normal, uvStartEnd, currentDecal.IsTiled, cullingGroupSphereIndex);
+			instance.int_3 = (instance.int_3 + 1) % instance._maxDynamicDecals;
+		}
 
     	public bool IsHitIgnored(Player player, RaycastHit hit)
     	{
