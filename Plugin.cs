@@ -49,9 +49,16 @@ namespace SevenBoldPencil.WeaponCamo
 		public ManualLogSource LoggerInstance;
 
         public static ConfigEntry<KeyboardShortcut> SpawnButton;
+        public static ConfigEntry<KeyboardShortcut> MoveForward;
+        public static ConfigEntry<KeyboardShortcut> MoveBack;
+        public static ConfigEntry<float> MoveStep;
+        public static ConfigEntry<float> GizmoCubeSize;
         public static ConfigEntry<MaterialType> DecalMaterial;
 
+        public RuntimeGizmos RuntimeGizmos;
     	public RaycastHit[] RaycastHits;
+        public Transform LastDecal;
+        public Vector3 LastDecalNormal;
 
         private void Awake()
         {
@@ -59,7 +66,12 @@ namespace SevenBoldPencil.WeaponCamo
 			LoggerInstance = Logger;
 
             SpawnButton = Config.Bind("Main", "Spawn Button", new KeyboardShortcut(KeyCode.F4), "Spawn Button");
+            MoveForward = Config.Bind("Main", "Move Forward", new KeyboardShortcut(KeyCode.F2), "Move Forward");
+            MoveBack = Config.Bind("Main", "Move Back", new KeyboardShortcut(KeyCode.F3), "Move Back");
+            MoveStep = Config.Bind<float>("Main", "Move Step", 0.005f, new ConfigDescription("from 1mm to 10cm, default is 5mm", new AcceptableValueRange<float>(0.001f, 0.1f)));
+            GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
             DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
+
     		RaycastHits = new RaycastHit[32];
         }
 
@@ -67,11 +79,42 @@ namespace SevenBoldPencil.WeaponCamo
 		{
 			if (Input.GetKeyDown(SpawnButton.Value.MainKey))
 			{
-                TestDecal();
+                PutDecalOnBallisticCollider();
 			}
+            if (Input.GetKeyDown(MoveForward.Value.MainKey) && LastDecal)
+            {
+                LastDecal.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
+            }
+            if (Input.GetKeyDown(MoveBack.Value.MainKey) && LastDecal)
+            {
+                LastDecal.Translate(LastDecalNormal * MoveStep.Value, Space.World);
+            }
+            if (CameraClass.Exist && !RuntimeGizmos)
+            {
+    			var camera = CameraClass.Instance.Camera;
+                if (camera)
+                {
+                    RuntimeGizmos = camera.gameObject.AddComponent<RuntimeGizmos>();
+                }
+            }
 		}
 
-        public void TestDecal()
+        public void LateUpdate()
+        {
+            if (RuntimeGizmos && LastDecal)
+            {
+                var scale = GizmoCubeSize.Value;
+                var scale3 = new Vector3(scale, scale, scale);
+                RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                {
+                    Position = LastDecal.position,
+                    Rotation = LastDecal.rotation,
+                    Scale = scale3,
+                });
+            }
+        }
+
+        public void PutDecalOnBallisticCollider()
         {
             LoggerInstance.LogWarning("TestDecal");
 
@@ -139,7 +182,7 @@ namespace SevenBoldPencil.WeaponCamo
 			}
         }
 
-		public static void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
+		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
 		{
 			DynamicDeferredDecalRenderer dynamicDeferredDecalRenderer = instance.list_0[instance.int_3];
 			GameObject gameObject = dynamicDeferredDecalRenderer.gameObject;
@@ -163,6 +206,9 @@ namespace SevenBoldPencil.WeaponCamo
 					transformHelper.position = position;
 					transformHelper.rotation = gameObject.transform.rotation;
 					transformHelper.parent = owner;
+
+                    LastDecal = transformHelper;
+                    LastDecalNormal = normal;
 				}
 			}
 			int num3 = UnityEngine.Random.Range(0, currentDecal.TileSheetColumns);
