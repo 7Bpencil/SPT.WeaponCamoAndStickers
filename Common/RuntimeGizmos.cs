@@ -8,6 +8,12 @@ namespace SevenBoldPencil.Common
     [RequireComponent(typeof(Camera))]
     public class RuntimeGizmos : MonoBehaviour
     {
+        public struct Line
+        {
+            public Vector3 Start;
+            public Vector3 End;
+        }
+
         public struct Cube
         {
             public Vector3 Position;
@@ -17,6 +23,7 @@ namespace SevenBoldPencil.Common
 
         public Material LineMaterial;
         public Vector3[] Vertices = new Vector3[24];
+        public List<Line> Lines = new(10);
         public List<Cube> Cubes = new(10);
 
         private void Awake()
@@ -37,6 +44,11 @@ namespace SevenBoldPencil.Common
             LineMaterial.SetPass(0);
 
             GL.Begin(GL.LINES);
+            foreach (var line in Lines)
+            {
+                GL.Vertex(line.Start);
+                GL.Vertex(line.End);
+            }
             foreach (var cube in Cubes)
             {
                 var verticesCount = FillCubeVertices(cube.Position, cube.Rotation, cube.Scale, Vertices);
@@ -47,6 +59,7 @@ namespace SevenBoldPencil.Common
             }
             GL.End();
 
+            Lines.Clear();
             Cubes.Clear();
         }
 
