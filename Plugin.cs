@@ -173,7 +173,11 @@ namespace SevenBoldPencil.WeaponCamo
             var decalBuffers = _decalsRenderer.dictionary_2;
             var decals = _decalsRenderer.dictionary_1;
             var decalProjectorHeight = _decalsRenderer._decalProjectorHeight;
-			var decal = decals[material];
+            if (!decals.TryGetValue(material, out var decal))
+            {
+                LoggerInstance.LogWarning($"DrawDecal: no decal for {material} material");
+                return;
+            }
 
 			method_5(_decalsRenderer, position, normal, owner, decal, decal.DynamicDecalMaterial, decalProjectorHeight);
 			foreach (var (camera, buffer) in decalBuffers)
