@@ -245,10 +245,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
 			method_5(_decalsRenderer, position, normal, owner, decal, decal.DynamicDecalMaterial, decalProjectorHeight);
-			foreach (var (camera, buffer) in decalBuffers)
-			{
-				buffer.IsDynamicBufferDirty = true;
-			}
+            decalsRenderer.method_13();
         }
 
 		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
