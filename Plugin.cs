@@ -46,6 +46,8 @@ namespace SevenBoldPencil.WeaponCamo
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
+    	private static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
+
         public static Plugin Instance;
 		public ManualLogSource LoggerInstance;
 
@@ -56,11 +58,15 @@ namespace SevenBoldPencil.WeaponCamo
         public static ConfigEntry<float> MoveStep;
         public static ConfigEntry<float> GizmoCubeSize;
         public static ConfigEntry<MaterialType> DecalMaterial;
+        public static ConfigEntry<float> DecalMaxAngle;
 
         public RuntimeGizmos RuntimeGizmos;
     	public RaycastHit[] RaycastHits;
-        public List<Transform> Decals;
+        public List<DynamicDeferredDecalRenderer> Decals;
         public Vector3 LastDecalNormal;
+
+        public AssetBundle Bundle;
+        public Shader DecalDynamicShader;
 
         private void Awake()
         {
@@ -74,9 +80,29 @@ namespace SevenBoldPencil.WeaponCamo
             MoveStep = Config.Bind<float>("Main", "Move Step", 0.005f, new ConfigDescription("from 1mm to 10cm, default is 5mm", new AcceptableValueRange<float>(0.001f, 0.1f)));
             GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
             DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
+            DecalMaxAngle = Config.Bind<float>("Main", "Decal Max Angle", 0.8f, new ConfigDescription("angle at which decal starts to cut off", new AcceptableValueRange<float>(0f, 1f)));
+            DecalMaxAngle.SettingChanged += (s, e) =>
+            {
+                PropagateDecalsMaxAngle(DecalMaxAngle.Value);
+            };
 
     		RaycastHits = new RaycastHit[32];
             Decals = new(10);
+
+            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
+            Bundle = AssetBundle.LoadFromFile(bundlePath);
+            DecalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
+
+            new Patch_DeferredDecalRenderer_SingleDecal_Init().Enable();
+        }
+
+        public void PropagateDecalsMaxAngle(float newMaxAngle)
+        {
+            foreach (var decal in Decals)
+            {
+                decal.DecalMaterial.SetFloat(_MaxAngle, newMaxAngle);
+            }
         }
 
 		public void Update()
@@ -89,16 +115,17 @@ namespace SevenBoldPencil.WeaponCamo
 			{
                 PutDecalOnWeapon();
 			}
+
             if (Decals.Count != 0)
             {
-                var lastDecal = Decals.Last();
+                var lastDecalHelper = Decals.Last().TransformHelper;
                 if (Input.GetKeyDown(MoveForward.Value.MainKey))
                 {
-                    lastDecal.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
+                    lastDecalHelper.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
                 }
                 if (Input.GetKeyDown(MoveBack.Value.MainKey))
                 {
-                    lastDecal.Translate(LastDecalNormal * MoveStep.Value, Space.World);
+                    lastDecalHelper.Translate(LastDecalNormal * MoveStep.Value, Space.World);
                 }
             }
             if (CameraClass.Exist && !RuntimeGizmos)
@@ -117,19 +144,20 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 foreach (var decal in Decals)
                 {
-                    var position = decal.position;
+                    var decalHelper = decal.TransformHelper;
+                    var position = decalHelper.position;
                     var scale = GizmoCubeSize.Value;
                     var scale3 = new Vector3(scale, scale, scale);
                     RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
                     {
                         Position = position,
-                        Rotation = decal.rotation,
+                        Rotation = decalHelper.rotation,
                         Scale = scale3,
                     });
                     RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
                     {
                         Start = position,
-                        End = position + decal.up * scale,
+                        End = position + decalHelper.up * scale,
                     });
                 }
             }
@@ -159,7 +187,7 @@ namespace SevenBoldPencil.WeaponCamo
 			var camera = CameraClass.Instance;
             var cameraTransform = camera.Camera.transform;
 
-            var maxDistance = 10;
+            var maxDistance = 100;
             var start = cameraTransform.position;
             var direction = cameraTransform.forward;
             var end = start + direction * maxDistance;
@@ -248,7 +276,7 @@ namespace SevenBoldPencil.WeaponCamo
 					transformHelper.rotation = gameObject.transform.rotation;
 					transformHelper.parent = owner;
 
-                    Decals.Add(transformHelper);
+                    Decals.Add(dynamicDeferredDecalRenderer);
                     LastDecalNormal = normal;
 				}
 			}
