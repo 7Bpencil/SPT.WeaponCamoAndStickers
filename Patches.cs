@@ -21,6 +21,7 @@ using SPT.Reflection.Patching;
 using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
@@ -41,6 +42,50 @@ namespace SevenBoldPencil.WeaponCamo
 				replacementMaterial.CopyPropertiesFromMaterial(__instance.DynamicDecalMaterial);
 				__instance.DynamicDecalMaterial = replacementMaterial;
 			}
+		}
+	}
+
+	public class Patch_DeferredDecalRenderer_Update : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(DeferredDecalRenderer), nameof(DeferredDecalRenderer.Update));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(DeferredDecalRenderer __instance)
+        {
+			return false;
+		}
+	}
+
+	public class Patch_DeferredDecalRenderer_OnPreCameraRender : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(DeferredDecalRenderer), nameof(DeferredDecalRenderer.OnPreCameraRender));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(DeferredDecalRenderer __instance, Camera currentCamera)
+        {
+            var __instance__ = new Proxy_DeferredDecalRenderer(__instance);
+			var list_0 = __instance__.list_0;
+
+			bool flag = false;
+			for (int i = 0; i < list_0.Count; i++)
+			{
+				if (list_0[i].enabled && list_0[i].ManualUpdate())
+				{
+					flag = true;
+				}
+			}
+			if (flag)
+			{
+				__instance.method_13();
+			}
+
+			return true;
 		}
 	}
 }

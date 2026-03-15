@@ -64,6 +64,7 @@ namespace SevenBoldPencil.WeaponCamo
     	public RaycastHit[] RaycastHits;
         public List<DynamicDeferredDecalRenderer> Decals;
         public Vector3 LastDecalNormal;
+        public Texture2D[] DecalTextures;
 
         public AssetBundle Bundle;
         public Shader DecalDynamicShader;
@@ -93,8 +94,22 @@ namespace SevenBoldPencil.WeaponCamo
 			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
             Bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
+            DecalTextures = [
+                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/red.png"),
+                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/sand.png"),
+                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/bearamogus.png"),
+            ];
 
             new Patch_DeferredDecalRenderer_SingleDecal_Init().Enable();
+            new Patch_DeferredDecalRenderer_Update().Enable();
+            new Patch_DeferredDecalRenderer_OnPreCameraRender().Enable();
+
+            // TODO
+            // seems like decals are not drawing on gun (because of stencil?)
+            // does it mean we can make decals that will only apply on gun (and hands)?
+
+            // TODO
+            // figure out why decal moves slightly during weapon inspect animation
         }
 
         public void PropagateDecalsMaxAngle(float newMaxAngle)
@@ -237,7 +252,8 @@ namespace SevenBoldPencil.WeaponCamo
 
             var decalBuffers = _decalsRenderer.dictionary_2;
             var decals = _decalsRenderer.dictionary_1;
-            var decalProjectorHeight = _decalsRenderer._decalProjectorHeight;
+            // var decalProjectorHeight = _decalsRenderer._decalProjectorHeight;
+            var decalProjectorHeight = 0.2f;
             if (!decals.TryGetValue(material, out var decal))
             {
                 LoggerInstance.LogWarning($"DrawDecal: no decal for {material} material");
@@ -248,6 +264,7 @@ namespace SevenBoldPencil.WeaponCamo
             decalsRenderer.method_13();
         }
 
+        private int index;
 		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
 		{
 			DynamicDeferredDecalRenderer dynamicDeferredDecalRenderer = instance.list_0[instance.int_3];
@@ -281,6 +298,11 @@ namespace SevenBoldPencil.WeaponCamo
 			int num4 = UnityEngine.Random.Range(0, currentDecal.TileSheetRows);
 			Vector4 uvStartEnd = new Vector4((float)num4 * currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize, (float)num4 * currentDecal.TileUSize + currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize + currentDecal.TileVSize);
 			dynamicDeferredDecalRenderer.enabled = true;
+
+            currentMaterial.SetTexture("_MainTex", DecalTextures[index]);
+            currentMaterial.SetTexture("_BumpMap", null);
+            index = (index + 1) % 3;
+
 			dynamicDeferredDecalRenderer.Init(currentMaterial, instance._cube, normal, uvStartEnd, currentDecal.IsTiled, cullingGroupSphereIndex);
 			instance.int_3 = (instance.int_3 + 1) % instance._maxDynamicDecals;
 		}
