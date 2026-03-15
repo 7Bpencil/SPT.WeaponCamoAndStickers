@@ -9,6 +9,7 @@ using SevenBoldPencil.Common;
 using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Linq;
 using Systems.Effects;
 using UnityEngine;
 
@@ -48,7 +49,8 @@ namespace SevenBoldPencil.WeaponCamo
         public static Plugin Instance;
 		public ManualLogSource LoggerInstance;
 
-        public static ConfigEntry<KeyboardShortcut> SpawnButton;
+        public static ConfigEntry<KeyboardShortcut> SpawnBallisticColliderDecalButton;
+        public static ConfigEntry<KeyboardShortcut> SpawnWeaponDecalButton;
         public static ConfigEntry<KeyboardShortcut> MoveForward;
         public static ConfigEntry<KeyboardShortcut> MoveBack;
         public static ConfigEntry<float> MoveStep;
@@ -65,9 +67,10 @@ namespace SevenBoldPencil.WeaponCamo
             Instance = this;
 			LoggerInstance = Logger;
 
-            SpawnButton = Config.Bind("Main", "Spawn Button", new KeyboardShortcut(KeyCode.F4), "Spawn Button");
-            MoveForward = Config.Bind("Main", "Move Forward", new KeyboardShortcut(KeyCode.F2), "Move Forward");
-            MoveBack = Config.Bind("Main", "Move Back", new KeyboardShortcut(KeyCode.F3), "Move Back");
+            SpawnBallisticColliderDecalButton = Config.Bind("Main", "Spawn Ballistic Collider Decal Button", new KeyboardShortcut(KeyCode.F3), "Spawn Ballistic Collider Decal Button");
+            SpawnWeaponDecalButton = Config.Bind("Main", "Spawn Weapon Decal Button", new KeyboardShortcut(KeyCode.F4), "Spawn Weapon Decal Button");
+            MoveForward = Config.Bind("Main", "Move Forward", new KeyboardShortcut(KeyCode.F1), "Move Forward");
+            MoveBack = Config.Bind("Main", "Move Back", new KeyboardShortcut(KeyCode.F2), "Move Back");
             MoveStep = Config.Bind<float>("Main", "Move Step", 0.005f, new ConfigDescription("from 1mm to 10cm, default is 5mm", new AcceptableValueRange<float>(0.001f, 0.1f)));
             GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
             DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
@@ -78,17 +81,25 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public void Update()
 		{
-			if (Input.GetKeyDown(SpawnButton.Value.MainKey))
+			if (Input.GetKeyDown(SpawnBallisticColliderDecalButton.Value.MainKey))
 			{
                 PutDecalOnBallisticCollider();
 			}
-            if (Input.GetKeyDown(MoveForward.Value.MainKey) && LastDecal)
+			if (Input.GetKeyDown(SpawnWeaponDecalButton.Value.MainKey))
+			{
+                PutDecalOnWeapon();
+			}
+            if (Decals.Count != 0)
             {
-                LastDecal.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
-            }
-            if (Input.GetKeyDown(MoveBack.Value.MainKey) && LastDecal)
-            {
-                LastDecal.Translate(LastDecalNormal * MoveStep.Value, Space.World);
+                var lastDecal = Decals.Last();
+                if (Input.GetKeyDown(MoveForward.Value.MainKey))
+                {
+                    lastDecal.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
+                }
+                if (Input.GetKeyDown(MoveBack.Value.MainKey))
+                {
+                    lastDecal.Translate(LastDecalNormal * MoveStep.Value, Space.World);
+                }
             }
             if (CameraClass.Exist && !RuntimeGizmos)
             {
@@ -122,6 +133,22 @@ namespace SevenBoldPencil.WeaponCamo
                     });
                 }
             }
+        }
+
+        public void PutDecalOnWeapon()
+        {
+            LoggerInstance.LogWarning("TestDecalOnWeapon");
+
+            var player = GamePlayerOwner.MyPlayer;
+            var pwa = player.ProceduralWeaponAnimation;
+            var weaponGO = pwa.HandsContainer.Weapon;
+			var camera = CameraClass.Instance;
+            var cameraTransform = camera.Camera.transform;
+
+            var start = cameraTransform.position;
+            var direction = cameraTransform.forward;
+            var normal = -direction;
+            DrawDecal(start, normal, weaponGO.transform, DecalMaterial.Value);
         }
 
         public void PutDecalOnBallisticCollider()
