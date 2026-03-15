@@ -57,7 +57,7 @@ namespace SevenBoldPencil.WeaponCamo
 
         public RuntimeGizmos RuntimeGizmos;
     	public RaycastHit[] RaycastHits;
-        public Transform LastDecal;
+        public List<Transform> Decals;
         public Vector3 LastDecalNormal;
 
         private void Awake()
@@ -73,6 +73,7 @@ namespace SevenBoldPencil.WeaponCamo
             DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
 
     		RaycastHits = new RaycastHit[32];
+            Decals = new(10);
         }
 
 		public void Update()
@@ -101,16 +102,25 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void LateUpdate()
         {
-            if (RuntimeGizmos && LastDecal)
+            if (RuntimeGizmos)
             {
-                var scale = GizmoCubeSize.Value;
-                var scale3 = new Vector3(scale, scale, scale);
-                RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                foreach (var decal in Decals)
                 {
-                    Position = LastDecal.position,
-                    Rotation = LastDecal.rotation,
-                    Scale = scale3,
-                });
+                    var position = decal.position;
+                    var scale = GizmoCubeSize.Value;
+                    var scale3 = new Vector3(scale, scale, scale);
+                    RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                    {
+                        Position = position,
+                        Rotation = decal.rotation,
+                        Scale = scale3,
+                    });
+                    RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
+                    {
+                        Start = position,
+                        End = position + decal.up * scale,
+                    });
+                }
             }
         }
 
@@ -211,7 +221,7 @@ namespace SevenBoldPencil.WeaponCamo
 					transformHelper.rotation = gameObject.transform.rotation;
 					transformHelper.parent = owner;
 
-                    LastDecal = transformHelper;
+                    Decals.Add(transformHelper);
                     LastDecalNormal = normal;
 				}
 			}
