@@ -6,6 +6,7 @@ using DeferredDecals;
 using EFT;
 using EFT.Ballistics;
 using SevenBoldPencil.Common;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
@@ -43,62 +44,116 @@ namespace SevenBoldPencil.WeaponCamo
         }
     }
 
+    public class DecalUI
+    {
+        public DynamicDeferredDecalRenderer Decal;
+        public float Opacity;
+        public float MaxAngle;
+        public string Size;
+        public string Depth;
+    }
+
+    public static class DecalExtensions
+    {
+    	public static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
+        public static readonly Vector3 LeftSideDecalRotation = new(0, 0, 90);
+        public static readonly Vector3 RightSideDecalRotation = new(0, 0, 270);
+
+        public static void ChangeTexture(this DynamicDeferredDecalRenderer decal, Texture2D diffuse, Texture2D bump = null)
+        {
+            decal.DecalMaterial.SetTexture("_MainTex", diffuse);
+            decal.DecalMaterial.SetTexture("_BumpMap", bump);
+        }
+
+        public static void ChangeSide(this DynamicDeferredDecalRenderer decal, bool isLeft)
+        {
+            var decalTransfromHelper = decal.TransformHelper;
+            if (isLeft)
+            {
+                decalTransfromHelper.localEulerAngles = LeftSideDecalRotation;
+            }
+            else
+            {
+                decalTransfromHelper.localEulerAngles = RightSideDecalRotation;
+            }
+        }
+
+        public static void ChangeLocalPosition(this DynamicDeferredDecalRenderer decal, Vector3 direction, float step)
+        {
+            var decalTransfromHelper = decal.TransformHelper;
+            decalTransfromHelper.Translate(direction * step, Space.Self);
+        }
+
+        public static void ChangeLocalRotation(this DynamicDeferredDecalRenderer decal, float delta)
+        {
+            var decalTransfromHelper = decal.TransformHelper;
+            decalTransfromHelper.Rotate(new Vector3(0, 1, 0) * delta, Space.Self);
+        }
+
+        public static void ChangeOpacity(this DynamicDeferredDecalRenderer decal, float opacity)
+        {
+            decal.DecalMaterial.color = new Color(1, 1, 1, opacity);
+        }
+
+        public static void ChangeMaxAngle(this DynamicDeferredDecalRenderer decal, float maxAngle)
+        {
+            decal.DecalMaterial.SetFloat(_MaxAngle, maxAngle);
+        }
+
+        public static void ChangeSize(this DynamicDeferredDecalRenderer decal, float size)
+        {
+            var decalTransform = decal.transform;
+            var depth = decalTransform.localScale.y;
+            decalTransform.localScale = new Vector3(size, depth, size);
+        }
+
+        public static void ChangeDepth(this DynamicDeferredDecalRenderer decal, float depth)
+        {
+            var decalTransform = decal.transform;
+            var size = decalTransform.localScale.x;
+            decalTransform.localScale = new Vector3(size, depth, size);
+        }
+    }
+
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
-    	private static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
-
         public static Plugin Instance;
+
 		public ManualLogSource LoggerInstance;
 
-        public static ConfigEntry<KeyboardShortcut> SpawnBallisticColliderDecalButton;
-        public static ConfigEntry<KeyboardShortcut> SpawnWeaponDecalButton;
-        public static ConfigEntry<KeyboardShortcut> MoveForward;
-        public static ConfigEntry<KeyboardShortcut> MoveBack;
-        public static ConfigEntry<float> MoveStep;
+        public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
         public static ConfigEntry<float> GizmoCubeSize;
         public static ConfigEntry<MaterialType> DecalMaterial;
-        public static ConfigEntry<float> DecalMaxAngle;
 
         public RuntimeGizmos RuntimeGizmos;
     	public RaycastHit[] RaycastHits;
         public List<DynamicDeferredDecalRenderer> Decals;
-        public Vector3 LastDecalNormal;
-        public Texture2D[] DecalTextures;
+        public List<DecalUI> DecalsUI;
+        public bool IsCamoEditorVisible;
 
         public AssetBundle Bundle;
         public Shader DecalDynamicShader;
+        public Texture2D DefaultDecalTexture;
 
         private void Awake()
         {
             Instance = this;
 			LoggerInstance = Logger;
 
-            SpawnBallisticColliderDecalButton = Config.Bind("Main", "Spawn Ballistic Collider Decal Button", new KeyboardShortcut(KeyCode.F3), "Spawn Ballistic Collider Decal Button");
-            SpawnWeaponDecalButton = Config.Bind("Main", "Spawn Weapon Decal Button", new KeyboardShortcut(KeyCode.F4), "Spawn Weapon Decal Button");
-            MoveForward = Config.Bind("Main", "Move Forward", new KeyboardShortcut(KeyCode.F1), "Move Forward");
-            MoveBack = Config.Bind("Main", "Move Back", new KeyboardShortcut(KeyCode.F2), "Move Back");
-            MoveStep = Config.Bind<float>("Main", "Move Step", 0.005f, new ConfigDescription("from 1mm to 10cm, default is 5mm", new AcceptableValueRange<float>(0.001f, 0.1f)));
+            ShowHideCamoEditor = Config.Bind("Main", "Show/Hide Camo Editor", new KeyboardShortcut(KeyCode.F4), "Show/Hide Camo Editor");
             GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
             DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
-            DecalMaxAngle = Config.Bind<float>("Main", "Decal Max Angle", 0.8f, new ConfigDescription("angle at which decal starts to cut off", new AcceptableValueRange<float>(0f, 1f)));
-            DecalMaxAngle.SettingChanged += (s, e) =>
-            {
-                PropagateDecalsMaxAngle(DecalMaxAngle.Value);
-            };
 
     		RaycastHits = new RaycastHit[32];
             Decals = new(10);
+            DecalsUI = new(10);
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
             Bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            DecalTextures = [
-                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/red.png"),
-                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/sand.png"),
-                Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/bearamogus.png"),
-            ];
+            DefaultDecalTexture = Bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Images/default.png");
 
             new Patch_DeferredDecalRenderer_SingleDecal_Init().Enable();
             new Patch_DeferredDecalRenderer_Update().Enable();
@@ -106,42 +161,26 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // seems like decals are not drawing on gun (because of stencil?)
-            // does it mean we can make decals that will only apply on gun (and hands)?
+            // does it mean we can make decals that will only apply on gun (and not hands and env)?
 
             // TODO
             // figure out why decal moves slightly during weapon inspect animation
-        }
 
-        public void PropagateDecalsMaxAngle(float newMaxAngle)
-        {
-            foreach (var decal in Decals)
-            {
-                decal.DecalMaterial.SetFloat(_MaxAngle, newMaxAngle);
-            }
+            // TODO
+            // add option to collapse decal settings
+
+            // TODO
+            // load textures from folder
+
+            // TODO
+            // add color picker
         }
 
 		public void Update()
 		{
-			if (Input.GetKeyDown(SpawnBallisticColliderDecalButton.Value.MainKey))
-			{
-                PutDecalOnBallisticCollider();
-			}
-			if (Input.GetKeyDown(SpawnWeaponDecalButton.Value.MainKey))
-			{
-                PutDecalOnWeapon();
-			}
-
-            if (Decals.Count != 0)
+            if (Input.GetKeyDown(ShowHideCamoEditor.Value.MainKey))
             {
-                var lastDecalHelper = Decals.Last().TransformHelper;
-                if (Input.GetKeyDown(MoveForward.Value.MainKey))
-                {
-                    lastDecalHelper.Translate(-LastDecalNormal * MoveStep.Value, Space.World);
-                }
-                if (Input.GetKeyDown(MoveBack.Value.MainKey))
-                {
-                    lastDecalHelper.Translate(LastDecalNormal * MoveStep.Value, Space.World);
-                }
+                IsCamoEditorVisible = !IsCamoEditorVisible;
             }
             if (CameraClass.Exist && !RuntimeGizmos)
             {
@@ -178,6 +217,268 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
+		private const float windowHeaderHeight = 15f;
+		private const float boxHeaderHeight = 20f;
+		private const float marginX = 15f;
+		private const float marginY = 15f;
+        private const float startX = marginX;
+		private const float startY = windowHeaderHeight + marginY + separatorY;
+		private const float height = 30f;
+		private const float separatorX = 3f;
+		private const float separatorY = 3f;
+        private const float buttonWidth = (60 - separatorX) / 2;
+        private const float fieldWidth = 40;
+        private const float nameWidth = 120;
+        private const float sideButtonWidth = 60;
+        private const float longButtonWidth = 60;
+        private const float longFieldWidth = 60;
+        private const int propertiesCount = 9;
+
+        private const float maxPropertyWidth = nameWidth + separatorX + (longButtonWidth + separatorX) * 4 + longFieldWidth;
+        private const float boxWidth = maxPropertyWidth + marginX * 2;
+        private const float addDecalButtonWidth = boxWidth;
+        private const float windowWidth = boxWidth + marginX * 2;
+        private const float boxHeight = boxHeaderHeight + separatorY + (height + separatorY) * propertiesCount;
+
+		private Rect windowRect;
+
+        private GUIStyle labelStyleName = new()
+        {
+            alignment = TextAnchor.MiddleLeft,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.white
+            }
+        };
+
+        private GUIStyle labelStyleValue = new()
+        {
+            alignment = TextAnchor.MiddleCenter,
+            normal = new GUIStyleState()
+            {
+                textColor = Color.white
+            }
+        };
+
+        public void OnGUI()
+        {
+            if (IsCamoEditorVisible)
+            {
+    			// if width == 0, then windowRect has not been initialized, so init it
+    			if (windowRect.width == 0f)
+    			{
+    				windowRect.width = windowWidth;
+    				windowRect.x = 50;
+    				windowRect.y = 50;
+    			}
+
+    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * Decals.Count;
+
+    			windowRect.height = windowHeight;
+                windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
+            }
+        }
+
+        private void WindowFunction(int windowID)
+		{
+			var x = startX;
+			var y = startY;
+
+            if (GUI.Button(new Rect(x, y, addDecalButtonWidth, height), "Add New Decal"))
+            {
+                PutDecalOnWeapon();
+            }
+            y += height + marginY;
+
+            foreach (var decalUI in DecalsUI)
+            {
+                DrawDecalUI(x, ref y, decalUI);
+                y += marginY;
+            }
+
+			GUI.DragWindow();
+        }
+
+        private void DrawDecalUI(float x, ref float y, DecalUI decalUI)
+        {
+            var decal = decalUI.Decal;
+            var localPosition = decal.TransformHelper.localPosition;
+            var localRotation = decal.TransformHelper.localEulerAngles;
+
+            GUI.Box(new Rect(x, y, boxWidth, boxHeight), "Decal");
+            y += boxHeaderHeight + separatorY;
+
+            {
+                var lineX = x + marginX;
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "Side:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Left"))
+                {
+                    decal.ChangeSide(true);
+                }
+                lineX += sideButtonWidth + separatorX;
+
+                if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Right"))
+                {
+                    decal.ChangeSide(false);
+                }
+                lineX += sideButtonWidth + separatorX;
+            }
+            y += height + separatorY;
+
+            {
+                var sliderWidth = 200;
+                var lineX = x + marginX;
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "Opacity:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                var newOpacity = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalUI.Opacity, 0f, 1f);
+                if (newOpacity != decalUI.Opacity)
+                {
+                    decalUI.Opacity = newOpacity;
+                    decal.ChangeOpacity(newOpacity);
+                }
+                lineX += sliderWidth + separatorX;
+
+                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalUI.Opacity:F3}", labelStyleValue);
+                lineX += longFieldWidth + separatorX;
+
+                y += height + separatorY;
+            }
+
+            {
+                var sliderWidth = 200;
+                var lineX = x + marginX;
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "MaxAngle:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                var newMaxAngle = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalUI.MaxAngle, 0f, 1f);
+                if (newMaxAngle != decalUI.MaxAngle)
+                {
+                    decalUI.MaxAngle = newMaxAngle;
+                    decal.ChangeMaxAngle(newMaxAngle);
+                }
+                lineX += sliderWidth + separatorX;
+
+                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalUI.MaxAngle:F3}", labelStyleValue);
+                lineX += longFieldWidth + separatorX;
+
+                y += height + separatorY;
+            }
+
+            void DrawChangePositionLine(float x, float y, string name, Vector3 direction, float value)
+            {
+                var lineX = x + marginX;
+
+                void DrawButton(float value, string valueStr)
+                {
+                    if (GUI.Button(new Rect(lineX, y, longButtonWidth, height), valueStr))
+                    {
+                        decal.ChangeLocalPosition(direction, value);
+                    }
+                    lineX += longButtonWidth + separatorX;
+                }
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), name, labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                DrawButton(-0.005f, "5mm");
+                DrawButton(-0.001f, "1mm");
+
+                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{value:F3}", labelStyleValue);
+                lineX += longFieldWidth + separatorX;
+
+                DrawButton(0.001f, "1mm");
+                DrawButton(0.005f, "5mm");
+            }
+
+            DrawChangePositionLine(x, y, "Forward/Backward:", new Vector3(1f, 0f, 0f), localPosition.y);
+            y += height + separatorY;
+
+            DrawChangePositionLine(x, y, "Down/Up:", new Vector3(0f, 0f, 1f), localPosition.z);
+            y += height + separatorY;
+
+            DrawChangePositionLine(x, y, "Left/Right", new Vector3(0f, 1f, 0f), localPosition.x);
+            y += height + separatorY;
+
+            {
+                var lineX = x + marginX;
+
+                void DrawButton(float x, float y, float value, string valueStr)
+                {
+                    if (GUI.Button(new Rect(lineX, y, buttonWidth, height), valueStr))
+                    {
+                        decal.ChangeLocalRotation(value);
+                    }
+                    lineX += buttonWidth + separatorX;
+                }
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "Rotation:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                DrawButton(lineX, y, -5, "5°");
+                DrawButton(lineX, y, -1, "1°");
+
+                GUI.Label(new Rect(lineX, y, fieldWidth, height), $"{localRotation.x:N0}", labelStyleValue);
+                lineX += fieldWidth + separatorX;
+
+                DrawButton(lineX, y, 1, "1°");
+                DrawButton(lineX, y, 5, "5°");
+            }
+            y += height + separatorY;
+
+            {
+                var lineX = x + marginX;
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "Size:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                decalUI.Size = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalUI.Size, 6);
+                lineX += longFieldWidth + separatorX;
+
+                if (GUI.Button(new Rect(lineX, y, buttonWidth, height), "Set"))
+                {
+                    if (float.TryParse(decalUI.Size, out var newSize))
+                    {
+                        decalUI.Size = newSize.ToString();
+                        decal.ChangeSize(newSize);
+                    }
+                }
+                lineX += buttonWidth + separatorX;
+            }
+            y += height + separatorY;
+
+            {
+                var lineX = x + marginX;
+
+                GUI.Label(new Rect(lineX, y, nameWidth, height), "Depth:", labelStyleName);
+                lineX += nameWidth + separatorX;
+
+                decalUI.Depth = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalUI.Depth, 6);
+                lineX += longFieldWidth + separatorX;
+
+                if (GUI.Button(new Rect(lineX, y, buttonWidth, height), "Set"))
+                {
+                    if (float.TryParse(decalUI.Depth, out var newDepth))
+                    {
+                        decalUI.Depth = newDepth.ToString();
+                        decal.ChangeDepth(newDepth);
+                    }
+                }
+                lineX += buttonWidth + separatorX;
+            }
+            y += height + separatorY;
+		}
+
+
+        private readonly Vector3 typicalRifleCenter = new Vector3(0f, -0.35f, -0.003f);
+        private readonly float defaultDecalDepth = 0.2f;
+        private readonly float defaultDecalSize = 0.2f;
+
         public void PutDecalOnWeapon()
         {
             LoggerInstance.LogWarning("TestDecalOnWeapon");
@@ -188,175 +489,70 @@ namespace SevenBoldPencil.WeaponCamo
 			var camera = CameraClass.Instance;
             var cameraTransform = camera.Camera.transform;
 
-            var start = cameraTransform.position;
-            var direction = cameraTransform.forward;
-            var normal = -direction;
-            DrawDecal(start, normal, weaponGO.transform, DecalMaterial.Value);
-        }
-
-        public void PutDecalOnBallisticCollider()
-        {
-            LoggerInstance.LogWarning("TestDecal");
-
-            var player = GamePlayerOwner.MyPlayer;
-			var camera = CameraClass.Instance;
-            var cameraTransform = camera.Camera.transform;
-
-            var maxDistance = 100;
-            var start = cameraTransform.position;
-            var direction = cameraTransform.forward;
-            var end = start + direction * maxDistance;
-            var hitMask = LayerMasksDataAbstractClass.HitMask;
-
-            // I am pretty sure this method is used for raycasting bullets
-        	var hasHit = EFTPhysicsClass.LinecastInBothSides(
-                start, end,
-                out var bestHit, out var isForwardHit,
-                hitMask, hitMask,
-                RaycastHits,
-                hit => IsHitIgnored(player, hit)
-            );
-
-            LoggerInstance.LogWarning($"TestDecal: has hit: {hasHit}");
-
-            if (!hasHit)
-            {
-                return;
-            }
-
-            LoggerInstance.LogWarning($"TestDecal: bestHit: {bestHit.collider.gameObject.name}");
-
-    		TryGetBallisticCollider(bestHit, out var ballisticCollider);
-            if (!ballisticCollider)
-            {
-                return;
-            }
-
-            LoggerInstance.LogWarning($"TestDecal: ballisticCollider: {ballisticCollider.gameObject.name}");
-
-			var hitBallisticCollider = ballisticCollider.Get(bestHit.point);
-            DrawDecal(bestHit, hitBallisticCollider, DecalMaterial.Value);
-        }
-
-        public void DrawDecal(RaycastHit hit, BallisticCollider ballisticCollider, MaterialType material)
-        {
-			var position = hit.point + hit.normal * EFTHardSettings.Instance.DECAL_SHIFT;
-            DrawDecal(position, hit.normal, ballisticCollider.transform, material);
-        }
-
-        public void DrawDecal(Vector3 position, Vector3 normal, Transform owner, MaterialType material)
-        {
             var effects = Singleton<Effects>.Instance;
             var decalsRenderer = effects.DeferredDecals;
             var _decalsRenderer = new Proxy_DeferredDecalRenderer(decalsRenderer);
 
             var decalBuffers = _decalsRenderer.dictionary_2;
             var decals = _decalsRenderer.dictionary_1;
-            // var decalProjectorHeight = _decalsRenderer._decalProjectorHeight;
-            var decalProjectorHeight = 0.2f;
+            var material = DecalMaterial.Value;
+
             if (!decals.TryGetValue(material, out var decal))
             {
                 LoggerInstance.LogWarning($"DrawDecal: no decal for {material} material");
                 return;
             }
 
-			method_5(_decalsRenderer, position, normal, owner, decal, decal.DynamicDecalMaterial, decalProjectorHeight);
+			method_5(_decalsRenderer, typicalRifleCenter, DecalExtensions.LeftSideDecalRotation, defaultDecalSize, weaponGO.transform, decal, decal.DynamicDecalMaterial, defaultDecalDepth);
             decalsRenderer.method_13();
         }
 
-        private int index;
-		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 position, Vector3 normal, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float projectorHeight)
+        private static readonly float sqrt2 = Mathf.Sqrt(2f);
+
+		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 localPosition, Vector3 localRotation, float size, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float depth)
 		{
 			DynamicDeferredDecalRenderer dynamicDeferredDecalRenderer = instance.list_0[instance.int_3];
-			GameObject gameObject = dynamicDeferredDecalRenderer.gameObject;
+			Transform decalTransform = dynamicDeferredDecalRenderer.gameObject.transform;
 			Transform transformHelper = dynamicDeferredDecalRenderer.TransformHelper;
 			int cullingGroupSphereIndex = dynamicDeferredDecalRenderer.CullingGroupSphereIndex;
-			float num = UnityEngine.Random.Range(currentDecal.DecalSize.x, currentDecal.DecalSize.y);
-			float num2 = num * 2f;
-			float rad = Mathf.Sqrt(num * num + num * num);
-			instance.boundingSphere_0[cullingGroupSphereIndex] = new BoundingSphere(position, rad);
-			if (gameObject != null)
-			{
-				gameObject.transform.localScale = new Vector3(num2, projectorHeight, num2);
-				gameObject.transform.up = normal;
-				gameObject.transform.position = position;
-				if (currentDecal.RandomizeRotation)
-				{
-					gameObject.transform.Rotate(Vector3.up, UnityEngine.Random.Range(0f, 359f), Space.Self);
-				}
-				if (transformHelper != null)
-				{
-					transformHelper.position = position;
-					transformHelper.rotation = gameObject.transform.rotation;
-					transformHelper.parent = owner;
 
-                    Decals.Add(dynamicDeferredDecalRenderer);
-                    LastDecalNormal = normal;
-				}
-			}
-			int num3 = UnityEngine.Random.Range(0, currentDecal.TileSheetColumns);
-			int num4 = UnityEngine.Random.Range(0, currentDecal.TileSheetRows);
-			Vector4 uvStartEnd = new Vector4((float)num4 * currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize, (float)num4 * currentDecal.TileUSize + currentDecal.TileUSize, (float)num3 * currentDecal.TileVSize + currentDecal.TileVSize);
+            // TODO I think Tarkov default decal radius calculation is incorrect
+
+			transformHelper.parent = owner;
+            transformHelper.localPosition = localPosition;
+            transformHelper.localEulerAngles = localRotation;
+
+            var position = transformHelper.position;
+            var rotation = transformHelper.rotation;
+
+			decalTransform.localScale = new Vector3(size, depth, size);
+			decalTransform.rotation = rotation;
+			decalTransform.position = position;
+
+            // TODO we have to update BoundingSphere with size changes
+            var boundingSphereRadius = sqrt2 * size * 0.5f;
+			instance.boundingSphere_0[cullingGroupSphereIndex] = new BoundingSphere(position, boundingSphereRadius);
+
+            Decals.Add(dynamicDeferredDecalRenderer);
+            DecalsUI.Add(new DecalUI()
+            {
+                Decal = dynamicDeferredDecalRenderer,
+                Opacity = 1f,
+                MaxAngle = 0.8f,
+                Size = size.ToString(),
+                Depth = depth.ToString(),
+            });
+
+			var uvStartEnd = new Vector4(0, 0, currentDecal.TileUSize, currentDecal.TileVSize);
 			dynamicDeferredDecalRenderer.enabled = true;
 
-            currentMaterial.SetTexture("_MainTex", DecalTextures[index]);
-            currentMaterial.SetTexture("_BumpMap", null);
-            index = (index + 1) % 3;
+			dynamicDeferredDecalRenderer.Init(currentMaterial, default, default, uvStartEnd, true, cullingGroupSphereIndex);
 
-			dynamicDeferredDecalRenderer.Init(currentMaterial, instance._cube, normal, uvStartEnd, currentDecal.IsTiled, cullingGroupSphereIndex);
+            // TODO this is totally unneeded, in future default decal prefab will have texture set from editor
+            dynamicDeferredDecalRenderer.ChangeTexture(DefaultDecalTexture);
+
 			instance.int_3 = (instance.int_3 + 1) % instance._maxDynamicDecals;
 		}
-
-    	public bool IsHitIgnored(Player player, RaycastHit hit)
-    	{
-            if (IgnoreBecauseHitPlayer(player, hit))
-            {
-                return true;
-            }
-
-            var hitBallisticCollider = TryGetBallisticCollider(hit, out _);
-            return !hitBallisticCollider;
-    	}
-
-        public bool IgnoreBecauseHitPlayer(Player player, RaycastHit hit)
-        {
-    		if (player == null)
-    		{
-    			return false;
-    		}
-    		if (player.HasBodyPartCollider(hit.collider))
-    		{
-    			return true;
-    		}
-    		if (player.IsAI)
-    		{
-    			return hit.collider == player.CharacterController.GetCollider();
-    		}
-
-    		return false;
-        }
-
-    	public bool TryGetBallisticCollider(RaycastHit hit, out BaseBallistic ballisticCollider)
-    	{
-    		ballisticCollider = null;
-    		if (hit.collider == null)
-    		{
-    			return false;
-    		}
-    		if (hit.collider.TryGetComponent<BaseBallistic>(out ballisticCollider))
-    		{
-    			return true;
-    		}
-    		if (hit.collider.transform.parent == null)
-    		{
-    			return false;
-    		}
-    		if (hit.collider.transform.parent.TryGetComponent<BaseBallistic>(out ballisticCollider))
-    		{
-    			return true;
-    		}
-    		return false;
-    	}
 
     }
 }
