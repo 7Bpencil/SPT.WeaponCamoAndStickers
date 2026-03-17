@@ -4,14 +4,13 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <RootNamespace>SevenBoldPencil.WeaponCamo</RootNamespace>
     <Nullable>disable</Nullable>
-    <Authors>SPT</Authors>
-    <Copyright></Copyright>
-    <AssemblyVersion>1.7.0</AssemblyVersion>
+    <Authors>7Bpencil</Authors>
+    <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Configurations>Debug;Release;Package</Configurations>
     <Version>$(AssemblyVersion)</Version>
     <LangVersion>latest</LangVersion>
-    <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 
