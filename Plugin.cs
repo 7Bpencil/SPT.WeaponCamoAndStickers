@@ -192,6 +192,12 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // add color picker
+
+            // TODO
+            // add support for non square decal textures
+
+            // TODO
+            // maybe apply camo texture on top of diffuse texture?
         }
 
         // TODO
