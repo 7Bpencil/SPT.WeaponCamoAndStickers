@@ -83,16 +83,7 @@ namespace SevenBoldPencil.WeaponCamo
             // does it mean we can make decals that will only apply on gun (and not hands and env)?
 
             // TODO
-            // figure out why decal moves slightly during weapon inspect animation
-            // yep, its because helpers are not in sync,
-            // parenting decal GOs themselves, fixes this
-            // time to write custom decal system!
-
-            // TODO
             // add option to collapse decal settings
-
-            // TODO
-            // load textures from folder
 
             // TODO
             // add color picker
