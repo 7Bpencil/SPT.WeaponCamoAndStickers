@@ -45,7 +45,6 @@ namespace SevenBoldPencil.WeaponCamo
 		public ManualLogSource LoggerInstance;
 
         public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
-        public static ConfigEntry<float> GizmoCubeSize;
 
         public RuntimeGizmos RuntimeGizmos;
         public EquipmentDecalRenderer DecalRenderer;
@@ -63,7 +62,6 @@ namespace SevenBoldPencil.WeaponCamo
 			LoggerInstance = Logger;
 
             ShowHideCamoEditor = Config.Bind("Main", "Show/Hide Camo Editor", new KeyboardShortcut(KeyCode.F4), "Show/Hide Camo Editor");
-            GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
 
             AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
@@ -170,23 +168,22 @@ namespace SevenBoldPencil.WeaponCamo
         {
             if (RuntimeGizmos)
             {
-                // TODO match gizmo cube to decal size
                 foreach (var decal in DecalRenderer.Decals)
                 {
-                    var decalHelper = decal.transform;
-                    var position = decalHelper.position;
-                    var scale = GizmoCubeSize.Value;
-                    var scale3 = new Vector3(scale, scale, scale);
+                    var decalTransform = decal.DecalTransform;
+                    var position = decalTransform.position;
+                    var scale = decalTransform.lossyScale;
+
                     RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
                     {
                         Position = position,
-                        Rotation = decalHelper.rotation,
-                        Scale = scale3,
+                        Rotation = decalTransform.rotation,
+                        Scale = scale,
                     });
                     RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
                     {
                         Start = position,
-                        End = position + decalHelper.up * scale,
+                        End = position + decalTransform.up * scale.y,
                     });
                 }
             }
@@ -318,8 +315,8 @@ namespace SevenBoldPencil.WeaponCamo
         private void DrawDecalUI(float x, ref float y, int decalIndex, EquipmentDecalUI decalUI)
         {
             var decal = decalUI.Decal;
-            var localPosition = decal.transform.localPosition;
-            var localRotation = decal.transform.localEulerAngles;
+            var localPosition = decal.DecalTransform.localPosition;
+            var localRotation = decal.DecalTransform.localEulerAngles;
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), "Decal");
             y += boxHeaderHeight + separatorY;
