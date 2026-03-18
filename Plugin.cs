@@ -13,48 +13,21 @@ using System.Collections.Generic;
 using System.Linq;
 using Systems.Effects;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
-    public struct Proxy_DeferredDecalRenderer
-    {
-        private static TypedFieldInfo<DeferredDecalRenderer, float> __decalProjectorHeight = new("_decalProjectorHeight");
-		private static TypedFieldInfo<DeferredDecalRenderer, Dictionary<MaterialType, DeferredDecalRenderer.SingleDecal>> __dictionary_1 = new("dictionary_1");
-		private static TypedFieldInfo<DeferredDecalRenderer, Dictionary<Camera, DeferredDecalRenderer.DeferredDecalBufferClass>> __dictionary_2 = new("dictionary_2");
-		private static TypedFieldInfo<DeferredDecalRenderer, List<DynamicDeferredDecalRenderer>> __list_0 = new("list_0");
-		private static TypedFieldInfo<DeferredDecalRenderer, int> __int_3 = new("int_3");
-		private static TypedFieldInfo<DeferredDecalRenderer, Mesh> __cube = new("_cube");
-		private static TypedFieldInfo<DeferredDecalRenderer, BoundingSphere[]> __boundingSphere_0 = new("boundingSphere_0");
-		private static TypedFieldInfo<DeferredDecalRenderer, int> __maxDynamicDecals = new("_maxDynamicDecals");
-
-        public float _decalProjectorHeight { get { return __decalProjectorHeight.Get(__instance); } set { __decalProjectorHeight.Set(__instance, value); } }
-        public Dictionary<MaterialType, DeferredDecalRenderer.SingleDecal> dictionary_1 { get { return __dictionary_1.Get(__instance); } set { __dictionary_1.Set(__instance, value); } }
-        public Dictionary<Camera, DeferredDecalRenderer.DeferredDecalBufferClass> dictionary_2 { get { return __dictionary_2.Get(__instance); } set { __dictionary_2.Set(__instance, value); } }
-        public List<DynamicDeferredDecalRenderer> list_0 { get { return __list_0.Get(__instance); } set { __list_0.Set(__instance, value); } }
-        public int int_3 { get { return __int_3.Get(__instance); } set { __int_3.Set(__instance, value); } }
-        public Mesh _cube { get { return __cube.Get(__instance); } set { __cube.Set(__instance, value); } }
-        public BoundingSphere[] boundingSphere_0 { get { return __boundingSphere_0.Get(__instance); } set { __boundingSphere_0.Set(__instance, value); } }
-        public int _maxDynamicDecals { get { return __maxDynamicDecals.Get(__instance); } set { __maxDynamicDecals.Set(__instance, value); } }
-
-        private DeferredDecalRenderer __instance;
-
-        public Proxy_DeferredDecalRenderer(DeferredDecalRenderer instance)
-        {
-            __instance = instance;
-        }
-    }
-
     public class CamoEditorUI
     {
-        public List<DecalUI> Decals;
+        public List<EquipmentDecalUI> Decals;
         public bool IsVisible;
         public bool IsDecalTextureSelectionScreenVisible;
         public int CurrentlyEditedDecal;
     }
 
-    public class DecalUI
+    public class EquipmentDecalUI
     {
-        public DynamicDeferredDecalRenderer Decal;
+        public EquipmentDecal Decal;
         public string Texture;
         public float Opacity;
         public float MaxAngle;
@@ -62,89 +35,25 @@ namespace SevenBoldPencil.WeaponCamo
         public string Depth;
     }
 
-    public static class DecalExtensions
-    {
-    	public static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
-        public static readonly string DefaultTextureName = "default";
-        public static readonly Vector3 LeftSideDecalRotation = new(0, 0, 90);
-        public static readonly Vector3 RightSideDecalRotation = new(0, 0, 270);
-
-        public static void ChangeTexture(this DynamicDeferredDecalRenderer decal, Texture2D diffuse, Texture2D bump = null)
-        {
-            decal.DecalMaterial.SetTexture("_MainTex", diffuse);
-            decal.DecalMaterial.SetTexture("_BumpMap", bump);
-        }
-
-        public static void ChangeSide(this DynamicDeferredDecalRenderer decal, bool isLeft)
-        {
-            var decalTransfromHelper = decal.TransformHelper;
-            if (isLeft)
-            {
-                decalTransfromHelper.localEulerAngles = LeftSideDecalRotation;
-            }
-            else
-            {
-                decalTransfromHelper.localEulerAngles = RightSideDecalRotation;
-            }
-        }
-
-        public static void ChangeLocalPosition(this DynamicDeferredDecalRenderer decal, Vector3 direction, float step)
-        {
-            var decalTransfromHelper = decal.TransformHelper;
-            decalTransfromHelper.Translate(direction * step, Space.Self);
-        }
-
-        public static void ChangeLocalRotation(this DynamicDeferredDecalRenderer decal, float delta)
-        {
-            var decalTransfromHelper = decal.TransformHelper;
-            decalTransfromHelper.Rotate(new Vector3(0, 1, 0) * delta, Space.Self);
-        }
-
-        public static void ChangeOpacity(this DynamicDeferredDecalRenderer decal, float opacity)
-        {
-            decal.DecalMaterial.color = new Color(1, 1, 1, opacity);
-        }
-
-        public static void ChangeMaxAngle(this DynamicDeferredDecalRenderer decal, float maxAngle)
-        {
-            decal.DecalMaterial.SetFloat(_MaxAngle, maxAngle);
-        }
-
-        public static void ChangeSize(this DynamicDeferredDecalRenderer decal, float size)
-        {
-            var decalTransform = decal.transform;
-            var depth = decalTransform.localScale.y;
-            decalTransform.localScale = new Vector3(size, depth, size);
-        }
-
-        public static void ChangeDepth(this DynamicDeferredDecalRenderer decal, float depth)
-        {
-            var decalTransform = decal.transform;
-            var size = decalTransform.localScale.x;
-            decalTransform.localScale = new Vector3(size, depth, size);
-        }
-    }
-
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
+        public const string DefaultTextureName = "default";
+
         public static Plugin Instance;
 
 		public ManualLogSource LoggerInstance;
 
         public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
         public static ConfigEntry<float> GizmoCubeSize;
-        public static ConfigEntry<MaterialType> DecalMaterial;
 
         public RuntimeGizmos RuntimeGizmos;
-    	public RaycastHit[] RaycastHits;
-        public List<DynamicDeferredDecalRenderer> Decals;
+        public EquipmentDecalRenderer DecalRenderer;
         public CamoEditorUI CamoEditorUI;
 
         public string AssemblyDir;
         public string DecalTexturesDir;
         public AssetBundle Bundle;
-        public Shader DecalDynamicShader;
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures;
 
@@ -155,10 +64,15 @@ namespace SevenBoldPencil.WeaponCamo
 
             ShowHideCamoEditor = Config.Bind("Main", "Show/Hide Camo Editor", new KeyboardShortcut(KeyCode.F4), "Show/Hide Camo Editor");
             GizmoCubeSize = Config.Bind<float>("Main", "Gizmo Cube Size", 0.05f, new ConfigDescription("from 1cm to 10cm, default is 5cm", new AcceptableValueRange<float>(0.01f, 0.1f)));
-            DecalMaterial = Config.Bind("Main", "Decal Material", MaterialType.Concrete, "Decal Material");
 
-    		RaycastHits = new RaycastHit[32];
-            Decals = new(10);
+            AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
+			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
+            Bundle = AssetBundle.LoadFromFile(bundlePath);
+            var decalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
+            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, Bundle);
+
+            DecalRenderer = new(decalDynamicShader);
             CamoEditorUI = new CamoEditorUI()
             {
                 Decals = new(10),
@@ -166,23 +80,15 @@ namespace SevenBoldPencil.WeaponCamo
                 IsDecalTextureSelectionScreenVisible = false,
             };
 
-            AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
-			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
-            Bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir);
-
-            new Patch_DeferredDecalRenderer_SingleDecal_Init().Enable();
-            new Patch_DeferredDecalRenderer_Update().Enable();
-            new Patch_DeferredDecalRenderer_OnPreCameraRender().Enable();
-
             // TODO
             // seems like decals are not drawing on gun (because of stencil?)
             // does it mean we can make decals that will only apply on gun (and not hands and env)?
 
             // TODO
             // figure out why decal moves slightly during weapon inspect animation
+            // yep, its because helpers are not in sync,
+            // parenting decal GOs themselves, fixes this
+            // time to write custom decal system!
 
             // TODO
             // add option to collapse decal settings
@@ -203,16 +109,16 @@ namespace SevenBoldPencil.WeaponCamo
         // TODO
         // add support for adding/removing images on running game
         // add support for drawing sub folders as file tree
-        public (List<string>, Dictionary<string, Texture2D>) LoadTexturesFromDirectory(string directoryPath)
+        public (List<string>, Dictionary<string, Texture2D>) LoadTexturesFromDirectory(string directoryPath, AssetBundle bundle)
         {
             var filePaths = Directory.GetFiles(directoryPath);
             var resultList = new List<string>(filePaths.Length + 1);
             var resultDict = new Dictionary<string, Texture2D>();
 
             {
-                var defaultTexture = Bundle.LoadAsset<Texture2D>($"Assets/WeaponCamo/Images/{DecalExtensions.DefaultTextureName}.png");
-                resultList.Add(DecalExtensions.DefaultTextureName);
-                resultDict.Add(DecalExtensions.DefaultTextureName, defaultTexture);
+                var defaultTexture = bundle.LoadAsset<Texture2D>($"Assets/WeaponCamo/Images/{DefaultTextureName}.png");
+                resultList.Add(DefaultTextureName);
+                resultDict.Add(DefaultTextureName, defaultTexture);
             }
 
             foreach (var filePath in filePaths)
@@ -264,9 +170,10 @@ namespace SevenBoldPencil.WeaponCamo
         {
             if (RuntimeGizmos)
             {
-                foreach (var decal in Decals)
+                // TODO match gizmo cube to decal size
+                foreach (var decal in DecalRenderer.Decals)
                 {
-                    var decalHelper = decal.TransformHelper;
+                    var decalHelper = decal.transform;
                     var position = decalHelper.position;
                     var scale = GizmoCubeSize.Value;
                     var scale3 = new Vector3(scale, scale, scale);
@@ -340,7 +247,7 @@ namespace SevenBoldPencil.WeaponCamo
     				windowRect.y = 50;
     			}
 
-    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * Decals.Count;
+    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * DecalRenderer.Decals.Count;
 
     			windowRect.height = windowHeight;
                 windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
@@ -408,11 +315,11 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private void DrawDecalUI(float x, ref float y, int decalIndex, DecalUI decalUI)
+        private void DrawDecalUI(float x, ref float y, int decalIndex, EquipmentDecalUI decalUI)
         {
             var decal = decalUI.Decal;
-            var localPosition = decal.TransformHelper.localPosition;
-            var localRotation = decal.TransformHelper.localEulerAngles;
+            var localPosition = decal.transform.localPosition;
+            var localRotation = decal.transform.localEulerAngles;
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), "Decal");
             y += boxHeaderHeight + separatorY;
@@ -598,10 +505,9 @@ namespace SevenBoldPencil.WeaponCamo
             y += height + separatorY;
 		}
 
-
         private readonly Vector3 typicalRifleCenter = new Vector3(0f, -0.35f, -0.003f);
-        private readonly float defaultDecalDepth = 0.1f;
         private readonly float defaultDecalSize = 0.2f;
+        private readonly float defaultDecalDepth = 0.1f;
 
         public void PutDecalOnWeapon()
         {
@@ -610,73 +516,31 @@ namespace SevenBoldPencil.WeaponCamo
             var player = GamePlayerOwner.MyPlayer;
             var pwa = player.ProceduralWeaponAnimation;
             var weaponGO = pwa.HandsContainer.Weapon;
-			var camera = CameraClass.Instance;
-            var cameraTransform = camera.Camera.transform;
 
-            var effects = Singleton<Effects>.Instance;
-            var decalsRenderer = effects.DeferredDecals;
-            var _decalsRenderer = new Proxy_DeferredDecalRenderer(decalsRenderer);
-
-            var decalBuffers = _decalsRenderer.dictionary_2;
-            var decals = _decalsRenderer.dictionary_1;
-            var material = DecalMaterial.Value;
-
-            if (!decals.TryGetValue(material, out var decal))
-            {
-                LoggerInstance.LogWarning($"DrawDecal: no decal for {material} material");
-                return;
-            }
-
-			method_5(_decalsRenderer, typicalRifleCenter, DecalExtensions.LeftSideDecalRotation, defaultDecalSize, weaponGO.transform, decal, decal.DynamicDecalMaterial, defaultDecalDepth);
-            decalsRenderer.method_13();
+			var _ = CreateDecal(
+                typicalRifleCenter,
+                EquipmentDecal.LeftSideDecalRotation,
+                defaultDecalSize,
+                defaultDecalDepth,
+                weaponGO.transform
+            );
         }
 
-        private static readonly float sqrt2 = Mathf.Sqrt(2f);
-
-		public void method_5(Proxy_DeferredDecalRenderer instance, Vector3 localPosition, Vector3 localRotation, float size, Transform owner, DeferredDecalRenderer.SingleDecal currentDecal, Material currentMaterial, float depth)
-		{
-			DynamicDeferredDecalRenderer dynamicDeferredDecalRenderer = instance.list_0[instance.int_3];
-			Transform decalTransform = dynamicDeferredDecalRenderer.gameObject.transform;
-			Transform transformHelper = dynamicDeferredDecalRenderer.TransformHelper;
-			int cullingGroupSphereIndex = dynamicDeferredDecalRenderer.CullingGroupSphereIndex;
-
-            // TODO I think Tarkov default decal radius calculation is incorrect
-
-			transformHelper.parent = owner;
-            transformHelper.localPosition = localPosition;
-            transformHelper.localEulerAngles = localRotation;
-
-            var position = transformHelper.position;
-            var rotation = transformHelper.rotation;
-
-			decalTransform.localScale = new Vector3(size, depth, size);
-			decalTransform.rotation = rotation;
-			decalTransform.position = position;
-
-            // TODO we have to update BoundingSphere with size changes
-            var boundingSphereRadius = sqrt2 * size * 0.5f;
-			instance.boundingSphere_0[cullingGroupSphereIndex] = new BoundingSphere(position, boundingSphereRadius);
-
-            Decals.Add(dynamicDeferredDecalRenderer);
-            CamoEditorUI.Decals.Add(new DecalUI()
+		public EquipmentDecal CreateDecal(Vector3 localPosition, Vector3 localRotation, float size, float depth, Transform owner)
+        {
+			var decal = DecalRenderer.CreateDecal(localPosition, localRotation, size, depth, owner);
+            decal.ChangeTexture(LoadedDecalTextures[DefaultTextureName]);
+            CamoEditorUI.Decals.Add(new EquipmentDecalUI()
             {
-                Decal = dynamicDeferredDecalRenderer,
-                Texture = DecalExtensions.DefaultTextureName,
+                Decal = decal,
+                Texture = DefaultTextureName,
                 Opacity = 1f,
                 MaxAngle = 0.8f,
                 Size = size.ToString(),
                 Depth = depth.ToString(),
             });
 
-            // TODO add support for tiling?
-			var uvStartEnd = new Vector4(0, 0, 1, 1);
-			dynamicDeferredDecalRenderer.enabled = true;
-
-			dynamicDeferredDecalRenderer.Init(currentMaterial, default, default, uvStartEnd, true, cullingGroupSphereIndex);
-            dynamicDeferredDecalRenderer.ChangeTexture(LoadedDecalTextures[DecalExtensions.DefaultTextureName]);
-
-			instance.int_3 = (instance.int_3 + 1) % instance._maxDynamicDecals;
-		}
-
+            return decal;
+        }
     }
 }
