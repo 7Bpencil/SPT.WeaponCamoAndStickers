@@ -36,7 +36,7 @@ namespace SevenBoldPencil.Common
 
         private void OnPostRender()
         {
-            if (Cubes.Count == 0)
+            if (Cubes.Count == 0 && Lines.Count == 0)
             {
                 return;
             }
