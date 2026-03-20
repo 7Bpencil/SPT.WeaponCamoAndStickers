@@ -275,7 +275,7 @@ namespace SevenBoldPencil.WeaponCamo
     				windowRect.y = 50;
     			}
 
-    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * DecalRenderer.Decals.Count;
+    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * camoEditor.Decals.Count;
 
     			windowRect.height = windowHeight;
                 windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
