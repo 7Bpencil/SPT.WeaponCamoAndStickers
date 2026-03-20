@@ -609,8 +609,11 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void OnCloneItem(string originalId, string cloneId)
         {
-            // TODO maybe add only if has decals?
-            Clones.Add(cloneId, originalId);
+            if (ItemsWithDecalsInfo.ContainsKey(originalId))
+            {
+                Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
+                Clones.Add(cloneId, originalId);
+            }
         }
 
         public void SetupCamoEditor(string itemId, Transform root)
