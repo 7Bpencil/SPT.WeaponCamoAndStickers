@@ -31,26 +31,14 @@ namespace SevenBoldPencil.WeaponCamo
 	public struct WeaponPreview_Proxy
 	{
 		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
+		private static TypedFieldInfo<WeaponPreview, Item> __item_0 = new("item_0");
 
 		public GameObject gameObject_0 { get { return __gameObject_0.Get(__instance); } set { __gameObject_0.Set(__instance, value); } }
+		public Item item_0 { get { return __item_0.Get(__instance); } set { __item_0.Set(__instance, value); } }
 
         private WeaponPreview __instance;
 
         public WeaponPreview_Proxy(WeaponPreview instance)
-        {
-            __instance = instance;
-        }
-	}
-
-	public struct WeaponModdingScreen_Proxy
-	{
-		private static TypedFieldInfo<WeaponModdingScreen, WeaponPreview> __weaponPreview = new("_weaponPreview");
-
-		public WeaponPreview _weaponPreview { get { return __weaponPreview.Get(__instance); } set { __weaponPreview.Set(__instance, value); } }
-
-        private WeaponModdingScreen __instance;
-
-        public WeaponModdingScreen_Proxy(WeaponModdingScreen instance)
         {
             __instance = instance;
         }
@@ -84,33 +72,36 @@ namespace SevenBoldPencil.WeaponCamo
 			// but from here we dont know where item preview is used,
 			// so we can only spawn decals associated with this item
    			var weaponPreview = __instance.weaponPreview_0;
-			var _weaponPreview = new WeaponPreview_Proxy(weaponPreview);
-			var item = __instance.item;
-			var itemId = item.Id;
-			// var camera = weaponPreview.WeaponPreviewCamera;
-
-			Logger.LogWarning($"Patch_WeaponPreview_Class3271_method_1: weaponPreview: {weaponPreview.transform.GetHierarchyPath()}");
-			if (TryGetWeaponRoot(_weaponPreview, out var weaponRoot))
+			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
+			var item = _weaponPreview.item_0;
+			if (item == null)
 			{
-				Logger.LogWarning($"Patch_WeaponPreview_Class3271_method_1: weaponRoot: {weaponRoot.GetHierarchyPath()}");
+				return;
+			}
+
+			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab))
+			{
+				var itemId = item.Id;
+				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
+				Logger.LogWarning($"Patch_WeaponPreview_Class3271_method_1: {weaponPrefab.GetInstanceID()}, item: {itemId} weaponRoot: {weaponRoot.GetHierarchyPath()}");
 				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
 				{
+					// var camera = weaponPreview.WeaponPreviewCamera;
 					Plugin.Instance.SetupCamoEditor(itemId, weaponRoot);
 				}
 			}
 		}
 
-		public static bool TryGetWeaponRoot(WeaponPreview_Proxy weaponPreview, out Transform weaponRoot)
+		public static bool TryGetWeaponPrefab(WeaponPreview_Proxy weaponPreview, out WeaponPrefab weaponPrefab)
 		{
 			// it takes time to load gameobjects so if you ask too early they will be null
 			var itemGO = weaponPreview.gameObject_0;
-			if (itemGO && itemGO.TryGetComponent<WeaponPrefab>(out var weaponPrefab))
+			if (itemGO && itemGO.TryGetComponent<WeaponPrefab>(out weaponPrefab))
 			{
-				weaponRoot = GetWeaponRoot(weaponPrefab);
 				return true;
 			}
 
-			weaponRoot = default;
+			weaponPrefab = default;
 			return false;
 		}
 
@@ -174,8 +165,30 @@ namespace SevenBoldPencil.WeaponCamo
 			if (item != null)
 			{
 				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(__instance);
-				Logger.LogWarning($"Patch_WeaponPrefab_InitHotObjects: {weaponRoot.GetHierarchyPath()}");
+				var weaponRootPath = weaponRoot.GetHierarchyPath();
+				Logger.LogWarning($"Patch_WeaponPrefab_InitHotObjects: {__instance.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
 				Plugin.Instance.SpawnItemDecals(item.Id, weaponRoot);
+			}
+		}
+	}
+
+	public class Patch_WeaponPrefab_ReturnToPool : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPrefab), nameof(WeaponPrefab.ReturnToPool));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(WeaponPrefab __instance)
+		{
+			var __instance__ = new WeaponPrefab_Proxy(__instance);
+			var item = __instance__.weapon_0;
+			if (item != null)
+			{
+				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(__instance);
+				Logger.LogWarning($"Patch_WeaponPrefab_ReturnToPool: {__instance.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
+				Plugin.Instance.OnItemDecalsDestroyed(item.Id);
 			}
 		}
 	}
@@ -197,7 +210,8 @@ namespace SevenBoldPencil.WeaponCamo
 				var item = _weaponPrefab.weapon_0;
 				if (item != null)
 				{
-					Logger.LogWarning($"Patch_AssetPoolObject_OnDestroy: {weaponPrefab.transform.GetHierarchyPath()}");
+					var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
+					Logger.LogWarning($"Patch_AssetPoolObject_OnDestroy: {weaponPrefab.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
 					Plugin.Instance.OnItemDecalsDestroyed(item.Id);
 				}
 			}

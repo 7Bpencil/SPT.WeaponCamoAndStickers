@@ -67,40 +67,6 @@ namespace SevenBoldPencil.WeaponCamo
             DecalMaterial.SetTexture("_BumpMap", bump);
         }
 
-        public void ChangeSide(bool isLeft)
-        {
-            if (isLeft)
-            {
-                DecalTransform.localEulerAngles = LeftSideDecalRotation;
-            }
-            else
-            {
-                DecalTransform.localEulerAngles = RightSideDecalRotation;
-            }
-        }
-
-        public void ChangeLocalPosition(Vector3 direction, float step)
-        {
-            DecalTransform.Translate(direction * step, Space.Self);
-        }
-
-        public void ChangeLocalRotation(float delta)
-        {
-            DecalTransform.Rotate(new Vector3(0, 1, 0) * delta, Space.Self);
-        }
-
-        public void ChangeSize(float size)
-        {
-            var depth = DecalTransform.localScale.y;
-            DecalTransform.localScale = new Vector3(size, depth, size);
-        }
-
-        public void ChangeDepth(float depth)
-        {
-            var size = DecalTransform.localScale.x;
-            DecalTransform.localScale = new Vector3(size, depth, size);
-        }
-
         public void ChangeOpacity(float opacity)
         {
             DecalMaterial.color = new Color(1, 1, 1, opacity);

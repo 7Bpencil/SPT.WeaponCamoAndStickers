@@ -40,11 +40,7 @@ namespace SevenBoldPencil.WeaponCamo
     public class DecalUI
     {
         public Decal Decal;
-        public string Texture;
-        public float Opacity;
-        public float MaxAngle;
-        public string Size;
-        public string Depth;
+        public DecalInfo DecalInfo;
     }
 
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
@@ -95,6 +91,7 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_WeaponModdingScreen_Show().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
+            new Patch_WeaponPrefab_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_CloneItem().Enable();
 
@@ -320,9 +317,9 @@ namespace SevenBoldPencil.WeaponCamo
                 if (GUI.Button(new Rect(x + xi * (iconSize + separatorX), y + yi * (iconSize + separatorX), iconSize, iconSize), texture))
                 {
                     var decalUI = camoEditor.Decals[camoEditor.CurrentlyEditedDecal];
-                    if (decalUI.Texture != textureName)
+                    if (decalUI.DecalInfo.Texture != textureName)
                     {
-                        decalUI.Texture = textureName;
+                        decalUI.DecalInfo.Texture = textureName;
                         decalUI.Decal.ChangeTexture(texture);
                     }
                 }
@@ -357,11 +354,7 @@ namespace SevenBoldPencil.WeaponCamo
                 var decalUI = new DecalUI()
                 {
                     Decal = decal,
-                    Texture = decalInfo.Texture,
-                    Opacity = decalInfo.Opacity,
-                    MaxAngle = decalInfo.MaxAngle,
-                    Size = defaultDecalSize.ToString(),
-                    Depth = defaultDecalDepth.ToString(),
+                    DecalInfo = decalInfo,
                 };
 
                 camoEditor.Decals.Add(decalUI);
@@ -379,8 +372,7 @@ namespace SevenBoldPencil.WeaponCamo
         private void DrawDecalUI(float x, ref float y, int decalIndex, DecalUI decalUI, CamoEditor camoEditor)
         {
             var decal = decalUI.Decal;
-            var localPosition = decal.DecalTransform.localPosition;
-            var localRotation = decal.DecalTransform.localEulerAngles;
+            ref var decalInfo = ref decalUI.DecalInfo;
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), "Decal");
             y += boxHeaderHeight + separatorY;
@@ -392,7 +384,7 @@ namespace SevenBoldPencil.WeaponCamo
                 lineX += nameWidth + separatorX;
 
                 var buttonWidth = boxWidth - nameWidth - separatorX - marginX * 2;
-                if (GUI.Button(new Rect(lineX, y, buttonWidth, height), decalUI.Texture))
+                if (GUI.Button(new Rect(lineX, y, buttonWidth, height), decalInfo.Texture))
                 {
                     camoEditor.IsDecalTextureSelectionScreenVisible = true;
                     camoEditor.CurrentlyEditedDecal = decalIndex;
@@ -408,13 +400,15 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Left"))
                 {
-                    decal.ChangeSide(true);
+                    decalInfo.LocalEulerAngles = Decal.LeftSideDecalRotation;
+                    decal.DecalTransform.localEulerAngles = Decal.LeftSideDecalRotation;
                 }
                 lineX += sideButtonWidth + separatorX;
 
                 if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Right"))
                 {
-                    decal.ChangeSide(false);
+                    decalInfo.LocalEulerAngles = Decal.RightSideDecalRotation;
+                    decal.DecalTransform.localEulerAngles = Decal.RightSideDecalRotation;
                 }
                 lineX += sideButtonWidth + separatorX;
             }
@@ -427,15 +421,15 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "Opacity:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                var newOpacity = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalUI.Opacity, 0f, 1f);
-                if (newOpacity != decalUI.Opacity)
+                var newOpacity = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalInfo.Opacity, 0f, 1f);
+                if (newOpacity != decalInfo.Opacity)
                 {
-                    decalUI.Opacity = newOpacity;
+                    decalInfo.Opacity = newOpacity;
                     decal.ChangeOpacity(newOpacity);
                 }
                 lineX += sliderWidth + separatorX;
 
-                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalUI.Opacity:F3}", labelStyleValue);
+                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalInfo.Opacity:F3}", labelStyleValue);
                 lineX += longFieldWidth + separatorX;
 
                 y += height + separatorY;
@@ -448,29 +442,31 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "MaxAngle:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                var newMaxAngle = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalUI.MaxAngle, 0f, 1f);
-                if (newMaxAngle != decalUI.MaxAngle)
+                var newMaxAngle = GUI.HorizontalSlider(new Rect(lineX, y, sliderWidth, height), decalInfo.MaxAngle, 0f, 1f);
+                if (newMaxAngle != decalInfo.MaxAngle)
                 {
-                    decalUI.MaxAngle = newMaxAngle;
+                    decalInfo.MaxAngle = newMaxAngle;
                     decal.ChangeMaxAngle(newMaxAngle);
                 }
                 lineX += sliderWidth + separatorX;
 
-                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalUI.MaxAngle:F3}", labelStyleValue);
+                GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{decalInfo.MaxAngle:F3}", labelStyleValue);
                 lineX += longFieldWidth + separatorX;
 
                 y += height + separatorY;
             }
 
-            void DrawChangePositionLine(float x, float y, string name, Vector3 direction, float value)
+            void DrawChangePositionLine(float x, float y, string name, Vector3 direction, float value, ref DecalInfo decalInfo)
             {
                 var lineX = x + marginX;
 
-                void DrawButton(float value, string valueStr)
+                void DrawButton(float value, string valueStr, ref DecalInfo decalInfo)
                 {
                     if (GUI.Button(new Rect(lineX, y, longButtonWidth, height), valueStr))
                     {
-                        decal.ChangeLocalPosition(direction, value);
+                        var localPosition = decalInfo.LocalPosition + direction * value;
+                        decalInfo.LocalPosition = localPosition;
+                        decal.DecalTransform.localPosition = localPosition;
                     }
                     lineX += longButtonWidth + separatorX;
                 }
@@ -478,33 +474,38 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), name, labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                DrawButton(-0.005f, "5mm");
-                DrawButton(-0.001f, "1mm");
+                DrawButton(-0.005f, "5mm", ref decalInfo);
+                DrawButton(-0.001f, "1mm", ref decalInfo);
 
                 GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{value:F3}", labelStyleValue);
                 lineX += longFieldWidth + separatorX;
 
-                DrawButton(0.001f, "1mm");
-                DrawButton(0.005f, "5mm");
+                DrawButton(0.001f, "1mm", ref decalInfo);
+                DrawButton(0.005f, "5mm", ref decalInfo);
             }
 
-            DrawChangePositionLine(x, y, "Forward/Backward:", new Vector3(1f, 0f, 0f), localPosition.y);
+            DrawChangePositionLine(x, y, "Forward/Backward:", new Vector3(0f, 1f, 0f), decalInfo.LocalPosition.y, ref decalInfo);
             y += height + separatorY;
 
-            DrawChangePositionLine(x, y, "Down/Up:", new Vector3(0f, 0f, 1f), localPosition.z);
+            DrawChangePositionLine(x, y, "Down/Up:", new Vector3(0f, 0f, 1f), decalInfo.LocalPosition.z, ref decalInfo);
             y += height + separatorY;
 
-            DrawChangePositionLine(x, y, "Left/Right", new Vector3(0f, 1f, 0f), localPosition.x);
+            DrawChangePositionLine(x, y, "Left/Right", new Vector3(1f, 0f, 0f), decalInfo.LocalPosition.x, ref decalInfo);
             y += height + separatorY;
 
             {
                 var lineX = x + marginX;
 
-                void DrawButton(float x, float y, float value, string valueStr)
+                void DrawButton(float x, float y, float value, string valueStr, ref DecalInfo decalInfo)
                 {
                     if (GUI.Button(new Rect(lineX, y, buttonWidth, height), valueStr))
                     {
-                        decal.ChangeLocalRotation(value);
+                        // TODO rotation
+                        // decalInfo.LocalEuler
+                        // var quaternion = Quaternion.Euler(0, value, 0);
+                        // localRotation *= quaternion;
+                        // var new
+                        // decal.ChangeLocalRotation(value);
                     }
                     lineX += buttonWidth + separatorX;
                 }
@@ -512,14 +513,14 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "Rotation:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                DrawButton(lineX, y, -5, "5°");
-                DrawButton(lineX, y, -1, "1°");
+                DrawButton(lineX, y, -5, "5°", ref decalInfo);
+                DrawButton(lineX, y, -1, "1°", ref decalInfo);
 
-                GUI.Label(new Rect(lineX, y, fieldWidth, height), $"{localRotation.x:N0}", labelStyleValue);
+                GUI.Label(new Rect(lineX, y, fieldWidth, height), $"{decalInfo.LocalEulerAngles.x:N0}", labelStyleValue);
                 lineX += fieldWidth + separatorX;
 
-                DrawButton(lineX, y, 1, "1°");
-                DrawButton(lineX, y, 5, "5°");
+                DrawButton(lineX, y, 1, "1°", ref decalInfo);
+                DrawButton(lineX, y, 5, "5°", ref decalInfo);
             }
             y += height + separatorY;
 
@@ -529,16 +530,16 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "Size:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                decalUI.Size = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalUI.Size, 6);
+                // decalUI.Size = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalInfo.LocalScale.y, 6);
                 lineX += longFieldWidth + separatorX;
 
                 if (GUI.Button(new Rect(lineX, y, buttonWidth, height), "Set"))
                 {
-                    if (float.TryParse(decalUI.Size, out var newSize))
-                    {
-                        decalUI.Size = newSize.ToString();
-                        decal.ChangeSize(newSize);
-                    }
+                    // if (float.TryParse(decalUI.Size, out var newSize))
+                    // {
+                    //     decalUI.Size = newSize.ToString();
+                    //     decal.ChangeSize(newSize);
+                    // }
                 }
                 lineX += buttonWidth + separatorX;
             }
@@ -550,16 +551,16 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "Depth:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                decalUI.Depth = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalUI.Depth, 6);
+                // decalUI.Depth = GUI.TextField(new Rect(lineX, y, longFieldWidth, height), decalUI.Depth, 6);
                 lineX += longFieldWidth + separatorX;
 
                 if (GUI.Button(new Rect(lineX, y, buttonWidth, height), "Set"))
                 {
-                    if (float.TryParse(decalUI.Depth, out var newDepth))
-                    {
-                        decalUI.Depth = newDepth.ToString();
-                        decal.ChangeDepth(newDepth);
-                    }
+                    // if (float.TryParse(decalUI.Depth, out var newDepth))
+                    // {
+                    //     decalUI.Depth = newDepth.ToString();
+                    //     decal.ChangeDepth(newDepth);
+                    // }
                 }
                 lineX += buttonWidth + separatorX;
             }
@@ -575,6 +576,10 @@ namespace SevenBoldPencil.WeaponCamo
             var decalsItemId = itemId;
             if (Clones.TryGetValue(itemId, out var originalItemId))
             {
+                // when user tries weapon in hideout shooting range,
+                // all his gear gets copied to new items to preserve
+                // original durability/ammo count/etc,
+                // but we have to clone decals ourselves
                 Logger.LogInfo($"SpawnItemDecals: {itemId} clone of {decalsItemId}");
                 decalsItemId = originalItemId;
             }
@@ -603,8 +608,17 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void OnItemDecalsDestroyed(string itemId)
         {
-			Logger.LogInfo($"OnItemDecalsDestroyed: {itemId}");
-            ItemsWithDecals.Remove(itemId);
+            if (ItemsWithDecals.Remove(itemId, out var decals))
+            {
+    			Logger.LogInfo($"OnItemDecalsDestroyed: {itemId}");
+                foreach (var decal in decals)
+                {
+                    if (decal)
+                    {
+                        Destroy(decal.gameObject);
+                    }
+                }
+            }
         }
 
         public void OnCloneItem(string originalId, string cloneId)
@@ -651,11 +665,7 @@ namespace SevenBoldPencil.WeaponCamo
                     var decalUI = new DecalUI()
                     {
                         Decal = decal,
-                        Texture = decalInfo.Texture,
-                        Opacity = decalInfo.Opacity,
-                        MaxAngle = decalInfo.MaxAngle,
-                        Size = decalInfo.LocalScale.x.ToString(),
-                        Depth = decalInfo.LocalScale.y.ToString(),
+                        DecalInfo = decalInfo,
                     };
                     decalsUI.Add(decalUI);
                 }
@@ -750,17 +760,7 @@ namespace SevenBoldPencil.WeaponCamo
         {
             foreach (var decalUI in decalsUI)
             {
-                var decal = decalUI.Decal;
-                var decalInfo = new DecalInfo()
-                {
-                    Texture = decalUI.Texture,
-                    LocalPosition = decal.DecalTransform.localPosition,
-                    LocalEulerAngles = decal.DecalTransform.localEulerAngles,
-                    LocalScale = decal.DecalTransform.localScale,
-                    Opacity = decalUI.Opacity,
-                    MaxAngle = decalUI.MaxAngle,
-                };
-                decalsInfo.Add(decalInfo);
+                decalsInfo.Add(decalUI.DecalInfo);
             }
         }
 
