@@ -31,15 +31,15 @@ namespace SevenBoldPencil.WeaponCamo
     {
         public string ItemId;
         public Transform DecalsRoot;
-        public List<EquipmentDecalUI> Decals;
+        public List<DecalUI> Decals;
         public bool IsVisible;
         public bool IsDecalTextureSelectionScreenVisible;
         public int CurrentlyEditedDecal; // TODO this should be Option<int>
     }
 
-    public class EquipmentDecalUI
+    public class DecalUI
     {
-        public EquipmentDecal Decal;
+        public Decal Decal;
         public string Texture;
         public float Opacity;
         public float MaxAngle;
@@ -59,7 +59,7 @@ namespace SevenBoldPencil.WeaponCamo
         public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
 
         public RuntimeGizmos RuntimeGizmos;
-        public EquipmentDecalRenderer DecalRenderer;
+        public DecalRenderer DecalRenderer;
         public Option<CamoEditor> CamoEditor;
         public bool IsCamoEditorWaitingForWeaponPreview;
 
@@ -69,7 +69,7 @@ namespace SevenBoldPencil.WeaponCamo
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures;
         public Dictionary<string, List<DecalInfo>> ItemsWithDecalsInfo;
-        public Dictionary<string, List<EquipmentDecal>> ItemsWithDecals;
+        public Dictionary<string, List<Decal>> ItemsWithDecals;
         public Dictionary<string, string> Clones;
 
         private void Awake()
@@ -337,7 +337,7 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     Texture = DefaultTextureName,
                     LocalPosition = typicalRifleCenter,
-                    LocalEulerAngles = EquipmentDecal.LeftSideDecalRotation,
+                    LocalEulerAngles = Decal.LeftSideDecalRotation,
                     LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                     Opacity = 1f,
                     MaxAngle = 0.8f,
@@ -349,12 +349,12 @@ namespace SevenBoldPencil.WeaponCamo
                 }
                 else
                 {
-                    var newDecals = new List<EquipmentDecal>();
+                    var newDecals = new List<Decal>();
                     newDecals.Add(decal);
                     ItemsWithDecals.Add(camoEditor.ItemId, newDecals);
                 }
 
-                var decalUI = new EquipmentDecalUI()
+                var decalUI = new DecalUI()
                 {
                     Decal = decal,
                     Texture = decalInfo.Texture,
@@ -376,7 +376,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private void DrawDecalUI(float x, ref float y, int decalIndex, EquipmentDecalUI decalUI, CamoEditor camoEditor)
+        private void DrawDecalUI(float x, ref float y, int decalIndex, DecalUI decalUI, CamoEditor camoEditor)
         {
             var decal = decalUI.Decal;
             var localPosition = decal.DecalTransform.localPosition;
@@ -591,7 +591,7 @@ namespace SevenBoldPencil.WeaponCamo
 
             Logger.LogInfo($"SpawnItemDecals: {itemId}, success");
 
-            var decals = new List<EquipmentDecal>(decalsInfo.Count);
+            var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
             {
                 var decal = DecalRenderer.CreateDecal(decalInfo, root, LoadedDecalTextures);
@@ -634,18 +634,18 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public List<EquipmentDecalUI> BuildItemDecalsUI(string itemId)
+        public List<DecalUI> BuildItemDecalsUI(string itemId)
         {
             if (GetItemDecals(itemId).Some(out var itemDecals))
             {
                 var decals = itemDecals.decals;
                 var decalsInfo = itemDecals.decalsInfo;
-                var decalsUI = new List<EquipmentDecalUI>(decals.Count);
+                var decalsUI = new List<DecalUI>(decals.Count);
                 for (var i = 0; i < decals.Count; i++)
                 {
                     var decal = decals[i];
                     var decalInfo = decalsInfo[i];
-                    var decalUI = new EquipmentDecalUI()
+                    var decalUI = new DecalUI()
                     {
                         Decal = decal,
                         Texture = decalInfo.Texture,
@@ -665,7 +665,7 @@ namespace SevenBoldPencil.WeaponCamo
             return new();
         }
 
-        public Option<(List<EquipmentDecal> decals, List<DecalInfo> decalsInfo)> GetItemDecals(string itemId)
+        public Option<(List<Decal> decals, List<DecalInfo> decalsInfo)> GetItemDecals(string itemId)
         {
             if (!ItemsWithDecals.TryGetValue(itemId, out var decals))
             {
@@ -743,7 +743,7 @@ namespace SevenBoldPencil.WeaponCamo
             // TODO we need to catch moments when weapon is spawned/despawned
         }
 
-        public void WriteDecalsToList(List<EquipmentDecalUI> decalsUI, List<DecalInfo> decalsInfo)
+        public void WriteDecalsToList(List<DecalUI> decalsUI, List<DecalInfo> decalsInfo)
         {
             foreach (var decalUI in decalsUI)
             {

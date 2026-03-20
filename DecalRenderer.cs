@@ -17,16 +17,16 @@ using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
-	public class EquipmentDecalRenderer
+	public class DecalRenderer
 	{
 		public Mesh Cube;
 		public Shader DecalShader;
 		public int int_2 = Shader.PropertyToID("_NormalsCopy");
 		public CommandBuffer commandBuffer_1;
-		public List<EquipmentDecal> Decals;
+		public List<Decal> Decals;
 		public Dictionary<Camera, CommandBuffer> dictionary_2;
 
-		public EquipmentDecalRenderer(Shader decalShader)
+		public DecalRenderer(Shader decalShader)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 			DecalShader = decalShader;
@@ -36,11 +36,11 @@ namespace SevenBoldPencil.WeaponCamo
 			Camera.onPreRender += OnPreCameraRender;
 		}
 
-		public EquipmentDecal CreateDecal(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
+		public Decal CreateDecal(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
 		{
-            var decalGO = new GameObject("Equipment Decal", typeof(EquipmentDecal));
+            var decalGO = new GameObject("Decal", typeof(Decal));
             var decalTransform = decalGO.transform;
-            var decal = decalGO.GetComponent<EquipmentDecal>();
+            var decal = decalGO.GetComponent<Decal>();
 
 			decal.Init(DecalShader);
 			decal.Set(decalInfo, root, loadedDecalTextures);

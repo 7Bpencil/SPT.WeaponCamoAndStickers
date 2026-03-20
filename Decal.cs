@@ -17,8 +17,7 @@ using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
-	// TODO rename to just "Decal"
-	public class EquipmentDecal : MonoBehaviour
+	public class Decal : MonoBehaviour
 	{
 		public static readonly int _UvStartEnd = Shader.PropertyToID("_UvStartEnd");
 		public static readonly int _NormalPower = Shader.PropertyToID("_NormalPower");
