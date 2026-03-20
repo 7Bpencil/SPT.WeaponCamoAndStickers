@@ -17,6 +17,7 @@ using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
+	// TODO rename to just "Decal"
 	public class EquipmentDecal : MonoBehaviour
 	{
 		public static readonly int _UvStartEnd = Shader.PropertyToID("_UvStartEnd");
@@ -43,6 +44,22 @@ namespace SevenBoldPencil.WeaponCamo
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 
 			DecalTransform = transform;
+		}
+
+		public void Set(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
+		{
+            DecalTransform.parent = root;
+			DecalTransform.localPosition = decalInfo.LocalPosition;
+			DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
+			DecalTransform.localScale = decalInfo.LocalScale;
+
+			if (loadedDecalTextures.TryGetValue(decalInfo.Texture, out var diffuse))
+			{
+	            DecalMaterial.SetTexture("_MainTex", diffuse);
+	            // DecalMaterial.SetTexture("_BumpMap", bump);
+			}
+            DecalMaterial.color = new Color(1, 1, 1, decalInfo.Opacity);
+            DecalMaterial.SetFloat(_MaxAngle, decalInfo.MaxAngle);
 		}
 
         public void ChangeTexture(Texture2D diffuse, Texture2D bump = null)

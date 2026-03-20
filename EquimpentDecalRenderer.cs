@@ -21,7 +21,6 @@ namespace SevenBoldPencil.WeaponCamo
 	{
 		public Mesh Cube;
 		public Shader DecalShader;
-		public bool bool_0; // another IsDirty flag?
 		public int int_2 = Shader.PropertyToID("_NormalsCopy");
 		public CommandBuffer commandBuffer_1;
 		public List<EquipmentDecal> Decals;
@@ -37,18 +36,14 @@ namespace SevenBoldPencil.WeaponCamo
 			Camera.onPreRender += OnPreCameraRender;
 		}
 
-		public EquipmentDecal CreateDecal(Vector3 localPosition, Vector3 localRotation, float size, float depth, Transform owner)
+		public EquipmentDecal CreateDecal(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
 		{
-            var decalGO = new GameObject("Equipment Decal");
+            var decalGO = new GameObject("Equipment Decal", typeof(EquipmentDecal));
             var decalTransform = decalGO.transform;
-            var decal = decalGO.AddComponent<EquipmentDecal>();
-
-            decalTransform.parent = owner;
-			decalTransform.localScale = new Vector3(size, depth, size);
-			decalTransform.localPosition = localPosition;
-			decalTransform.localEulerAngles = localRotation;
+            var decal = decalGO.GetComponent<EquipmentDecal>();
 
 			decal.Init(DecalShader);
+			decal.Set(decalInfo, root, loadedDecalTextures);
 
             Decals.Add(decal);
 
@@ -63,7 +58,6 @@ namespace SevenBoldPencil.WeaponCamo
 				// we have single commandBuffer_1 attached to multiple cameras
 				// but then we null it, and create new one to assing it only to new camera? eh
 
-				bool_0 = false;
 				commandBuffer_1 = null;
 				if (dictionary_2.ContainsKey(currentCamera))
 				{
@@ -75,7 +69,6 @@ namespace SevenBoldPencil.WeaponCamo
 					commandBuffer_1.name = "Deferred decals Dynamic (Weapon Camo)";
 					currentCamera.AddCommandBuffer(CameraEvent.BeforeLighting, commandBuffer_1);
 					dictionary_2.Add(currentCamera, commandBuffer_1);
-					bool_0 = true;
 				}
 			}
 		}
@@ -90,30 +83,25 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public bool method_12(Camera currentCamera)
 		{
-			if (currentCamera && EFTHardSettings.Instance.DEFERRED_DECALS_ENABLED)
+			// TODO limit to cameras that can actually see decals
+			if (!currentCamera)
 			{
-				if (!currentCamera.isActiveAndEnabled)
-				{
-					return false;
-				}
-
-				var isOpticCamera = currentCamera.CompareTag("OpticCamera");
-				if (currentCamera.renderingPath != RenderingPath.DeferredShading && !isOpticCamera)
-				{
-					return false;
-				}
-				if (!((CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera) || isOpticCamera))
-				{
-					return false;
-				}
-				if (Decals.Count == 0)
-				{
-					return false;
-				}
-
-				return true;
+				return false;
 			}
-			return false;
+			if (!currentCamera.isActiveAndEnabled)
+			{
+				return false;
+			}
+			if (currentCamera.renderingPath != RenderingPath.DeferredShading)
+			{
+				return false;
+			}
+			if (Decals.Count == 0)
+			{
+				return false;
+			}
+
+			return true;
 		}
 
 		public void method_9(CommandBuffer buffer, Camera currentCamera, Action<Camera, CommandBuffer> drawFunc)
