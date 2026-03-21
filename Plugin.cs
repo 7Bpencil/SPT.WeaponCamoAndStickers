@@ -20,7 +20,7 @@ namespace SevenBoldPencil.WeaponCamo
     public class ItemsWithDecals
     {
         // yes, there can be multiple items with same Id,
-        // for example when you open item description of weapon you already hold in hands,
+        // for example when you open item preview of weapon you already hold in hands,
         // or when hideout shooting range clones weapon (we pretend that they have the same Id)
         public Dictionary<int, ItemWithDecals> Items;
         public List<DecalInfo> DecalsInfo;
@@ -44,6 +44,8 @@ namespace SevenBoldPencil.WeaponCamo
 
     public class CamoEditor
     {
+        public Camera Camera;
+        public RuntimeGizmos RuntimeGizmos;
         public string ItemId;
         public int InstanceID;
         public Transform DecalsRoot;
@@ -63,7 +65,6 @@ namespace SevenBoldPencil.WeaponCamo
 
         public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
 
-        public RuntimeGizmos RuntimeGizmos;
         public DecalRenderer DecalRenderer;
         public Option<CamoEditor> CamoEditor;
         public bool IsCamoEditorWaitingForWeaponPreview;
@@ -178,39 +179,37 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 camoEditor.IsVisible = !camoEditor.IsVisible;
             }
-            if (CameraClass.Exist && !RuntimeGizmos)
-            {
-    			var camera = CameraClass.Instance.Camera;
-                if (camera)
-                {
-                    RuntimeGizmos = camera.gameObject.AddComponent<RuntimeGizmos>();
-                }
-            }
 		}
 
         public void LateUpdate()
         {
-            if (RuntimeGizmos)
+            if (CamoEditor.Some(out var camoEditor) && camoEditor.RuntimeGizmos)
             {
-                foreach (var decal in DecalRenderer.Decals)
+                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
                 {
-                    if (decal)
+                    foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
                     {
-                        var decalTransform = decal.DecalTransform;
-                        var position = decalTransform.position;
-                        var scale = decalTransform.lossyScale;
+                        foreach (var decal in itemWithDecals.Decals)
+                        {
+                            if (decal)
+                            {
+                                var decalTransform = decal.DecalTransform;
+                                var position = decalTransform.position;
+                                var scale = decalTransform.lossyScale;
 
-                        RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
-                        {
-                            Position = position,
-                            Rotation = decalTransform.rotation,
-                            Scale = scale,
-                        });
-                        RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
-                        {
-                            Start = position,
-                            End = position + decalTransform.up * scale.y,
-                        });
+                                camoEditor.RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                                {
+                                    Position = position,
+                                    Rotation = decalTransform.rotation,
+                                    Scale = scale,
+                                });
+                                camoEditor.RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
+                                {
+                                    Start = position,
+                                    End = position + decalTransform.up * scale.y,
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -702,15 +701,18 @@ namespace SevenBoldPencil.WeaponCamo
             return itemId;
         }
 
-        public void SetupCamoEditor(string itemId, WeaponPrefab weaponPrefab)
+        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
             LoggerInstance.LogInfo($"SetupCamoEditor: {itemId}");
             IsCamoEditorWaitingForWeaponPreview = false;
             var instanceID = weaponPrefab.GetInstanceID();
             var decalsRoot = GetWeaponRoot(weaponPrefab);
+            var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
             CamoEditor = new(new CamoEditor()
             {
+                Camera = editorCamera,
+                RuntimeGizmos = runtimeGizmos,
                 ItemId = itemId,
                 InstanceID = instanceID,
                 DecalsRoot = decalsRoot,
@@ -753,6 +755,7 @@ namespace SevenBoldPencil.WeaponCamo
                 }
             }
 
+            Destroy(camoEditor.RuntimeGizmos);
             CamoEditor = default;
         }
 

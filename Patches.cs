@@ -84,8 +84,8 @@ namespace SevenBoldPencil.WeaponCamo
 				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
 				{
 					var itemId = item.Id;
-					// var camera = weaponPreview.WeaponPreviewCamera;
-					Plugin.Instance.SetupCamoEditor(itemId, weaponPrefab);
+					var camera = weaponPreview.WeaponPreviewCamera;
+					Plugin.Instance.SetupCamoEditor(camera, itemId, weaponPrefab);
 				}
 			}
 		}
