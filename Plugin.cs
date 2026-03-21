@@ -22,7 +22,7 @@ namespace SevenBoldPencil.WeaponCamo
         // yes, there can be multiple items with same Id,
         // for example when you open item preview of weapon you already hold in hands,
         // or when hideout shooting range clones weapon (we pretend that they have the same Id)
-        public Dictionary<int, ItemWithDecals> Items;
+        public Dictionary<int, ItemWithDecals> Items; // TODO iterating dict is probably not the best idea, but list in annoying
         public List<DecalInfo> DecalsInfo;
     }
 
@@ -74,7 +74,7 @@ namespace SevenBoldPencil.WeaponCamo
         public AssetBundle Bundle;
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures;
-        public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        public Dictionary<string, ItemsWithDecals> ItemsWithDecals; // TODO we can use this to draw decals instead of flat list, this way reordering and culling will be much easier
         public Dictionary<string, string> Clones;
 
         private void Awake()
