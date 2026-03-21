@@ -126,14 +126,6 @@ namespace SevenBoldPencil.WeaponCamo
             // we can save items as jsons in assets/items/ each item separate file with name=item.Id
             // we can save presets as jsons in assets/presets/ each preset separate file with name=preset name (with support for subfolders)
             // show presets per weapon template (Item.TemplateId?)
-            //
-            // TODO
-            // trying weapon in hideout clones it to new weapon with different id,
-            // so we need to track clone (UpdateHideoutPlayerInventory)
-            // - have separate dict for clones Dictionary<string, string>
-            //   clones do not need editor, so shits easier
-            // - when clone is created check if original item has decals
-            // - when clone is destroyed no need to do anything really
         }
 
         // TODO
