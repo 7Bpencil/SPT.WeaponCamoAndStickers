@@ -642,7 +642,7 @@ namespace SevenBoldPencil.WeaponCamo
                 return;
             }
 
-            var decalsRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
+            var decalsRoot = GetWeaponRoot(weaponPrefab);
             var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
@@ -661,6 +661,11 @@ namespace SevenBoldPencil.WeaponCamo
 
             Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, success");
         }
+
+		public static Transform GetWeaponRoot(WeaponPrefab weaponPrefab)
+		{
+			return weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.weapon);
+		}
 
         public void OnWeaponPrefabDestroyed(string itemId, WeaponPrefab weaponPrefab)
         {
@@ -711,7 +716,7 @@ namespace SevenBoldPencil.WeaponCamo
             LoggerInstance.LogInfo($"SetupCamoEditor: {itemId}");
             IsCamoEditorWaitingForWeaponPreview = false;
             var instanceID = weaponPrefab.GetInstanceID();
-            var decalsRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
+            var decalsRoot = GetWeaponRoot(weaponPrefab);
             CamoEditor = new(new CamoEditor()
             {
                 ItemId = itemId,

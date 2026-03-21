@@ -102,11 +102,6 @@ namespace SevenBoldPencil.WeaponCamo
 			weaponPrefab = default;
 			return false;
 		}
-
-		public static Transform GetWeaponRoot(WeaponPrefab weaponPrefab)
-		{
-			return weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.weapon);
-		}
 	}
 
 	public class Patch_WeaponModdingScreen_Show : ModulePatch
