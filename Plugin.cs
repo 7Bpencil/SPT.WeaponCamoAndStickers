@@ -58,7 +58,7 @@ namespace SevenBoldPencil.WeaponCamo
         public Transform DecalsRoot;
         public bool IsVisible;
         public bool IsDecalTextureSelectionScreenVisible;
-        public int CurrentlyEditedDecal; // TODO this should be Option<int>
+        public Option<int> CurrentlyEditedDecalIndex;
     }
 
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
@@ -190,34 +190,30 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void LateUpdate()
         {
-            if (CamoEditor.Some(out var camoEditor) && camoEditor.RuntimeGizmos)
+            if (CamoEditor.Some(out var camoEditor) &&
+                camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) &&
+                camoEditor.RuntimeGizmos &&
+                ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals) &&
+                itemsWithDecals.Items.TryGetValue(camoEditor.InstanceID, out var itemWithDecals))
             {
-                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
+                var decal = itemWithDecals.Decals[currentlyEditedDecalIndex];
+                if (decal)
                 {
-                    foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
-                    {
-                        foreach (var decal in itemWithDecals.Decals)
-                        {
-                            if (decal)
-                            {
-                                var decalTransform = decal.DecalTransform;
-                                var position = decalTransform.position;
-                                var scale = decalTransform.lossyScale;
+                    var decalTransform = decal.DecalTransform;
+                    var position = decalTransform.position;
+                    var scale = decalTransform.lossyScale;
 
-                                camoEditor.RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
-                                {
-                                    Position = position,
-                                    Rotation = decalTransform.rotation,
-                                    Scale = scale,
-                                });
-                                camoEditor.RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
-                                {
-                                    Start = position,
-                                    End = position + decalTransform.up * scale.y,
-                                });
-                            }
-                        }
-                    }
+                    camoEditor.RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                    {
+                        Position = position,
+                        Rotation = decalTransform.rotation,
+                        Scale = scale,
+                    });
+                    camoEditor.RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
+                    {
+                        Start = position,
+                        End = position + decalTransform.up * scale.y,
+                    });
                 }
             }
         }
@@ -296,9 +292,9 @@ namespace SevenBoldPencil.WeaponCamo
 			var y = startY;
 
             var camoEditor = CamoEditor.Value;
-            if (camoEditor.IsDecalTextureSelectionScreenVisible)
+            if (camoEditor.IsDecalTextureSelectionScreenVisible && camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex))
             {
-                DrawDecalTextureSelectorUI(x, y, camoEditor);
+                DrawDecalTextureSelectorUI(x, y, currentlyEditedDecalIndex, camoEditor);
             }
             else
             {
@@ -308,7 +304,7 @@ namespace SevenBoldPencil.WeaponCamo
 			GUI.DragWindow();
         }
 
-        private void DrawDecalTextureSelectorUI(float x, float y, CamoEditor camoEditor)
+        private void DrawDecalTextureSelectorUI(float x, float y, int decalIndex, CamoEditor camoEditor)
         {
             var columns = 3;
             var iconSize = (boxWidth - ((columns - 1) * separatorX)) / columns;
@@ -328,11 +324,11 @@ namespace SevenBoldPencil.WeaponCamo
                 if (GUI.Button(new Rect(x + xi * (iconSize + separatorX), y + yi * (iconSize + separatorX), iconSize, iconSize), texture))
                 {
                     var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
-                    var decalInfo = itemsWithDecals.DecalsInfo[camoEditor.CurrentlyEditedDecal];
+                    var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
                     if (decalInfo.Texture != textureName)
                     {
                         decalInfo.Texture = textureName;
-                        ChangeDecalOnItems(camoEditor.CurrentlyEditedDecal, itemsWithDecals.Items, decal =>
+                        ChangeDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
                         {
                             decal.ChangeTexture(texture);
                         });
@@ -425,7 +421,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (GUI.Button(new Rect(lineX, y, buttonWidth, height), decalInfo.Texture))
                 {
                     camoEditor.IsDecalTextureSelectionScreenVisible = true;
-                    camoEditor.CurrentlyEditedDecal = decalIndex;
+                    camoEditor.CurrentlyEditedDecalIndex = new(decalIndex);
                 }
             }
             y += height + separatorY;
