@@ -141,7 +141,10 @@ namespace SevenBoldPencil.WeaponCamo
         // add support for drawing sub folders as file tree
         public (List<string>, Dictionary<string, Texture2D>) LoadTexturesFromDirectory(string directoryPath, AssetBundle bundle)
         {
-            var filePaths = Directory.GetFiles(directoryPath);
+            var filePaths = Directory.GetFiles(directoryPath, "*", new EnumerationOptions()
+            {
+                RecurseSubdirectories = true
+            });
             var resultList = new List<string>(filePaths.Length + 1);
             var resultDict = new Dictionary<string, Texture2D>();
 
