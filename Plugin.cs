@@ -17,7 +17,22 @@ using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
-    public struct DecalInfo
+    public class ItemsWithDecals
+    {
+        // yes, there can be multiple items with same Id,
+        // for example when you open item description of weapon you already hold in hands,
+        // or when hideout shooting range clones weapon (we pretend that they have the same Id)
+        public Dictionary<int, ItemWithDecals> Items;
+        public List<DecalInfo> DecalsInfo;
+    }
+
+    public class ItemWithDecals
+    {
+        public Transform DecalsRoot;
+        public List<Decal> Decals;
+    }
+
+    public class DecalInfo
     {
         public string Texture;
         public Vector3 LocalPosition;
@@ -30,17 +45,11 @@ namespace SevenBoldPencil.WeaponCamo
     public class CamoEditor
     {
         public string ItemId;
+        public int InstanceID;
         public Transform DecalsRoot;
-        public List<DecalUI> Decals;
         public bool IsVisible;
         public bool IsDecalTextureSelectionScreenVisible;
         public int CurrentlyEditedDecal; // TODO this should be Option<int>
-    }
-
-    public class DecalUI
-    {
-        public Decal Decal;
-        public DecalInfo DecalInfo;
     }
 
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
@@ -64,8 +73,7 @@ namespace SevenBoldPencil.WeaponCamo
         public AssetBundle Bundle;
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures;
-        public Dictionary<string, List<DecalInfo>> ItemsWithDecalsInfo;
-        public Dictionary<string, List<Decal>> ItemsWithDecals;
+        public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         public Dictionary<string, string> Clones;
 
         private void Awake()
@@ -81,7 +89,6 @@ namespace SevenBoldPencil.WeaponCamo
             Bundle = AssetBundle.LoadFromFile(bundlePath);
             var decalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
             (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, Bundle);
-            ItemsWithDecalsInfo = new();
             ItemsWithDecals = new();
             Clones = new();
 
@@ -272,7 +279,13 @@ namespace SevenBoldPencil.WeaponCamo
     				windowRect.y = 50;
     			}
 
-    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * camoEditor.Decals.Count;
+                var decalsCount = 0;
+                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
+                {
+                    decalsCount = itemsWithDecals.DecalsInfo.Count;
+                }
+
+    			var windowHeight = startY + height + marginY + (boxHeight + marginY) * decalsCount;
 
     			windowRect.height = windowHeight;
                 windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
@@ -316,13 +329,26 @@ namespace SevenBoldPencil.WeaponCamo
                 var yi = i / columns;
                 if (GUI.Button(new Rect(x + xi * (iconSize + separatorX), y + yi * (iconSize + separatorX), iconSize, iconSize), texture))
                 {
-                    var decalUI = camoEditor.Decals[camoEditor.CurrentlyEditedDecal];
-                    if (decalUI.DecalInfo.Texture != textureName)
+                    var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+                    var decalInfo = itemsWithDecals.DecalsInfo[camoEditor.CurrentlyEditedDecal];
+                    if (decalInfo.Texture != textureName)
                     {
-                        decalUI.DecalInfo.Texture = textureName;
-                        decalUI.Decal.ChangeTexture(texture);
+                        decalInfo.Texture = textureName;
+                        ChangeDecalOnItems(camoEditor.CurrentlyEditedDecal, itemsWithDecals.Items, decal =>
+                        {
+                            decal.ChangeTexture(texture);
+                        });
                     }
                 }
+            }
+        }
+
+        public void ChangeDecalOnItems(int decalIndex, Dictionary<int, ItemWithDecals> items, Action<Decal> changeDecal)
+        {
+            foreach (var (_, itemWithDecals) in items)
+            {
+                var decal = itemWithDecals.Decals[decalIndex];
+                changeDecal(decal);
             }
         }
 
@@ -339,41 +365,55 @@ namespace SevenBoldPencil.WeaponCamo
                     Opacity = 1f,
                     MaxAngle = 0.8f,
                 };
-                var decal = DecalRenderer.CreateDecal(decalInfo, camoEditor.DecalsRoot, LoadedDecalTextures);
-                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var decals))
+
+                if (ItemsWithDecals.ContainsKey(camoEditor.ItemId))
                 {
-                    decals.Add(decal);
+                    var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+                    itemsWithDecals.DecalsInfo.Add(decalInfo);
+                    foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+                    {
+                        var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
+                        itemWithDecals.Decals.Add(decal);
+                    }
                 }
                 else
                 {
-                    var newDecals = new List<Decal>();
-                    newDecals.Add(decal);
-                    ItemsWithDecals.Add(camoEditor.ItemId, newDecals);
+                    var decal = DecalRenderer.CreateDecal(decalInfo, camoEditor.DecalsRoot, LoadedDecalTextures);
+                    var decals = new List<Decal>() { decal };
+                    var decalsInfo = new List<DecalInfo>() { decalInfo };
+                    var itemsWithDecals = new ItemsWithDecals() {
+                        Items = new Dictionary<int, ItemWithDecals>() {
+                            {
+                                camoEditor.InstanceID,
+                                new ItemWithDecals() {
+                                    DecalsRoot = camoEditor.DecalsRoot,
+                                    Decals = decals,
+                                }
+                            }
+                        },
+                        DecalsInfo = decalsInfo
+                    };
+
+                    ItemsWithDecals.Add(camoEditor.ItemId, itemsWithDecals);
                 }
-
-                var decalUI = new DecalUI()
-                {
-                    Decal = decal,
-                    DecalInfo = decalInfo,
-                };
-
-                camoEditor.Decals.Add(decalUI);
-
             }
             y += height + marginY;
 
-            for (var i = 0; i < camoEditor.Decals.Count; i++)
             {
-                DrawDecalUI(x, ref y, i, camoEditor.Decals[i], camoEditor);
-                y += marginY;
+                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
+                {
+                    var decalsInfo = itemsWithDecals.DecalsInfo;
+                    for (var i = 0; i < decalsInfo.Count; i++)
+                    {
+                        DrawDecalUI(x, ref y, i, decalsInfo[i], itemsWithDecals.Items, camoEditor);
+                        y += marginY;
+                    }
+                }
             }
         }
 
-        private void DrawDecalUI(float x, ref float y, int decalIndex, DecalUI decalUI, CamoEditor camoEditor)
+        private void DrawDecalUI(float x, ref float y, int decalIndex, DecalInfo decalInfo, Dictionary<int, ItemWithDecals> items, CamoEditor camoEditor)
         {
-            var decal = decalUI.Decal;
-            ref var decalInfo = ref decalUI.DecalInfo;
-
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), "Decal");
             y += boxHeaderHeight + separatorY;
 
@@ -401,14 +441,20 @@ namespace SevenBoldPencil.WeaponCamo
                 if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Left"))
                 {
                     decalInfo.LocalEulerAngles = Decal.LeftSideDecalRotation;
-                    decal.DecalTransform.localEulerAngles = Decal.LeftSideDecalRotation;
+                    ChangeDecalOnItems(decalIndex, items, decal =>
+                    {
+                        decal.DecalTransform.localEulerAngles = Decal.LeftSideDecalRotation;
+                    });
                 }
                 lineX += sideButtonWidth + separatorX;
 
                 if (GUI.Button(new Rect(lineX, y, sideButtonWidth, height), "Right"))
                 {
                     decalInfo.LocalEulerAngles = Decal.RightSideDecalRotation;
-                    decal.DecalTransform.localEulerAngles = Decal.RightSideDecalRotation;
+                    ChangeDecalOnItems(decalIndex, items, decal =>
+                    {
+                        decal.DecalTransform.localEulerAngles = Decal.RightSideDecalRotation;
+                    });
                 }
                 lineX += sideButtonWidth + separatorX;
             }
@@ -425,7 +471,10 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newOpacity != decalInfo.Opacity)
                 {
                     decalInfo.Opacity = newOpacity;
-                    decal.ChangeOpacity(newOpacity);
+                    ChangeDecalOnItems(decalIndex, items, decal =>
+                    {
+                        decal.ChangeOpacity(newOpacity);
+                    });
                 }
                 lineX += sliderWidth + separatorX;
 
@@ -446,7 +495,10 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;
-                    decal.ChangeMaxAngle(newMaxAngle);
+                    ChangeDecalOnItems(decalIndex, items, decal =>
+                    {
+                        decal.ChangeMaxAngle(newMaxAngle);
+                    });
                 }
                 lineX += sliderWidth + separatorX;
 
@@ -456,17 +508,20 @@ namespace SevenBoldPencil.WeaponCamo
                 y += height + separatorY;
             }
 
-            void DrawChangePositionLine(float x, float y, string name, Vector3 direction, float value, ref DecalInfo decalInfo)
+            void DrawChangePositionLine(float x, float y, string name, Vector3 direction, float value, DecalInfo decalInfo)
             {
                 var lineX = x + marginX;
 
-                void DrawButton(float value, string valueStr, ref DecalInfo decalInfo)
+                void DrawButton(float value, string valueStr, DecalInfo decalInfo)
                 {
                     if (GUI.Button(new Rect(lineX, y, longButtonWidth, height), valueStr))
                     {
                         var localPosition = decalInfo.LocalPosition + direction * value;
                         decalInfo.LocalPosition = localPosition;
-                        decal.DecalTransform.localPosition = localPosition;
+                        ChangeDecalOnItems(decalIndex, items, decal =>
+                        {
+                            decal.DecalTransform.localPosition = localPosition;
+                        });
                     }
                     lineX += longButtonWidth + separatorX;
                 }
@@ -474,29 +529,29 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), name, labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                DrawButton(-0.005f, "5mm", ref decalInfo);
-                DrawButton(-0.001f, "1mm", ref decalInfo);
+                DrawButton(-0.005f, "5mm", decalInfo);
+                DrawButton(-0.001f, "1mm", decalInfo);
 
                 GUI.Label(new Rect(lineX, y, longFieldWidth, height), $"{value:F3}", labelStyleValue);
                 lineX += longFieldWidth + separatorX;
 
-                DrawButton(0.001f, "1mm", ref decalInfo);
-                DrawButton(0.005f, "5mm", ref decalInfo);
+                DrawButton(0.001f, "1mm", decalInfo);
+                DrawButton(0.005f, "5mm", decalInfo);
             }
 
-            DrawChangePositionLine(x, y, "Forward/Backward:", new Vector3(0f, 1f, 0f), decalInfo.LocalPosition.y, ref decalInfo);
+            DrawChangePositionLine(x, y, "Forward/Backward:", new Vector3(0f, 1f, 0f), decalInfo.LocalPosition.y, decalInfo);
             y += height + separatorY;
 
-            DrawChangePositionLine(x, y, "Down/Up:", new Vector3(0f, 0f, 1f), decalInfo.LocalPosition.z, ref decalInfo);
+            DrawChangePositionLine(x, y, "Down/Up:", new Vector3(0f, 0f, 1f), decalInfo.LocalPosition.z, decalInfo);
             y += height + separatorY;
 
-            DrawChangePositionLine(x, y, "Left/Right", new Vector3(1f, 0f, 0f), decalInfo.LocalPosition.x, ref decalInfo);
+            DrawChangePositionLine(x, y, "Left/Right", new Vector3(1f, 0f, 0f), decalInfo.LocalPosition.x, decalInfo);
             y += height + separatorY;
 
             {
                 var lineX = x + marginX;
 
-                void DrawButton(float x, float y, float value, string valueStr, ref DecalInfo decalInfo)
+                void DrawButton(float x, float y, float value, string valueStr, DecalInfo decalInfo)
                 {
                     if (GUI.Button(new Rect(lineX, y, buttonWidth, height), valueStr))
                     {
@@ -513,14 +568,14 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, height), "Rotation:", labelStyleName);
                 lineX += nameWidth + separatorX;
 
-                DrawButton(lineX, y, -5, "5°", ref decalInfo);
-                DrawButton(lineX, y, -1, "1°", ref decalInfo);
+                DrawButton(lineX, y, -5, "5°", decalInfo);
+                DrawButton(lineX, y, -1, "1°", decalInfo);
 
                 GUI.Label(new Rect(lineX, y, fieldWidth, height), $"{decalInfo.LocalEulerAngles.x:N0}", labelStyleValue);
                 lineX += fieldWidth + separatorX;
 
-                DrawButton(lineX, y, 1, "1°", ref decalInfo);
-                DrawButton(lineX, y, 5, "5°", ref decalInfo);
+                DrawButton(lineX, y, 1, "1°", decalInfo);
+                DrawButton(lineX, y, 5, "5°", decalInfo);
             }
             y += height + separatorY;
 
@@ -571,51 +626,57 @@ namespace SevenBoldPencil.WeaponCamo
         private readonly float defaultDecalSize = 0.2f;
         private readonly float defaultDecalDepth = 0.1f;
 
-        public void SpawnItemDecals(string itemId, Transform root)
+        public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
-            var decalsItemId = itemId;
-            if (Clones.TryGetValue(itemId, out var originalItemId))
+            itemId = GetOriginalItemId(itemId);
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                // when user tries weapon in hideout shooting range,
-                // all his gear gets copied to new items to preserve
-                // original durability/ammo count/etc,
-                // but we have to clone decals ourselves
-                Logger.LogInfo($"SpawnItemDecals: {itemId} clone of {decalsItemId}");
-                decalsItemId = originalItemId;
-            }
-            if (!ItemsWithDecalsInfo.TryGetValue(decalsItemId, out var decalsInfo))
-            {
-                Logger.LogInfo($"SpawnItemDecals: {decalsItemId}, no decals info");
-                return;
-            }
-            if (ItemsWithDecals.ContainsKey(itemId))
-            {
-                Logger.LogInfo($"SpawnItemDecals: {itemId}, already spawned");
+                Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, no decals info");
                 return;
             }
 
-            Logger.LogInfo($"SpawnItemDecals: {itemId}, success");
+            var instanceID = weaponPrefab.GetInstanceID();
+            if (itemsWithDecals.Items.ContainsKey(instanceID))
+            {
+                Logger.LogError($"OnWeaponPrefabCreated: {itemId}, tried to init multiple times?");
+                return;
+            }
 
+            var decalsRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
+            var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
             {
-                var decal = DecalRenderer.CreateDecal(decalInfo, root, LoadedDecalTextures);
+                var decal = DecalRenderer.CreateDecal(decalInfo, decalsRoot, LoadedDecalTextures);
                 decals.Add(decal);
             }
 
-            ItemsWithDecals.Add(itemId, decals);
+            var itemWithDecals = new ItemWithDecals()
+            {
+                DecalsRoot = decalsRoot,
+                Decals = decals,
+            };
+
+            itemsWithDecals.Items.Add(instanceID, itemWithDecals);
+
+            Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, success");
         }
 
-        public void OnItemDecalsDestroyed(string itemId)
+        public void OnWeaponPrefabDestroyed(string itemId, WeaponPrefab weaponPrefab)
         {
-            if (ItemsWithDecals.Remove(itemId, out var decals))
+            itemId = GetOriginalItemId(itemId);
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-    			Logger.LogInfo($"OnItemDecalsDestroyed: {itemId}");
-                foreach (var decal in decals)
+                var instanceID = weaponPrefab.GetInstanceID();
+                if (itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
                 {
-                    if (decal)
+        			Logger.LogInfo($"OnWeaponPrefabDestroyed: {itemId}, {instanceID}");
+                    foreach (var decal in itemWithDecals.Decals)
                     {
-                        Destroy(decal.gameObject);
+                        if (decal)
+                        {
+                            Destroy(decal.gameObject);
+                        }
                     }
                 }
             }
@@ -623,78 +684,42 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void OnCloneItem(string originalId, string cloneId)
         {
-            if (ItemsWithDecalsInfo.ContainsKey(originalId))
+            // when user tries weapon in hideout shooting range,
+            // all his gear gets copied to new items to preserve
+            // original durability/ammo count/etc,
+            // but we have to clone decals ourselves
+            if (ItemsWithDecals.ContainsKey(originalId))
             {
                 Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
                 Clones.Add(cloneId, originalId);
             }
         }
 
-        public void SetupCamoEditor(string itemId, Transform root)
+        public string GetOriginalItemId(string itemId)
         {
+            if (Clones.TryGetValue(itemId, out var originalId))
+            {
+                return originalId;
+            }
+
+            return itemId;
+        }
+
+        public void SetupCamoEditor(string itemId, WeaponPrefab weaponPrefab)
+        {
+            itemId = GetOriginalItemId(itemId);
             LoggerInstance.LogInfo($"SetupCamoEditor: {itemId}");
-
             IsCamoEditorWaitingForWeaponPreview = false;
-
-            // this method is called after SpawnItemDecals, right?
-            // so we can just get item and all its decals from dicts, right?
-
-            var decalsUI = BuildItemDecalsUI(itemId);
-
+            var instanceID = weaponPrefab.GetInstanceID();
+            var decalsRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
             CamoEditor = new(new CamoEditor()
             {
                 ItemId = itemId,
-                DecalsRoot = root,
-                Decals = decalsUI,
+                InstanceID = instanceID,
+                DecalsRoot = decalsRoot,
                 IsVisible = true,
                 IsDecalTextureSelectionScreenVisible = false,
             });
-        }
-
-        public List<DecalUI> BuildItemDecalsUI(string itemId)
-        {
-            if (GetItemDecals(itemId).Some(out var itemDecals))
-            {
-                var decals = itemDecals.decals;
-                var decalsInfo = itemDecals.decalsInfo;
-                var decalsUI = new List<DecalUI>(decals.Count);
-                for (var i = 0; i < decals.Count; i++)
-                {
-                    var decal = decals[i];
-                    var decalInfo = decalsInfo[i];
-                    var decalUI = new DecalUI()
-                    {
-                        Decal = decal,
-                        DecalInfo = decalInfo,
-                    };
-                    decalsUI.Add(decalUI);
-                }
-
-                return decalsUI;
-            }
-
-            // this item doesn't have any decals,
-            // but maybe player wants to put some!
-            return new();
-        }
-
-        public Option<(List<Decal> decals, List<DecalInfo> decalsInfo)> GetItemDecals(string itemId)
-        {
-            if (!ItemsWithDecals.TryGetValue(itemId, out var decals))
-            {
-                return default;
-            }
-            if (!ItemsWithDecalsInfo.TryGetValue(itemId, out var decalsInfo))
-            {
-                return default;
-            }
-            if (decals.Count != decalsInfo.Count)
-            {
-                LoggerInstance.LogError($"GetItemDecals: {itemId}, mismatched decals?");
-                return default;
-            }
-
-            return new((decals, decalsInfo));
         }
 
         public void CloseCamoEditor()
@@ -715,53 +740,23 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             var itemId = camoEditor.ItemId;
-            var decalsUI = camoEditor.Decals;
-            if (ItemsWithDecalsInfo.TryGetValue(itemId, out var decalsInfo))
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                if (decalsUI.Count == 0)
+                var decalsInfo = itemsWithDecals.DecalsInfo;
+                if (decalsInfo.Count == 0)
                 {
-                    // remove decals, with file
-                    ItemsWithDecalsInfo.Remove(itemId);
+                    ItemsWithDecals.Remove(itemId);
                     RemoveDecalsFile(itemId);
                     LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} remove decals");
                 }
                 else
                 {
-                    // rewrite existing decals
-                    decalsInfo.Clear();
-                    WriteDecalsToList(decalsUI, decalsInfo);
                     WriteDecalsToFile(itemId, decalsInfo);
                     LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} rewrite decals");
                 }
             }
-            else
-            {
-                if (decalsUI.Count == 0)
-                {
-                    // do nothing
-                    LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} no decals on item");
-                }
-                else
-                {
-                    // write decals to new file
-                    decalsInfo = new(decalsUI.Count);
-                    WriteDecalsToList(decalsUI, decalsInfo);
-                    ItemsWithDecalsInfo.Add(itemId, decalsInfo);
-                    WriteDecalsToFile(itemId, decalsInfo);
-                    LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} write decals to new file");
-                }
-            }
 
             CamoEditor = default;
-            // TODO we need to catch moments when weapon is spawned/despawned
-        }
-
-        public void WriteDecalsToList(List<DecalUI> decalsUI, List<DecalInfo> decalsInfo)
-        {
-            foreach (var decalUI in decalsUI)
-            {
-                decalsInfo.Add(decalUI.DecalInfo);
-            }
         }
 
         public void WriteDecalsToFile(string itemId, List<DecalInfo> decalsInfo)
@@ -770,7 +765,6 @@ namespace SevenBoldPencil.WeaponCamo
             // dump decalsInfo on disk
             // create if doesnt exist, rewrite if does
             // assets/items/itemId.json
-
         }
 
         public void RemoveDecalsFile(string itemId)

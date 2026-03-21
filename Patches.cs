@@ -81,13 +81,11 @@ namespace SevenBoldPencil.WeaponCamo
 
 			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab))
 			{
-				var itemId = item.Id;
-				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
-				Logger.LogWarning($"Patch_WeaponPreview_Class3271_method_1: {weaponPrefab.GetInstanceID()}, item: {itemId} weaponRoot: {weaponRoot.GetHierarchyPath()}");
 				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
 				{
+					var itemId = item.Id;
 					// var camera = weaponPreview.WeaponPreviewCamera;
-					Plugin.Instance.SetupCamoEditor(itemId, weaponRoot);
+					Plugin.Instance.SetupCamoEditor(itemId, weaponPrefab);
 				}
 			}
 		}
@@ -128,7 +126,6 @@ namespace SevenBoldPencil.WeaponCamo
 			// if this method is called then next WeaponPreview.Class3271.method_1
 			// is guaranteed to be weapon preview for WeaponModdingScreen
 
-			Logger.LogInfo($"Patch_WeaponModdingScreen_Show");
 			Plugin.Instance.IsCamoEditorWaitingForWeaponPreview = true;
 		}
 	}
@@ -164,10 +161,7 @@ namespace SevenBoldPencil.WeaponCamo
 			var item = __instance__.weapon_0;
 			if (item != null)
 			{
-				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(__instance);
-				var weaponRootPath = weaponRoot.GetHierarchyPath();
-				Logger.LogWarning($"Patch_WeaponPrefab_InitHotObjects: {__instance.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
-				Plugin.Instance.SpawnItemDecals(item.Id, weaponRoot);
+				Plugin.Instance.OnWeaponPrefabCreated(item.Id, __instance);
 			}
 		}
 	}
@@ -186,9 +180,7 @@ namespace SevenBoldPencil.WeaponCamo
 			var item = __instance__.weapon_0;
 			if (item != null)
 			{
-				var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(__instance);
-				Logger.LogWarning($"Patch_WeaponPrefab_ReturnToPool: {__instance.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
-				Plugin.Instance.OnItemDecalsDestroyed(item.Id);
+				Plugin.Instance.OnWeaponPrefabDestroyed(item.Id, __instance);
 			}
 		}
 	}
@@ -210,9 +202,7 @@ namespace SevenBoldPencil.WeaponCamo
 				var item = _weaponPrefab.weapon_0;
 				if (item != null)
 				{
-					var weaponRoot = Patch_WeaponPreview_Class3271_method_1.GetWeaponRoot(weaponPrefab);
-					Logger.LogWarning($"Patch_AssetPoolObject_OnDestroy: {weaponPrefab.GetInstanceID()} {item.Id} {weaponRoot.GetHierarchyPath()}");
-					Plugin.Instance.OnItemDecalsDestroyed(item.Id);
+					Plugin.Instance.OnWeaponPrefabDestroyed(item.Id, weaponPrefab);
 				}
 			}
 		}
