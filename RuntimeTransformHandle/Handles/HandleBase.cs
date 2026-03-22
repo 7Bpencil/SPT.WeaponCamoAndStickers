@@ -6,85 +6,66 @@ namespace RuntimeHandle
 {
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020
+     * Rewritten by 7Bpencil 22.03.2026
      */
     public abstract class HandleBase : MonoBehaviour
     {
-        public event Action InteractionStart;
-        public event Action InteractionEnd;
-        public event Action<float> InteractionUpdate;
-        
-        protected RuntimeTransformHandle _parentTransformHandle;
-
+        protected RuntimeTransformHandle _transformHandle;
         protected Color _defaultColor;
-
         protected Material _material;
 
-        protected Vector3 _hitPoint;
+		public Transform Target => _transformHandle.target;
+		public Transform TransformHandle => _transformHandle.transform;
 
-        protected bool _isInteracting = false;
-
-        public float delta;
-
-        protected virtual void InitializeMaterial()
+        protected void InitializeMaterial(Shader shader)
         {
-            _material = new Material(Resources.Load("Shaders/HandleShader") as Shader);
+            _material = new Material(shader);
             _material.color = _defaultColor;
         }
-        
+
         public void SetDefaultColor()
         {
             _material.color = _defaultColor;
         }
-        
-        public void SetColor(Color p_color)
+
+        public void SetColor(Color color)
         {
-            _material.color = p_color;
+            _material.color = color;
         }
-        
+
         public virtual void StartInteraction(Vector3 p_hitPoint)
         {
-            _hitPoint = p_hitPoint;
-            InteractionStart?.Invoke();
-            _isInteracting = true;
+
         }
 
         public virtual bool CanInteract(Vector3 p_hitPoint)
         {
             return true;
         }
-        
+
         public virtual void Interact(Vector3 p_previousPosition)
         {
-            InteractionUpdate?.Invoke(delta);
+
         }
 
         public virtual void EndInteraction()
         {
-            _isInteracting = false;
-            InteractionEnd?.Invoke();
-            delta = 0;
             SetDefaultColor();
         }
 
-        static public Vector3 GetVectorFromAxes(HandleAxes p_axes)
+        public static Vector3 GetVectorFromAxes(HandleAxes p_axes)
         {
-            switch (p_axes)
+            return p_axes switch
             {
-                case HandleAxes.X:
-                    return new Vector3(1,0,0);
-                case HandleAxes.Y:
-                    return new Vector3(0,1,0);
-                case HandleAxes.Z:
-                    return new Vector3(0,0,1);
-                case HandleAxes.XY:
-                    return new Vector3(1,1,0);
-                case HandleAxes.XZ:
-                    return new Vector3(1,0,1);
-                case HandleAxes.YZ:
-                    return new Vector3(0,1,1);
-                default:
-                    return new Vector3(1,1,1);
-            }
+                HandleAxes.X => new Vector3(1,0,0),
+                HandleAxes.Y => new Vector3(0,1,0),
+                HandleAxes.Z => new Vector3(0,0,1),
+                HandleAxes.XY => new Vector3(1,1,0),
+                HandleAxes.XZ => new Vector3(1,0,1),
+                HandleAxes.YZ => new Vector3(0,1,1),
+                HandleAxes.XYZ => new Vector3(1,1,1),
+				_ => throw new ArgumentException($"Unknown HandleAxes: {p_axes}")
+            };
         }
     }
 }

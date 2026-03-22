@@ -5,7 +5,7 @@ namespace RuntimeHandle
 	public static class HandleMathUtils
 	{
 		public const float PRECISION_THRESHOLD = 0.001f;
-		
+
 		public static float ClosestPointOnRay(Ray ray, Ray other)
 		{
 			// based on: https://math.stackexchange.com/questions/1036959/midpoint-of-the-shortest-distance-between-2-rays-in-3d
@@ -20,7 +20,7 @@ namespace RuntimeHandle
 			float ad = Vector3.Dot(ray.origin,    other.direction);
 			float bc = Vector3.Dot(ray.direction, other.origin);
 			float ab = Vector3.Dot(ray.origin,    ray.direction);
-			
+
 			float bottom = bd * bd - 1f;
 			if (Mathf.Abs(bottom) < PRECISION_THRESHOLD)
 			{

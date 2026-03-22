@@ -4,118 +4,96 @@ namespace RuntimeHandle
 {
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020
+     * Rewritten by 7Bpencil 22.03.2026
      */
     public class PositionPlane : HandleBase
     {
-        protected Vector3 _startPosition;
-        protected Vector3 _axis1;
-        protected Vector3 _axis2;
-        protected Vector3 _perp;
-        protected Plane _plane;
-        protected Vector3 _interactionOffset;
-        protected GameObject _handle;
-        
-        public PositionPlane Initialize(RuntimeTransformHandle p_runtimeHandle, Vector3 p_axis1, Vector3 p_axis2, Vector3 p_perp, Color p_color)
+        private Vector3 _axis1;
+        private Vector3 _axis2;
+        private Vector3 _perp;
+        private GameObject _handle;
+        private Vector3 _offsetLocalSpace;
+
+        public PositionPlane Initialize(RuntimeTransformHandle transformHandle, PositionHandle positionHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
         {
-            _parentTransformHandle = p_runtimeHandle;
-            _defaultColor = p_color;
-            _axis1 = p_axis1;
-            _axis2 = p_axis2;
-            _perp = p_perp;
+            _transformHandle = transformHandle;
+            _defaultColor = color;
+            _axis1 = axis1;
+            _axis2 = axis2;
+            _perp = perp;
 
-            InitializeMaterial();
+            InitializeMaterial(handleShader);
 
-            transform.SetParent(p_runtimeHandle.transform, false);
+            transform.SetParent(positionHandle.transform, false);
 
-            _handle = new GameObject();
+            _handle = new GameObject("PositionPlane");
             _handle.transform.SetParent(transform, false);
-            MeshRenderer mr = _handle.AddComponent<MeshRenderer>();
-            mr.material = _material;
-            MeshFilter mf = _handle.AddComponent<MeshFilter>();
-            mf.mesh = MeshUtils.CreateBox(.02f, .5f, 0.5f);
-            MeshCollider mc = _handle.AddComponent<MeshCollider>();
             _handle.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
             _handle.transform.localPosition = (_axis1 + _axis2) * .25f;
+            _handle.AddComponent<MeshRenderer>().material = _material;
+            _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(.02f, .5f, 0.5f);
+            _handle.AddComponent<MeshCollider>();
 
             return this;
         }
 
         public override void Interact(Vector3 p_previousPosition)
         {
-            Ray ray = Camera.main.ScreenPointToRay(RuntimeTransformHandle.GetMousePosition());
-
-            float d = 0.0f;
-            _plane.Raycast(ray, out d);
-            
-            Vector3 hitPoint = ray.GetPoint(d);
-
-            Vector3 offset = hitPoint + _interactionOffset - _startPosition;
-
-            Vector3 axis = _axis1 + _axis2;
-            Vector3 snapping = _parentTransformHandle.positionSnap;
-            float snap = Vector3.Scale(snapping, axis).magnitude;
-            if (snap != 0 && _parentTransformHandle.snappingType == HandleSnappingType.RELATIVE)
-            {
-                if (snapping.x != 0) offset.x = Mathf.Round(offset.x / snapping.x) * snapping.x;
-                if (snapping.y != 0) offset.y = Mathf.Round(offset.y / snapping.y) * snapping.y;
-                if (snapping.z != 0) offset.z = Mathf.Round(offset.z / snapping.z) * snapping.z;
-            }
-
-            Vector3 position = _startPosition + offset;
-            
-            if (snap != 0 && _parentTransformHandle.snappingType == HandleSnappingType.ABSOLUTE)
-            {
-                if (snapping.x != 0) position.x = Mathf.Round(position.x / snapping.x) * snapping.x;
-                if (snapping.y != 0) position.y = Mathf.Round(position.y / snapping.y) * snapping.y;
-                if (snapping.x != 0) position.z = Mathf.Round(position.z / snapping.z) * snapping.z;
-            }
-
-            _parentTransformHandle.target.position = position;
-
             base.Interact(p_previousPosition);
+
+            var rperp = Target.TransformDirection(_perp);
+            var position = Target.position;
+            var plane = new Plane(rperp, position);
+            var cameraRay = _transformHandle.GetCameraRay();
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+            var offset = Target.TransformDirection(_offsetLocalSpace);
+            var newPosition = hitPoint - offset;
+
+            Target.position = newPosition;
+            TransformHandle.position = newPosition;
         }
 
         public override void StartInteraction(Vector3 p_hitPoint)
         {
-            Vector3 rperp = _parentTransformHandle.space == HandleSpace.LOCAL
-                ? _parentTransformHandle.target.rotation * _perp
-                : _perp;
-            
-            _plane = new Plane(rperp, _parentTransformHandle.target.position);
-            
-            Ray ray = Camera.main.ScreenPointToRay(RuntimeTransformHandle.GetMousePosition());
+			base.StartInteraction(p_hitPoint);
 
-            float d = 0.0f;
-            _plane.Raycast(ray, out d);
-            
-            Vector3 hitPoint = ray.GetPoint(d);
-            _startPosition = _parentTransformHandle.target.position;
-            _interactionOffset = _startPosition - hitPoint;
+            var rperp = Target.TransformDirection(_perp);
+            var position = Target.position;
+            var plane = new Plane(rperp, position);
+            var cameraRay = _transformHandle.GetCameraRay();
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+            var offset = hitPoint - position;
+
+            _offsetLocalSpace = Target.InverseTransformDirection(offset);
         }
 
-        void Update()
+        private void Update()
         {
-            Vector3 axis1 = _axis1;
-            Vector3 raxis1 = _parentTransformHandle.space == HandleSpace.LOCAL
-                ? _parentTransformHandle.target.rotation * axis1
-                : axis1;
-            float angle1 = Vector3.Angle(_parentTransformHandle.handleCamera.transform.forward, raxis1);
+            var axis1 = _axis1;
+            var raxis1 = Target.TransformDirection(axis1);
+            var angle1 = Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis1);
             if (angle1 < 90)
+            {
                 axis1 = -axis1;
-            
-            //Debug.Log(Vector3.Angle(_parentTransformHandle.handleCamera.transform.forward, raxis1));
-            // if (Vector3.Angle(_parentTransformHandle.handleCamera.transform.forward, axis1) > 90)
-            //     axis1 = -axis1;
-            
-            Vector3 axis2 = _axis2;
-            Vector3 raxis2 = _parentTransformHandle.space == HandleSpace.LOCAL
-                ? _parentTransformHandle.target.rotation * axis2
-                : axis2;
-            float angle2 = Vector3.Angle(_parentTransformHandle.handleCamera.transform.forward, raxis2);
-            if (angle2 < 90)
-                axis2 = -axis2;
+            }
 
-            _handle.transform.localPosition = (axis1 + axis2) * .25f;
+            // Debug.Log(Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis1));
+            // if (Vector3.Angle(_transformHandle.handleCamera.transform.forward, axis1) > 90)
+            // {
+            //     axis1 = -axis1;
+            // }
+
+            var axis2 = _axis2;
+            var raxis2 = Target.TransformDirection(axis2);
+            var angle2 = Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis2);
+            if (angle2 < 90)
+            {
+                axis2 = -axis2;
+            }
+
+            _handle.transform.localPosition = (axis1 + axis2) * 0.25f;
         }
     }
 }

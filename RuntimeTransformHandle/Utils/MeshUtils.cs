@@ -13,7 +13,7 @@ namespace RuntimeHandle
 		static public Mesh CreateArc(Vector3 p_center, Vector3 p_startPoint, Vector3 p_axis, float p_radius, float p_angle, int p_segmentCount)
 		{
 			Mesh mesh = new Mesh();
-			
+
 			Vector3[] vertices = new Vector3[p_segmentCount+2];
 
 			Vector3 startVector = (p_startPoint - p_center).normalized * p_radius;
@@ -24,7 +24,7 @@ namespace RuntimeHandle
 				vertices[i] = v + p_center;
 			}
 			vertices[p_segmentCount+1] = p_center;
-			
+
 			Vector3[] normals = new Vector3[vertices.Length];
 			for( int n = 0; n < normals.Length; n++ )
 				normals[n] = Vector3.up;
@@ -36,7 +36,7 @@ namespace RuntimeHandle
 				uvs[i] = new Vector2(Mathf.Cos(rad) * .5f + .5f, Mathf.Sin(rad) * .5f + .5f);
 			}
 			uvs[p_segmentCount + 1] = Vector2.one / 2f;
-			
+
 			int[] triangles = new int[ p_segmentCount * 3 ];
 			for (int i = 0; i < p_segmentCount; i++)
 			{
@@ -45,31 +45,31 @@ namespace RuntimeHandle
 				triangles[index+1] = i;
 				triangles[index+2] = i + 1;
 			}
-			
+
 			mesh.vertices = vertices;
 			mesh.normals = normals;
 			mesh.uv = uvs;
 			mesh.triangles = triangles;
- 
+
 			mesh.RecalculateBounds();
 			mesh.Optimize();
-			
+
 			return mesh;
 		}
-		
+
 		static public Mesh CreateArc(float p_radius, float p_angle, int p_segmentCount)
 		{
 			Mesh mesh = new Mesh();
-			
+
 			Vector3[] vertices = new Vector3[p_segmentCount+2];
-			
+
 			for (int i = 0; i<=p_segmentCount; i++)
 			{
 				float rad = (float) i / p_segmentCount * p_angle;
 				vertices[i] = new Vector3(Mathf.Cos(rad) * p_radius, 0f, Mathf.Sin(rad) * p_radius);
 			}
 			vertices[p_segmentCount+1] = Vector3.zero;
-			
+
 			Vector3[] normals = new Vector3[vertices.Length];
 			for( int n = 0; n < normals.Length; n++ )
 				normals[n] = Vector3.up;
@@ -81,7 +81,7 @@ namespace RuntimeHandle
 				uvs[i] = new Vector2(Mathf.Cos(rad) * .5f + .5f, Mathf.Sin(rad) * .5f + .5f);
 			}
 			uvs[p_segmentCount + 1] = Vector2.one / 2f;
-			
+
 			int[] triangles = new int[ p_segmentCount * 3 ];
 			for (int i = 0; i < p_segmentCount; i++)
 			{
@@ -90,25 +90,25 @@ namespace RuntimeHandle
 				triangles[index+1] = i;
 				triangles[index+2] = i + 1;
 			}
-			
+
 			mesh.vertices = vertices;
 			mesh.normals = normals;
 			mesh.uv = uvs;
 			mesh.triangles = triangles;
- 
+
 			mesh.RecalculateBounds();
 			mesh.Optimize();
-			
+
 			return mesh;
 		}
-		
+
 		static public Mesh CreateGrid(float p_width, float p_height, int p_segmentsX = 1, int p_segmentsY = 1)
 		{
 			Mesh mesh = new Mesh();
 
 			int resX = p_segmentsX + 1;
 			int resZ = p_segmentsY + 1;
-			
+
 			Vector3[] vertices = new Vector3[ resX * resZ ];
 			for(int z = 0; z < resZ; z++)
 			{
@@ -120,12 +120,12 @@ namespace RuntimeHandle
 				}
 			}
 
-			
+
 			Vector3[] normals = new Vector3[ vertices.Length ];
 			for( int n = 0; n < normals.Length; n++ )
 				normals[n] = Vector3.up;
 
-			
+
 			Vector2[] uvs = new Vector2[ vertices.Length ];
 			for(int v = 0; v < resZ; v++)
 			{
@@ -143,28 +143,28 @@ namespace RuntimeHandle
 			{
 				// Retrieve lower left corner from face ind
 				int i = face % (resX - 1) + (face / (resZ - 1) * resX);
- 
+
 				triangles[t++] = i + resX;
 				triangles[t++] = i + 1;
 				triangles[t++] = i;
- 
-				triangles[t++] = i + resX;	
+
+				triangles[t++] = i + resX;
 				triangles[t++] = i + resX + 1;
-				triangles[t++] = i + 1; 
+				triangles[t++] = i + 1;
 			}
 
- 
+
 			mesh.vertices = vertices;
 			mesh.normals = normals;
 			mesh.uv = uvs;
 			mesh.triangles = triangles;
- 
+
 			mesh.RecalculateBounds();
 			mesh.Optimize();
 
 			return mesh;
 		}
-		
+
 		static public Mesh CreateBox(float p_width, float p_height, float p_depth)
 		{
 			Mesh mesh = new Mesh();
@@ -809,24 +809,24 @@ namespace RuntimeHandle
 		{
 			Mesh mesh = new Mesh();
 			mesh.Clear();
-			
+
 			Vector3[] vertices = new Vector3[(p_longitudeCount+1) * p_lattitudeCount + 2];
 			float _pi = Mathf.PI;
 			float _2pi = _pi * 2f;
-			 
+
 			vertices[0] = Vector3.up * p_radius;
 			for( int lat = 0; lat < p_lattitudeCount; lat++ )
 			{
 				float a1 = _pi * (float)(lat+1) / (p_lattitudeCount+1);
 				float sin1 = Mathf.Sin(a1);
 				float cos1 = Mathf.Cos(a1);
-			 
+
 				for( int lon = 0; lon <= p_longitudeCount; lon++ )
 				{
 					float a2 = _2pi * (float)(lon == p_longitudeCount ? 0 : lon) / p_longitudeCount;
 					float sin2 = Mathf.Sin(a2);
 					float cos2 = Mathf.Cos(a2);
-			 
+
 					vertices[ lon + lat * (p_longitudeCount + 1) + 1] = new Vector3( sin1 * cos2, cos1, sin1 * sin2 ) * p_radius;
 				}
 			}
@@ -837,19 +837,19 @@ namespace RuntimeHandle
 			for( int n = 0; n < vertices.Length; n++ )
 				normals[n] = vertices[n].normalized;
 
-			
+
 			Vector2[] uvs = new Vector2[vertices.Length];
 			uvs[0] = Vector2.up;
 			uvs[uvs.Length-1] = Vector2.zero;
 			for( int lat = 0; lat < p_lattitudeCount; lat++ )
 				for( int lon = 0; lon <= p_longitudeCount; lon++ )
 					uvs[lon + lat * (p_longitudeCount + 1) + 1] = new Vector2( (float)lon / p_longitudeCount, 1f - (float)(lat+1) / (p_lattitudeCount+1) );
-			
+
 			int faceCount = vertices.Length;
 			int triangleCount = faceCount * 2;
 			int indexCount = triangleCount * 3;
 			int[] triangles = new int[ indexCount ];
-			 
+
 			//Top Cap
 			int i = 0;
 			for( int lon = 0; lon < p_longitudeCount; lon++ )
@@ -858,7 +858,7 @@ namespace RuntimeHandle
 				triangles[i++] = lon+1;
 				triangles[i++] = 0;
 			}
-			 
+
 			//Middle
 			for( int lat = 0; lat < p_lattitudeCount - 1; lat++ )
 			{
@@ -866,17 +866,17 @@ namespace RuntimeHandle
 				{
 					int current = lon + lat * (p_longitudeCount + 1) + 1;
 					int next = current + p_longitudeCount + 1;
-			 
+
 					triangles[i++] = current;
 					triangles[i++] = current + 1;
 					triangles[i++] = next + 1;
-			 
+
 					triangles[i++] = current;
 					triangles[i++] = next + 1;
 					triangles[i++] = next;
 				}
 			}
-			 
+
 			//Bottom Cap
 			for( int lon = 0; lon < p_longitudeCount; lon++ )
 			{
@@ -889,7 +889,7 @@ namespace RuntimeHandle
 			mesh.normals = normals;
 			mesh.uv = uvs;
 			mesh.triangles = triangles;
-			 
+
 			mesh.RecalculateBounds();
 			mesh.Optimize();
 

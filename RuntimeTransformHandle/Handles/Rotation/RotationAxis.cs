@@ -5,160 +5,101 @@ namespace RuntimeHandle
 {
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020
+     * Rewritten by 7Bpencil 22.03.2026
      */
     public class RotationAxis : HandleBase
     {
-        private Mesh     _arcMesh;
-        private Material _arcMaterial;
-        private Vector3  _axis;
-        private Vector3  _rotatedAxis;
-        private Plane    _axisPlane;
-        private Vector3  _tangent;
-        private Vector3  _biTangent;
-        
-        private Quaternion _startRotation;
+		private Transform _rotationHandle;
 
-        public RotationAxis Initialize(RuntimeTransformHandle p_runtimeHandle, Vector3 p_axis, Color p_color)
+        private Vector3 _axis1;
+        private Vector3 _axis2;
+        private Vector3 _perp;
+
+		private Vector3 _startOffsetLocalSpace;
+		private Quaternion _startLocalRotation;
+
+        public RotationAxis Initialize(RuntimeTransformHandle transformHandle, RotationHandle rotationHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
         {
-            _parentTransformHandle = p_runtimeHandle;
-            _axis = p_axis;
-            _defaultColor = p_color;
-            
-            InitializeMaterial();
+            _transformHandle = transformHandle;
+            _defaultColor = color;
 
-            transform.SetParent(p_runtimeHandle.transform, false);
+			_rotationHandle = rotationHandle.transform;
 
-            GameObject o = new GameObject();
+            _axis1 = axis1;
+            _axis2 = axis2;
+            _perp = perp;
+
+            InitializeMaterial(handleShader);
+
+            transform.SetParent(_rotationHandle, false);
+
+            var o = new GameObject("Arc");
             o.transform.SetParent(transform, false);
-            MeshRenderer mr = o.AddComponent<MeshRenderer>();
-            mr.material = _material;
-            MeshFilter mf = o.AddComponent<MeshFilter>();
-            mf.mesh = MeshUtils.CreateTorus(2f, .02f, 32, 6);
-            MeshCollider mc = o.AddComponent<MeshCollider>();
-            mc.sharedMesh = MeshUtils.CreateTorus(2f, .1f, 32, 6);
-            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _axis);
+            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
+            o.AddComponent<MeshRenderer>().material = _material;
+            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateTorus(2f, .02f, 32, 6);
+            o.AddComponent<MeshCollider>().sharedMesh = MeshUtils.CreateTorus(2f, .1f, 32, 6);
+
             return this;
-        }
-        
-        protected override void InitializeMaterial()
-        {
-            _material = new Material(Resources.Load("Shaders/AdvancedHandleShader") as Shader);
-            _material.color = _defaultColor;
         }
 
         public void Update()
         {
-            _material.SetVector("_CameraPosition", _parentTransformHandle.handleCamera.transform.position);
-            _material.SetFloat("_CameraDistance",
-                (_parentTransformHandle.handleCamera.transform.position - _parentTransformHandle.transform.position)
-                .magnitude);
+            _material.SetVector("_CameraPosition", _transformHandle.handleCamera.transform.position);
+            _material.SetFloat("_CameraDistance", (_transformHandle.handleCamera.transform.position - TransformHandle.position).magnitude);
         }
 
         public override void Interact(Vector3 p_previousPosition)
         {
-            Ray cameraRay = Camera.main.ScreenPointToRay(RuntimeTransformHandle.GetMousePosition());
-            
-            if (!_axisPlane.Raycast(cameraRay, out float hitT))
-            {
-                base.Interact(p_previousPosition);
-                return;
-            }
-            
-            Vector3 hitPoint     = cameraRay.GetPoint(hitT);
-            Vector3 hitDirection = (hitPoint - _parentTransformHandle.target.position).normalized;
-            float   x            = Vector3.Dot(hitDirection, _tangent);
-            float   y            = Vector3.Dot(hitDirection, _biTangent);
-            float   angleRadians = Mathf.Atan2(y, x);
-            float   angleDegrees = angleRadians * Mathf.Rad2Deg;
-
-            if (_parentTransformHandle.rotationSnap != 0)
-            {
-                angleDegrees = Mathf.Round(angleDegrees / _parentTransformHandle.rotationSnap) * _parentTransformHandle.rotationSnap;
-                angleRadians = angleDegrees                                                    * Mathf.Deg2Rad;
-            }
-
-            if (_parentTransformHandle.space == HandleSpace.LOCAL)
-            {
-                _parentTransformHandle.target.localRotation = _startRotation * Quaternion.AngleAxis(angleDegrees, _axis);
-            }
-            else
-            {
-                Vector3 invertedRotatedAxis = Quaternion.Inverse(_startRotation) * _axis;
-                _parentTransformHandle.target.rotation = _startRotation * Quaternion.AngleAxis(angleDegrees, invertedRotatedAxis);
-            }
-
-            _arcMesh = MeshUtils.CreateArc(transform.position, _hitPoint, _rotatedAxis, 2, angleRadians, Mathf.Abs(Mathf.CeilToInt(angleDegrees)) + 1);
-            DrawArc();
-
             base.Interact(p_previousPosition);
+
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
+            var plane = new Plane(rperp, position);
+            var cameraRay = _transformHandle.GetCameraRay();
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+			var offset = hitPoint - position;
+			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
+			var newLocalRotation = _startLocalRotation * Quaternion.AngleAxis(angle, _perp);
+
+			Target.localRotation = newLocalRotation;
+			_rotationHandle.rotation = Target.rotation;
         }
-        
+
         public override bool CanInteract(Vector3 p_hitPoint)
         {
-            var cameraDistance = (_parentTransformHandle.transform.position - _parentTransformHandle.handleCamera.transform.position).magnitude;
-            var pointDistance = (p_hitPoint - _parentTransformHandle.handleCamera.transform.position).magnitude;
+            var cameraDistance = (TransformHandle.position - _transformHandle.handleCamera.transform.position).magnitude;
+            var pointDistance = (p_hitPoint - _transformHandle.handleCamera.transform.position).magnitude;
             return pointDistance <= cameraDistance;
         }
 
         public override void StartInteraction(Vector3 p_hitPoint)
         {
-            if (!CanInteract(p_hitPoint))
-                return;
-           
-            
             base.StartInteraction(p_hitPoint);
-            
-            _startRotation = _parentTransformHandle.space == HandleSpace.LOCAL ? _parentTransformHandle.target.localRotation : _parentTransformHandle.target.rotation;
 
-            _arcMaterial = new Material(Shader.Find("sHTiF/HandleShader"));
-            _arcMaterial.color = new Color(1,1,0,.4f);
-            _arcMaterial.renderQueue = 5000;
-            //_arcMesh.gameObject.SetActive(true);
+            TransformHandle.rotation = Target.rotation;
+			_rotationHandle.rotation = Quaternion.identity;
 
-            if (_parentTransformHandle.space == HandleSpace.LOCAL)
-            {
-                _rotatedAxis = _startRotation * _axis;
-            }
-            else
-            {
-                _rotatedAxis     = _axis;
-            }
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
+            var plane = new Plane(rperp, position);
+            var cameraRay = _transformHandle.GetCameraRay();
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+            var offset = hitPoint - position;
 
-            _axisPlane = new Plane(_rotatedAxis, _parentTransformHandle.target.position);
-
-            Vector3 startHitPoint;
-            Ray     cameraRay = Camera.main.ScreenPointToRay(RuntimeTransformHandle.GetMousePosition());
-            if (_axisPlane.Raycast(cameraRay, out float hitT))
-            {
-                startHitPoint = cameraRay.GetPoint(hitT);
-            }
-            else
-            {
-                startHitPoint = _axisPlane.ClosestPointOnPlane(p_hitPoint);
-            }
-            
-            _tangent   = (startHitPoint - _parentTransformHandle.target.position).normalized;
-            _biTangent = Vector3.Cross(_rotatedAxis, _tangent);
+			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			_startLocalRotation = Target.localRotation;
         }
-        
+
         public override void EndInteraction()
         {
             base.EndInteraction();
-            //Destroy(_arcMesh.gameObject);
-            delta = 0;
-        }
 
-        void DrawArc()
-        {
-            // _arcMaterial.SetPass(0);
-            // Graphics.DrawMeshNow(_arcMesh, Matrix4x4.identity);
-            Graphics.DrawMesh(_arcMesh, Matrix4x4.identity, _arcMaterial, 0);
-
-            // GameObject arc = new GameObject();
-            // MeshRenderer mr = arc.AddComponent<MeshRenderer>();
-            // mr.material = new Material(Shader.Find("sHTiF/HandleShader"));
-            // mr.material.color = new Color(1,1,0,.5f);
-            // _arcMesh = arc.AddComponent<MeshFilter>();
+            TransformHandle.rotation = Target.rotation;
+			_rotationHandle.localRotation = Quaternion.identity;
         }
     }
 }

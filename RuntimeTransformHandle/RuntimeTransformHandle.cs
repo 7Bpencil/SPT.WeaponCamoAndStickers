@@ -1,36 +1,28 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.Events;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace RuntimeHandle
 {
     /**
      * Created by Peter @sHTiF Stefcek 21.10.2020
+     * Rewritten by 7Bpencil 22.03.2026
      */
     public class RuntimeTransformHandle : MonoBehaviour
     {
         public HandleAxes axes = HandleAxes.XYZ;
-        public HandleSpace space = HandleSpace.LOCAL;
         public HandleType type = HandleType.POSITION;
-        public HandleSnappingType snappingType = HandleSnappingType.RELATIVE;
 
-        public Vector3 positionSnap = Vector3.zero;
-        public float rotationSnap = 0;
-        public Vector3 scaleSnap = Vector3.zero;
-
-        public bool autoScale = false;
-        public float autoScaleFactor = 1;
+        public bool autoScale = true;
+        public float autoScaleFactor = 0.5f;
         public Camera handleCamera;
 
         private Vector3 _previousMousePosition;
+		private bool _previousMouseDown;
         private HandleBase _previousAxis;
 
         private HandleBase _draggingHandle;
-
-        private HandleType _previousType;
-        private HandleAxes _previousAxes;
+		public bool IsDragging => _draggingHandle;
 
         private PositionHandle _positionHandle;
         private RotationHandle _rotationHandle;
@@ -38,150 +30,104 @@ namespace RuntimeHandle
 
         public Transform target;
 
-        public UnityEvent startedDraggingHandle = new UnityEvent();
-        public UnityEvent isDraggingHandle = new UnityEvent();
-        public UnityEvent endedDraggingHandle = new UnityEvent();
+        public Action OnStartedDraggingHandle;
+        public Action OnDraggingHandle;
+        public Action OnEndedDraggingHandle;
 
-        [SerializeField] private bool disableWhenNoTarget;
+        private Shader positionHandleShader;
+        private Shader rotationHandleShader;
+        private Shader scaleHandleShader;
 
-        void Start()
+        private void CreateHandles()
         {
-            if (handleCamera == null)
-                handleCamera = Camera.main;
-
-            _previousType = type;
-
-            if (target == null)
-                target = transform;
-
-            if (disableWhenNoTarget && target == transform)
-                gameObject.SetActive(false);
-
-            CreateHandles();
+			if (type == HandleType.POSITION)
+			{
+				_positionHandle = new GameObject("PositionHandle").AddComponent<PositionHandle>().Initialize(this, positionHandleShader);
+			}
+			if (type == HandleType.ROTATION)
+			{
+				_rotationHandle = new GameObject("RotationHandle").AddComponent<RotationHandle>().Initialize(this, rotationHandleShader);
+			}
+			if (type == HandleType.SCALE)
+			{
+				_scaleHandle = new GameObject("ScaleHandle").AddComponent<ScaleHandle>().Initialize(this, scaleHandleShader);
+			}
         }
 
-        void CreateHandles()
-        {
-            switch (type)
-            {
-                case HandleType.POSITION:
-                    _positionHandle = gameObject.AddComponent<PositionHandle>().Initialize(this);
-                    break;
-                case HandleType.ROTATION:
-                    _rotationHandle = gameObject.AddComponent<RotationHandle>().Initialize(this);
-                    break;
-                case HandleType.SCALE:
-                    _scaleHandle = gameObject.AddComponent<ScaleHandle>().Initialize(this);
-                    break;
-            }
-        }
-
-        void Clear()
+        private void Clear()
         {
             _draggingHandle = null;
-
-            if (_positionHandle) _positionHandle.Destroy();
-            if (_rotationHandle) _rotationHandle.Destroy();
-            if (_scaleHandle) _scaleHandle.Destroy();
+            if (_positionHandle) Destroy(_positionHandle.gameObject);
+            if (_rotationHandle) Destroy(_rotationHandle.gameObject);
+            if (_scaleHandle) Destroy(_scaleHandle.gameObject);
         }
 
-        void Update()
+        private void Update()
         {
-            if (autoScale)
-                transform.localScale =
-                    Vector3.one * (Vector3.Distance(handleCamera.transform.position, transform.position) * autoScaleFactor) / 15;
+			if (!Physics.autoSyncTransforms)
+			{
+				// thanks BSG, very cool
+				Physics.SyncTransforms();
+			}
 
-            if (_previousType != type || _previousAxes != axes)
-            {
-                Clear();
-                CreateHandles();
-                _previousType = type;
-                _previousAxes = axes;
-            }
+			UpdateAutoScale();
 
-            HandleBase handle = null;
-            Vector3 hitPoint = Vector3.zero;
-            GetHandle(ref handle, ref hitPoint);
+            var (handle, hitPoint) = GetHandle();
 
             HandleOverEffect(handle, hitPoint);
 
-            if (PointerIsDown() && _draggingHandle != null)
+			// for some reason Input.GetMouseButtonUp(0) doesnt work here,
+			// no idea why, some thing blocks it probably, so do it manually
+
+			var mouseDown = Input.GetMouseButton(0);
+			var hasPressed = mouseDown && !_previousMouseDown;
+			var hasReleased = !mouseDown && _previousMouseDown;
+
+            if (mouseDown && _draggingHandle)
             {
                 _draggingHandle.Interact(_previousMousePosition);
-                isDraggingHandle.Invoke();
+                OnDraggingHandle?.Invoke();
             }
 
-            if (GetPointerDown() && handle != null)
+            if (hasPressed && handle && handle.CanInteract(hitPoint))
             {
                 _draggingHandle = handle;
                 _draggingHandle.StartInteraction(hitPoint);
-                startedDraggingHandle.Invoke();
+                OnStartedDraggingHandle?.Invoke();
             }
 
-            if (GetPointerUp() && _draggingHandle != null)
+            if (hasReleased && _draggingHandle)
             {
                 _draggingHandle.EndInteraction();
+                OnEndedDraggingHandle?.Invoke();
                 _draggingHandle = null;
-                endedDraggingHandle.Invoke();
             }
 
-            _previousMousePosition = GetMousePosition();
-
-            transform.position = target.transform.position;
-            if (space == HandleSpace.LOCAL || type == HandleType.SCALE)
-            {
-                transform.rotation = target.transform.rotation;
-            }
-            else
-            {
-                transform.rotation = Quaternion.identity;
-            }
+            _previousMousePosition = Input.mousePosition;
+			_previousMouseDown = mouseDown;
         }
 
-        public static bool GetPointerDown()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current.leftButton.wasPressedThisFrame;
-#else
-            return Input.GetMouseButtonDown(0);
-#endif
-        }
+		public void UpdateAutoScale()
+		{
+            if (autoScale)
+			{
+                transform.localScale = Vector3.one * (Vector3.Distance(handleCamera.transform.position, transform.position) * autoScaleFactor) / 15f;
+			}
+		}
 
-        public static bool PointerIsDown()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current.leftButton.isPressed;
-#else
-            return Input.GetMouseButton(0);
-#endif
-        }
+		public Ray GetCameraRay()
+		{
+            return handleCamera.ScreenPointToRay(Input.mousePosition);
+		}
 
-        public static bool GetPointerUp()
+        private void HandleOverEffect(HandleBase p_axis, Vector3 p_hitPoint)
         {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current.leftButton.wasReleasedThisFrame;
-#else
-            return Input.GetMouseButtonUp(0);
-#endif
-        }
-
-        public static Vector3 GetMousePosition()
-        {
-#if ENABLE_INPUT_SYSTEM
-            return Mouse.current.position.ReadValue();
-#else
-            return Input.mousePosition;
-#endif
-        }
-
-        void HandleOverEffect(HandleBase p_axis, Vector3 p_hitPoint)
-        {
-            if (_draggingHandle == null && _previousAxis != null && (_previousAxis != p_axis || !_previousAxis.CanInteract(p_hitPoint)))
+            if (!_draggingHandle && _previousAxis && (_previousAxis != p_axis || !_previousAxis.CanInteract(p_hitPoint)))
             {
                 _previousAxis.SetDefaultColor();
             }
 
-            if (p_axis != null && _draggingHandle == null && p_axis.CanInteract(p_hitPoint))
+            if (p_axis && !_draggingHandle && p_axis.CanInteract(p_hitPoint))
             {
                 p_axis.SetColor(Color.yellow);
             }
@@ -189,91 +135,93 @@ namespace RuntimeHandle
             _previousAxis = p_axis;
         }
 
-        private void GetHandle(ref HandleBase p_handle, ref Vector3 p_hitPoint)
+        private (HandleBase, Vector3) GetHandle()
         {
-            Ray ray = Camera.main.ScreenPointToRay(GetMousePosition());
-            RaycastHit[] hits = Physics.RaycastAll(ray);
-            if (hits.Length == 0)
-                return;
+            var ray = GetCameraRay();
+            var hits = Physics.RaycastAll(ray); // TODO alloc
+            if (hits.Length != 0)
+			{
+	            foreach (var hit in hits)
+	            {
+	                var p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
+	                if (p_handle)
+	                {
+	                    return (p_handle, hit.point);
+	                }
+	            }
+			}
 
-            foreach (RaycastHit hit in hits)
-            {
-                p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
-
-                if (p_handle != null)
-                {
-                    p_hitPoint = hit.point;
-                    return;
-                }
-            }
+            return default;
         }
 
-        static public RuntimeTransformHandle Create(Transform p_target, HandleType p_handleType)
+        static public RuntimeTransformHandle Create(Transform target, Camera handleCamera, Shader positionHandleShader, Shader rotationHandleShader, Shader scaleHandleShader)
         {
-            RuntimeTransformHandle runtimeTransformHandle = new GameObject().AddComponent<RuntimeTransformHandle>();
-            runtimeTransformHandle.target = p_target;
-            runtimeTransformHandle.type = p_handleType;
+			var handleGO = new GameObject("RuntimeTransformHandle", typeof(RuntimeTransformHandle));
+			var handleTransform = handleGO.transform;
+            var handle = handleGO.GetComponent<RuntimeTransformHandle>();
 
-            return runtimeTransformHandle;
-        }
+			handleTransform.parent = target.parent;
+			handleTransform.localPosition = target.localPosition;
+			handleTransform.localRotation = target.localRotation;
 
-        #region public methods to control handles
-        public void SetTarget(Transform newTarget)
-        {
-            target = newTarget;
-        }
+            handle.target = target;
+			handle.handleCamera = handleCamera;
 
-        public void SetTarget(GameObject newTarget)
-        {
-            target = newTarget.transform;
+	        handle.positionHandleShader = positionHandleShader;
+	        handle.rotationHandleShader = rotationHandleShader;
+	        handle.scaleHandleShader = scaleHandleShader;
 
-            if (target == null)
-                target = transform;
+			handle.UpdateAutoScale();
 
-            if (disableWhenNoTarget && target == transform)
-                gameObject.SetActive(false);
-            else if(disableWhenNoTarget && target != transform)
-                gameObject.SetActive(true);
-        }
-
-        public void SetHandleMode(int mode)
-        {
-            SetHandleMode((HandleType)mode);
+            return handle;
         }
 
         public void SetHandleMode(HandleType mode)
         {
             type = mode;
+			Clear();
+			CreateHandles();
         }
 
         public void EnableXAxis(bool enable)
         {
             if (enable)
+			{
                 axes |= HandleAxes.X;
+			}
             else
+			{
                 axes &= ~HandleAxes.X;
+			}
         }
 
         public void EnableYAxis(bool enable)
         {
             if (enable)
+			{
                 axes |= HandleAxes.Y;
+			}
             else
+			{
                 axes &= ~HandleAxes.Y;
+			}
         }
 
         public void EnableZAxis(bool enable)
         {
             if (enable)
+			{
                 axes |= HandleAxes.Z;
+			}
             else
+			{
                 axes &= ~HandleAxes.Z;
+			}
         }
 
-        public void SetAxis(HandleAxes newAxes)
+        public void SetAxes(HandleAxes newAxes)
         {
             axes = newAxes;
         }
-        #endregion
     }
 }
