@@ -364,7 +364,8 @@ namespace SevenBoldPencil.WeaponCamo
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
             {
-                AddNewDecal(camoEditor);
+                var newDecalIndex = AddNewDecal(camoEditor);
+                camoEditor.CurrentlyEditedDecalIndex = new(newDecalIndex);
             }
         }
 
@@ -396,7 +397,8 @@ namespace SevenBoldPencil.WeaponCamo
             var duplicateX = deleteX + smallIconSize + iconSeparator;
             if (GUI.Button(new Rect(duplicateX, bottomLineY, smallIconSize, smallIconSize), CamoEditorResources.DuplicateIcon))
             {
-                Duplicate(camoEditor, decalIndex);
+                var newDecalIndex = Duplicate(camoEditor, decalIndex);
+                camoEditor.CurrentlyEditedDecalIndex = new(newDecalIndex);
             }
 
             var arrowX = duplicateX + smallIconSize + iconSeparator;
@@ -587,7 +589,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        public void Duplicate(CamoEditor camoEditor, int decalIndex)
+        public int Duplicate(CamoEditor camoEditor, int decalIndex)
         {
             var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
             var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
@@ -598,6 +600,8 @@ namespace SevenBoldPencil.WeaponCamo
                 var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
                 itemWithDecals.Decals.Insert(decalIndex, decal);
             }
+
+            return decalIndex + 1;
         }
 
         public void Delete(CamoEditor camoEditor, int decalIndex)
@@ -612,7 +616,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        public void AddNewDecal(CamoEditor camoEditor)
+        public int AddNewDecal(CamoEditor camoEditor)
         {
             var decalInfo = new DecalInfo()
             {
@@ -633,6 +637,8 @@ namespace SevenBoldPencil.WeaponCamo
                     var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
                     itemWithDecals.Decals.Add(decal);
                 }
+
+                return itemsWithDecals.DecalsInfo.Count - 1;
             }
             else
             {
@@ -653,6 +659,8 @@ namespace SevenBoldPencil.WeaponCamo
                 };
 
                 ItemsWithDecals.Add(camoEditor.ItemId, itemsWithDecals);
+
+                return 0;
             }
         }
 
