@@ -196,10 +196,6 @@ namespace SevenBoldPencil.WeaponCamo
             // maybe apply camo texture on top of diffuse texture?
 
             // TODO
-            // maybe 3D gizmos (similar to unity editor)
-            // is the best way to move/rotate/scale decal?
-
-            // TODO
             // we can save items as jsons in assets/items/ each item separate file with name=item.Id
             // we can save presets as jsons in assets/presets/ each preset separate file with name=preset name (with support for subfolders)
             // show presets per weapon template (Item.TemplateId?)
