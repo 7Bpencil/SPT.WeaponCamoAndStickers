@@ -49,6 +49,12 @@ namespace SevenBoldPencil.WeaponCamo
         public Vector3 LocalScale;
         public float Opacity;
         public float MaxAngle;
+
+        public DecalInfo GetCopy()
+        {
+            // this is enough for now
+            return (DecalInfo)MemberwiseClone();
+        }
     }
 
     public class CamoEditor
@@ -201,7 +207,7 @@ namespace SevenBoldPencil.WeaponCamo
             // add reset rotation button
 
             // TODO
-            //  hear me out: we can place 3D models as decorations on guns and equipment!
+            // hear me out: we can place 3D models as decorations on guns and equipment!
         }
 
         // TODO
@@ -362,7 +368,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private (float, float) DrawDecalElementUI(CamoEditor camoEditor, float x, float y, int i, DecalInfo decalInfo)
+        private (float, float) DrawDecalElementUI(CamoEditor camoEditor, float x, float y, int decalIndex, DecalInfo decalInfo)
         {
             var texture = LoadedDecalTextures[decalInfo.Texture];
 
@@ -375,7 +381,7 @@ namespace SevenBoldPencil.WeaponCamo
             var textureIconX = x + boxMargin;
             if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), texture))
             {
-                camoEditor.CurrentlyEditedDecalIndex = new(i);
+                camoEditor.CurrentlyEditedDecalIndex = new(decalIndex);
             }
 
             var labelX = textureIconX + iconSize + iconSeparator + 2;
@@ -384,13 +390,13 @@ namespace SevenBoldPencil.WeaponCamo
             var deleteX = x + boxWidth - (iconSeparator + smallIconSize) * 3;
             if (GUI.Button(new Rect(deleteX, bottomLineY, smallIconSize, smallIconSize), CamoEditorResources.DeleteIcon))
             {
-                // TODO duplicate
+                Delete(camoEditor, decalIndex);
             }
 
             var duplicateX = deleteX + smallIconSize + iconSeparator;
             if (GUI.Button(new Rect(duplicateX, bottomLineY, smallIconSize, smallIconSize), CamoEditorResources.DuplicateIcon))
             {
-                // TODO delete
+                Duplicate(camoEditor, decalIndex);
             }
 
             var arrowX = duplicateX + smallIconSize + iconSeparator;
@@ -434,12 +440,14 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditRotationIcon))
                 {
+                    // TODO add button to match camera rotation
                     SetupTransformHandle(camoEditor, HandleType.ROTATION, decalIndex, decal);
                 }
                 columnY += smallIconSize + iconSeparator;
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditScaleIcon))
                 {
+                    // TODO add scale plane handles
                     SetupTransformHandle(camoEditor, HandleType.SCALE, decalIndex, decal);
                 }
             }
@@ -576,6 +584,31 @@ namespace SevenBoldPencil.WeaponCamo
                         });
                     }
                 }
+            }
+        }
+
+        public void Duplicate(CamoEditor camoEditor, int decalIndex)
+        {
+            var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
+            var decalInfoDuplicate = decalInfo.GetCopy();
+            itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfoDuplicate);
+            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            {
+                var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
+                itemWithDecals.Decals.Insert(decalIndex, decal);
+            }
+        }
+
+        public void Delete(CamoEditor camoEditor, int decalIndex)
+        {
+            var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+            itemsWithDecals.DecalsInfo.RemoveAt(decalIndex);
+            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            {
+                var decal = itemWithDecals.Decals[decalIndex];
+                itemWithDecals.Decals.RemoveAt(decalIndex);
+                Destroy(decal.gameObject);
             }
         }
 
