@@ -294,7 +294,6 @@ namespace SevenBoldPencil.WeaponCamo
 
         private const float start = 23;
         private const float windowWidth = 410; // TODO adjust to 5 icons width
-        private const float windowHeight = 600;
         private const float buttonHeight = 30;
         private const float buttonSeparator = 4;
         private const float margin = 14;
@@ -304,6 +303,7 @@ namespace SevenBoldPencil.WeaponCamo
         private const float smallIconSize = (iconSize - iconSeparator) / 2;
         private const int iconColumns = 5;
         private const float boxWidth = windowWidth - margin * 2;
+        private const float boxHeight = iconSize + boxMargin * 2;
         private const float boxMargin = 3;
         private const float nameWidth = 120;
         private const float longFieldWidth = 60;
@@ -317,12 +317,33 @@ namespace SevenBoldPencil.WeaponCamo
     			if (windowRect.width == 0f)
     			{
     				windowRect.width = windowWidth;
-    				windowRect.height = windowHeight;
     				windowRect.x = start;
     				windowRect.y = start;
     			}
 
+				windowRect.height = CalculateWindowHeight(camoEditor);
                 windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
+            }
+        }
+
+        private float CalculateWindowHeight(CamoEditor camoEditor)
+        {
+            if (camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex))
+            {
+                return 600;
+            }
+            else
+            {
+                var height = startMarginY;
+                if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
+                {
+                    height += itemsWithDecals.DecalsInfo.Count * (boxHeight + 8);
+                }
+
+                height += buttonHeight;
+                height += margin;
+
+                return height;
             }
         }
 
@@ -350,12 +371,13 @@ namespace SevenBoldPencil.WeaponCamo
 
             if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
             {
+                // TODO add scroll view
                 var decalsInfo = itemsWithDecals.DecalsInfo;
                 for (var i = 0; i < decalsInfo.Count; i++)
                 {
                     var decalInfo = decalsInfo[i];
-                    var (sizeX, sizeY) = DrawDecalElementUI(camoEditor, x, y, i, decalInfo);
-                    y += sizeY + 8;
+                    DrawDecalElementUI(camoEditor, x, y, i, decalInfo);
+                    y += boxHeight + 8;
                 }
             }
 
@@ -366,11 +388,10 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private (float, float) DrawDecalElementUI(CamoEditor camoEditor, float x, float y, int decalIndex, DecalInfo decalInfo)
+        private void DrawDecalElementUI(CamoEditor camoEditor, float x, float y, int decalIndex, DecalInfo decalInfo)
         {
             var texture = LoadedDecalTextures[decalInfo.Texture];
 
-            var boxHeight = iconSize + boxMargin * 2;
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), default(string));
 
             var topLineY = y + boxMargin;
@@ -407,8 +428,6 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 Swap(camoEditor, decalIndex, decalIndex + 1);
             }
-
-            return (boxWidth, boxHeight);
         }
 
         private void DrawDecalEditUI(CamoEditor camoEditor, int decalIndex)
