@@ -85,7 +85,6 @@ namespace SevenBoldPencil.WeaponCamo
 			{
 				return;
 			}
-
 			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab))
 			{
 				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
@@ -108,6 +107,27 @@ namespace SevenBoldPencil.WeaponCamo
 
 			weaponPrefab = default;
 			return false;
+		}
+	}
+
+	public class Patch_WeaponPreview_Rotate : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPreview), nameof(WeaponPreview.Rotate));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(WeaponPreview __instance)
+		{
+			var _weaponPreview = new WeaponPreview_Proxy(__instance);
+			var item = _weaponPreview.item_0;
+			if (item != null)
+			{
+				return Plugin.Instance.CanWeaponPreviewRotate(item.Id);
+			}
+
+			return true;
 		}
 	}
 

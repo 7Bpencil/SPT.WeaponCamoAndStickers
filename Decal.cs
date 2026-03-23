@@ -41,6 +41,8 @@ namespace SevenBoldPencil.WeaponCamo
 		public void Init(Shader shader)
 		{
 			// TODO add ability to change uvStartEnd (tiling)
+			// set as repeating, so it stays the same on vertical,
+			// but gets cropped/multiplied on horizontal
 			var uvStartEnd = new Vector4(0, 0, 1, 1);
 
 			DecalMaterial = new Material(shader);
