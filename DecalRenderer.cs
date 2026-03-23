@@ -27,34 +27,18 @@ namespace SevenBoldPencil.WeaponCamo
 	public class DecalRenderer
 	{
 		public Mesh Cube;
-		public Shader DecalShader;
 		public int int_2 = Shader.PropertyToID("_NormalsCopy");
 		public CommandBuffer commandBuffer_1;
-		public List<Decal> Decals;
+		public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
 		public Dictionary<Camera, CommandBuffer> dictionary_2;
 
-		public DecalRenderer(Shader decalShader)
+		public DecalRenderer(Dictionary<string, ItemsWithDecals> itemsWithDecals)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
-			DecalShader = decalShader;
-			Decals = new(10);
+			ItemsWithDecals = itemsWithDecals;
 			dictionary_2 = new();
 			Camera.onPreCull += OnPreCullCameraRender;
 			Camera.onPreRender += OnPreCameraRender;
-		}
-
-		public Decal CreateDecal(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
-		{
-            var decalGO = new GameObject("Decal", typeof(Decal));
-            var decalTransform = decalGO.transform;
-            var decal = decalGO.GetComponent<Decal>();
-
-			decal.Init(DecalShader);
-			decal.Set(decalInfo, root, loadedDecalTextures);
-
-            Decals.Add(decal);
-
-			return decal;
 		}
 
 		public void OnPreCullCameraRender(Camera currentCamera)
@@ -103,7 +87,7 @@ namespace SevenBoldPencil.WeaponCamo
 			{
 				return false;
 			}
-			if (Decals.Count == 0)
+			if (ItemsWithDecals.Count == 0)
 			{
 				return false;
 			}
@@ -133,50 +117,21 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public void method_10(Camera currentCamera, CommandBuffer buffer)
 		{
-			foreach (var decal in Decals)
+			// thats the easiest way to deal with decal order
+			foreach (var (_, itemsWithDecals) in ItemsWithDecals)
 			{
-				// TODO clear dead decals
-				if (decal && decal.enabled)
+				foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
 				{
-					buffer.DrawMesh(Cube, decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial);
+					foreach (var decal in itemWithDecals.Decals)
+					{
+						if (decal)
+						{
+							buffer.DrawMesh(Cube, decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial);
+						}
+					}
 				}
 			}
 		}
 
-		public void Clear()
-		{
-			// This object lives for an entirety of application
-			// (decals can be shown in inventory, in battle, in loading screens which show character, etc)
-			// So clearing it is not neccessary?
-
-			Camera.onPreCull -= OnPreCullCameraRender;
-			Camera.onPreRender -= OnPreCameraRender;
-			method_8();
-			method_4();
-		}
-
-		public void method_8()
-		{
-			foreach (var item in dictionary_2)
-			{
-				if (item.Key)
-				{
-					item.Key.RemoveCommandBuffer(CameraEvent.BeforeLighting, item.Value);
-				}
-			}
-			dictionary_2.Clear();
-		}
-
-		public void method_4()
-		{
-			foreach (var decal in Decals)
-			{
-				if (decal)
-				{
-					UnityEngine.Object.DestroyImmediate(decal.gameObject);
-				}
-			}
-			Decals.Clear();
-		}
 	}
 }

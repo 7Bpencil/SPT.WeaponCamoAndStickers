@@ -145,9 +145,10 @@ namespace SevenBoldPencil.WeaponCamo
         public string AssemblyDir;
         public string DecalTexturesDir;
         public AssetBundle Bundle;
+        public Shader DecalShader;
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures; // TODO return ERROR texture if tries to get unknown texture
-        public Dictionary<string, ItemsWithDecals> ItemsWithDecals; // TODO we can use this to draw decals instead of flat list, this way reordering and culling will be much easier
+        public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         public Dictionary<string, string> Clones;
 
         private void Awake()
@@ -161,13 +162,13 @@ namespace SevenBoldPencil.WeaponCamo
             DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
 			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
             Bundle = AssetBundle.LoadFromFile(bundlePath);
-            var decalDynamicShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
+            DecalShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
             (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, Bundle);
             CamoEditorResources = new(Bundle);
             ItemsWithDecals = new();
             Clones = new();
 
-            DecalRenderer = new(decalDynamicShader);
+            DecalRenderer = new(ItemsWithDecals);
 
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
@@ -404,11 +405,11 @@ namespace SevenBoldPencil.WeaponCamo
             var arrowX = duplicateX + smallIconSize + iconSeparator;
             if (GUI.Button(new Rect(arrowX, topLineY, smallIconSize, smallIconSize), CamoEditorResources.MoveUpIcon))
             {
-                // TODO move up
+                Swap(camoEditor, decalIndex, decalIndex - 1);
             }
             if (GUI.Button(new Rect(arrowX, bottomLineY, smallIconSize, smallIconSize), CamoEditorResources.MoveDownIcon))
             {
-                // TODO move down
+                Swap(camoEditor, decalIndex, decalIndex + 1);
             }
 
             return (boxWidth, boxHeight);
@@ -597,7 +598,7 @@ namespace SevenBoldPencil.WeaponCamo
             itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfoDuplicate);
             foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
             {
-                var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
+                var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
                 itemWithDecals.Decals.Insert(decalIndex, decal);
             }
 
@@ -613,6 +614,25 @@ namespace SevenBoldPencil.WeaponCamo
                 var decal = itemWithDecals.Decals[decalIndex];
                 itemWithDecals.Decals.RemoveAt(decalIndex);
                 Destroy(decal.gameObject);
+            }
+        }
+
+        public void Swap(CamoEditor camoEditor, int decalIndexA, int decalIndexB)
+        {
+            var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+            var decalsInfo = itemsWithDecals.DecalsInfo;
+
+            if (decalIndexA < 0 || decalIndexA > decalsInfo.Count - 1 ||
+                decalIndexB < 0 || decalIndexB > decalsInfo.Count - 1)
+            {
+                return;
+            }
+
+            (decalsInfo[decalIndexA], decalsInfo[decalIndexB]) = (decalsInfo[decalIndexB], decalsInfo[decalIndexA]);
+            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            {
+                var decals = itemWithDecals.Decals;
+                (decals[decalIndexA], decals[decalIndexB]) = (decals[decalIndexB], decals[decalIndexA]);
             }
         }
 
@@ -634,7 +654,7 @@ namespace SevenBoldPencil.WeaponCamo
                 itemsWithDecals.DecalsInfo.Add(decalInfo);
                 foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
                 {
-                    var decal = DecalRenderer.CreateDecal(decalInfo, itemWithDecals.DecalsRoot, LoadedDecalTextures);
+                    var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
                     itemWithDecals.Decals.Add(decal);
                 }
 
@@ -642,7 +662,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
             else
             {
-                var decal = DecalRenderer.CreateDecal(decalInfo, camoEditor.DecalsRoot, LoadedDecalTextures);
+                var decal = CreateDecal(decalInfo, camoEditor.DecalsRoot);
                 var decals = new List<Decal>() { decal };
                 var decalsInfo = new List<DecalInfo>() { decalInfo };
                 var itemsWithDecals = new ItemsWithDecals() {
@@ -700,7 +720,7 @@ namespace SevenBoldPencil.WeaponCamo
             var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
             {
-                var decal = DecalRenderer.CreateDecal(decalInfo, decalsRoot, LoadedDecalTextures);
+                var decal = CreateDecal(decalInfo, decalsRoot);
                 decals.Add(decal);
             }
 
@@ -714,6 +734,14 @@ namespace SevenBoldPencil.WeaponCamo
 
             Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, success");
         }
+
+		public Decal CreateDecal(DecalInfo decalInfo, Transform root)
+		{
+            var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
+			decal.Init(DecalShader);
+			decal.Set(decalInfo, root, LoadedDecalTextures);
+			return decal;
+		}
 
 		public static Transform GetWeaponRoot(WeaponPrefab weaponPrefab)
 		{
