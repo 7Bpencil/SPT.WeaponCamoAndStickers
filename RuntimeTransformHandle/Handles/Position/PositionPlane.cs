@@ -68,32 +68,5 @@ namespace RuntimeHandle
 
             _offsetLocalSpace = Target.InverseTransformDirection(offset);
         }
-
-        private void Update()
-        {
-            var axis1 = _axis1;
-            var raxis1 = Target.TransformDirection(axis1);
-            var angle1 = Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis1);
-            if (angle1 < 90)
-            {
-                axis1 = -axis1;
-            }
-
-            // Debug.Log(Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis1));
-            // if (Vector3.Angle(_transformHandle.handleCamera.transform.forward, axis1) > 90)
-            // {
-            //     axis1 = -axis1;
-            // }
-
-            var axis2 = _axis2;
-            var raxis2 = Target.TransformDirection(axis2);
-            var angle2 = Vector3.Angle(_transformHandle.handleCamera.transform.forward, raxis2);
-            if (angle2 < 90)
-            {
-                axis2 = -axis2;
-            }
-
-            _handle.transform.localPosition = (axis1 + axis2) * 0.25f;
-        }
     }
 }
