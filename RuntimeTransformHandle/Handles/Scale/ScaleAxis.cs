@@ -15,8 +15,10 @@ namespace RuntimeHandle
         private Vector3 _axis;
 		private Transform _arm;
 		private Transform _tip;
-        private float _offsetLength;
-        private Vector3 _startScale;
+        private float _startOffsetLength;
+        private Vector3 _startLocalScale;
+
+		public Vector3 Axis => _axis;
 
         public ScaleAxis Initialize(RuntimeTransformHandle transformHandle, ScaleHandle scaleHandle, Vector3 axis, Color color, Shader handleShader)
         {
@@ -52,10 +54,10 @@ namespace RuntimeHandle
             return this;
         }
 
-        public void SetHandleVisualScale(float delta)
+        public void SetHandleVisualScale(float scale)
         {
-            _arm.localScale = new Vector3(1, 1 + delta, 1);
-            _tip.localPosition = _axis * (SIZE * (1 + delta));
+            _arm.localScale = new Vector3(1, scale, 1);
+            _tip.localPosition = _axis * (SIZE * scale);
         }
 
         public override void Interact(Vector3 p_previousPosition)
@@ -69,13 +71,12 @@ namespace RuntimeHandle
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
             var hitPoint = ray.GetPoint(closestT);
             var offset = hitPoint - position;
+			var offsetLength = offset.magnitude;
+            var scale = offsetLength / _startOffsetLength;
 
-            var delta = offset.magnitude / _offsetLength - 1f;
-            var newScale = Vector3.Scale(_startScale, _axis * delta + Vector3.one);
+            Target.localScale = ScaleHandle.CalculateScale(_startLocalScale, _axis, scale);
 
-            Target.localScale = newScale;
-
-			SetHandleVisualScale(delta);
+			SetHandleVisualScale(scale);
         }
 
         public override void StartInteraction(Vector3 p_hitPoint)
@@ -90,17 +91,17 @@ namespace RuntimeHandle
             var hitPoint = ray.GetPoint(closestT);
             var offset = hitPoint - position;
 
-            _offsetLength = offset.magnitude;
-            _startScale = Target.localScale;
+            _startOffsetLength = offset.magnitude;
+            _startLocalScale = Target.localScale;
 
-			SetHandleVisualScale(0);
+			SetHandleVisualScale(1);
         }
 
         public override void EndInteraction()
 		{
             base.EndInteraction();
 
-			SetHandleVisualScale(0);
+			SetHandleVisualScale(1);
 		}
     }
 }

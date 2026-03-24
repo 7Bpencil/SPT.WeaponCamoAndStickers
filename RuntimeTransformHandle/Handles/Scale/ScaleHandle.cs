@@ -11,22 +11,22 @@ namespace RuntimeHandle
     public class ScaleHandle : MonoBehaviour
     {
         private RuntimeTransformHandle _transformHandle;
-        private List<ScaleAxis> _axes;
-        private ScaleGlobal _globalAxis;
+        private ScaleAxis _axisX;
+        private ScaleAxis _axisY;
+        private ScaleAxis _axisZ;
 
         public ScaleHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
         {
             _transformHandle = transformHandle;
-            transform.SetParent(_transformHandle.transform, false);
 
-            _axes = new List<ScaleAxis>();
+            transform.SetParent(_transformHandle.transform, false);
 
             if (_transformHandle.axes == HandleAxes.X ||
                 _transformHandle.axes == HandleAxes.XY ||
                 _transformHandle.axes == HandleAxes.XZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _axes.Add(new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.right, Color.red, handleShader));
+                _axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.right, Color.red, handleShader);
             }
 
             if (_transformHandle.axes == HandleAxes.Y ||
@@ -34,7 +34,7 @@ namespace RuntimeHandle
                 _transformHandle.axes == HandleAxes.YZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _axes.Add(new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.up, Color.green, handleShader));
+                _axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.up, Color.green, handleShader);
             }
 
             if (_transformHandle.axes == HandleAxes.Z ||
@@ -42,17 +42,33 @@ namespace RuntimeHandle
                 _transformHandle.axes == HandleAxes.YZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _axes.Add(new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.forward, Color.blue, handleShader));
+                _axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.forward, Color.blue, handleShader);
             }
 
-            if (_transformHandle.axes != HandleAxes.X &&
-                _transformHandle.axes != HandleAxes.Y &&
-                _transformHandle.axes != HandleAxes.Z)
+            if (_transformHandle.axes == HandleAxes.XY ||
+                _transformHandle.axes == HandleAxes.XYZ)
             {
-                _globalAxis = new GameObject("ScaleGlobal").AddComponent<ScaleGlobal>().Initialize(_transformHandle, this, _axes, HandleBase.GetVectorFromAxes(_transformHandle.axes), Color.white, handleShader);
+                new GameObject("ScalePlane.XY").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisY, Vector3.forward, new Color(0, 0, 1,.2f), handleShader);
+            }
+
+            if (_transformHandle.axes == HandleAxes.YZ ||
+                _transformHandle.axes == HandleAxes.XYZ)
+            {
+                new GameObject("ScalePlane.YZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisY, _axisZ, Vector3.right, new Color(1, 0, 0, .2f), handleShader);
+            }
+
+            if (_transformHandle.axes == HandleAxes.XZ ||
+                _transformHandle.axes == HandleAxes.XYZ)
+            {
+                new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisZ, Vector3.up, new Color(0, 1, 0, .2f), handleShader);
             }
 
             return this;
         }
+
+		public static Vector3 CalculateScale(Vector3 startScale, Vector3 mask, float scale)
+		{
+			return Vector3.Scale(startScale, Vector3.one + mask * (scale - 1));
+		}
     }
 }
