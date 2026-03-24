@@ -48,19 +48,19 @@ namespace RuntimeHandle
             if (_transformHandle.axes == HandleAxes.XY ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                new GameObject("ScalePlane.XY").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisY, Vector3.forward, new Color(0, 0, 1,.2f), handleShader);
+                new GameObject("ScalePlane.XY").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisY, Vector3.forward, new Color(0, 0, 1, 0.5f), handleShader);
             }
 
             if (_transformHandle.axes == HandleAxes.YZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                new GameObject("ScalePlane.YZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisY, _axisZ, Vector3.right, new Color(1, 0, 0, .2f), handleShader);
+                new GameObject("ScalePlane.YZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisY, _axisZ, Vector3.right, new Color(1, 0, 0, 0.5f), handleShader);
             }
 
             if (_transformHandle.axes == HandleAxes.XZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisZ, Vector3.up, new Color(0, 1, 0, .2f), handleShader);
+                new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisZ, Vector3.up, new Color(0, 1, 0, 0.5f), handleShader);
             }
 
             return this;

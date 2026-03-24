@@ -50,19 +50,19 @@ namespace RuntimeHandle
             if (_transformHandle.axes == HandleAxes.XY ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _planes.Add(new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, new Color(0, 0, 1,.2f), handleShader));
+                _planes.Add(new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, new Color(0, 0, 1, 0.5f), handleShader));
             }
 
             if (_transformHandle.axes == HandleAxes.YZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _planes.Add(new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, new Color(1, 0, 0, .2f), handleShader));
+                _planes.Add(new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, new Color(1, 0, 0, 0.5f), handleShader));
             }
 
             if (_transformHandle.axes == HandleAxes.XZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
-                _planes.Add(new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, new Color(0, 1, 0, .2f), handleShader));
+                _planes.Add(new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, new Color(0, 1, 0, 0.5f), handleShader));
             }
 
             return this;

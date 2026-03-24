@@ -41,9 +41,9 @@ namespace RuntimeHandle
             _handle = new GameObject("ScalePlane");
             _handle.transform.SetParent(transform, false);
             _handle.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
-            _handle.transform.localPosition = (_axis1 + _axis2) * .25f;
+            _handle.transform.localPosition = _axis1 + _axis2;
             _handle.AddComponent<MeshRenderer>().material = _material;
-            _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(.02f, .5f, 0.5f);
+            _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
             _handle.AddComponent<MeshCollider>();
 
             return this;
