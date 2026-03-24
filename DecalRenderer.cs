@@ -26,55 +26,44 @@ namespace SevenBoldPencil.WeaponCamo
 {
 	public class DecalRenderer
 	{
-		public Mesh Cube;
-		public int int_2 = Shader.PropertyToID("_NormalsCopy");
-		public CommandBuffer commandBuffer_1;
-		public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
-		public Dictionary<Camera, CommandBuffer> dictionary_2;
+		public static readonly int int_2 = Shader.PropertyToID("_NormalsCopy");
 
-		public DecalRenderer(Dictionary<string, ItemsWithDecals> itemsWithDecals)
+		public Mesh Cube;
+		public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        public Dictionary<Camera, string> WeaponPreviewCameras;
+		public Dictionary<Camera, CommandBuffer> CommandBuffers;
+
+		public DecalRenderer(Dictionary<string, ItemsWithDecals> itemsWithDecals, Dictionary<Camera, string> weaponPreviewCameras)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 			ItemsWithDecals = itemsWithDecals;
-			dictionary_2 = new();
+			WeaponPreviewCameras = weaponPreviewCameras;
+			CommandBuffers = new();
 			Camera.onPreCull += OnPreCullCameraRender;
 			Camera.onPreRender += OnPreCameraRender;
 		}
 
 		public void OnPreCullCameraRender(Camera currentCamera)
 		{
-			if (method_12(currentCamera))
+			if (method_12(currentCamera) && !CommandBuffers.ContainsKey(currentCamera))
 			{
-				// this code feels wrong
-				// we have single commandBuffer_1 attached to multiple cameras
-				// but then we null it, and create new one to assing it only to new camera? eh
-
-				commandBuffer_1 = null;
-				if (dictionary_2.ContainsKey(currentCamera))
-				{
-					commandBuffer_1 = dictionary_2[currentCamera];
-				}
-				else
-				{
-					commandBuffer_1 = new CommandBuffer();
-					commandBuffer_1.name = "Deferred decals Dynamic (Weapon Camo)";
-					currentCamera.AddCommandBuffer(CameraEvent.BeforeLighting, commandBuffer_1);
-					dictionary_2.Add(currentCamera, commandBuffer_1);
-				}
+				var commandBuffer = new CommandBuffer();
+				commandBuffer.name = "Deferred decals Dynamic (Weapon Camo)";
+				currentCamera.AddCommandBuffer(CameraEvent.BeforeLighting, commandBuffer);
+				CommandBuffers.Add(currentCamera, commandBuffer);
 			}
 		}
 
 		public void OnPreCameraRender(Camera currentCamera)
 		{
-			if (method_12(currentCamera) && dictionary_2.ContainsKey(currentCamera))
+			if (method_12(currentCamera) && CommandBuffers.TryGetValue(currentCamera, out var commandBuffer))
 			{
-				method_9(commandBuffer_1, currentCamera, method_10);
+				method_9(currentCamera, commandBuffer);
 			}
 		}
 
 		public bool method_12(Camera currentCamera)
 		{
-			// TODO limit to cameras that can actually see decals
 			if (!currentCamera)
 			{
 				return false;
@@ -92,10 +81,23 @@ namespace SevenBoldPencil.WeaponCamo
 				return false;
 			}
 
-			return true;
+			if (CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera)
+			{
+				return true;
+			}
+			if (currentCamera.CompareTag("OpticCamera"))
+			{
+				return true;
+			}
+			if (WeaponPreviewCameras.ContainsKey(currentCamera))
+			{
+				return true;
+			}
+
+			return false;
 		}
 
-		public void method_9(CommandBuffer buffer, Camera currentCamera, Action<Camera, CommandBuffer> drawFunc)
+		public void method_9(Camera currentCamera, CommandBuffer buffer)
 		{
 			buffer.Clear();
 			buffer.GetTemporaryRT(int_2, -1, -1);
@@ -111,14 +113,47 @@ namespace SevenBoldPencil.WeaponCamo
 				},
 				BuiltinRenderTextureType.CameraTarget
 			);
-			drawFunc(currentCamera, buffer);
+			DrawDecals(currentCamera, buffer);
 			buffer.ReleaseTemporaryRT(int_2);
 		}
 
-		public void method_10(Camera currentCamera, CommandBuffer buffer)
+		public void DrawDecals(Camera currentCamera, CommandBuffer buffer)
 		{
-			// thats the easiest way to deal with decal order
+			if (CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera)
+			{
+				DrawAllDecals(currentCamera, buffer);
+			}
+			if (currentCamera.CompareTag("OpticCamera"))
+			{
+				DrawAllDecals(currentCamera, buffer);
+			}
+			if (WeaponPreviewCameras.TryGetValue(currentCamera, out var itemId))
+			{
+				DrawDecalsOnItem(currentCamera, buffer, itemId);
+			}
+		}
+
+		private void DrawAllDecals(Camera currentCamera, CommandBuffer buffer)
+		{
+			// TODO some simple culling
 			foreach (var (_, itemsWithDecals) in ItemsWithDecals)
+			{
+				foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+				{
+					foreach (var decal in itemWithDecals.Decals)
+					{
+						if (decal)
+						{
+							buffer.DrawMesh(Cube, decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial);
+						}
+					}
+				}
+			}
+		}
+
+		private void DrawDecalsOnItem(Camera currentCamera, CommandBuffer buffer, string itemId)
+		{
+			if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
 			{
 				foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
 				{

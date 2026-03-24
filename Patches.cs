@@ -75,9 +75,8 @@ namespace SevenBoldPencil.WeaponCamo
         [PatchPostfix]
         public static void Postfix(WeaponPreview.Class3271 __instance)
         {
-			// this called when item preview or weapon customization screen is opened and fully initialized,
-			// but from here we dont know where item preview is used,
-			// so we can only spawn decals associated with this item
+			// this called when WeaponPreview is opened and fully initialized,
+			// WeaponPreview is used both by weapon modding screen and item overview
    			var weaponPreview = __instance.weaponPreview_0;
 			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
 			var item = _weaponPreview.item_0;
@@ -87,10 +86,12 @@ namespace SevenBoldPencil.WeaponCamo
 			}
 			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab))
 			{
+				var itemId = item.Id;
+				var camera = weaponPreview.WeaponPreviewCamera;
+
+				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId);
 				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
 				{
-					var itemId = item.Id;
-					var camera = weaponPreview.WeaponPreviewCamera;
 					Plugin.Instance.SetupCamoEditor(camera, itemId, weaponPrefab);
 				}
 			}
@@ -98,7 +99,7 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public static bool TryGetWeaponPrefab(WeaponPreview_Proxy weaponPreview, out WeaponPrefab weaponPrefab)
 		{
-			// it takes time to load gameobjects so if you ask too early they will be null
+			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview.gameObject_0;
 			if (itemGO && itemGO.TryGetComponent<WeaponPrefab>(out weaponPrefab))
 			{
@@ -131,6 +132,31 @@ namespace SevenBoldPencil.WeaponCamo
 		}
 	}
 
+	public class Patch_WeaponPreview_Hide : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPreview), nameof(WeaponPreview.Hide));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(WeaponPreview __instance)
+		{
+			var _weaponPreview = new WeaponPreview_Proxy(__instance);
+			var item = _weaponPreview.item_0;
+			if (item != null)
+			{
+				var camera = __instance.WeaponPreviewCamera;
+				if (camera)
+				{
+					Plugin.Instance.OnWeaponPreviewClosed(camera, item.Id);
+				}
+			}
+
+			return true;
+		}
+	}
+
 	public class Patch_WeaponModdingScreen_Show : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
@@ -141,12 +167,12 @@ namespace SevenBoldPencil.WeaponCamo
         [PatchPostfix]
         public static void Postfix(WeaponModdingScreen __instance, Item item, InventoryController inventoryController, CompoundItem[] collections)
 		{
-			// this is called when user pressed modify on weapon context menu
-			// we use this now because user can modify only weapons that he actually access to,
+			// this is called when user presses modify on weapon context menu
+			// we use modding screen because user can only modify weapons that he actually has access to,
 			// unlike trader guns, or guns in builds window
 			//
 			// if this method is called then next WeaponPreview.Class3271.method_1
-			// is guaranteed to be weapon preview for WeaponModdingScreen
+			// is guaranteed to be weapon preview for this WeaponModdingScreen
 
 			Plugin.Instance.IsCamoEditorWaitingForWeaponPreview = true;
 		}
@@ -217,7 +243,8 @@ namespace SevenBoldPencil.WeaponCamo
         [PatchPrefix]
         public static void Prefix(AssetPoolObject __instance)
 		{
-			// WeaponPrefab doesn't override OnDestroy, so we have to do it this way
+			// Some WeaponPrefabs return to pools, others simply get destroyed,
+			// notice WeaponPrefab doesn't override OnDestroy, so we have to do it this way
 			if (__instance is WeaponPrefab weaponPrefab)
 			{
 				var _weaponPrefab = new WeaponPrefab_Proxy(weaponPrefab);
@@ -241,7 +268,7 @@ namespace SevenBoldPencil.WeaponCamo
         [PatchPostfix]
         public static void Postfix(GClass3380 __instance, ref Item __result, Item originalItem)
 		{
-			// only weapons support for now, to not ddos hash tables
+			// only weapons support for now
 			if (originalItem is Weapon weapon)
 			{
 				Plugin.Instance.OnCloneItem(weapon.Id, __result.Id);

@@ -150,6 +150,7 @@ namespace SevenBoldPencil.WeaponCamo
         public Dictionary<string, Texture2D> LoadedDecalTextures; // TODO return ERROR texture if tries to get unknown texture
         public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         public Dictionary<string, string> Clones;
+        public Dictionary<Camera, string> WeaponPreviewCameras;
 
         private void Awake()
         {
@@ -167,11 +168,13 @@ namespace SevenBoldPencil.WeaponCamo
             CamoEditorResources = new(Bundle);
             ItemsWithDecals = new();
             Clones = new();
+            WeaponPreviewCameras = new();
 
-            DecalRenderer = new(ItemsWithDecals);
+            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras);
 
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
+            new Patch_WeaponPreview_Hide().Enable();
             new Patch_WeaponModdingScreen_Show().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
@@ -205,6 +208,9 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // hear me out: we can place 3D models as decorations on guns and equipment!
+
+            // TODO
+            // it doesnt work without Unity Explorer enabled, cursor glitches out
         }
 
         // TODO
@@ -694,6 +700,7 @@ namespace SevenBoldPencil.WeaponCamo
                 };
 
                 ItemsWithDecals.Add(camoEditor.ItemId, itemsWithDecals);
+                WeaponPreviewCameras.Add(camoEditor.Camera, camoEditor.ItemId);
 
                 return 0;
             }
@@ -804,6 +811,21 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             return itemId;
+        }
+
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId)
+        {
+			Logger.LogWarning($"OnWeaponPreviewOpened: {itemId}");
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+            }
+        }
+
+        public void OnWeaponPreviewClosed(Camera weaponPreviewCamera, string itemId)
+        {
+			Logger.LogWarning($"OnWeaponPreviewClosed: {itemId}");
+            WeaponPreviewCameras.Remove(weaponPreviewCamera);
         }
 
         public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab)
