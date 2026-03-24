@@ -1,3 +1,4 @@
+using SevenBoldPencil.Common;
 using System;
 using UnityEngine;
 
@@ -16,7 +17,7 @@ namespace RuntimeHandle
         {
             _transformHandle = transformHandle;
             _axis = axis;
-            _defaultColor = color;
+            _defaultColor = color.WithAlpha(0.5f);
 
             InitializeMaterial(handleShader);
 

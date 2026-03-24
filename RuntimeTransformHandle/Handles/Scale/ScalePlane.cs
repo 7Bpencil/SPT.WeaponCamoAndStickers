@@ -5,6 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -26,7 +27,7 @@ namespace RuntimeHandle
         public ScalePlane Initialize(RuntimeTransformHandle transformHandle, ScaleHandle scaleHandle, ScaleAxis axis1, ScaleAxis axis2, Vector3 perp, Color color, Shader handleShader)
         {
             _transformHandle = transformHandle;
-            _defaultColor = color;
+            _defaultColor = color.WithAlpha(0.5f);
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
             _perp = perp;

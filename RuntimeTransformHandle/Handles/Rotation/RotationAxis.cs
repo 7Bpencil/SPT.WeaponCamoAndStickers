@@ -1,3 +1,4 @@
+using SevenBoldPencil.Common;
 using System;
 using UnityEngine;
 
@@ -21,7 +22,7 @@ namespace RuntimeHandle
         public RotationAxis Initialize(RuntimeTransformHandle transformHandle, RotationHandle rotationHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
         {
             _transformHandle = transformHandle;
-            _defaultColor = color;
+            _defaultColor = color.WithAlpha(0.5f);
 
 			_rotationHandle = rotationHandle.transform;
 

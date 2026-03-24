@@ -1,3 +1,4 @@
+using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -17,7 +18,7 @@ namespace RuntimeHandle
         public PositionPlane Initialize(RuntimeTransformHandle transformHandle, PositionHandle positionHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
         {
             _transformHandle = transformHandle;
-            _defaultColor = color;
+            _defaultColor = color.WithAlpha(0.5f);
             _axis1 = axis1;
             _axis2 = axis2;
             _perp = perp;
