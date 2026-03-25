@@ -231,9 +231,8 @@ namespace SevenBoldPencil.WeaponCamo
             var resultDict = new Dictionary<string, Texture2D>();
 
             {
-                var defaultTexture = bundle.LoadAsset<Texture2D>($"Assets/WeaponCamo/Images/{DefaultTextureName}.png");
                 resultList.Add(DefaultTextureName);
-                resultDict.Add(DefaultTextureName, defaultTexture);
+                resultDict.Add(DefaultTextureName, Texture2D.whiteTexture);
             }
 
             foreach (var filePath in filePaths)

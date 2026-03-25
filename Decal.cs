@@ -64,7 +64,7 @@ namespace SevenBoldPencil.WeaponCamo
 			if (loadedDecalTextures.TryGetValue(decalInfo.Texture, out var diffuse))
 			{
 	            DecalMaterial.SetTexture("_MainTex", diffuse);
-	            // DecalMaterial.SetTexture("_BumpMap", bump);
+	            DecalMaterial.SetTexture("_BumpMap", Texture2D.normalTexture);
 			}
             DecalMaterial.color = decalInfo.Color;
             DecalMaterial.SetFloat(_MaxAngle, decalInfo.MaxAngle);
