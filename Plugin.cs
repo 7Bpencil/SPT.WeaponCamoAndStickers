@@ -317,6 +317,7 @@ namespace SevenBoldPencil.WeaponCamo
         private const float boxMargin = 3;
         private const float nameWidth = 120;
         private const float longFieldWidth = 60;
+        private const float fixTransformButtonWidth = 110;
 
         public void OnGUI()
         {
@@ -464,12 +465,40 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     SetupTransformHandle(camoEditor, HandleType.POSITION, decalIndex, decal);
                 }
+                {
+                    var valueX = x + smallIconSize + iconSeparator + 7;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localPosition.x:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localPosition.y:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localPosition.z:F3}", CamoEditorResources.LabelStyleName);
+                }
                 columnY += smallIconSize + iconSeparator;
+
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditRotationIcon))
                 {
-                    // TODO add button to match camera rotation
                     SetupTransformHandle(camoEditor, HandleType.ROTATION, decalIndex, decal);
+                }
+                {
+                    var valueX = x + smallIconSize + iconSeparator + 7;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localEulerAngles.x:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localEulerAngles.y:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localEulerAngles.z:F3}", CamoEditorResources.LabelStyleName);
+                }
+                {
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "round to degree"))
+                    {
+                        RoundLocalEulerAnglesToDegree(camoEditor, decalIndex);
+                    }
                 }
                 columnY += smallIconSize + iconSeparator;
 
@@ -477,10 +506,22 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     SetupTransformHandle(camoEditor, HandleType.SCALE, decalIndex, decal);
                 }
-                var fixAspectRatioX = x + smallIconSize + iconSeparator;
-                if (GUI.Button(new Rect(fixAspectRatioX, columnY, 100, smallIconSize), "fix aspect ratio"))
                 {
-                    FixAspectRatio(camoEditor, decalIndex);
+                    var valueX = x + smallIconSize + iconSeparator + 7;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localScale.x:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localScale.y:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localScale.z:F3}", CamoEditorResources.LabelStyleName);
+                }
+                {
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "fix aspect ratio"))
+                    {
+                        FixAspectRatio(camoEditor, decalIndex);
+                    }
                 }
                 columnY += smallIconSize + iconSeparator;
 
@@ -495,7 +536,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             {
-                var sliderWidth = 160;
+                var sliderWidth = 212;
 
                 var labelX = x;
                 var sliderX = labelX + nameWidth + iconSeparator - 42;
@@ -715,6 +756,21 @@ namespace SevenBoldPencil.WeaponCamo
 
                 return 0;
             }
+        }
+
+        public void RoundLocalEulerAnglesToDegree(CamoEditor camoEditor, int decalIndex)
+        {
+            var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
+
+            decalInfo.LocalEulerAngles.x = MathF.Round(decalInfo.LocalEulerAngles.x);
+            decalInfo.LocalEulerAngles.y = MathF.Round(decalInfo.LocalEulerAngles.y);
+            decalInfo.LocalEulerAngles.z = MathF.Round(decalInfo.LocalEulerAngles.z);
+
+            ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+            {
+                decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
+            });
         }
 
         public void FixAspectRatio(CamoEditor camoEditor, int decalIndex)
