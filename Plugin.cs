@@ -195,18 +195,12 @@ namespace SevenBoldPencil.WeaponCamo
             // add color picker
 
             // TODO
-            // add support for non square decal textures
-
-            // TODO
             // maybe apply camo texture on top of diffuse texture?
 
             // TODO
             // we can save items as jsons in assets/items/ each item separate file with name=item.Id
             // we can save presets as jsons in assets/presets/ each preset separate file with name=preset name (with support for subfolders)
             // show presets per weapon template (Item.TemplateId?)
-
-            // TODO
-            // add reset rotation button
 
             // TODO
             // hear me out: we can place 3D models as decorations on guns and equipment!
