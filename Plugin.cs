@@ -546,9 +546,17 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void SetupTransformHandle(CamoEditor camoEditor, HandleType handleType, int decalIndex, Decal decal)
         {
-            if (!camoEditor.TransformHandle)
+            if (camoEditor.TransformHandle)
             {
-                camoEditor.TransformHandle = RuntimeTransformHandle.Create(
+                if (camoEditor.TransformHandle.type == handleType)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                camoEditor.TransformHandle = RuntimeTransformHandle.Create
+                (
                     decal.DecalTransform,
                     camoEditor.Camera,
                     CamoEditorResources.PositionHandleShader,
@@ -558,6 +566,7 @@ namespace SevenBoldPencil.WeaponCamo
 
                 camoEditor.TransformHandle.OnEndedDraggingHandle += () => OnEndedDraggingHandle(camoEditor, decalIndex);
             }
+
             camoEditor.TransformHandle.SetHandleMode(handleType);
 			TransformHelperClass.SetLayersRecursively(camoEditor.TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
