@@ -66,7 +66,7 @@ namespace SevenBoldPencil.WeaponCamo
 	            DecalMaterial.SetTexture("_MainTex", diffuse);
 	            // DecalMaterial.SetTexture("_BumpMap", bump);
 			}
-            DecalMaterial.color = new Color(1, 1, 1, decalInfo.Opacity);
+            DecalMaterial.color = decalInfo.Color;
             DecalMaterial.SetFloat(_MaxAngle, decalInfo.MaxAngle);
 		}
 
@@ -76,9 +76,9 @@ namespace SevenBoldPencil.WeaponCamo
             DecalMaterial.SetTexture("_BumpMap", bump);
         }
 
-        public void ChangeOpacity(float opacity)
+        public void ChangeColor(Color color)
         {
-            DecalMaterial.color = new Color(1, 1, 1, opacity);
+            DecalMaterial.color = color;
         }
 
         public void ChangeMaxAngle(float maxAngle)

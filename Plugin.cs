@@ -44,10 +44,10 @@ namespace SevenBoldPencil.WeaponCamo
     public class DecalInfo
     {
         public string Texture;
+        public Color Color; // TODO make full color picker, I am too tired rn
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
-        public float Opacity;
         public float MaxAngle;
 
         public DecalInfo GetCopy()
@@ -211,6 +211,9 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // it doesnt work without Unity Explorer enabled, cursor glitches out
+
+            // TODO
+            // are gifs possible?
         }
 
         // TODO
@@ -483,18 +486,18 @@ namespace SevenBoldPencil.WeaponCamo
                 GUI.Label(new Rect(lineX, y, nameWidth, buttonHeight), "Opacity:", CamoEditorResources.LabelStyleName);
                 lineX += nameWidth + iconSeparator - 42;
 
-                var newOpacity = GUI.HorizontalSlider(new Rect(lineX, y + 11, sliderWidth, buttonHeight), decalInfo.Opacity, 0f, 1f);
-                if (newOpacity != decalInfo.Opacity)
+                var newAlpha = GUI.HorizontalSlider(new Rect(lineX, y + 11, sliderWidth, buttonHeight), decalInfo.Color.a, 0f, 1f);
+                if (newAlpha != decalInfo.Color.a)
                 {
-                    decalInfo.Opacity = newOpacity;
+                    decalInfo.Color = decalInfo.Color.WithAlpha(newAlpha);
                     ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
                     {
-                        decal.ChangeOpacity(newOpacity);
+                        decal.ChangeColor(decalInfo.Color);
                     });
                 }
                 lineX += sliderWidth + iconSeparator;
 
-                GUI.Label(new Rect(lineX, y, longFieldWidth, buttonHeight), $"{decalInfo.Opacity:F3}", CamoEditorResources.LabelStyleValue);
+                GUI.Label(new Rect(lineX, y, longFieldWidth, buttonHeight), $"{decalInfo.Color.a:F3}", CamoEditorResources.LabelStyleValue);
                 lineX += longFieldWidth + iconSeparator;
 
                 y += buttonHeight + iconSeparator;
@@ -662,10 +665,10 @@ namespace SevenBoldPencil.WeaponCamo
             var decalInfo = new DecalInfo()
             {
                 Texture = DefaultTextureName,
+                Color = Color.white,
                 LocalPosition = typicalRifleCenter,
                 LocalEulerAngles = Decal.LeftSideDecalRotation,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
-                Opacity = 1f,
                 MaxAngle = 0.8f,
             };
 
