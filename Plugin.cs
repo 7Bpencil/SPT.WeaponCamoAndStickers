@@ -24,6 +24,8 @@ using RuntimeHandle;
 using UnityEngine;
 using UnityEngine.Rendering;
 
+// TODO by default give only camos and eft stickers, others are addons
+
 namespace SevenBoldPencil.WeaponCamo
 {
     public class ItemsWithDecals
@@ -302,7 +304,7 @@ namespace SevenBoldPencil.WeaponCamo
         }
 
         private const float start = 23;
-        private const float windowWidth = 410; // TODO adjust to 5 icons width
+        private const float windowWidth = margin + (iconSize + iconSeparator) * iconColumns - iconSeparator + margin; // TODO adjust to 5 icons width
         private const float buttonHeight = 30;
         private const float buttonSeparator = 4;
         private const float margin = 14;
@@ -474,13 +476,12 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditScaleIcon))
                 {
-                    // TODO add scale plane handles
                     SetupTransformHandle(camoEditor, HandleType.SCALE, decalIndex, decal);
                 }
             }
 
             {
-                var sliderWidth = 200;
+                var sliderWidth = 160;
                 var lineX = x + smallIconSize+ margin;
 
                 GUI.Label(new Rect(lineX, y, nameWidth, buttonHeight), "Opacity:", CamoEditorResources.LabelStyleName);
@@ -504,7 +505,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             {
-                var sliderWidth = 200;
+                var sliderWidth = 160;
                 var lineX = x + smallIconSize + margin;
 
                 GUI.Label(new Rect(lineX, y, nameWidth, buttonHeight), "MaxAngle:", CamoEditorResources.LabelStyleName);
@@ -529,7 +530,7 @@ namespace SevenBoldPencil.WeaponCamo
 
             {
                 var lineX = x + smallIconSize + margin;
-                GUI.DrawTexture(new Rect(lineX, y, iconSize, iconSize), texture);
+                GUI.Button(new Rect(lineX, y, iconSize, iconSize), texture);
 
                 lineX += iconSize + iconSeparator + 12;
                 GUI.Label(new Rect(lineX, y + 1, 256, smallIconSize), decalInfo.Texture, CamoEditorResources.TextureNameStyle);
