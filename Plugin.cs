@@ -46,7 +46,7 @@ namespace SevenBoldPencil.WeaponCamo
     public class DecalInfo
     {
         public string Texture;
-        public Color Color; // TODO make full color picker, I am too tired rn
+        public Color Color; // TODO make full color picker, but I am too tired rn
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
@@ -66,7 +66,7 @@ namespace SevenBoldPencil.WeaponCamo
         public string ItemId;
         public int InstanceID;
         public Transform DecalsRoot;
-        public bool IsVisible;
+        public bool IsOpened;
         public Option<int> CurrentlyEditedDecalIndex;
         public RuntimeTransformHandle TransformHandle;
 		public Rect WindowRect;
@@ -77,6 +77,10 @@ namespace SevenBoldPencil.WeaponCamo
         public Shader PositionHandleShader;
         public Shader RotationHandleShader;
         public Shader ScaleHandleShader;
+
+        public Texture2D MainIcon;
+        public Texture2D ClosedIcon;
+        public Texture2D OpenedIcon;
         public Texture2D MoveUpIcon;
         public Texture2D MoveDownIcon;
         public Texture2D EditPositionIcon;
@@ -118,6 +122,10 @@ namespace SevenBoldPencil.WeaponCamo
             PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/HandleShader.shader");
             RotationHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/AdvancedHandleShader.shader");
             ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/HandleShader.shader");
+
+            MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/color-palette.png");
+            ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/closed-arrow.png");
+            OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/opened-arrow.png");
             MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/up-arrow.png");
             MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/down-arrow.png");
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Move-Icon.png");
@@ -136,8 +144,6 @@ namespace SevenBoldPencil.WeaponCamo
         public static Plugin Instance;
 
 		public ManualLogSource LoggerInstance;
-
-        public static ConfigEntry<KeyboardShortcut> ShowHideCamoEditor;
 
         public DecalRenderer DecalRenderer;
         public Option<CamoEditor> CamoEditor;
@@ -158,8 +164,6 @@ namespace SevenBoldPencil.WeaponCamo
         {
             Instance = this;
 			LoggerInstance = Logger;
-
-            ShowHideCamoEditor = Config.Bind("Main", "Show/Hide Camo Editor", new KeyboardShortcut(KeyCode.F4), "Show/Hide Camo Editor");
 
             AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
@@ -210,6 +214,9 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // are gifs possible?
+
+            // TODO
+            // move pivot point from center to face (in shaders + gizmo, transfor)
         }
 
         // TODO
@@ -258,14 +265,6 @@ namespace SevenBoldPencil.WeaponCamo
             return (resultList, resultDict);
         }
 
-		public void Update()
-		{
-            if (Input.GetKeyDown(ShowHideCamoEditor.Value.MainKey) && CamoEditor.Some(out var camoEditor))
-            {
-                camoEditor.IsVisible = !camoEditor.IsVisible;
-            }
-		}
-
         public void LateUpdate()
         {
             if (CamoEditor.Some(out var camoEditor) &&
@@ -296,12 +295,13 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private const float start = 23;
-        private const float windowWidth = margin + (iconSize + iconSeparator) * iconColumns - iconSeparator + margin; // TODO adjust to 5 icons width
+        private const float startX = 25;
+        private const float startY = 19;
+        private const float windowWidth = margin + (iconSize + iconSeparator) * iconColumns - iconSeparator + margin;
         private const float buttonHeight = 30;
         private const float buttonSeparator = 4;
         private const float margin = 14;
-        private const float startMarginY = 15 + margin;
+        private const float decalSeparator = 8;
         private const float iconSize = 66;
         private const float iconSeparator = 3;
         private const float smallIconSize = (iconSize - iconSeparator) / 2;
@@ -312,23 +312,53 @@ namespace SevenBoldPencil.WeaponCamo
         private const float nameWidth = 120;
         private const float longFieldWidth = 60;
         private const float fixTransformButtonWidth = 110;
+        private const float openCloseButtonWidth = 22;
+        private const float openCloseButtonHeight = 66;
+        private Rect openCloseButtonIconRect = new(2, 3, 18, 61);
+        private const float mainIconWidth = 62;
+        private Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
+
+        private void DrawColor(Rect rect, Color color)
+        {
+            GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, color, 0, 0);
+        }
 
         public void OnGUI()
         {
-            if (CamoEditor.Some(out var camoEditor) && camoEditor.IsVisible)
+            if (CamoEditor.Some(out var camoEditor))
             {
-    			// if width == 0, then windowRect has not been initialized, so init it
-    			ref var windowRect = ref camoEditor.WindowRect;
-    			if (windowRect.width == 0f)
-    			{
-    				windowRect.width = windowWidth;
-    				windowRect.x = start;
-    				windowRect.y = start;
-    			}
+                if (camoEditor.IsOpened)
+                {
+        			ref var windowRect = ref camoEditor.WindowRect;
+    				windowRect.height = CalculateWindowHeight(camoEditor);
+                    windowRect = GUI.Window(1, windowRect, DrawOpenedWindow, GUIContent.none);
 
-				windowRect.height = CalculateWindowHeight(camoEditor);
-                windowRect = GUI.Window(1, windowRect, WindowFunction, $"Camo Editor");
+                    var closeButtonWindowRect = new Rect(windowRect.xMax, windowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                }
+                else
+                {
+        			ref var windowRect = ref camoEditor.WindowRect;
+                    windowRect = GUI.Window(1, windowRect, DrawClosedWindow, GUIContent.none);
+                }
             }
+        }
+
+        private void DrawClosedWindow(int windowID)
+        {
+            var camoEditor = CamoEditor.Value;
+
+            DrawColor(new Rect(0, 0, mainIconWidth + openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            GUI.DrawTexture(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), CamoEditorResources.MainIcon, ScaleMode.StretchToFill);
+            GUI.DrawTexture(new Rect(mainIconWidth + openCloseButtonIconRect.x, openCloseButtonIconRect.y, openCloseButtonIconRect.width, openCloseButtonIconRect.height), CamoEditorResources.ClosedIcon, ScaleMode.StretchToFill);
+            if (GUI.Button(new Rect(mainIconWidth, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
+            {
+    			ref var windowRect = ref camoEditor.WindowRect;
+                camoEditor.IsOpened = true;
+				windowRect.width = windowWidth;
+            }
+
+			GUI.DragWindow();
         }
 
         private float CalculateWindowHeight(CamoEditor camoEditor)
@@ -339,10 +369,10 @@ namespace SevenBoldPencil.WeaponCamo
             }
             else
             {
-                var height = startMarginY;
+                var height = margin;
                 if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
                 {
-                    height += itemsWithDecals.DecalsInfo.Count * (boxHeight + 8);
+                    height += itemsWithDecals.DecalsInfo.Count * (boxHeight + decalSeparator);
                 }
 
                 height += buttonHeight;
@@ -352,11 +382,11 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private void WindowFunction(int windowID)
+        private void DrawOpenedWindow(int windowID)
 		{
-            // TODO add small handle at the top right side of the window to collapse/expand it
             var camoEditor = CamoEditor.Value;
 
+            DrawColor(new Rect(0, 0, camoEditor.WindowRect.width, camoEditor.WindowRect.height), backgroundColor);
             if (camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex))
             {
                 DrawDecalEditUI(camoEditor, currentlyEditedDecalIndex);
@@ -369,10 +399,25 @@ namespace SevenBoldPencil.WeaponCamo
 			GUI.DragWindow();
         }
 
+        private void DrawOpenedWindowCloseButton(int windowID)
+        {
+            var camoEditor = CamoEditor.Value;
+
+            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIcon, ScaleMode.StretchToFill);
+            if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
+            {
+    			ref var windowRect = ref camoEditor.WindowRect;
+                camoEditor.IsOpened = false;
+				windowRect.width = mainIconWidth + openCloseButtonWidth;
+				windowRect.height = openCloseButtonHeight;
+            }
+        }
+
         public void DrawDecalsListUI(CamoEditor camoEditor)
         {
             var x = margin;
-            var y = startMarginY;
+            var y = margin;
 
             if (ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals))
             {
@@ -382,7 +427,7 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     var decalInfo = decalsInfo[i];
                     DrawDecalElementUI(camoEditor, x, y, i, decalInfo);
-                    y += boxHeight + 8;
+                    y += boxHeight + decalSeparator;
                 }
             }
 
@@ -443,7 +488,7 @@ namespace SevenBoldPencil.WeaponCamo
             var texture = LoadedDecalTextures[decalInfo.Texture];
 
             var x = margin;
-            var y = startMarginY;
+            var y = margin;
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
             {
@@ -570,7 +615,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
 
-            GUI.DrawTexture(new Rect(x, y, boxWidth, 2), Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, new Color(0.1f, 0.1f, 0.1f, 1f), 0, 0);
+            DrawColor(new Rect(x, y, boxWidth, 2), new Color(0.1f, 0.1f, 0.1f, 1f));
             y += 2 + margin;
 
             DrawAllTextures(camoEditor, x, y, decalIndex, decalInfo, itemsWithDecals);
@@ -919,7 +964,8 @@ namespace SevenBoldPencil.WeaponCamo
                 ItemId = itemId,
                 InstanceID = instanceID,
                 DecalsRoot = decalsRoot,
-                IsVisible = true,
+                IsOpened = false,
+                WindowRect = new(startX, startY, mainIconWidth + openCloseButtonWidth, openCloseButtonHeight)
             });
         }
 
