@@ -200,16 +200,12 @@ namespace SevenBoldPencil.WeaponCamo
             // does it mean we can make decals that will only apply on gun (and not hands and env)?
 
             // TODO
-            // add option to collapse decal settings
-
-            // TODO
             // add color picker
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
 
             // TODO
-            // we can save items as jsons in assets/items/ each item separate file with name=item.Id
             // we can save presets as jsons in assets/presets/ each preset separate file with name=preset name (with support for subfolders)
             // show presets per weapon template (Item.TemplateId?)
 
