@@ -70,6 +70,7 @@ namespace SevenBoldPencil.WeaponCamo
         public Transform DecalsRoot;
         public bool IsOpened;
         public Option<int> CurrentlyEditedDecalIndex;
+        public Vector2 TexturesScrollPosition;
         public RuntimeTransformHandle TransformHandle;
 		public Rect WindowRect;
     }
@@ -334,6 +335,7 @@ namespace SevenBoldPencil.WeaponCamo
         private const float iconSeparator = 3;
         private const float smallIconSize = (iconSize - iconSeparator) / 2;
         private const int iconColumns = 5;
+        private const int maxIconRows = 5;
         private const float boxWidth = windowWidth - margin * 2;
         private const float boxHeight = iconSize + boxMargin * 2;
         private const float boxMargin = 3;
@@ -345,6 +347,7 @@ namespace SevenBoldPencil.WeaponCamo
         private Rect openCloseButtonIconRect = new(2, 3, 18, 61);
         private const float mainIconWidth = 62;
         private Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
+        private Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
 
         private void DrawColor(Rect rect, Color color)
         {
@@ -393,7 +396,17 @@ namespace SevenBoldPencil.WeaponCamo
         {
             if (camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex))
             {
-                return 600 + iconSize + margin;
+                var totalRows = DivideIntRoundUp(LoadedDecalTexturesList.Count, iconColumns);
+                var visibleRows = Math.Min(totalRows, maxIconRows);
+                var visibleHeight = visibleRows * (iconSize + iconSeparator) + iconSize / 2;
+                return
+                    margin + buttonHeight + margin +
+                    3 * (smallIconSize + iconSeparator) +
+                    iconSize + iconSeparator +
+                    2 * (buttonHeight + iconSeparator) +
+                    4 + margin +
+                    visibleHeight +
+                    margin;
             }
             else
             {
@@ -642,9 +655,8 @@ namespace SevenBoldPencil.WeaponCamo
                 y = maxAngleY + buttonHeight + iconSeparator;
             }
 
-
-            DrawColor(new Rect(x, y, boxWidth, 2), new Color(0.1f, 0.1f, 0.1f, 1f));
-            y += 2 + margin;
+            DrawColor(new Rect(x, y, boxWidth, 4), separatorColor);
+            y += 4 + margin;
 
             DrawAllTextures(camoEditor, x, y, decalIndex, decalInfo, itemsWithDecals);
         }
@@ -704,6 +716,28 @@ namespace SevenBoldPencil.WeaponCamo
 
         private void DrawAllTextures(CamoEditor camoEditor, float x, float y, int decalIndex, DecalInfo decalInfo, ItemsWithDecals itemsWithDecals)
         {
+            var totalRows = DivideIntRoundUp(LoadedDecalTexturesList.Count, iconColumns);
+            var visibleRows = Math.Min(totalRows, maxIconRows);
+            var totalHeight = totalRows * (iconSize + iconSeparator) - iconSeparator;
+            var visibleHeight = visibleRows * (iconSize + iconSeparator) + iconSize / 2;
+            var totalRect = new Rect(x, y, boxWidth, totalHeight);
+            var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
+
+            // render my own vertical scroll bar because unity's one is cannot be set slimmer than 15 px...
+            if (totalRows > visibleRows)
+            {
+                var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
+                var handlePositionT = camoEditor.TexturesScrollPosition.y / (float)totalHeight;
+                var handlePosition = handlePositionT * visibleHeight;
+                var scrollBarWidth = 4;
+                var scrollBarX = x + boxWidth + 5;
+                var handleColor = new Color32(183, 195, 202, 255);
+                DrawColor(new Rect(scrollBarX, y, scrollBarWidth, visibleHeight), separatorColor);
+                DrawColor(new Rect(scrollBarX, y + handlePosition, scrollBarWidth, handleHeight), handleColor);
+            }
+
+            camoEditor.TexturesScrollPosition = GUI.BeginScrollView(visibleRect, camoEditor.TexturesScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
             for (var i = 0; i < LoadedDecalTexturesList.Count; i++)
             {
                 var textureName = LoadedDecalTexturesList[i];
@@ -728,6 +762,12 @@ namespace SevenBoldPencil.WeaponCamo
                     }
                 }
             }
+            GUI.EndScrollView();
+        }
+
+        private static int DivideIntRoundUp(int left, int right)
+        {
+            return (left + right - 1) / right;
         }
 
         public int Duplicate(CamoEditor camoEditor, int decalIndex)
