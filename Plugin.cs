@@ -154,6 +154,7 @@ namespace SevenBoldPencil.WeaponCamo
         public bool IsCamoEditorWaitingForWeaponPreview;
 
         public string AssemblyDir;
+        public string UserDir;
         public string DecalTexturesDir;
         public string ItemsDir;
         public string PresetsDir;
@@ -171,9 +172,10 @@ namespace SevenBoldPencil.WeaponCamo
 			LoggerInstance = Logger;
 
             AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
-            ItemsDir = Path.Combine(AssemblyDir, "assets", "items");
-            PresetsDir = Path.Combine(AssemblyDir, "assets", "presets");
+            UserDir = Path.Combine(AssemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamo");
+            DecalTexturesDir = Path.Combine(UserDir, "textures");
+            ItemsDir = Path.Combine(UserDir, "items");
+            PresetsDir = Path.Combine(UserDir, "presets");
 			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
             Bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
