@@ -275,4 +275,23 @@ namespace SevenBoldPencil.WeaponCamo
 			}
 		}
 	}
+
+	public class Patch_GClass2304_smethod_0 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(GClass2304), nameof(GClass2304.smethod_0));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(GClass2304 __instance, bool isCursorVisible)
+		{
+			if (!isCursorVisible)
+			{
+				return Plugin.Instance.CanHideCursor();
+			}
+
+			return true;
+		}
+	}
 }

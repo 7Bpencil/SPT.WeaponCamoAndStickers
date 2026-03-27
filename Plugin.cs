@@ -187,6 +187,7 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_WeaponPrefab_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_CloneItem().Enable();
+            new Patch_GClass2304_smethod_0().Enable();
 
             // TODO
             // seems like decals are not drawing on gun (because of stencil?)
@@ -210,13 +211,10 @@ namespace SevenBoldPencil.WeaponCamo
             // hear me out: we can place 3D models as decorations on guns and equipment!
 
             // TODO
-            // it doesnt work without Unity Explorer enabled, cursor glitches out
-
-            // TODO
             // are gifs possible?
 
             // TODO
-            // move pivot point from center to face (in shaders + gizmo, transfor)
+            // move pivot point from center to face (in shaders + gizmo, not transform)
         }
 
         // TODO
@@ -973,9 +971,28 @@ namespace SevenBoldPencil.WeaponCamo
         {
             if (CamoEditor.Some(out var camoEditor) &&
                 camoEditor.ItemId == itemId &&
-                camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) &&
+                camoEditor.CurrentlyEditedDecalIndex.HasValue &&
                 camoEditor.TransformHandle)
             {
+                // its annoying to tune decal placement
+                // while gun is rotating on every mouse
+                // movement, so disable rotation
+                return !camoEditor.TransformHandle.IsDragging;
+            }
+
+            return true;
+        }
+
+        public bool CanHideCursor()
+        {
+            if (CamoEditor.Some(out var camoEditor) &&
+                camoEditor.CurrentlyEditedDecalIndex.HasValue &&
+                camoEditor.TransformHandle)
+            {
+                // game hides cursor and resets it to the center,
+                // when player drags in weapon modding screen, which
+                // fucks up dragging transform handles,
+                //  so keep cursor visible
                 return !camoEditor.TransformHandle.IsDragging;
             }
 
