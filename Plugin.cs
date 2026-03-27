@@ -47,6 +47,7 @@ namespace SevenBoldPencil.WeaponCamo
     {
         public string Texture;
         public Color Color; // TODO make full color picker, but I am too tired rn
+        public Vector4 UV;
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
@@ -752,6 +753,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 Texture = DefaultTextureName,
                 Color = Color.white,
+                UV = new Vector4(0, 0, 1, 1),
                 LocalPosition = typicalRifleCenter,
                 LocalEulerAngles = Decal.LeftSideDecalRotation,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),

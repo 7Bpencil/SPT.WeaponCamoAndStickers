@@ -43,10 +43,8 @@ namespace SevenBoldPencil.WeaponCamo
 			// TODO add ability to change uvStartEnd (tiling)
 			// set as repeating, so it stays the same on vertical,
 			// but gets cropped/multiplied on horizontal
-			var uvStartEnd = new Vector4(0, 0, 1, 1);
 
 			DecalMaterial = new Material(shader);
-			DecalMaterial.SetVector(_UvStartEnd, uvStartEnd);
 			DecalMaterial.SetFloat(_NormalPower, 3);
 			DecalMaterial.SetColor(_SpecularColor, new Color(0, 0, 0, 1));
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
@@ -67,6 +65,7 @@ namespace SevenBoldPencil.WeaponCamo
 	            DecalMaterial.SetTexture("_BumpMap", Texture2D.normalTexture);
 			}
             DecalMaterial.color = decalInfo.Color;
+			DecalMaterial.SetVector(_UvStartEnd, decalInfo.UV);
             DecalMaterial.SetFloat(_MaxAngle, decalInfo.MaxAngle);
 		}
 
@@ -80,6 +79,11 @@ namespace SevenBoldPencil.WeaponCamo
         {
             DecalMaterial.color = color;
         }
+
+		public void ChangeUV(Vector4 uv)
+		{
+			DecalMaterial.SetVector(_UvStartEnd, uv);
+		}
 
         public void ChangeMaxAngle(float maxAngle)
         {
