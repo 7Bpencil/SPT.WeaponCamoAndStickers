@@ -13,6 +13,7 @@ using DeferredDecals;
 using EFT;
 using EFT.Ballistics;
 using EFT.UI.WeaponModding;
+using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
 using System.IO;
@@ -153,6 +154,8 @@ namespace SevenBoldPencil.WeaponCamo
 
         public string AssemblyDir;
         public string DecalTexturesDir;
+        public string ItemsDir;
+        public string PresetsDir;
         public AssetBundle Bundle;
         public Shader DecalShader;
         public List<string> LoadedDecalTexturesList;
@@ -168,12 +171,14 @@ namespace SevenBoldPencil.WeaponCamo
 
             AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             DecalTexturesDir = Path.Combine(AssemblyDir, "assets", "images");
+            ItemsDir = Path.Combine(AssemblyDir, "assets", "items");
+            PresetsDir = Path.Combine(AssemblyDir, "assets", "presets");
 			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
             Bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
             (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, Bundle);
             CamoEditorResources = new(Bundle);
-            ItemsWithDecals = new();
+            ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
             WeaponPreviewCameras = new();
 
@@ -238,7 +243,7 @@ namespace SevenBoldPencil.WeaponCamo
             foreach (var filePath in filePaths)
             {
                 var extension = Path.GetExtension(filePath);
-                if (!(extension == ".png" || extension == ".jpg"))
+                if (extension != ".png") // maybe we will support gif one day?
                 {
                     continue;
                 }
@@ -250,7 +255,8 @@ namespace SevenBoldPencil.WeaponCamo
                     var name = filePath
                         .Replace(directoryPath, "")
                         .Replace(extension, "")
-                        .Remove(0, 1); // remove first slash
+                        .Remove(0, 1) // remove first slash
+                        .Replace(@"\", @"/"); // replace windows slashes with unix ones
 
                     resultList.Add(name);
                     resultDict.Add(name, texture);
@@ -262,6 +268,33 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             return (resultList, resultDict);
+        }
+
+        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                return new();
+            }
+
+            var filePaths = Directory.GetFiles(directoryPath, "*.json");
+            var result = new Dictionary<string, ItemsWithDecals>();
+
+            foreach (var filePath in filePaths)
+            {
+                var itemId = Path.GetFileNameWithoutExtension(filePath);
+                var json = File.ReadAllText(filePath);
+                var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                var itemsWithDecals = new ItemsWithDecals()
+                {
+                    Items = new(),
+                    DecalsInfo = decalsInfo,
+                };
+
+                result.Add(itemId, itemsWithDecals);
+            }
+
+            return result;
         }
 
         public void LateUpdate()
@@ -1043,15 +1076,23 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void WriteDecalsToFile(string itemId, List<DecalInfo> decalsInfo)
         {
-            // TODO
-            // dump decalsInfo on disk
-            // create if doesnt exist, rewrite if does
-            // assets/items/itemId.json
+            var fileInfo = GetItemFileInfo(itemId);
+            var json = JsonConvert.SerializeObject(decalsInfo, Formatting.Indented);
+            Directory.CreateDirectory(fileInfo.Directory.FullName);
+            File.WriteAllText(fileInfo.FullName, json);
         }
 
         public void RemoveDecalsFile(string itemId)
         {
-            // TODO
+            var fileInfo = GetItemFileInfo(itemId);
+            File.Delete(fileInfo.FullName);
+        }
+
+        public FileInfo GetItemFileInfo(string itemId)
+        {
+            var fileName = $"{itemId}.json";
+            var filePath = Path.Combine(ItemsDir, fileName);
+            return new FileInfo(filePath);
         }
     }
 }
