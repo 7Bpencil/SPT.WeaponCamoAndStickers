@@ -987,15 +987,13 @@ namespace SevenBoldPencil.WeaponCamo
 
         public bool CanHideCursor()
         {
-            if (CamoEditor.Some(out var camoEditor) &&
-                camoEditor.CurrentlyEditedDecalIndex.HasValue &&
-                camoEditor.TransformHandle)
+            if (CamoEditor.Some(out var camoEditor))
             {
                 // game hides cursor and resets it to the center,
                 // when player drags in weapon modding screen, which
-                // fucks up dragging transform handles,
-                //  so keep cursor visible
-                return !camoEditor.TransformHandle.IsDragging;
+                // fucks up dragging transform handles and sliders,
+                // so keep cursor visible
+                return !camoEditor.IsOpened;
             }
 
             return true;
