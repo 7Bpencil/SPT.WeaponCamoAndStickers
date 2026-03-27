@@ -482,7 +482,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             var labelX = textureIconX + iconSize + iconSeparator + 2;
-            GUI.Label(new Rect(labelX, topLineY + 1, 270, iconSize), decalInfo.Texture, CamoEditorResources.TextureNameStyle);
+            GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalInfo.Texture, CamoEditorResources.TextureNameStyle);
 
             var deleteX = x + boxWidth - (iconSeparator + smallIconSize) * 3;
             if (GUI.Button(new Rect(deleteX, bottomLineY, smallIconSize, smallIconSize), CamoEditorResources.DeleteIcon))
