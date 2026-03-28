@@ -153,12 +153,9 @@ namespace SevenBoldPencil.WeaponCamo
         public CamoEditorResources CamoEditorResources;
         public bool IsCamoEditorWaitingForWeaponPreview;
 
-        public string AssemblyDir;
-        public string UserDir;
         public string DecalTexturesDir;
         public string ItemsDir;
         public string PresetsDir;
-        public AssetBundle Bundle;
         public Shader DecalShader;
         public List<string> LoadedDecalTexturesList;
         public Dictionary<string, Texture2D> LoadedDecalTextures; // TODO return ERROR texture if tries to get unknown texture
@@ -171,16 +168,16 @@ namespace SevenBoldPencil.WeaponCamo
             Instance = this;
 			LoggerInstance = Logger;
 
-            AssemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            UserDir = Path.Combine(AssemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamo");
-            DecalTexturesDir = Path.Combine(UserDir, "textures");
-            ItemsDir = Path.Combine(UserDir, "items");
-            PresetsDir = Path.Combine(UserDir, "presets");
-			var bundlePath = Path.Combine(AssemblyDir, "assets", "bundles", "weaponcamo");
-            Bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalShader = Bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, Bundle);
-            CamoEditorResources = new(Bundle);
+            var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var userDir = Path.Combine(assemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamo");
+            DecalTexturesDir = Path.Combine(userDir, "textures");
+            ItemsDir = Path.Combine(userDir, "items");
+            PresetsDir = Path.Combine(userDir, "presets");
+			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
+            var bundle = AssetBundle.LoadFromFile(bundlePath);
+            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
+            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, bundle);
+            CamoEditorResources = new(bundle);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
             WeaponPreviewCameras = new();
