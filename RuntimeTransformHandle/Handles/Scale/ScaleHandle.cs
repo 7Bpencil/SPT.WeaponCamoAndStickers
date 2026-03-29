@@ -45,18 +45,6 @@ namespace RuntimeHandle
                 _axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(_transformHandle, this, Vector3.forward, Color.blue, handleShader);
             }
 
-            if (_transformHandle.axes == HandleAxes.XY ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                new GameObject("ScalePlane.XY").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisX, _axisY, Vector3.forward, Color.blue, handleShader);
-            }
-
-            if (_transformHandle.axes == HandleAxes.YZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                new GameObject("ScalePlane.YZ").AddComponent<ScalePlane>().Initialize(_transformHandle, this, _axisY, _axisZ, Vector3.right, Color.red, handleShader);
-            }
-
             if (_transformHandle.axes == HandleAxes.XZ ||
                 _transformHandle.axes == HandleAxes.XYZ)
             {
