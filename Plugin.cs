@@ -12,6 +12,7 @@ using Comfort.Common;
 using DeferredDecals;
 using EFT;
 using EFT.Ballistics;
+using EFT.InventoryLogic;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
@@ -228,6 +229,9 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // move pivot point from center to face (in shaders + gizmo, not transform)
+
+            // TODO
+            // make keyboard shortcuts for move/rotate/scale
         }
 
         // TODO
@@ -1119,6 +1123,12 @@ namespace SevenBoldPencil.WeaponCamo
 		{
 			return weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.weapon);
 		}
+
+		// TODO add ability to select attachment point (weapon or EWeaponModType.mod_magazine)
+    	public static Transform GetModTransform(WeaponPrefab weaponPrefab, EWeaponModType modType)
+        {
+        	return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
+        }
 
         public void OnWeaponPrefabDestroyed(string itemId, WeaponPrefab weaponPrefab)
         {
