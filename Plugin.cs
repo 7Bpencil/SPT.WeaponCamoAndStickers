@@ -26,8 +26,6 @@ using RuntimeHandle;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// TODO by default give only camos and eft stickers, others are addons
-
 namespace SevenBoldPencil.WeaponCamo
 {
     public class ItemsWithDecals
@@ -91,6 +89,7 @@ namespace SevenBoldPencil.WeaponCamo
         public Texture2D EditPositionIcon;
         public Texture2D EditRotationIcon;
         public Texture2D EditScaleIcon;
+        public Texture2D EditTextureTilingIcon;
         public Texture2D DuplicateIcon;
         public Texture2D DeleteIcon;
         public Texture2D ColorWheelHSV;
@@ -114,6 +113,7 @@ namespace SevenBoldPencil.WeaponCamo
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Move-Icon.png");
             EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Rotate-Icon.png");
             EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Scale-Icon.png");
+            EditTextureTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/UV-Scale-Icon.png");
             DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/copy.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/bin.png");
             ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/hsv-circle.png");
@@ -442,7 +442,7 @@ namespace SevenBoldPencil.WeaponCamo
                 var visibleHeight = visibleRows * (iconSize + iconSeparator) + iconSize / 2;
                 return
                     margin + buttonHeight + margin +
-                    3 * (smallIconSize + iconSeparator) +
+                    4 * (smallIconSize + iconSeparator) +
                     smallIconSize + margin +
                     buttonHeight + iconSeparator +
                     buttonHeight + margin +
@@ -677,7 +677,7 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditPositionIcon))
                 {
-                    SetupTransformHandle(camoEditor, HandleType.POSITION, decalIndex, decal);
+                    SetupTransformHandle(camoEditor, HandleType.Position, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + smallIconSize + iconSeparator + 7;
@@ -695,7 +695,7 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditRotationIcon))
                 {
-                    SetupTransformHandle(camoEditor, HandleType.ROTATION, decalIndex, decal);
+                    SetupTransformHandle(camoEditor, HandleType.Rotation, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + smallIconSize + iconSeparator + 7;
@@ -718,7 +718,7 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditScaleIcon))
                 {
-                    SetupTransformHandle(camoEditor, HandleType.SCALE, decalIndex, decal);
+                    SetupTransformHandle(camoEditor, HandleType.Scale, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + smallIconSize + iconSeparator + 7;
@@ -735,6 +735,26 @@ namespace SevenBoldPencil.WeaponCamo
                     if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "fix aspect ratio"))
                     {
                         FixAspectRatio(camoEditor, decalIndex);
+                    }
+                }
+                columnY += smallIconSize + iconSeparator;
+
+                if (GUI.Button(new Rect(x, columnY, smallIconSize, smallIconSize), CamoEditorResources.EditTextureTilingIcon))
+                {
+                    SetupTransformHandle(camoEditor, HandleType.TextureTiling, decalIndex, decalInfo, decal);
+                }
+                {
+                    var valueX = x + smallIconSize + iconSeparator + 7;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"X: {decalInfo.UV.z:F3}", CamoEditorResources.LabelStyleName);
+                    valueX += longFieldWidth + iconSeparator;
+
+                    GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Y: {decalInfo.UV.w:F3}", CamoEditorResources.LabelStyleName);
+                }
+                {
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "fix aspect ratio"))
+                    {
+                        FixUVAspectRatio(camoEditor, decalIndex);
                     }
                 }
                 columnY += smallIconSize + iconSeparator;
@@ -815,7 +835,7 @@ namespace SevenBoldPencil.WeaponCamo
             DrawAllTextures(camoEditor, x, y, decalIndex, decalInfo, itemsWithDecals);
         }
 
-        public void SetupTransformHandle(CamoEditor camoEditor, HandleType handleType, int decalIndex, Decal decal)
+        public void SetupTransformHandle(CamoEditor camoEditor, HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             if (camoEditor.TransformHandle)
             {
@@ -835,29 +855,67 @@ namespace SevenBoldPencil.WeaponCamo
                     CamoEditorResources.ScaleHandleShader
                 );
 
-                camoEditor.TransformHandle.OnEndedDraggingHandle += () => OnEndedDraggingHandle(camoEditor, decalIndex);
+                camoEditor.TransformHandle.OnEndedDraggingHandle += () => OnEndedDraggingHandle(camoEditor, decalIndex, decalInfo, decal);
             }
 
-            camoEditor.TransformHandle.SetHandleMode(handleType);
+            camoEditor.TransformHandle.DestroyHandles();
+
+			if (handleType == HandleType.Position)
+			{
+                camoEditor.TransformHandle.CreateHandlePosition();
+			}
+			if (handleType == HandleType.Rotation)
+			{
+                camoEditor.TransformHandle.CreateHandleRotation();
+			}
+			if (handleType == HandleType.Scale)
+			{
+                camoEditor.TransformHandle.CreateHandleScale();
+			}
+            if (handleType == HandleType.TextureTiling)
+            {
+                camoEditor.TransformHandle.CreateHandleTextureTiling(decalInfo, decal);
+            }
+
 			TransformHelperClass.SetLayersRecursively(camoEditor.TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
 
-        public void OnEndedDraggingHandle(CamoEditor camoEditor, int decalIndex)
+        public void OnEndedDraggingHandle(CamoEditor camoEditor, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
-            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
-            var decal = itemsWithDecals.Items[camoEditor.InstanceID].Decals[decalIndex];
+            var handleType = camoEditor.TransformHandle.type;
 
-            decalInfo.LocalPosition = decal.DecalTransform.localPosition;
-            decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
-            decalInfo.LocalScale = decal.DecalTransform.localScale;
-
-            ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+            if (handleType == HandleType.Position)
             {
-                decal.DecalTransform.localPosition = decalInfo.LocalPosition;
-                decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
-                decal.DecalTransform.localScale = decalInfo.LocalScale;
-            });
+                decalInfo.LocalPosition = decal.DecalTransform.localPosition;
+                ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+                {
+                    decal.DecalTransform.localPosition = decalInfo.LocalPosition;
+                });
+            }
+            if (handleType == HandleType.Rotation)
+            {
+                decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
+                ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+                {
+                    decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
+                });
+            }
+            if (handleType == HandleType.Scale)
+            {
+                decalInfo.LocalScale = decal.DecalTransform.localScale;
+                ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+                {
+                    decal.DecalTransform.localScale = decalInfo.LocalScale;
+                });
+            }
+            if (handleType == HandleType.TextureTiling)
+            {
+                ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+                {
+                    decal.ChangeUV(decalInfo.UV);
+                });
+            }
         }
 
         public void DestroyTransformHandle(CamoEditor camoEditor)
@@ -912,6 +970,7 @@ namespace SevenBoldPencil.WeaponCamo
                         {
                             decal.ChangeTexture(texture);
                         });
+                        // TODO if images have the same aspect ratio, do not fix
                         FixAspectRatio(camoEditor, decalIndex);
                     }
                 }
@@ -1058,6 +1117,21 @@ namespace SevenBoldPencil.WeaponCamo
             ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
             {
                 decal.DecalTransform.localScale = decalInfo.LocalScale;
+            });
+        }
+
+        public void FixUVAspectRatio(CamoEditor camoEditor, int decalIndex)
+        {
+            var itemsWithDecals = ItemsWithDecals[camoEditor.ItemId];
+            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
+            var aspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
+
+            // we keep uv height and modify width to match it
+            decalInfo.UV.z = decalInfo.UV.w * aspectRatio;
+
+            ModfiyDecalOnItems(decalIndex, itemsWithDecals.Items, decal =>
+            {
+                decal.ChangeUV(decalInfo.UV);
             });
         }
 

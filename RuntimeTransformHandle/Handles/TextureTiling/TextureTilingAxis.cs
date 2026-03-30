@@ -1,35 +1,57 @@
+//
+// Copyright (c) 2026 7Bpencil
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+//
+
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamo;
+using System;
 using System.IO;
 using System.Security.Permissions;
 using UnityEngine;
 
 namespace RuntimeHandle
 {
-    /**
-     * Created by Peter @sHTiF Stefcek 20.10.2020
-     * Rewritten by 7Bpencil 22.03.2026
-     */
-    public class ScaleAxis : HandleBase
+    public class TextureTilingAxis : HandleBase
     {
         private const float SIZE = 2;
 
         private Vector3 _axis;
 		private Transform _arm;
 		private Transform _tip;
+
+		private Vector4 _uvAxis;
+		private DecalInfo _decalInfo;
+		private Decal _decal;
+
         private float _startOffsetLength;
-        private Vector3 _startLocalScale;
+		private Vector4 _startUV;
 
 		public Vector3 Axis => _axis;
 
-        public ScaleAxis Initialize(RuntimeTransformHandle transformHandle, ScaleHandle scaleHandle, Vector3 axis, Color color, Shader handleShader)
-        {
+        public TextureTilingAxis Initialize(
+			RuntimeTransformHandle transformHandle,
+			TextureTilingHandle uvHandle,
+			Vector3 axis,
+			Color color,
+			Shader handleShader,
+			Vector4 uvAxis,
+			DecalInfo decalInfo,
+            Decal decal)
+		{
             _transformHandle = transformHandle;
             _axis = axis;
             _defaultColor = color.WithAlpha(0.5f);
 
+			_uvAxis = uvAxis;
+			_decalInfo = decalInfo;
+			_decal = decal;
+
             InitializeMaterial(handleShader);
 
-            transform.SetParent(scaleHandle.transform, false);
+            transform.SetParent(uvHandle.transform, false);
 
             {
                 var o = new GameObject("Arm");
@@ -78,7 +100,9 @@ namespace RuntimeHandle
 			var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-            Target.localScale = ScaleHandle.CalculateScale(_startLocalScale, _axis, scale);
+			var uv = TextureTilingHandle.CalculateUV(_startUV, _uvAxis, scale);
+			_decalInfo.UV = uv;
+			_decal.ChangeUV(uv);
 
 			SetHandleVisualScale(scale);
         }
@@ -94,7 +118,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-            _startLocalScale = Target.localScale;
+			_startUV = _decalInfo.UV;
 
 			SetHandleVisualScale(1);
         }

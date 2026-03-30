@@ -38,10 +38,13 @@ namespace RuntimeHandle
             return this;
         }
 
-        public override void Interact(Vector3 p_previousPosition)
-        {
-            base.Interact(p_previousPosition);
+		public override bool CanInteract(Vector3 hitPoint)
+		{
+			return true;
+		}
 
+        public override void Interact()
+        {
             var rperp = Target.TransformDirection(_perp);
             var position = Target.position;
             var plane = new Plane(rperp, position);
@@ -55,10 +58,8 @@ namespace RuntimeHandle
             TransformHandle.position = newPosition;
         }
 
-        public override void StartInteraction(Vector3 p_hitPoint)
+        public override void StartInteraction()
         {
-			base.StartInteraction(p_hitPoint);
-
             var rperp = Target.TransformDirection(_perp);
             var position = Target.position;
             var plane = new Plane(rperp, position);
@@ -68,6 +69,11 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _offsetLocalSpace = Target.InverseTransformDirection(offset);
+        }
+
+        public override void EndInteraction()
+        {
+
         }
     }
 }

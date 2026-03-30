@@ -9,61 +9,17 @@ namespace RuntimeHandle
      */
     public class PositionHandle : MonoBehaviour
     {
-        private RuntimeTransformHandle _transformHandle;
-        private List<PositionAxis> _axes;
-        private List<PositionPlane> _planes;
-
         public PositionHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
         {
-            _transformHandle = transformHandle;
+            transform.SetParent(transformHandle.transform, false);
 
-            transform.SetParent(_transformHandle.transform, false);
+            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, this, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader);
 
-            _axes = new List<PositionAxis>();
-
-            if (_transformHandle.axes == HandleAxes.X ||
-                _transformHandle.axes == HandleAxes.XY ||
-                _transformHandle.axes == HandleAxes.XZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(_transformHandle, this, Vector3.right, Color.red, handleShader));
-            }
-
-            if (_transformHandle.axes == HandleAxes.Y ||
-                _transformHandle.axes == HandleAxes.XY ||
-                _transformHandle.axes == HandleAxes.YZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(_transformHandle, this, Vector3.up, Color.green, handleShader));
-            }
-
-            if (_transformHandle.axes == HandleAxes.Z ||
-                _transformHandle.axes == HandleAxes.XZ ||
-                _transformHandle.axes == HandleAxes.YZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(_transformHandle, this, Vector3.forward, Color.blue, handleShader));
-            }
-
-            _planes = new List<PositionPlane>();
-
-            if (_transformHandle.axes == HandleAxes.XY ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _planes.Add(new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader));
-            }
-
-            if (_transformHandle.axes == HandleAxes.YZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _planes.Add(new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader));
-            }
-
-            if (_transformHandle.axes == HandleAxes.XZ ||
-                _transformHandle.axes == HandleAxes.XYZ)
-            {
-                _planes.Add(new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(_transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader));
-            }
+            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
+            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
+            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
 
             return this;
         }

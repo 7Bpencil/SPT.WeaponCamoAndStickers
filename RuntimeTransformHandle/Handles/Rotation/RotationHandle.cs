@@ -9,39 +9,13 @@ namespace RuntimeHandle
      */
     public class RotationHandle : MonoBehaviour
     {
-        private RuntimeTransformHandle _parentTransformHandle;
-        private List<RotationAxis> _axes;
-
-        public RotationHandle Initialize(RuntimeTransformHandle parentTransformHandle, Shader handleShader)
+        public RotationHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
         {
-            _parentTransformHandle = parentTransformHandle;
-            transform.SetParent(_parentTransformHandle.transform, false);
+            transform.SetParent(transformHandle.transform, false);
 
-            _axes = new List<RotationAxis>();
-
-            if (_parentTransformHandle.axes == HandleAxes.X ||
-                _parentTransformHandle.axes == HandleAxes.XY ||
-                _parentTransformHandle.axes == HandleAxes.XZ ||
-                _parentTransformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(_parentTransformHandle, this, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader));
-            }
-
-            if (_parentTransformHandle.axes == HandleAxes.Y ||
-                _parentTransformHandle.axes == HandleAxes.XY ||
-                _parentTransformHandle.axes == HandleAxes.YZ ||
-                _parentTransformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(_parentTransformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader));
-            }
-
-            if (_parentTransformHandle.axes == HandleAxes.Z ||
-                _parentTransformHandle.axes == HandleAxes.YZ ||
-                _parentTransformHandle.axes == HandleAxes.XZ ||
-                _parentTransformHandle.axes == HandleAxes.XYZ)
-            {
-                _axes.Add(new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(_parentTransformHandle, this, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader));
-            }
+            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
 
             return this;
         }

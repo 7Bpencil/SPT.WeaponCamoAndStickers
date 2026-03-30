@@ -1,4 +1,7 @@
-﻿using System;
+﻿using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamo;
+using System;
+using RuntimeHandle;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -10,8 +13,7 @@ namespace RuntimeHandle
      */
     public class RuntimeTransformHandle : MonoBehaviour
     {
-        public HandleAxes axes = HandleAxes.XYZ;
-        public HandleType type = HandleType.POSITION;
+        public HandleType type;
 
         public bool autoScale = true;
         public float autoScaleFactor = 0.5f;
@@ -19,14 +21,15 @@ namespace RuntimeHandle
 
         private Vector3 _previousMousePosition;
 		private bool _previousMouseDown;
-        private HandleBase _previousAxis;
-
+        private HandleBase _previousHandle;
         private HandleBase _draggingHandle;
+
 		public bool IsDragging => _draggingHandle;
 
         private PositionHandle _positionHandle;
         private RotationHandle _rotationHandle;
         private ScaleHandle _scaleHandle;
+        private TextureTilingHandle _textureTilingHandle;
 
         public Transform target;
 
@@ -38,28 +41,38 @@ namespace RuntimeHandle
         private Shader rotationHandleShader;
         private Shader scaleHandleShader;
 
-        private void CreateHandles()
+        public void CreateHandlePosition()
         {
-			if (type == HandleType.POSITION)
-			{
-				_positionHandle = new GameObject("PositionHandle").AddComponent<PositionHandle>().Initialize(this, positionHandleShader);
-			}
-			if (type == HandleType.ROTATION)
-			{
-				_rotationHandle = new GameObject("RotationHandle").AddComponent<RotationHandle>().Initialize(this, rotationHandleShader);
-			}
-			if (type == HandleType.SCALE)
-			{
-				_scaleHandle = new GameObject("ScaleHandle").AddComponent<ScaleHandle>().Initialize(this, scaleHandleShader);
-			}
+			type = HandleType.Position;
+			_positionHandle = new GameObject("PositionHandle").AddComponent<PositionHandle>().Initialize(this, positionHandleShader);
+		}
+
+        public void CreateHandleRotation()
+		{
+			type = HandleType.Rotation;
+			_rotationHandle = new GameObject("RotationHandle").AddComponent<RotationHandle>().Initialize(this, rotationHandleShader);
+		}
+
+        public void CreateHandleScale()
+		{
+			type = HandleType.Scale;
+			_scaleHandle = new GameObject("ScaleHandle").AddComponent<ScaleHandle>().Initialize(this, scaleHandleShader);
         }
 
-        private void Clear()
+		public void CreateHandleTextureTiling(DecalInfo decalInfo, Decal decal)
+		{
+            type = HandleType.TextureTiling;
+			_textureTilingHandle = new GameObject("TextureTilingHandle").AddComponent<TextureTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+		}
+
+        public void DestroyHandles()
         {
             _draggingHandle = null;
+			_previousHandle = null;
             if (_positionHandle) Destroy(_positionHandle.gameObject);
             if (_rotationHandle) Destroy(_rotationHandle.gameObject);
             if (_scaleHandle) Destroy(_scaleHandle.gameObject);
+            if (_textureTilingHandle) Destroy(_textureTilingHandle.gameObject);
         }
 
         private void Update()
@@ -72,10 +85,6 @@ namespace RuntimeHandle
 
 			UpdateAutoScale();
 
-            var (handle, hitPoint) = GetHandle();
-
-            HandleOverEffect(handle, hitPoint);
-
 			// for some reason Input.GetMouseButtonUp(0) doesnt work here,
 			// no idea why, some thing blocks it probably, so do it manually
 
@@ -83,25 +92,45 @@ namespace RuntimeHandle
 			var hasPressed = mouseDown && !_previousMouseDown;
 			var hasReleased = !mouseDown && _previousMouseDown;
 
-            if (mouseDown && _draggingHandle)
-            {
-                _draggingHandle.Interact(_previousMousePosition);
-                OnDraggingHandle?.Invoke();
-            }
+			if (IsDragging)
+			{
+	            if (mouseDown)
+	            {
+	                _draggingHandle.Interact();
+	                OnDraggingHandle?.Invoke();
+	            }
+	            if (hasReleased)
+	            {
+	                _draggingHandle.EndInteraction();
+	                OnEndedDraggingHandle?.Invoke();
+	                _draggingHandle = null;
+	            }
+			}
+			else
+			{
+	            var (handle, hitPoint) = GetHandle();
 
-            if (hasPressed && handle && handle.CanInteract(hitPoint))
-            {
-                _draggingHandle = handle;
-                _draggingHandle.StartInteraction(hitPoint);
-                OnStartedDraggingHandle?.Invoke();
-            }
+				var canInteract = handle && handle.CanInteract(hitPoint);
+				if (handle != _previousHandle)
+				{
+					if (canInteract)
+					{
+		                handle.SetInteractionColor();
+					}
+					if (_previousHandle)
+					{
+		                _previousHandle.SetDefaultColor();
+					}
+				}
+				if (hasPressed && canInteract)
+				{
+	                _draggingHandle = handle;
+	                _draggingHandle.StartInteraction();
+	                OnStartedDraggingHandle?.Invoke();
+				}
 
-            if (hasReleased && _draggingHandle)
-            {
-                _draggingHandle.EndInteraction();
-                OnEndedDraggingHandle?.Invoke();
-                _draggingHandle = null;
-            }
+	            _previousHandle = handle;
+			}
 
             _previousMousePosition = Input.mousePosition;
 			_previousMouseDown = mouseDown;
@@ -119,21 +148,6 @@ namespace RuntimeHandle
 		{
             return handleCamera.ScreenPointToRay(Input.mousePosition);
 		}
-
-        private void HandleOverEffect(HandleBase p_axis, Vector3 p_hitPoint)
-        {
-            if (!_draggingHandle && _previousAxis && (_previousAxis != p_axis || !_previousAxis.CanInteract(p_hitPoint)))
-            {
-                _previousAxis.SetDefaultColor();
-            }
-
-            if (p_axis && !_draggingHandle && p_axis.CanInteract(p_hitPoint))
-            {
-                p_axis.SetColor(Color.yellow);
-            }
-
-            _previousAxis = p_axis;
-        }
 
         private (HandleBase, Vector3) GetHandle()
         {
@@ -176,52 +190,5 @@ namespace RuntimeHandle
             return handle;
         }
 
-        public void SetHandleMode(HandleType mode)
-        {
-            type = mode;
-			Clear();
-			CreateHandles();
-        }
-
-        public void EnableXAxis(bool enable)
-        {
-            if (enable)
-			{
-                axes |= HandleAxes.X;
-			}
-            else
-			{
-                axes &= ~HandleAxes.X;
-			}
-        }
-
-        public void EnableYAxis(bool enable)
-        {
-            if (enable)
-			{
-                axes |= HandleAxes.Y;
-			}
-            else
-			{
-                axes &= ~HandleAxes.Y;
-			}
-        }
-
-        public void EnableZAxis(bool enable)
-        {
-            if (enable)
-			{
-                axes |= HandleAxes.Z;
-			}
-            else
-			{
-                axes &= ~HandleAxes.Z;
-			}
-        }
-
-        public void SetAxes(HandleAxes newAxes)
-        {
-            axes = newAxes;
-        }
     }
 }

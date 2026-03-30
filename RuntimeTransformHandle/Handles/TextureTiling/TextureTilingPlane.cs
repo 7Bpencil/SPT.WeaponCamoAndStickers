@@ -6,11 +6,13 @@
 //
 
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamo;
+using System;
 using UnityEngine;
 
 namespace RuntimeHandle
 {
-    public class ScalePlane : HandleBase
+    public class TextureTilingPlane : HandleBase
     {
         private const float SIZE = 2;
 
@@ -18,13 +20,30 @@ namespace RuntimeHandle
         private Vector3 _axis2;
         private Vector3 _perp;
         private GameObject _handle;
+
+        private TextureTilingAxis _axis1Handle;
+        private TextureTilingAxis _axis2Handle;
+
+		private Vector4 _uvAxis1;
+		private Vector4 _uvAxis2;
+		private DecalInfo _decalInfo;
+		private Decal _decal;
+
         private float _startOffsetLength;
-        private Vector3 _startLocalScale;
+		private Vector4 _startUV;
 
-        private ScaleAxis _axis1Handle;
-        private ScaleAxis _axis2Handle;
-
-        public ScalePlane Initialize(RuntimeTransformHandle transformHandle, ScaleHandle scaleHandle, ScaleAxis axis1, ScaleAxis axis2, Vector3 perp, Color color, Shader handleShader)
+        public TextureTilingPlane Initialize(
+			RuntimeTransformHandle transformHandle,
+			TextureTilingHandle uvHandle,
+			TextureTilingAxis axis1,
+			TextureTilingAxis axis2,
+			Vector3 perp,
+			Color color,
+			Shader handleShader,
+			Vector4 uvAxis1,
+			Vector4 uvAxis2,
+			DecalInfo decalInfo,
+            Decal decal)
         {
             _transformHandle = transformHandle;
             _defaultColor = color.WithAlpha(0.5f);
@@ -35,9 +54,14 @@ namespace RuntimeHandle
             _axis1Handle = axis1;
             _axis2Handle = axis2;
 
+			_uvAxis1 = uvAxis1;
+			_uvAxis2 = uvAxis2;
+			_decalInfo = decalInfo;
+			_decal = decal;
+
             InitializeMaterial(handleShader);
 
-            transform.SetParent(scaleHandle.transform, false);
+            transform.SetParent(uvHandle.transform, false);
 
             _handle = new GameObject("ScalePlane");
             _handle.transform.SetParent(transform, false);
@@ -67,7 +91,9 @@ namespace RuntimeHandle
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-            Target.localScale = ScaleHandle.CalculateScale(_startLocalScale, _axis1 + _axis2, scale);
+			var uv = TextureTilingHandle.CalculateUV(_startUV, _uvAxis1 + _uvAxis2, scale);
+			_decalInfo.UV = uv;
+			_decal.ChangeUV(uv);
 
             SetHandlesVisualScale(scale);
         }
@@ -83,7 +109,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-            _startLocalScale = Target.localScale;
+			_startUV = _decalInfo.UV;
 
             SetHandlesVisualScale(1);
             SetHandlesInteractionColor();

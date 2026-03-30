@@ -45,10 +45,13 @@ namespace RuntimeHandle
             return this;
         }
 
-        public override void Interact(Vector3 p_previousPosition)
-        {
-            base.Interact(p_previousPosition);
+		public override bool CanInteract(Vector3 hitPoint)
+		{
+			return true;
+		}
 
+        public override void Interact()
+        {
             var raxis = Target.TransformDirection(_axis);
             var position = Target.position;
             var ray = new Ray(position, raxis);
@@ -62,10 +65,8 @@ namespace RuntimeHandle
             TransformHandle.position = newPosition;
         }
 
-        public override void StartInteraction(Vector3 p_hitPoint)
+        public override void StartInteraction()
         {
-            base.StartInteraction(p_hitPoint);
-
             var raxis = Target.TransformDirection(_axis);
             var position = Target.position;
             var ray = new Ray(position, raxis);
@@ -75,6 +76,11 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _offsetLength = offset.magnitude;
+        }
+
+        public override void EndInteraction()
+        {
+
         }
     }
 }

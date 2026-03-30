@@ -28,44 +28,17 @@ namespace RuntimeHandle
             _material.color = _defaultColor;
         }
 
-        public void SetColor(Color color)
+        public void SetInteractionColor()
         {
-            _material.color = color;
+            _material.color = Color.yellow;
         }
 
-        public virtual void StartInteraction(Vector3 p_hitPoint)
-        {
+        public abstract bool CanInteract(Vector3 hitPoint);
 
-        }
+        public abstract void StartInteraction();
 
-        public virtual bool CanInteract(Vector3 p_hitPoint)
-        {
-            return true;
-        }
+        public abstract void Interact();
 
-        public virtual void Interact(Vector3 p_previousPosition)
-        {
-
-        }
-
-        public virtual void EndInteraction()
-        {
-            SetDefaultColor();
-        }
-
-        public static Vector3 GetVectorFromAxes(HandleAxes p_axes)
-        {
-            return p_axes switch
-            {
-                HandleAxes.X => new Vector3(1,0,0),
-                HandleAxes.Y => new Vector3(0,1,0),
-                HandleAxes.Z => new Vector3(0,0,1),
-                HandleAxes.XY => new Vector3(1,1,0),
-                HandleAxes.XZ => new Vector3(1,0,1),
-                HandleAxes.YZ => new Vector3(0,1,1),
-                HandleAxes.XYZ => new Vector3(1,1,1),
-				_ => throw new ArgumentException($"Unknown HandleAxes: {p_axes}")
-            };
-        }
+        public abstract void EndInteraction();
     }
 }
