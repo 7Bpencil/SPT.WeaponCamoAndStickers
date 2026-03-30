@@ -852,7 +852,8 @@ namespace SevenBoldPencil.WeaponCamo
                     camoEditor.Camera,
                     CamoEditorResources.PositionHandleShader,
                     CamoEditorResources.RotationHandleShader,
-                    CamoEditorResources.ScaleHandleShader
+                    CamoEditorResources.ScaleHandleShader,
+                    LayerMaskClass.WeaponPreview
                 );
 
                 camoEditor.TransformHandle.OnEndedDraggingHandle += () => OnEndedDraggingHandle(camoEditor, decalIndex, decalInfo, decal);
