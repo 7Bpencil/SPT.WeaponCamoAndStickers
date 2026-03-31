@@ -52,39 +52,24 @@ namespace SevenBoldPencil.WeaponCamo
 			DecalTransform = transform;
 		}
 
-		public void Set(DecalInfo decalInfo, Transform root, Dictionary<string, Texture2D> loadedDecalTextures)
+		public void Set(DecalInfo decalInfo, Transform root, Texture2D diffuse)
 		{
             DecalTransform.parent = root;
 			DecalTransform.localPosition = decalInfo.LocalPosition;
 			DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
 			DecalTransform.localScale = decalInfo.LocalScale;
 
-			if (loadedDecalTextures.TryGetValue(decalInfo.Texture, out var diffuse))
-			{
-				ChangeTexture(diffuse);
-			}
-			else
-			{
-				// TODO set pink texture with ERROR text
- 			}
+			ChangeTexture(diffuse);
+            DecalMaterial.SetTexture("_BumpMap", Texture2D.normalTexture); // TODO add support for bump textures
 
 			ChangeColor(decalInfo.ColorHSVA);
 			ChangeUV(decalInfo.UV);
 			ChangeMaxAngle(decalInfo.MaxAngle);
 		}
 
-        public void ChangeTexture(Texture2D diffuse, Texture2D bump = null)
+        public void ChangeTexture(Texture2D diffuse)
         {
             DecalMaterial.SetTexture("_MainTex", diffuse);
-
-			if (bump)
-			{
-	            DecalMaterial.SetTexture("_BumpMap", bump);
-			}
-			else
-			{
-	            DecalMaterial.SetTexture("_BumpMap", Texture2D.normalTexture);
-			}
         }
 
         public void ChangeColor(Vector4 colorHSVA)

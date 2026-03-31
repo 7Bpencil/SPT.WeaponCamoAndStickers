@@ -69,20 +69,20 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public ManualLogSource LoggerInstance;
 
-        public DecalRenderer DecalRenderer;
-        public Option<CamoEditor> CamoEditor;
-        public CamoEditorResources CamoEditorResources;
-        public bool IsCamoEditorWaitingForWeaponPreview;
+        private DecalRenderer DecalRenderer;
+        private Option<CamoEditor> CamoEditor;
+        private CamoEditorResources CamoEditorResources;
+        private bool IsCamoEditorWaitingForWeaponPreview;
 
-        public string DecalTexturesDir;
-        public string ItemsDir;
-        public string PresetsDir;
-        public Shader DecalShader;
-        public List<string> LoadedDecalTexturesList;
-        public Dictionary<string, Texture2D> LoadedDecalTextures;
-        public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
-        public Dictionary<string, string> Clones;
-        public Dictionary<Camera, string> WeaponPreviewCameras;
+        private string DecalTexturesDir;
+        private string ItemsDir;
+        private string PresetsDir;
+        private Shader DecalShader;
+        private List<string> LoadedDecalTexturesList;
+        private Dictionary<string, Texture2D> LoadedDecalTextures;
+        private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        private Dictionary<string, string> Clones;
+        private Dictionary<Camera, string> WeaponPreviewCameras;
 
         private void Awake()
         {
@@ -254,13 +254,62 @@ namespace SevenBoldPencil.WeaponCamo
         {
             if (CamoEditor.Some(out var camoEditor))
             {
-
+                camoEditor.DrawWindow();
             }
+        }
+
+        public (DecalInfo, Decal) GetDecal(string itemId, int instanceID, int decalIndex)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
+            var decal = itemsWithDecals.Items[instanceID].Decals[decalIndex];
+            return (decalInfo, decal);
+        }
+
+        public Option<List<DecalInfo>> GetDecalsInfo(string itemId)
+        {
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                return new(itemsWithDecals.DecalsInfo);
+            }
+
+            return default;
+        }
+
+        public int GetDecalsCount(string itemId)
+        {
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                return itemsWithDecals.DecalsInfo.Count;
+            }
+
+            return 0;
+        }
+
+        public Texture2D GetTexture(string textureName)
+        {
+			// TODO if texture doesnt exist return pink texture with ERROR text
+			if (LoadedDecalTextures.TryGetValue(textureName, out var texture))
+            {
+                return texture;
+            }
+
+			return Texture2D.whiteTexture;
+        }
+
+        public int GetTexturesCount()
+        {
+            return LoadedDecalTexturesList.Count;
+        }
+
+        public string GetTextureName(int textureIndex)
+        {
+            return LoadedDecalTexturesList[textureIndex];
         }
 
         public void ApplyTexture(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            var texture = LoadedDecalTextures[decalInfo.Texture];
+            var texture = GetTexture(decalInfo.Texture);
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 decal.ChangeTexture(texture);
@@ -422,7 +471,7 @@ namespace SevenBoldPencil.WeaponCamo
         public void FixAspectRatio(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             // we keep decal width the same and change height to match texture aspect ratio
-            var texture = LoadedDecalTextures[decalInfo.Texture];
+            var texture = GetTexture(decalInfo.Texture);
             var textureInverseAspectRatio = texture.height / (float)texture.width;
             decalInfo.LocalScale.z = decalInfo.LocalScale.x * textureInverseAspectRatio;
             ApplyLocalScale(itemId, decalIndex, decalInfo);
@@ -489,8 +538,9 @@ namespace SevenBoldPencil.WeaponCamo
 		public Decal CreateDecal(DecalInfo decalInfo, Transform root)
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
+            var decalTexture = GetTexture(decalInfo.Texture);
 			decal.Init(DecalShader);
-			decal.Set(decalInfo, root, LoadedDecalTextures);
+			decal.Set(decalInfo, root, decalTexture);
 			return decal;
 		}
 
@@ -548,13 +598,22 @@ namespace SevenBoldPencil.WeaponCamo
             return itemId;
         }
 
-        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId)
+        public void WaitForWeaponPreview()
+        {
+			IsCamoEditorWaitingForWeaponPreview = true;
+        }
+
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab)
         {
 			Logger.LogWarning($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
             {
                 WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
             }
+			if (IsCamoEditorWaitingForWeaponPreview)
+			{
+				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab);
+			}
         }
 
         public void OnWeaponPreviewClosed(Camera weaponPreviewCamera, string itemId)
@@ -573,6 +632,8 @@ namespace SevenBoldPencil.WeaponCamo
             var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
             CamoEditor = new(new CamoEditor()
             {
+                Plugin = this,
+                CamoEditorResources = CamoEditorResources,
                 Camera = editorCamera,
                 RuntimeGizmos = runtimeGizmos,
                 ItemId = itemId,
@@ -580,7 +641,7 @@ namespace SevenBoldPencil.WeaponCamo
                 DecalsRoot = decalsRoot,
                 IsOpened = false,
                 IsColorPickerOpened = false,
-                WindowRect = new(startX, startY, mainIconWidth, openCloseButtonHeight)
+                WindowRect = SevenBoldPencil.WeaponCamo.CamoEditor.GetDefaultWindowRect()
             });
         }
 
@@ -648,11 +709,7 @@ namespace SevenBoldPencil.WeaponCamo
                 }
             }
 
-            if (camoEditor.RuntimeGizmos)
-            {
-                Destroy(camoEditor.RuntimeGizmos);
-            }
-            DestroyTransformHandle(camoEditor);
+            camoEditor.Destroy();
             CamoEditor = default;
         }
 

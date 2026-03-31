@@ -88,12 +88,7 @@ namespace SevenBoldPencil.WeaponCamo
 			{
 				var itemId = item.Id;
 				var camera = weaponPreview.WeaponPreviewCamera;
-
-				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId);
-				if (Plugin.Instance.IsCamoEditorWaitingForWeaponPreview)
-				{
-					Plugin.Instance.SetupCamoEditor(camera, itemId, weaponPrefab);
-				}
+				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab);
 			}
 		}
 
@@ -174,7 +169,7 @@ namespace SevenBoldPencil.WeaponCamo
 			// if this method is called then next WeaponPreview.Class3271.method_1
 			// is guaranteed to be weapon preview for this WeaponModdingScreen
 
-			Plugin.Instance.IsCamoEditorWaitingForWeaponPreview = true;
+			Plugin.Instance.WaitForWeaponPreview();
 		}
 	}
 
