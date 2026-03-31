@@ -83,6 +83,7 @@ namespace SevenBoldPencil.WeaponCamo
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
         private Dictionary<Camera, string> WeaponPreviewCameras;
+        private HashSet<Camera> PlayerModelViewCameras;
 
         private void Awake()
         {
@@ -102,8 +103,8 @@ namespace SevenBoldPencil.WeaponCamo
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
             WeaponPreviewCameras = new();
-
-            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras);
+            PlayerModelViewCameras = new();
+            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, PlayerModelViewCameras);
 
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
@@ -115,6 +116,8 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass2304_smethod_0().Enable();
+            new Patch_PlayerModelView_method_0().Enable();
+            new Patch_PlayerModelView_method_1().Enable();
 
             // TODO
             // seems like decals are not drawing on gun (because of stencil?)
@@ -620,6 +623,18 @@ namespace SevenBoldPencil.WeaponCamo
         {
 			Logger.LogWarning($"OnWeaponPreviewClosed: {itemId}");
             WeaponPreviewCameras.Remove(weaponPreviewCamera);
+        }
+
+		public void OnPlayerModelViewShown(Camera playerModelViewCamera)
+        {
+			Logger.LogWarning($"OnPlayerModelViewShown");
+            PlayerModelViewCameras.Add(playerModelViewCamera);
+        }
+
+		public void OnPlayerModelViewClosed(Camera playerModelViewCamera)
+        {
+			Logger.LogWarning($"OnPlayerModelViewClosed");
+            PlayerModelViewCameras.Remove(playerModelViewCamera);
         }
 
         public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab)

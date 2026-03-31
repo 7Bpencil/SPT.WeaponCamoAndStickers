@@ -296,4 +296,52 @@ namespace SevenBoldPencil.WeaponCamo
 			return true;
 		}
 	}
+
+	// this method is called when PlayerModelView is opened and finishes loading
+	public class Patch_PlayerModelView_method_0 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_0));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerModelView __instance)
+		{
+			var instanceTransform = __instance.transform;
+			for (var i = 0; i < instanceTransform.childCount; i++)
+			{
+				var child = instanceTransform.GetChild(i);
+				if (child.TryGetComponent<Camera>(out var camera))
+				{
+					Plugin.Instance.OnPlayerModelViewShown(camera);
+					break;
+				}
+			}
+		}
+	}
+
+	// this method is called when PlayerModelView is closed
+	public class Patch_PlayerModelView_method_1 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_1));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(PlayerModelView __instance)
+		{
+			var instanceTransform = __instance.transform;
+			for (var i = 0; i < instanceTransform.childCount; i++)
+			{
+				var child = instanceTransform.GetChild(i);
+				if (child.TryGetComponent<Camera>(out var camera))
+				{
+					Plugin.Instance.OnPlayerModelViewClosed(camera);
+					break;
+				}
+			}
+		}
+	}
 }

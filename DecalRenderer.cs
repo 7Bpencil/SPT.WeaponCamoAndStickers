@@ -28,16 +28,21 @@ namespace SevenBoldPencil.WeaponCamo
 	{
 		public static readonly int int_2 = Shader.PropertyToID("_NormalsCopy");
 
-		public Mesh Cube;
-		public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
-        public Dictionary<Camera, string> WeaponPreviewCameras;
-		public Dictionary<Camera, CommandBuffer> CommandBuffers;
+		private Mesh Cube;
+		private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        private Dictionary<Camera, string> WeaponPreviewCameras;
+        private HashSet<Camera> PlayerModelViewCameras;
+		private Dictionary<Camera, CommandBuffer> CommandBuffers;
 
-		public DecalRenderer(Dictionary<string, ItemsWithDecals> itemsWithDecals, Dictionary<Camera, string> weaponPreviewCameras)
+		public DecalRenderer(
+			Dictionary<string, ItemsWithDecals> itemsWithDecals,
+			Dictionary<Camera, string> weaponPreviewCameras,
+			HashSet<Camera> playerModelViewCameras)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 			ItemsWithDecals = itemsWithDecals;
 			WeaponPreviewCameras = weaponPreviewCameras;
+			PlayerModelViewCameras = playerModelViewCameras;
 			CommandBuffers = new();
 			Camera.onPreCull += OnPreCullCameraRender;
 			Camera.onPreRender += OnPreCameraRender;
@@ -45,7 +50,7 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public void OnPreCullCameraRender(Camera currentCamera)
 		{
-			if (method_12(currentCamera) && !CommandBuffers.ContainsKey(currentCamera))
+			if (CanCameraSeeDecals(currentCamera) && !CommandBuffers.ContainsKey(currentCamera))
 			{
 				var commandBuffer = new CommandBuffer();
 				commandBuffer.name = "Deferred decals Dynamic (Weapon Camo)";
@@ -56,13 +61,13 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public void OnPreCameraRender(Camera currentCamera)
 		{
-			if (method_12(currentCamera) && CommandBuffers.TryGetValue(currentCamera, out var commandBuffer))
+			if (CanCameraSeeDecals(currentCamera) && CommandBuffers.TryGetValue(currentCamera, out var commandBuffer))
 			{
-				method_9(currentCamera, commandBuffer);
+				SetupBufferAndDrawDecals(currentCamera, commandBuffer);
 			}
 		}
 
-		public bool method_12(Camera currentCamera)
+		public bool CanCameraSeeDecals(Camera currentCamera)
 		{
 			if (!currentCamera)
 			{
@@ -93,11 +98,15 @@ namespace SevenBoldPencil.WeaponCamo
 			{
 				return true;
 			}
+			if (PlayerModelViewCameras.Contains(currentCamera))
+			{
+				return true;
+			}
 
 			return false;
 		}
 
-		public void method_9(Camera currentCamera, CommandBuffer buffer)
+		public void SetupBufferAndDrawDecals(Camera currentCamera, CommandBuffer buffer)
 		{
 			buffer.Clear();
 			buffer.GetTemporaryRT(int_2, -1, -1);
@@ -124,6 +133,10 @@ namespace SevenBoldPencil.WeaponCamo
 			if (WeaponPreviewCameras.TryGetValue(currentCamera, out var itemId))
 			{
 				DrawDecalsOnItem(currentCamera, buffer, itemId);
+			}
+			if (PlayerModelViewCameras.Contains(currentCamera))
+			{
+				DrawAllDecals(currentCamera, buffer);
 			}
 		}
 
