@@ -271,6 +271,7 @@ namespace SevenBoldPencil.WeaponCamo
 		}
 	}
 
+	// this method is used everywhere to set cursor visible or invisible
 	public class Patch_GClass2304_smethod_0 : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
