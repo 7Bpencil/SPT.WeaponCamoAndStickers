@@ -104,13 +104,7 @@ namespace SevenBoldPencil.WeaponCamo
 			buffer.Blit(BuiltinRenderTextureType.GBuffer2, int_2);
 			buffer.SetRenderTarget
 			(
-				new RenderTargetIdentifier[4]
-				{
-					BuiltinRenderTextureType.GBuffer0,
-					BuiltinRenderTextureType.GBuffer1,
-					BuiltinRenderTextureType.GBuffer2,
-					currentCamera.allowHDR ? BuiltinRenderTextureType.CameraTarget : BuiltinRenderTextureType.GBuffer3
-				},
+				BuiltinRenderTextureType.GBuffer0,
 				BuiltinRenderTextureType.CameraTarget
 			);
 			DrawDecals(currentCamera, buffer);

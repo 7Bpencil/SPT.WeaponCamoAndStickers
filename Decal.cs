@@ -27,8 +27,6 @@ namespace SevenBoldPencil.WeaponCamo
 	public class Decal : MonoBehaviour
 	{
 		public static readonly int _UvStartEnd = Shader.PropertyToID("_UvStartEnd");
-		public static readonly int _NormalPower = Shader.PropertyToID("_NormalPower");
-		public static readonly int _SpecularColor = Shader.PropertyToID("_SpecularColor");
 		public static readonly int _Temperature = Shader.PropertyToID("_Temperature");
     	public static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
 
@@ -40,13 +38,7 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public void Init(Shader shader)
 		{
-			// TODO add ability to change uvStartEnd (tiling)
-			// set as repeating, so it stays the same on vertical,
-			// but gets cropped/multiplied on horizontal
-
 			DecalMaterial = new Material(shader);
-			DecalMaterial.SetFloat(_NormalPower, 3);
-			DecalMaterial.SetColor(_SpecularColor, new Color(0, 0, 0, 1));
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 
 			DecalTransform = transform;
@@ -60,8 +52,6 @@ namespace SevenBoldPencil.WeaponCamo
 			DecalTransform.localScale = decalInfo.LocalScale;
 
 			ChangeTexture(diffuse);
-            DecalMaterial.SetTexture("_BumpMap", Texture2D.normalTexture); // TODO add support for bump textures
-
 			ChangeColor(decalInfo.ColorHSVA);
 			ChangeUV(decalInfo.UV);
 			ChangeMaxAngle(decalInfo.MaxAngle);
