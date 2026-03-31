@@ -113,7 +113,7 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_WeaponPrefab_InitHotObjects().Enable();
             new Patch_WeaponPrefab_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
-            new Patch_GClass3380_CloneItem().Enable();
+            new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass2304_smethod_0().Enable();
 
             // TODO

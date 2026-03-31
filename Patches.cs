@@ -252,16 +252,22 @@ namespace SevenBoldPencil.WeaponCamo
 		}
 	}
 
-	public class Patch_GClass3380_CloneItem : ModulePatch
+	// this method is used everywhere to clone items:
+	// - hideout shooting range
+	// - raid loading screen
+	// - raid exit screen
+	// - profile overview screen
+	public class Patch_GClass3380_smethod_2 : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
+			Type[] parameters = null;
 			Type[] generics = [typeof(Item)];
-            return AccessTools.Method(typeof(GClass3380), nameof(GClass3380.CloneItem), null, generics);
+            return AccessTools.Method(typeof(GClass3380), nameof(GClass3380.smethod_2), parameters, generics);
         }
 
         [PatchPostfix]
-        public static void Postfix(GClass3380 __instance, ref Item __result, Item originalItem)
+        public static void Postfix(GClass3380 __instance, ref Item __result, Item originalItem, IIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
 		{
 			// only weapons support for now
 			if (originalItem is Weapon weapon)
