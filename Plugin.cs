@@ -410,6 +410,10 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
+        private readonly Vector3 typicalRifleCenter = new Vector3(0f, -0.35f, -0.003f);
+        private readonly float defaultDecalSize = 0.2f;
+        private readonly float defaultDecalDepth = 0.1f;
+
         public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera)
         {
             var decalInfo = new DecalInfo()
@@ -494,10 +498,6 @@ namespace SevenBoldPencil.WeaponCamo
                 changeDecal(decal);
             }
         }
-
-        private readonly Vector3 typicalRifleCenter = new Vector3(0f, -0.35f, -0.003f);
-        private readonly float defaultDecalSize = 0.2f;
-        private readonly float defaultDecalDepth = 0.1f;
 
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
