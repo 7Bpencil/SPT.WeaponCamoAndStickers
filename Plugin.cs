@@ -598,7 +598,7 @@ namespace SevenBoldPencil.WeaponCamo
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
-                ChangeColor(camoEditor.ItemId, decalIndex, decalInfo);
+                ApplyColor(camoEditor.ItemId, decalIndex, decalInfo);
             }
 
             {
@@ -616,7 +616,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
-                    ChangeColor(camoEditor.ItemId, decalIndex, decalInfo);
+                    ApplyColor(camoEditor.ItemId, decalIndex, decalInfo);
                 }
 
                 GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "Saturation:", CamoEditorResources.LabelStyleName);
@@ -624,7 +624,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
-                    ChangeColor(camoEditor.ItemId, decalIndex, decalInfo);
+                    ApplyColor(camoEditor.ItemId, decalIndex, decalInfo);
                 }
 
                 GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "Value:", CamoEditorResources.LabelStyleName);
@@ -632,7 +632,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
-                    ChangeColor(camoEditor.ItemId, decalIndex, decalInfo);
+                    ApplyColor(camoEditor.ItemId, decalIndex, decalInfo);
                 }
             }
         }
@@ -805,7 +805,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newAlpha != decalInfo.ColorHSVA.w)
                 {
                     decalInfo.ColorHSVA.w = newAlpha;
-                    ChangeColor(camoEditor.ItemId, decalIndex, decalInfo);
+                    ApplyColor(camoEditor.ItemId, decalIndex, decalInfo);
                 }
                 GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoEditorResources.LabelStyleValue);
 
@@ -815,7 +815,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;
-                    ChangeMaxAngle(camoEditor.ItemId, decalIndex, decalInfo);
+                    ApplyMaxAngle(camoEditor.ItemId, decalIndex, decalInfo);
                 }
                 GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoEditorResources.LabelStyleValue);
 
@@ -892,21 +892,21 @@ namespace SevenBoldPencil.WeaponCamo
             if (handleType == HandleType.Position)
             {
                 decalInfo.LocalPosition = decal.DecalTransform.localPosition;
-                ChangeLocalPosition(camoEditor.ItemId, decalIndex, decalInfo);
+                ApplyLocalPosition(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.Rotation)
             {
                 decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
-                ChangeLocalEulerAngles(camoEditor.ItemId, decalIndex, decalInfo);
+                ApplyLocalEulerAngles(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.Scale)
             {
                 decalInfo.LocalScale = decal.DecalTransform.localScale;
-                ChangeLocalScale(camoEditor.ItemId, decalIndex, decalInfo);
+                ApplyLocalScale(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.TextureTiling)
             {
-                ChangeUV(camoEditor.ItemId, decalIndex, decalInfo);
+                ApplyUV(camoEditor.ItemId, decalIndex, decalInfo);
             }
         }
 
@@ -958,7 +958,7 @@ namespace SevenBoldPencil.WeaponCamo
                     if (decalInfo.Texture != textureName)
                     {
                         decalInfo.Texture = textureName;
-                        ChangeTexture(camoEditor.ItemId, decalIndex, decalInfo);
+                        ApplyTexture(camoEditor.ItemId, decalIndex, decalInfo);
                         // TODO if images have the same aspect ratio, do not fix
                         FixAspectRatio(camoEditor.ItemId, decalIndex, decalInfo);
                     }
@@ -972,8 +972,7 @@ namespace SevenBoldPencil.WeaponCamo
             return (left + right - 1) / right;
         }
 
-        // TODO rename all similar methods to ApplyXChange
-        public void ChangeTexture(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyTexture(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             var texture = LoadedDecalTextures[decalInfo.Texture];
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
@@ -982,7 +981,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeColor(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyColor(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -990,7 +989,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeMaxAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyMaxAngle(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -998,7 +997,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeUV(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyUV(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -1006,7 +1005,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeLocalPosition(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyLocalPosition(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -1014,7 +1013,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeLocalEulerAngles(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyLocalEulerAngles(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -1022,7 +1021,7 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ChangeLocalScale(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyLocalScale(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
@@ -1131,38 +1130,24 @@ namespace SevenBoldPencil.WeaponCamo
             decalInfo.LocalEulerAngles.x = MathF.Round(decalInfo.LocalEulerAngles.x);
             decalInfo.LocalEulerAngles.y = MathF.Round(decalInfo.LocalEulerAngles.y);
             decalInfo.LocalEulerAngles.z = MathF.Round(decalInfo.LocalEulerAngles.z);
-
-            ModfiyDecalOnItems(itemId, decalIndex, decal =>
-            {
-                decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
-            });
+            ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
         }
 
         public void FixAspectRatio(string itemId, int decalIndex, DecalInfo decalInfo)
         {
+            // we keep decal width the same and change height to match texture aspect ratio
             var texture = LoadedDecalTextures[decalInfo.Texture];
             var textureInverseAspectRatio = texture.height / (float)texture.width;
-
-            // we keep decal width the same and change height to match texture aspect ratio
             decalInfo.LocalScale.z = decalInfo.LocalScale.x * textureInverseAspectRatio;
-
-            ModfiyDecalOnItems(itemId, decalIndex, decal =>
-            {
-                decal.DecalTransform.localScale = decalInfo.LocalScale;
-            });
+            ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
         public void FixUVAspectRatio(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            var aspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
-
             // we keep uv height and modify width to match it
+            var aspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
             decalInfo.UV.z = decalInfo.UV.w * aspectRatio;
-
-            ModfiyDecalOnItems(itemId, decalIndex, decal =>
-            {
-                decal.ChangeUV(decalInfo.UV);
-            });
+            ApplyUV(itemId, decalIndex, decalInfo);
         }
 
         // notice that we modify decal on all items
