@@ -20,7 +20,7 @@ namespace RuntimeHandle
         public Camera handleCamera;
 
 		private RaycastHit[] raycastHits;
-		private int raycastLayer;
+		private int raycastLayerMask;
         private Vector3 _previousMousePosition;
 		private bool _previousMouseDown;
         private HandleBase _previousHandle;
@@ -154,7 +154,7 @@ namespace RuntimeHandle
         private (HandleBase, Vector3) GetHandle()
         {
             var ray = GetCameraRay();
-			var hitsCount = Physics.RaycastNonAlloc(ray, raycastHits, maxDistance: 10, layerMask: 1 << raycastLayer);
+			var hitsCount = Physics.RaycastNonAlloc(ray, raycastHits, maxDistance: 10, layerMask: raycastLayerMask);
             if (hitsCount != 0)
 			{
 				for (var i = 0; i < hitsCount; i++)
@@ -177,7 +177,7 @@ namespace RuntimeHandle
 			Shader positionHandleShader,
 			Shader rotationHandleShader,
 			Shader scaleHandleShader,
-			int raycastLayer)
+			int raycastLayerMask)
         {
 			var handleGO = new GameObject("RuntimeTransformHandle", typeof(RuntimeTransformHandle));
 			var handleTransform = handleGO.transform;
@@ -195,7 +195,7 @@ namespace RuntimeHandle
 	        handle.scaleHandleShader = scaleHandleShader;
 
 			handle.raycastHits = new RaycastHit[5];
-			handle.raycastLayer = raycastLayer;
+			handle.raycastLayerMask = raycastLayerMask;
 
 			handle.UpdateAutoScale();
 
