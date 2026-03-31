@@ -63,6 +63,10 @@ namespace SevenBoldPencil.WeaponCamo
 			{
 				ChangeTexture(diffuse);
 			}
+			else
+			{
+				// TODO set pink texture with ERROR text
+ 			}
 
 			ChangeColor(decalInfo.ColorHSVA);
 			ChangeUV(decalInfo.UV);

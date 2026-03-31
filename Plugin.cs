@@ -173,7 +173,7 @@ namespace SevenBoldPencil.WeaponCamo
         public string PresetsDir;
         public Shader DecalShader;
         public List<string> LoadedDecalTexturesList;
-        public Dictionary<string, Texture2D> LoadedDecalTextures; // TODO return ERROR texture if tries to get unknown texture
+        public Dictionary<string, Texture2D> LoadedDecalTextures;
         public Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         public Dictionary<string, string> Clones;
         public Dictionary<Camera, string> WeaponPreviewCameras;
@@ -232,6 +232,12 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // make keyboard shortcuts for move/rotate/scale
+
+            // TODO
+            // make buttons flip horizontally, resets etc
+
+            // TODO
+            // decals are not showing on some screens
         }
 
         // TODO
@@ -1199,11 +1205,11 @@ namespace SevenBoldPencil.WeaponCamo
 			return weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.weapon);
 		}
 
-		// TODO add ability to select attachment point (weapon or EWeaponModType.mod_magazine)
-    	public static Transform GetModTransform(WeaponPrefab weaponPrefab, EWeaponModType modType)
-        {
-        	return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
-        }
+        // TODO add ability to select attachment point (ECharacterWeaponBones.weapon or EWeaponModType.mod_magazine)
+        // public static Transform GetModTransform(WeaponPrefab weaponPrefab, EWeaponModType modType)
+        // {
+        //     return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
+        // }
 
         public void OnWeaponPrefabDestroyed(string itemId, WeaponPrefab weaponPrefab)
         {
