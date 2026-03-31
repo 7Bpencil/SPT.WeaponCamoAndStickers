@@ -815,10 +815,7 @@ namespace SevenBoldPencil.WeaponCamo
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;
-                    ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                    {
-                        decal.ChangeMaxAngle(newMaxAngle);
-                    });
+                    ChangeMaxAngle(camoEditor.ItemId, decalIndex, decalInfo);
                 }
                 GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoEditorResources.LabelStyleValue);
 
@@ -895,33 +892,21 @@ namespace SevenBoldPencil.WeaponCamo
             if (handleType == HandleType.Position)
             {
                 decalInfo.LocalPosition = decal.DecalTransform.localPosition;
-                ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                {
-                    decal.DecalTransform.localPosition = decalInfo.LocalPosition;
-                });
+                ChangeLocalPosition(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.Rotation)
             {
                 decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
-                ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                {
-                    decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
-                });
+                ChangeLocalEulerAngles(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.Scale)
             {
                 decalInfo.LocalScale = decal.DecalTransform.localScale;
-                ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                {
-                    decal.DecalTransform.localScale = decalInfo.LocalScale;
-                });
+                ChangeLocalScale(camoEditor.ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.TextureTiling)
             {
-                ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                {
-                    decal.ChangeUV(decalInfo.UV);
-                });
+                ChangeUV(camoEditor.ItemId, decalIndex, decalInfo);
             }
         }
 
@@ -973,10 +958,7 @@ namespace SevenBoldPencil.WeaponCamo
                     if (decalInfo.Texture != textureName)
                     {
                         decalInfo.Texture = textureName;
-                        ModfiyDecalOnItems(camoEditor.ItemId, decalIndex, decal =>
-                        {
-                            decal.ChangeTexture(texture);
-                        });
+                        ChangeTexture(camoEditor.ItemId, decalIndex, decalInfo);
                         // TODO if images have the same aspect ratio, do not fix
                         FixAspectRatio(camoEditor.ItemId, decalIndex, decalInfo);
                     }
@@ -990,11 +972,61 @@ namespace SevenBoldPencil.WeaponCamo
             return (left + right - 1) / right;
         }
 
+        // TODO rename all similar methods to ApplyXChange
+        public void ChangeTexture(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            var texture = LoadedDecalTextures[decalInfo.Texture];
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeTexture(texture);
+            });
+        }
+
         public void ChangeColor(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 decal.ChangeColor(decalInfo.ColorHSVA);
+            });
+        }
+
+        public void ChangeMaxAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeMaxAngle(decalInfo.MaxAngle);
+            });
+        }
+
+        public void ChangeUV(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeUV(decalInfo.UV);
+            });
+        }
+
+        public void ChangeLocalPosition(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.DecalTransform.localPosition = decalInfo.LocalPosition;
+            });
+        }
+
+        public void ChangeLocalEulerAngles(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
+            });
+        }
+
+        public void ChangeLocalScale(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.DecalTransform.localScale = decalInfo.LocalScale;
             });
         }
 
