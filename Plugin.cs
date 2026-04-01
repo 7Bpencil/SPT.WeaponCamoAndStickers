@@ -141,9 +141,6 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // make keyboard shortcuts for move/rotate/scale
-
-            // TODO
-            // make buttons flip horizontally, resets etc
         }
 
         // TODO
@@ -440,6 +437,18 @@ namespace SevenBoldPencil.WeaponCamo
 
                 return 0;
             }
+        }
+
+        // this works only left/right,
+        // to make it work in more cases would require defining
+        // proper mirror plane, which is obvious for left/right,
+        // but not so obvious in other cases
+        public void FlipSideLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.LocalPosition.x *= -1f;
+            decalInfo.LocalEulerAngles.z += -180;
+            ApplyLocalPosition(itemId, decalIndex, decalInfo);
+            ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
         }
 
         public void RoundLocalEulerAnglesToDegree(string itemId, int decalIndex, DecalInfo decalInfo)

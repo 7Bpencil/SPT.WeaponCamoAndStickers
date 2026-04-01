@@ -484,6 +484,12 @@ namespace SevenBoldPencil.WeaponCamo
 
                     GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localPosition.z:F3}", CamoEditorResources.LabelStyleName);
                 }
+                {
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "flip left/right"))
+                    {
+                        Plugin.FlipSideLeftRight(ItemId, decalIndex, decalInfo);
+                    }
+                }
                 columnY += smallIconSize + iconSeparator;
 
 
