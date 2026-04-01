@@ -117,6 +117,7 @@ namespace SevenBoldPencil.WeaponCamo
         public int InstanceID;
         public Transform DecalsRoot;
         public bool IsOpened;
+        public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedDecalIndex;
         public Vector2 TexturesScrollPosition;
         public bool IsColorPickerOpened;
@@ -137,6 +138,7 @@ namespace SevenBoldPencil.WeaponCamo
         private const float smallIconSize = (iconSize - iconSeparator) / 2;
         private const int iconColumns = 5;
         private const int maxIconRows = 5;
+        private const int maxDecalsVisible = 11;
         private const float boxWidth = windowWidth - margin * 2;
         private const float boxHeight = iconSize + boxMargin * 2;
         private const float boxMargin = 3;
@@ -145,12 +147,14 @@ namespace SevenBoldPencil.WeaponCamo
         private const float fixTransformButtonWidth = 110;
         private const float openCloseButtonWidth = 22;
         private const float openCloseButtonHeight = 66;
-        private Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        private Rect colorPickerRect = new(0, 159, 231, 331);
-        private float hsCircleDiameter = 201;
+        private static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
+        private static readonly Rect colorPickerRect = new(0, 159, 231, 331);
+        private const float hsCircleDiameter = 201;
         private const float mainIconWidth = 62;
-        private Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
-        private Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
+        private static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
+        private static readonly Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
+        private static readonly Color scrollBarHandleColor = new(183, 195, 202, 255);
+        private const float scrollBarWidth = 4;
 
         public static Rect GetDefaultWindowRect()
         {
@@ -238,9 +242,21 @@ namespace SevenBoldPencil.WeaponCamo
             else
             {
                 var height = margin;
-                var decalsCount = Plugin.GetDecalsCount(ItemId);
 
-                height += decalsCount * (boxHeight + decalSeparator);
+                var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
+
+                float visibleHeight;
+                if (totalDecalsCount > maxDecalsVisible)
+                {
+                    visibleHeight = maxDecalsVisible * (boxHeight + decalSeparator) + boxHeight * 0.5f;
+                }
+                else
+                {
+                    visibleHeight = totalDecalsCount * (boxHeight + decalSeparator) - decalSeparator;
+                }
+
+                height += visibleHeight;
+                height += decalSeparator;
                 height += buttonHeight;
                 height += margin;
 
@@ -282,13 +298,48 @@ namespace SevenBoldPencil.WeaponCamo
 
             if (Plugin.GetDecalsInfo(ItemId).Some(out var decalsInfo))
             {
-                // TODO add scroll view
+                var decalsY = y;
+
+                float totalHeight;
+                float visibleHeight;
+                if (decalsInfo.Count > maxDecalsVisible)
+                {
+                    totalHeight = decalsInfo.Count * (boxHeight + decalSeparator) - decalSeparator;
+                    visibleHeight = maxDecalsVisible * (boxHeight + decalSeparator) + boxHeight * 0.5f;
+                }
+                else
+                {
+                    totalHeight = decalsInfo.Count * (boxHeight + decalSeparator) - decalSeparator;
+                    visibleHeight = totalHeight;
+                }
+
+                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
+
+                // render my own vertical scroll bar because unity's one is cannot be set slimmer than 15 px...
+                if (decalsInfo.Count > maxDecalsVisible)
+                {
+                    var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
+                    var handlePositionT = DecalsScrollPosition.y / (float)totalHeight;
+                    var handlePosition = handlePositionT * visibleHeight;
+                    var scrollBarX = x + boxWidth + 5;
+                    DrawColor(new Rect(scrollBarX, decalsY, scrollBarWidth, visibleHeight), separatorColor);
+                    DrawColor(new Rect(scrollBarX, decalsY + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
+                }
+
+                DecalsScrollPosition = GUI.BeginScrollView(visibleRect, DecalsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
                 for (var i = 0; i < decalsInfo.Count; i++)
                 {
                     var decalInfo = decalsInfo[i];
-                    DrawDecalElementUI(x, y, i, decalInfo);
-                    y += boxHeight + decalSeparator;
+                    DrawDecalElementUI(x, decalsY, i, decalInfo);
+                    decalsY += boxHeight + decalSeparator;
                 }
+
+                GUI.EndScrollView();
+
+                y += visibleHeight;
+                y += decalSeparator;
             }
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
@@ -694,11 +745,9 @@ namespace SevenBoldPencil.WeaponCamo
                 var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
                 var handlePositionT = TexturesScrollPosition.y / (float)totalHeight;
                 var handlePosition = handlePositionT * visibleHeight;
-                var scrollBarWidth = 4;
                 var scrollBarX = x + boxWidth + 5;
-                var handleColor = new Color32(183, 195, 202, 255);
                 DrawColor(new Rect(scrollBarX, y, scrollBarWidth, visibleHeight), separatorColor);
-                DrawColor(new Rect(scrollBarX, y + handlePosition, scrollBarWidth, handleHeight), handleColor);
+                DrawColor(new Rect(scrollBarX, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
 
             TexturesScrollPosition = GUI.BeginScrollView(visibleRect, TexturesScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
