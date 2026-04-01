@@ -373,7 +373,7 @@ namespace SevenBoldPencil.WeaponCamo
             var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
             var decalInfoDuplicate = decalInfo.GetCopy();
             itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfoDuplicate);
-            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
                 var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
                 itemWithDecals.Decals.Insert(decalIndex, decal);
@@ -386,7 +386,7 @@ namespace SevenBoldPencil.WeaponCamo
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
             itemsWithDecals.DecalsInfo.RemoveAt(decalIndex);
-            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
                 var decal = itemWithDecals.Decals[decalIndex];
                 itemWithDecals.Decals.RemoveAt(decalIndex);
@@ -406,7 +406,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             (decalsInfo[decalIndexA], decalsInfo[decalIndexB]) = (decalsInfo[decalIndexB], decalsInfo[decalIndexA]);
-            foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
                 var decals = itemWithDecals.Decals;
                 (decals[decalIndexA], decals[decalIndexB]) = (decals[decalIndexB], decals[decalIndexA]);
@@ -434,7 +434,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 var itemsWithDecals = ItemsWithDecals[itemId];
                 itemsWithDecals.DecalsInfo.Add(decalInfo);
-                foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
                 {
                     var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
                     itemWithDecals.Decals.Add(decal);
