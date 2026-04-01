@@ -226,8 +226,7 @@ namespace SevenBoldPencil.WeaponCamo
             if (CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex))
             {
                 var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(), iconColumns);
-                var visibleRows = Math.Min(totalRows, maxIconRows);
-                var visibleHeight = visibleRows * (iconSize + iconSeparator) + iconSize / 2;
+                var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, iconSeparator);
                 return
                     margin + buttonHeight + margin +
                     4 * (smallIconSize + iconSeparator) +
@@ -244,16 +243,7 @@ namespace SevenBoldPencil.WeaponCamo
                 var height = margin;
 
                 var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
-
-                float visibleHeight;
-                if (totalDecalsCount > maxDecalsVisible)
-                {
-                    visibleHeight = maxDecalsVisible * (boxHeight + decalSeparator) + boxHeight * 0.5f;
-                }
-                else
-                {
-                    visibleHeight = totalDecalsCount * (boxHeight + decalSeparator) - decalSeparator;
-                }
+                var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, decalSeparator);
 
                 height += visibleHeight;
                 height += decalSeparator;
@@ -300,19 +290,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 var decalsY = y;
 
-                float totalHeight;
-                float visibleHeight;
-                if (decalsInfo.Count > maxDecalsVisible)
-                {
-                    totalHeight = decalsInfo.Count * (boxHeight + decalSeparator) - decalSeparator;
-                    visibleHeight = maxDecalsVisible * (boxHeight + decalSeparator) + boxHeight * 0.5f;
-                }
-                else
-                {
-                    totalHeight = decalsInfo.Count * (boxHeight + decalSeparator) - decalSeparator;
-                    visibleHeight = totalHeight;
-                }
-
+                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(decalsInfo.Count, maxDecalsVisible, boxHeight, decalSeparator);
                 var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
 
@@ -733,14 +711,12 @@ namespace SevenBoldPencil.WeaponCamo
         private void DrawAllTextures(float x, float y, int decalIndex, DecalInfo decalInfo)
         {
             var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(), iconColumns);
-            var visibleRows = Math.Min(totalRows, maxIconRows);
-            var totalHeight = totalRows * (iconSize + iconSeparator) - iconSeparator;
-            var visibleHeight = visibleRows * (iconSize + iconSeparator) + iconSize / 2;
+            var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, iconSeparator);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
 
             // render my own vertical scroll bar because unity's one is cannot be set slimmer than 15 px...
-            if (totalRows > visibleRows)
+            if (totalRows > maxIconRows)
             {
                 var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
                 var handlePositionT = TexturesScrollPosition.y / (float)totalHeight;
@@ -790,6 +766,20 @@ namespace SevenBoldPencil.WeaponCamo
         private static int DivideIntRoundUp(int left, int right)
         {
             return (left + right - 1) / right;
+        }
+
+        private static (float totalHeight, float visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, float itemHeight, float separatorHeight)
+        {
+            var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
+            if (totalCount > maxCount)
+            {
+                var visibleHeight = maxCount * (itemHeight + separatorHeight) + itemHeight * 0.5f;
+                return (totalHeight, visibleHeight);
+            }
+            else
+            {
+                return (totalHeight, totalHeight);
+            }
         }
 
         public void DrawDecalProjectionBox()
