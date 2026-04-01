@@ -488,6 +488,7 @@ namespace SevenBoldPencil.WeaponCamo
                     if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "flip left/right"))
                     {
                         Plugin.FlipSideLeftRight(ItemId, decalIndex, decalInfo);
+                        SyncTransformHandle();
                     }
                 }
                 columnY += smallIconSize + iconSeparator;
@@ -512,6 +513,7 @@ namespace SevenBoldPencil.WeaponCamo
                     if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, smallIconSize), "round to degree"))
                     {
                         Plugin.RoundLocalEulerAnglesToDegree(ItemId, decalIndex, decalInfo);
+                        SyncTransformHandle();
                     }
                 }
                 columnY += smallIconSize + iconSeparator;
@@ -700,6 +702,15 @@ namespace SevenBoldPencil.WeaponCamo
             if (handleType == HandleType.TextureTiling)
             {
                 Plugin.ApplyUV(ItemId, decalIndex, decalInfo);
+            }
+        }
+
+        public void SyncTransformHandle()
+        {
+            if (TransformHandle)
+            {
+                TransformHandle.handleTransform.position = TransformHandle.targetTransform.position;
+                TransformHandle.handleTransform.rotation = TransformHandle.targetTransform.rotation;
             }
         }
 

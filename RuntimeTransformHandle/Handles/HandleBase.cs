@@ -14,8 +14,8 @@ namespace RuntimeHandle
         protected Color _defaultColor;
         protected Material _material;
 
-		public Transform Target => _transformHandle.target;
-		public Transform TransformHandle => _transformHandle.transform;
+		public Transform Target => _transformHandle.targetTransform;
+		public Transform TransformHandle => _transformHandle.handleTransform;
 
         protected void InitializeMaterial(Shader shader)
         {

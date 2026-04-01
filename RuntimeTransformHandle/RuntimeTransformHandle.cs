@@ -17,7 +17,6 @@ namespace RuntimeHandle
 
         public bool autoScale = true;
         public float autoScaleFactor = 0.5f;
-        public Camera handleCamera;
 
 		private RaycastHit[] raycastHits;
 		private int raycastLayerMask;
@@ -33,7 +32,9 @@ namespace RuntimeHandle
         private ScaleHandle _scaleHandle;
         private TextureTilingHandle _textureTilingHandle;
 
-        public Transform target;
+        public Transform targetTransform;
+		public Transform handleTransform;
+        public Camera handleCamera;
 
         public Action OnStartedDraggingHandle;
         public Action OnDraggingHandle;
@@ -142,7 +143,7 @@ namespace RuntimeHandle
 		{
             if (autoScale)
 			{
-                transform.localScale = Vector3.one * (Vector3.Distance(handleCamera.transform.position, transform.position) * autoScaleFactor) / 15f;
+                handleTransform.localScale = Vector3.one * (Vector3.Distance(handleCamera.transform.position, handleTransform.position) * autoScaleFactor) / 15f;
 			}
 		}
 
@@ -187,7 +188,8 @@ namespace RuntimeHandle
 			handleTransform.localPosition = target.localPosition;
 			handleTransform.localRotation = target.localRotation;
 
-            handle.target = target;
+            handle.targetTransform = target;
+			handle.handleTransform = handleTransform;
 			handle.handleCamera = handleCamera;
 
 	        handle.positionHandleShader = positionHandleShader;
