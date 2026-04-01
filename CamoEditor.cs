@@ -556,7 +556,7 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     var colorButtonRect = new Rect(x, columnY, smallIconSize, smallIconSize);
 
-                    DrawColor(colorButtonRect, decalInfo.ColorHSVA.HSVAtoRGBA());
+                    DrawColor(colorButtonRect, decalInfo.ColorHSVA.HSVAtoRGBA().WithAlpha(1f));
                     if (GUI.Button(colorButtonRect, GUIContent.none, GUIStyle.none))
                     {
                         IsColorPickerOpened = !IsColorPickerOpened;
