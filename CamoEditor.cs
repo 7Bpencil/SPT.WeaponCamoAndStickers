@@ -240,17 +240,14 @@ namespace SevenBoldPencil.WeaponCamo
             }
             else
             {
-                var height = margin;
-
                 var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, decalSeparator);
-
-                height += visibleHeight;
-                height += decalSeparator;
-                height += buttonHeight;
-                height += margin;
-
-                return height;
+                return
+                    margin +
+                    visibleHeight +
+                    decalSeparator +
+                    buttonHeight +
+                    margin;
             }
         }
 
