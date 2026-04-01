@@ -189,7 +189,7 @@ namespace SevenBoldPencil.WeaponCamo
                 }
                 else
                 {
-                    LoggerInstance.LogError($"Failed to load decal texture: {name}");
+                    Logger.LogError($"Failed to load decal texture: {name}");
                 }
             }
 
@@ -640,7 +640,7 @@ namespace SevenBoldPencil.WeaponCamo
         public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
-            LoggerInstance.LogInfo($"SetupCamoEditor: {itemId}");
+            Logger.LogInfo($"SetupCamoEditor: {itemId}");
             IsCamoEditorWaitingForWeaponPreview = false;
             var instanceID = weaponPrefab.GetInstanceID();
             var decalsRoot = GetWeaponRoot(weaponPrefab);
@@ -703,7 +703,7 @@ namespace SevenBoldPencil.WeaponCamo
 
             if (!CamoEditor.Some(out var camoEditor))
             {
-                LoggerInstance.LogWarning($"CloseCamoEditor: tried to close uninitialized decal editor");
+                Logger.LogWarning($"CloseCamoEditor: tried to close uninitialized decal editor");
                 return;
             }
 
@@ -715,12 +715,12 @@ namespace SevenBoldPencil.WeaponCamo
                 {
                     ItemsWithDecals.Remove(itemId);
                     RemoveDecalsFile(itemId);
-                    LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} remove decals");
+                    Logger.LogInfo($"CloseCamoEditor: {itemId} remove decals");
                 }
                 else
                 {
                     WriteDecalsToFile(itemId, decalsInfo);
-                    LoggerInstance.LogInfo($"CloseCamoEditor: {itemId} rewrite decals");
+                    Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite decals");
                 }
             }
 
