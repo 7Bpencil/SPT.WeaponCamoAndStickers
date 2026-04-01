@@ -144,9 +144,6 @@ namespace SevenBoldPencil.WeaponCamo
 
             // TODO
             // make buttons flip horizontally, resets etc
-
-            // TODO
-            // decals are not showing on some screens
         }
 
         // TODO
