@@ -742,5 +742,28 @@ namespace SevenBoldPencil.WeaponCamo
         {
             return (left + right - 1) / right;
         }
+
+        public void DrawDecalProjectionBox()
+        {
+            if (CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) && RuntimeGizmos)
+            {
+                var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, currentlyEditedDecalIndex);
+                var decalTransform = decal.DecalTransform;
+                var position = decalTransform.position;
+                var scale = decalTransform.lossyScale;
+
+                RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
+                {
+                    Position = position,
+                    Rotation = decalTransform.rotation,
+                    Scale = scale,
+                });
+                RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
+                {
+                    Start = position,
+                    End = position + decalTransform.up * scale.y,
+                });
+            }
+        }
     }
 }

@@ -225,31 +225,9 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void LateUpdate()
         {
-            if (CamoEditor.Some(out var camoEditor) &&
-                camoEditor.CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) &&
-                camoEditor.RuntimeGizmos &&
-                ItemsWithDecals.TryGetValue(camoEditor.ItemId, out var itemsWithDecals) &&
-                itemsWithDecals.Items.TryGetValue(camoEditor.InstanceID, out var itemWithDecals))
+            if (CamoEditor.Some(out var camoEditor))
             {
-                var decal = itemWithDecals.Decals[currentlyEditedDecalIndex];
-                if (decal)
-                {
-                    var decalTransform = decal.DecalTransform;
-                    var position = decalTransform.position;
-                    var scale = decalTransform.lossyScale;
-
-                    camoEditor.RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
-                    {
-                        Position = position,
-                        Rotation = decalTransform.rotation,
-                        Scale = scale,
-                    });
-                    camoEditor.RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
-                    {
-                        Start = position,
-                        End = position + decalTransform.up * scale.y,
-                    });
-                }
+                camoEditor.DrawDecalProjectionBox();
             }
         }
 
