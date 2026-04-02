@@ -149,10 +149,7 @@ namespace SevenBoldPencil.WeaponCamo
 				{
 					foreach (var decal in itemWithDecals.Decals)
 					{
-						if (decal)
-						{
-							buffer.DrawMesh(Cube, decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial);
-						}
+						DrawDecal(decal, buffer);
 					}
 				}
 			}
@@ -166,14 +163,24 @@ namespace SevenBoldPencil.WeaponCamo
 				{
 					foreach (var decal in itemWithDecals.Decals)
 					{
-						if (decal)
-						{
-							buffer.DrawMesh(Cube, decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial);
-						}
+						DrawDecal(decal, buffer);
 					}
 				}
 			}
 		}
 
+		private void DrawDecal(Decal decal, CommandBuffer buffer)
+		{
+			if (decal)
+			{
+				// its easier to accurately place decal when
+				// its transform handle is located on the face
+				// of projector volume, instead of geometric center.
+
+				var offset = new Vector3(0, -0.5f, 0);
+				var resultMatrix = decal.DecalTransform.localToWorldMatrix * Matrix4x4.Translate(offset);
+				buffer.DrawMesh(Cube, resultMatrix, decal.DecalMaterial);
+			}
+		}
 	}
 }

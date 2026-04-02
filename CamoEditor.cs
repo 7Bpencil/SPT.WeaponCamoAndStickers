@@ -804,17 +804,13 @@ namespace SevenBoldPencil.WeaponCamo
                 var decalTransform = decal.DecalTransform;
                 var position = decalTransform.position;
                 var scale = decalTransform.lossyScale;
+                var offset = decalTransform.up * (scale.y * 0.5f);
 
                 RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
                 {
-                    Position = position,
+                    Position = position - offset,
                     Rotation = decalTransform.rotation,
                     Scale = scale,
-                });
-                RuntimeGizmos.Lines.Add(new RuntimeGizmos.Line()
-                {
-                    Start = position,
-                    End = position + decalTransform.up * scale.y,
                 });
             }
         }

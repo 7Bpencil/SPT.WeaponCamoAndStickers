@@ -137,9 +137,6 @@ namespace SevenBoldPencil.WeaponCamo
             // are gifs possible?
 
             // TODO
-            // move pivot point from center to face (in shaders + gizmo, not transform)
-
-            // TODO
             // make keyboard shortcuts for move/rotate/scale
         }
 
