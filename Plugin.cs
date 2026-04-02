@@ -385,9 +385,10 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private readonly Vector3 typicalRifleCenter = new Vector3(0f, -0.35f, -0.003f);
-        private readonly float defaultDecalSize = 0.2f;
-        private readonly float defaultDecalDepth = 0.1f;
+        // pretty interesting that most rifles are 5 cm in width
+        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-0.026f, -0.35f, -0.003f);
+        private const float defaultDecalSize = 0.2f;
+        private const float defaultDecalDepth = 0.02f;
 
         public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera)
         {
@@ -396,10 +397,10 @@ namespace SevenBoldPencil.WeaponCamo
                 Texture = DefaultTextureName,
                 ColorHSVA = new Vector4(0, 0, 1, 1),
                 UV = new Vector4(0, 0, 1, 1),
-                LocalPosition = typicalRifleCenter,
+                LocalPosition = typicalRifleLeftSideCenter,
                 LocalEulerAngles = Decal.LeftSideDecalRotation,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
-                MaxAngle = 0.8f,
+                MaxAngle = 0.5f,
             };
 
             if (ItemsWithDecals.ContainsKey(itemId))
