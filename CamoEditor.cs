@@ -126,35 +126,35 @@ namespace SevenBoldPencil.WeaponCamo
 
         // brace for imGUI shitshow
 
-        private const float startX = 25;
-        private const float startY = 19;
-        private const float windowWidth = margin + (iconSize + iconSeparator) * iconColumns - iconSeparator + margin;
-        private const float buttonHeight = 30;
-        private const float buttonSeparator = 4;
-        private const float margin = 14;
-        private const float decalSeparator = 8;
-        private const float iconSize = 66;
-        private const float iconSeparator = 3;
-        private const float smallIconSize = (iconSize - iconSeparator) / 2;
+        private const int startX = 25;
+        private const int startY = 19;
+        private const int windowWidth = margin + (iconSize + iconSeparator) * iconColumns - iconSeparator + margin;
+        private const int buttonHeight = 30;
+        private const int buttonSeparator = 4;
+        private const int margin = 14;
+        private const int decalSeparator = 8;
+        private const int iconSize = smallIconSize * 2 + iconSeparator;
+        private const int iconSeparator = 4;
+        private const int smallIconSize = 32;
         private const int iconColumns = 5;
         private const int maxIconRows = 5;
         private const int maxDecalsVisible = 11;
-        private const float boxWidth = windowWidth - margin * 2;
-        private const float boxHeight = iconSize + boxMargin * 2;
-        private const float boxMargin = 3;
-        private const float nameWidth = 120;
-        private const float longFieldWidth = 60;
-        private const float fixTransformButtonWidth = 110;
-        private const float openCloseButtonWidth = 22;
-        private const float openCloseButtonHeight = 66;
+        private const int boxWidth = windowWidth - margin * 2;
+        private const int boxHeight = iconSize + boxMargin * 2;
+        private const int boxMargin = 3;
+        private const int nameWidth = 120;
+        private const int longFieldWidth = 60;
+        private const int fixTransformButtonWidth = 110;
+        private const int openCloseButtonWidth = 22;
+        private const int openCloseButtonHeight = 66;
         private static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
         private static readonly Rect colorPickerRect = new(0, 159, 231, 331);
-        private const float hsCircleDiameter = 201;
-        private const float mainIconWidth = 62;
+        private const int hsCircleDiameter = 201;
+        private const int mainIconWidth = 62;
         private static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
         private static readonly Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
         private static readonly Color scrollBarHandleColor = new(183, 195, 202, 255);
-        private const float scrollBarWidth = 4;
+        private const int scrollBarWidth = 4;
 
         public static Rect GetDefaultWindowRect()
         {
@@ -324,7 +324,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private void DrawDecalElementUI(float x, float y, int decalIndex, DecalInfo decalInfo)
+        private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
             var texture = Plugin.GetTexture(decalInfo.Texture);
 
@@ -722,7 +722,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        private void DrawAllTextures(float x, float y, int decalIndex, DecalInfo decalInfo)
+        private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
             var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(), iconColumns);
             var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, iconSeparator);
@@ -782,12 +782,12 @@ namespace SevenBoldPencil.WeaponCamo
             return (left + right - 1) / right;
         }
 
-        private static (float totalHeight, float visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, float itemHeight, float separatorHeight)
+        private static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)
         {
             var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
             if (totalCount > maxCount)
             {
-                var visibleHeight = maxCount * (itemHeight + separatorHeight) + itemHeight * 0.5f;
+                var visibleHeight = maxCount * (itemHeight + separatorHeight) + itemHeight / 2;
                 return (totalHeight, visibleHeight);
             }
             else
