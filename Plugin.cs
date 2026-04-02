@@ -77,6 +77,7 @@ namespace SevenBoldPencil.WeaponCamo
         private List<string> LoadedDecalTexturesList;
         private Dictionary<string, Texture2D> LoadedDecalTextures;
 
+        private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
         private Dictionary<Camera, string> WeaponPreviewCameras;
@@ -102,6 +103,7 @@ namespace SevenBoldPencil.WeaponCamo
             CamoEditorResources = new(bundle);
             (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, bundle);
 
+            DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
             WeaponPreviewCameras = new();
@@ -190,7 +192,29 @@ namespace SevenBoldPencil.WeaponCamo
             return (resultList, resultDict);
         }
 
-        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
+        public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                return new();
+            }
+
+            var filePaths = Directory.GetFiles(directoryPath, "*.json");
+            var result = new Dictionary<string, List<DecalInfo>>();
+
+            foreach (var filePath in filePaths)
+            {
+                var presetName = Path.GetFileNameWithoutExtension(filePath);
+                var json = File.ReadAllText(filePath);
+                var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+
+                result.Add(presetName, decalsInfo);
+            }
+
+            return result;
+        }
+
+        public static Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
             {
@@ -259,6 +283,16 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             return 0;
+        }
+
+        public int GetPresetsCount()
+        {
+            return DecalPresets.Count;
+        }
+
+        public Dictionary<string, List<DecalInfo>>.KeyCollection GetPresetNames()
+        {
+            return DecalPresets.Keys;
         }
 
         public Texture2D GetTexture(string textureName)
@@ -641,6 +675,7 @@ namespace SevenBoldPencil.WeaponCamo
                 DecalsRoot = decalsRoot,
                 IsOpened = false,
                 IsColorPickerOpened = false,
+                CurrentPresetName = "",
                 WindowRect = SevenBoldPencil.WeaponCamo.CamoEditor.GetDefaultWindowRect()
             });
         }
