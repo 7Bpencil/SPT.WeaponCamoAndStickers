@@ -69,21 +69,22 @@ namespace SevenBoldPencil.WeaponCamo
 
 		public ManualLogSource LoggerInstance;
 
-        private DecalRenderer DecalRenderer;
-        private Option<CamoEditor> CamoEditor;
-        private CamoEditorResources CamoEditorResources;
-        private bool IsCamoEditorWaitingForWeaponPreview;
-
         private string DecalTexturesDir;
         private string ItemsDir;
         private string PresetsDir;
         private Shader DecalShader;
+        private CamoEditorResources CamoEditorResources;
         private List<string> LoadedDecalTexturesList;
         private Dictionary<string, Texture2D> LoadedDecalTextures;
+
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
         private Dictionary<Camera, string> WeaponPreviewCameras;
         private HashSet<Camera> PlayerModelViewCameras;
+
+        private DecalRenderer DecalRenderer;
+        private Option<CamoEditor> CamoEditor;
+        private bool IsCamoEditorWaitingForWeaponPreview;
 
         private void Awake()
         {
@@ -98,12 +99,14 @@ namespace SevenBoldPencil.WeaponCamo
 			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, bundle);
             CamoEditorResources = new(bundle);
+            (LoadedDecalTexturesList, LoadedDecalTextures) = LoadTexturesFromDirectory(DecalTexturesDir, bundle);
+
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
             WeaponPreviewCameras = new();
             PlayerModelViewCameras = new();
+
             DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, PlayerModelViewCameras);
 
             new Patch_WeaponPreview_Class3271_method_1().Enable();
@@ -120,7 +123,7 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_PlayerModelView_method_1().Enable();
 
             // TODO
-            // seems like decals are not drawing on gun (because of stencil?)
+            // seems like default decals are not drawing on gun (because of stencil?)
             // does it mean we can make decals that will only apply on gun (and not hands and env)?
 
             // TODO
