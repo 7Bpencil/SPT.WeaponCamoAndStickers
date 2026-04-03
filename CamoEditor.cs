@@ -358,7 +358,7 @@ namespace SevenBoldPencil.WeaponCamo
             var saveX = x + boxWidth - buttonHeight;
             if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), CamoEditorResources.SaveIcon))
             {
-                // TODO
+                Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName);
             }
             y += buttonHeight + mediumMargin;
 
@@ -373,7 +373,19 @@ namespace SevenBoldPencil.WeaponCamo
                 var presetsCount = Plugin.GetPresetsCount();
                 if (presetsCount > 0)
                 {
-                    // TODO
+                    // TODO add scroll view
+                    foreach (var name in Plugin.GetPresetNames())
+                    {
+                        if (GUI.Button(new Rect(x, y, presetButtonWidth, buttonHeight), name))
+                        {
+                            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, name);
+                        }
+                        if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, y, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
+                        {
+                            Plugin.DeletePreset(name);
+                        }
+                        y += buttonHeight + smallMargin;
+                    }
                 }
                 else
                 {

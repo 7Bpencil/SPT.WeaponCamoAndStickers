@@ -454,11 +454,14 @@ namespace SevenBoldPencil.WeaponCamo
                 var decal = CreateDecal(decalInfo, decalsRoot);
                 var decals = new List<Decal>() { decal };
                 var decalsInfo = new List<DecalInfo>() { decalInfo };
-                var itemsWithDecals = new ItemsWithDecals() {
-                    Items = new Dictionary<int, ItemWithDecals>() {
+                var itemsWithDecals = new ItemsWithDecals()
+                {
+                    Items = new Dictionary<int, ItemWithDecals>()
+                    {
                         {
                             instanceID,
-                            new ItemWithDecals() {
+                            new ItemWithDecals()
+                            {
                                 DecalsRoot = decalsRoot,
                                 Decals = decals,
                             }
@@ -710,6 +713,126 @@ namespace SevenBoldPencil.WeaponCamo
             return true;
         }
 
+        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, string presetName)
+        {
+            if (!DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
+            {
+                return;
+            }
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                var itemsWithDecals = ItemsWithDecals[itemId];
+
+                var decalsInfo = itemsWithDecals.DecalsInfo;
+                decalsInfo.Clear();
+                CopyDecalsInfo(presetDecalsInfo, decalsInfo);
+
+                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+                {
+                    var decals = itemWithDecals.Decals;
+                    foreach (var decal in decals)
+                    {
+                        GameObject.Destroy(decal.gameObject);
+                    }
+                    decals.Clear();
+
+                    foreach (var decalInfo in decalsInfo)
+                    {
+                        var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                        decals.Add(decal);
+                    }
+                }
+            }
+            else
+            {
+                var decalsInfo = new List<DecalInfo>(presetDecalsInfo.Count);
+                CopyDecalsInfo(presetDecalsInfo, decalsInfo);
+
+                var decals = new List<Decal>(presetDecalsInfo.Count);
+                foreach (var decalInfo in decalsInfo)
+                {
+                    var decal = CreateDecal(decalInfo, decalsRoot);
+                    decals.Add(decal);
+                }
+
+                var itemsWithDecals = new ItemsWithDecals()
+                {
+                    Items = new Dictionary<int, ItemWithDecals>()
+                    {
+                        {
+                            instanceID,
+                            new ItemWithDecals()
+                            {
+                                DecalsRoot = decalsRoot,
+                                Decals = decals,
+                            }
+                        }
+                    },
+                    DecalsInfo = decalsInfo
+                };
+
+                ItemsWithDecals.Add(itemId, itemsWithDecals);
+                WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+            }
+        }
+
+        public void SaveDecalsIntoPreset(string itemId, string presetName)
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                return;
+            }
+            if (!GetDecalsInfo(itemId).Some(out var decalsInfo))
+            {
+                return;
+            }
+            if (DecalPresets.TryGetValue(presetName, out var oldPresetDecalsInfo))
+            {
+                oldPresetDecalsInfo.Clear();
+                CopyDecalsInfo(decalsInfo, oldPresetDecalsInfo);
+                WritePresetToFile(presetName, oldPresetDecalsInfo);
+            }
+            else
+            {
+                var newPresetDecalsInfo = new List<DecalInfo>(decalsInfo.Count);
+                CopyDecalsInfo(decalsInfo, newPresetDecalsInfo);
+                DecalPresets.Add(presetName, newPresetDecalsInfo);
+                WritePresetToFile(presetName, newPresetDecalsInfo);
+            }
+        }
+
+        public void CopyDecalsInfo(List<DecalInfo> source, List<DecalInfo> destination)
+        {
+            foreach (var decalInfo in source)
+            {
+                destination.Add(decalInfo.GetCopy());
+            }
+        }
+
+        public void WritePresetToFile(string presetName, List<DecalInfo> preset)
+        {
+            var fileInfo = GetPresetFileInfo(presetName);
+            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            Directory.CreateDirectory(fileInfo.Directory.FullName);
+            File.WriteAllText(fileInfo.FullName, json);
+        }
+
+        public void DeletePreset(string presetName)
+        {
+            if (DecalPresets.Remove(presetName))
+            {
+                var fileInfo = GetPresetFileInfo(presetName);
+                File.Delete(fileInfo.FullName);
+            }
+        }
+
+        public FileInfo GetPresetFileInfo(string presetName)
+        {
+            var fileName = $"{presetName}.json";
+            var filePath = Path.Combine(PresetsDir, fileName);
+            return new FileInfo(filePath);
+        }
+
         public void CloseCamoEditor()
         {
             IsCamoEditorWaitingForWeaponPreview = false;
@@ -728,9 +851,8 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             var itemId = camoEditor.ItemId;
-            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            if (GetDecalsInfo(itemId).Some(out var decalsInfo))
             {
-                var decalsInfo = itemsWithDecals.DecalsInfo;
                 if (decalsInfo.Count == 0)
                 {
                     ItemsWithDecals.Remove(itemId);
