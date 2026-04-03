@@ -132,10 +132,6 @@ namespace SevenBoldPencil.WeaponCamo
             // maybe apply camo texture on top of diffuse texture?
 
             // TODO
-            // we can save presets as jsons in assets/presets/ each preset separate file with name=preset name (with support for subfolders)
-            // show presets per weapon template (Item.TemplateId?)
-
-            // TODO
             // hear me out: we can place 3D models as decorations on guns and equipment!
 
             // TODO
