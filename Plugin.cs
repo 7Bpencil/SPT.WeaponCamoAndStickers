@@ -503,14 +503,19 @@ namespace SevenBoldPencil.WeaponCamo
             var texture = GetTexture(decalInfo.Texture);
             var textureInverseAspectRatio = texture.height / (float)texture.width;
             decalInfo.LocalScale.z = decalInfo.LocalScale.x * textureInverseAspectRatio;
+            decalInfo.UV.z = decalInfo.UV.w;
             ApplyLocalScale(itemId, decalIndex, decalInfo);
+            ApplyUV(itemId, decalIndex, decalInfo);
         }
 
         public void FixUVAspectRatio(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             // we keep uv height and modify width to match it
-            var aspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
-            decalInfo.UV.z = decalInfo.UV.w * aspectRatio;
+            var texture = GetTexture(decalInfo.Texture);
+            var textureAspectRatio = texture.width / (float)texture.height;
+            var decalAspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
+            var k = decalAspectRatio / textureAspectRatio;
+            decalInfo.UV.z = decalInfo.UV.w * k;
             ApplyUV(itemId, decalIndex, decalInfo);
         }
 
