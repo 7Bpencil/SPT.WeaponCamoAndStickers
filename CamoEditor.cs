@@ -146,9 +146,10 @@ namespace SevenBoldPencil.WeaponCamo
         // brace for imGUI shitshow
 
         public const int iconColumns = 5;
-        public const int maxIconRows = 5;
-        public const int maxDecalsVisible = 11;
-        public const int maxPresetsVisible = 5;
+        public const int maxIconRows = 6;
+        public const int maxDecalsVisibleWhenPresetsAreNotOpened = 9;
+        public const int maxDecalsVisibleWhenPresetsAreOpened = 5;
+        public const int maxPresetsVisible = 9;
 
         public const int smallMargin = 4;
         public const int mediumMargin = 8;
@@ -180,7 +181,7 @@ namespace SevenBoldPencil.WeaponCamo
             return new(startX, startY, mainIconWidth, openCloseButtonHeight);
         }
 
-        private void DrawColor(Rect rect, Color color)
+        public static void DrawColor(Rect rect, Color color)
         {
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, color, 0, 0);
         }
@@ -303,6 +304,7 @@ namespace SevenBoldPencil.WeaponCamo
         private int CalculateDecalsWindowHeight()
         {
             var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
+            var maxDecalsVisible = IsPresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
             var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, mediumMargin);
             return
                 bigMargin +
@@ -373,19 +375,29 @@ namespace SevenBoldPencil.WeaponCamo
                 var presetsCount = Plugin.GetPresetsCount();
                 if (presetsCount > 0)
                 {
-                    // TODO add scroll view
+                    var decalsY = y;
+
+                    var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
+                    var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
+                    var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
+
+                    DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
+                    PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
                     foreach (var name in Plugin.GetPresetNames())
                     {
-                        if (GUI.Button(new Rect(x, y, presetButtonWidth, buttonHeight), name))
+                        if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), name))
                         {
                             Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, name);
                         }
-                        if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, y, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
+                        if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                         {
                             Plugin.DeletePreset(name);
                         }
-                        y += buttonHeight + smallMargin;
+                        decalsY += buttonHeight + smallMargin;
                     }
+
+                    GUI.EndScrollView();
                 }
                 else
                 {
@@ -412,21 +424,12 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 var decalsY = y;
 
+                var maxDecalsVisible = IsPresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
                 var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(decalsInfo.Count, maxDecalsVisible, boxHeight, mediumMargin);
                 var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
 
-                // render my own vertical scroll bar because unity's one is cannot be set slimmer than 15 px...
-                if (decalsInfo.Count > maxDecalsVisible)
-                {
-                    var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
-                    var handlePositionT = DecalsScrollPosition.y / (float)totalHeight;
-                    var handlePosition = handlePositionT * visibleHeight;
-                    var scrollBarX = x + boxWidth + 5;
-                    DrawColor(new Rect(scrollBarX, decalsY, scrollBarWidth, visibleHeight), separatorColor);
-                    DrawColor(new Rect(scrollBarX, decalsY + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
-                }
-
+                DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, DecalsScrollPosition);
                 DecalsScrollPosition = GUI.BeginScrollView(visibleRect, DecalsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
                 for (var i = 0; i < decalsInfo.Count; i++)
@@ -859,17 +862,7 @@ namespace SevenBoldPencil.WeaponCamo
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
 
-            // render my own vertical scroll bar because unity's one is cannot be set slimmer than 15 px...
-            if (totalRows > maxIconRows)
-            {
-                var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
-                var handlePositionT = TexturesScrollPosition.y / (float)totalHeight;
-                var handlePosition = handlePositionT * visibleHeight;
-                var scrollBarX = x + boxWidth + 5;
-                DrawColor(new Rect(scrollBarX, y, scrollBarWidth, visibleHeight), separatorColor);
-                DrawColor(new Rect(scrollBarX, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
-            }
-
+            DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, TexturesScrollPosition);
             TexturesScrollPosition = GUI.BeginScrollView(visibleRect, TexturesScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
             for (var i = 0; i < Plugin.GetTexturesCount(); i++)
@@ -917,12 +910,25 @@ namespace SevenBoldPencil.WeaponCamo
             var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
             if (totalCount > maxCount)
             {
-                var visibleHeight = maxCount * (itemHeight + separatorHeight) + itemHeight / 2;
+                var visibleHeight = maxCount * (itemHeight + separatorHeight) - separatorHeight;
                 return (totalHeight, visibleHeight);
             }
             else
             {
                 return (totalHeight, totalHeight);
+            }
+        }
+
+        // render my own vertical scroll bar because unity's one cannot be set slimmer than 15 px...
+        public static void DrawScrollBar(int x, int y, int totalHeight, int visibleHeight, Vector2 scrollPosition)
+        {
+            if (totalHeight > visibleHeight)
+            {
+                var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
+                var handlePositionT = scrollPosition.y / (float)totalHeight;
+                var handlePosition = handlePositionT * visibleHeight;
+                DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
+                DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
         }
 
