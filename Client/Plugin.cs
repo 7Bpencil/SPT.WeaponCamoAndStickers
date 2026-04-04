@@ -114,7 +114,7 @@ namespace SevenBoldPencil.WeaponCamo
 			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            DefaultTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/textures/default.png");
+            DefaultTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Textures/default.png");
             CamoEditorResources = new(bundle);
             DecalTextures = new();
             CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures);
