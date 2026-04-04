@@ -48,6 +48,8 @@ namespace SevenBoldPencil.WeaponCamo
         public Texture2D SaveIcon;
         public Texture2D ColorWheelHSV;
 
+        public string[] DecalTypesToolbar;
+
         public CamoEditorResources(AssetBundle bundle)
         {
             PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/HandleShader.shader");
@@ -67,6 +69,8 @@ namespace SevenBoldPencil.WeaponCamo
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/diskette.png");
             ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/hsv-circle.png");
+
+            DecalTypesToolbar = ["Camos", "Stickers"];
         }
     }
 
@@ -138,6 +142,7 @@ namespace SevenBoldPencil.WeaponCamo
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedDecalIndex;
+        public DecalTextureType DecalTypeMenu;
         public Vector2 TexturesScrollPosition;
         public bool IsColorPickerOpened;
         public RuntimeTransformHandle TransformHandle;
@@ -260,7 +265,7 @@ namespace SevenBoldPencil.WeaponCamo
 
         private int CalculateDecalEditWindowHeight()
         {
-            var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(), iconColumns);
+            var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(DecalTypeMenu), iconColumns);
             var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
             return
                 bigMargin + buttonHeight + bigMargin +
@@ -270,6 +275,7 @@ namespace SevenBoldPencil.WeaponCamo
                 buttonHeight + bigMargin +
                 iconSize + bigMargin +
                 4 + bigMargin +
+                buttonHeight + smallMargin +
                 visibleHeight +
                 bigMargin;
         }
@@ -392,6 +398,7 @@ namespace SevenBoldPencil.WeaponCamo
                         }
                         if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                         {
+                            // TODO removing elements while iterating
                             Plugin.DeletePreset(name);
                         }
                         decalsY += buttonHeight + smallMargin;
@@ -448,13 +455,21 @@ namespace SevenBoldPencil.WeaponCamo
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
             {
                 var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, DecalsRoot, Camera);
-                CurrentlyEditedDecalIndex = new(newDecalIndex);
+                var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
+                var textureData = Plugin.GetTextureData(decalInfo.Texture);
+                SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
             }
+        }
+
+        private void SetCurrentlyEditedDecal(int decalIndex, DecalTextureType decalTextureType)
+        {
+            CurrentlyEditedDecalIndex = new(decalIndex);
+            DecalTypeMenu = decalTextureType;
         }
 
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
-            var texture = Plugin.GetTexture(decalInfo.Texture);
+            var textureData = Plugin.GetTextureData(decalInfo.Texture);
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), default(string));
 
@@ -462,9 +477,9 @@ namespace SevenBoldPencil.WeaponCamo
             var bottomLineY = topLineY + buttonHeight + smallMargin;
 
             var textureIconX = x + smallMargin;
-            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), texture))
+            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), textureData.Texture))
             {
-                CurrentlyEditedDecalIndex = new(decalIndex);
+                SetCurrentlyEditedDecal(decalIndex, textureData.Type);
             }
 
             var labelX = textureIconX + iconSize + smallMargin + 2;
@@ -480,7 +495,7 @@ namespace SevenBoldPencil.WeaponCamo
             if (GUI.Button(new Rect(duplicateX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DuplicateIcon))
             {
                 var newDecalIndex = Plugin.Duplicate(ItemId, decalIndex);
-                CurrentlyEditedDecalIndex = new(newDecalIndex);
+                SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
             }
 
             var arrowX = duplicateX + buttonHeight + smallMargin;
@@ -585,7 +600,7 @@ namespace SevenBoldPencil.WeaponCamo
 
             var decalIndex = CurrentlyEditedDecalIndex.Value;
             var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
-            var texture = Plugin.GetTexture(decalInfo.Texture);
+            var textureData = Plugin.GetTextureData(decalInfo.Texture);
 
             var x = bigMargin;
             var y = bigMargin;
@@ -665,9 +680,9 @@ namespace SevenBoldPencil.WeaponCamo
                     GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localScale.z:F3}", CamoStyle.LabelStyleName);
                 }
                 {
-                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, buttonHeight), "fix aspect ratio"))
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, buttonHeight), "fix scale"))
                     {
-                        Plugin.FixAspectRatio(ItemId, decalIndex, decalInfo);
+                        Plugin.FixScale(ItemId, decalIndex, decalInfo);
                     }
                 }
                 columnY += buttonHeight + smallMargin;
@@ -685,9 +700,9 @@ namespace SevenBoldPencil.WeaponCamo
                     GUI.Label(new Rect(valueX, columnY, longFieldWidth, buttonHeight), $"Y: {decalInfo.UV.w:F3}", CamoStyle.LabelStyleName);
                 }
                 {
-                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, buttonHeight), "fix aspect ratio"))
+                    if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, columnY, fixTransformButtonWidth, buttonHeight), "fix UV"))
                     {
-                        Plugin.FixUVAspectRatio(ItemId, decalIndex, decalInfo);
+                        Plugin.FixUV(ItemId, decalIndex, decalInfo);
                     }
                 }
                 columnY += buttonHeight + smallMargin;
@@ -751,7 +766,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), texture);
+                GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Texture);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoStyle.TextureNameStyle);
@@ -857,7 +872,10 @@ namespace SevenBoldPencil.WeaponCamo
 
         private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
-            var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(), iconColumns);
+            DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
+            y += buttonHeight + smallMargin;
+
+            var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(DecalTypeMenu), iconColumns);
             var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
@@ -865,10 +883,10 @@ namespace SevenBoldPencil.WeaponCamo
             DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, TexturesScrollPosition);
             TexturesScrollPosition = GUI.BeginScrollView(visibleRect, TexturesScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            for (var i = 0; i < Plugin.GetTexturesCount(); i++)
+            for (var i = 0; i < Plugin.GetTexturesCount(DecalTypeMenu); i++)
             {
-                var textureName = Plugin.GetTextureName(i);
-                var texture = Plugin.GetTexture(textureName);
+                var textureName = Plugin.GetTextureName(DecalTypeMenu, i);
+                var textureData = Plugin.GetTextureData(textureName);
 
                 var ix = i % iconColumns;
                 var iy = i / iconColumns;
@@ -876,14 +894,20 @@ namespace SevenBoldPencil.WeaponCamo
                 var xi = x + ix * (iconSize + smallMargin);
                 var yi = y + iy * (iconSize + smallMargin);
 
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), texture))
+                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Texture))
                 {
                     if (decalInfo.Texture != textureName)
                     {
                         decalInfo.Texture = textureName;
                         Plugin.ApplyTexture(ItemId, decalIndex, decalInfo);
-                        // TODO if images have the same aspect ratio, do not fix
-                        Plugin.FixAspectRatio(ItemId, decalIndex, decalInfo);
+                        if (textureData.Type == DecalTextureType.Camo)
+                        {
+                            Plugin.FixUV(ItemId, decalIndex, decalInfo);
+                        }
+                        else
+                        {
+                            Plugin.FixScale(ItemId, decalIndex, decalInfo);
+                        }
                     }
                 }
             }
