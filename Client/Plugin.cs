@@ -14,6 +14,16 @@ using EFT;
 using EFT.Ballistics;
 using EFT.InventoryLogic;
 using EFT.UI.WeaponModding;
+using EFT.AssetsManager;
+using EFT.Hideout;
+using EFT.Hideout.ShootingRange;
+using EFT.Interactive;
+using EFT.Interactive.SecretExfiltrations;
+using EFT.Quests;
+using EFT.SynchronizableObjects;
+using EFT.UI;
+using EFT.UI.Screens;
+using EFT.Vehicle;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
@@ -147,6 +157,7 @@ namespace SevenBoldPencil.WeaponCamo
             new Patch_GClass2304_smethod_0().Enable();
             new Patch_PlayerModelView_method_0().Enable();
             new Patch_PlayerModelView_method_1().Enable();
+            new Patch_PlayerBody_SetSkin().Enable();
 
             // TODO
             // seems like default decals are not drawing on gun (because of stencil)

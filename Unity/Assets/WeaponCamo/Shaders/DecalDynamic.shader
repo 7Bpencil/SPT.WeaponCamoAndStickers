@@ -17,6 +17,20 @@ Shader "WeaponCamo/Decal/Deferred DecalShader Diffuse+Normals Dynamic" {
             ZClip False
             ZTest Always
             ZWrite Off
+
+            // _StencilType:
+            // 1: equimpent (clothes/helmet/armor/rig/backpack)
+            // 2: hands/weapon (but we patch hands to be 1)
+            // 0: everything else
+
+            Stencil {
+                Ref 2
+                ReadMask 3
+                Comp Equal
+                Pass Keep
+                Fail Keep
+                ZFail Keep
+            }
             CGPROGRAM
 
             #pragma vertex vert

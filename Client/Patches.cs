@@ -9,6 +9,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using DeferredDecals;
+using Diz.Skinning;
 using EFT;
 using EFT.AssetsManager;
 using EFT.Hideout;
@@ -18,6 +19,7 @@ using EFT.Interactive.SecretExfiltrations;
 using EFT.InventoryLogic;
 using EFT.Quests;
 using EFT.SynchronizableObjects;
+using EFT.Visual;
 using EFT.UI;
 using EFT.UI.Screens;
 using EFT.UI.WeaponModding;
@@ -60,6 +62,20 @@ namespace SevenBoldPencil.WeaponCamo
         private WeaponPrefab __instance;
 
         public WeaponPrefab_Proxy(WeaponPrefab instance)
+        {
+            __instance = instance;
+        }
+	}
+
+	public struct LoddedSkin_Proxy
+	{
+		private static TypedFieldInfo<LoddedSkin, AbstractSkin[]> __lods = new("_lods");
+
+		public AbstractSkin[] _lods { get { return __lods.Get(__instance); } set { __lods.Set(__instance, value); } }
+
+        private LoddedSkin __instance;
+
+        public LoddedSkin_Proxy(LoddedSkin instance)
         {
             __instance = instance;
         }
@@ -344,4 +360,37 @@ namespace SevenBoldPencil.WeaponCamo
 			}
 		}
 	}
+
+	public class Patch_PlayerBody_SetSkin : ModulePatch
+	{
+		public static readonly int _StencilType = Shader.PropertyToID("_StencilType");
+
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerBody), nameof(PlayerBody.SetSkin));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+		{
+			var skin = __instance.BodySkins[part.Key];
+			var _skin = new LoddedSkin_Proxy(skin);
+			foreach (var lod in _skin._lods)
+			{
+				var skinnedMeshRenderer = lod.SkinnedMeshRenderer;
+                foreach (var material in skinnedMeshRenderer.materials)
+                {
+					var shaderName = material.shader.name;
+					if (shaderName == "p0/Reflective/Bumped Specular SMap" ||
+						shaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+					{
+						// decal shader works only on fragments with _StencilType = 2
+						// so set everything on player body to 1, to keept it clean from decals
+						material.SetFloat(_StencilType, 1);
+					}
+                }
+			}
+		}
+	}
+
 }
