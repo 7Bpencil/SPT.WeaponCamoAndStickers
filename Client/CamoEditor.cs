@@ -5,26 +5,10 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using Comfort.Common;
-using DeferredDecals;
-using EFT;
-using EFT.Ballistics;
-using EFT.InventoryLogic;
-using EFT.UI.WeaponModding;
-using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
-using System.IO;
-using System.Reflection;
-using System.Collections.Generic;
-using System.Linq;
-using Systems.Effects;
 using RuntimeHandle;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {

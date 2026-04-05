@@ -7,9 +7,6 @@
 
 using SevenBoldPencil.Common;
 using SevenBoldPencil.WeaponCamo;
-using System;
-using System.IO;
-using System.Security.Permissions;
 using UnityEngine;
 
 namespace RuntimeHandle

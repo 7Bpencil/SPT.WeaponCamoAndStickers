@@ -5,35 +5,20 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using DeferredDecals;
 using Diz.Skinning;
 using EFT;
 using EFT.AssetsManager;
-using EFT.Hideout;
-using EFT.Hideout.ShootingRange;
-using EFT.Interactive;
-using EFT.Interactive.SecretExfiltrations;
 using EFT.InventoryLogic;
-using EFT.Quests;
-using EFT.SynchronizableObjects;
 using EFT.Visual;
 using EFT.UI;
-using EFT.UI.Screens;
 using EFT.UI.WeaponModding;
-using EFT.Vehicle;
 using SevenBoldPencil.Common;
 using System;
-using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
-using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamo
 {
