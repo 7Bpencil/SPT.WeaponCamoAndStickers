@@ -123,17 +123,9 @@ namespace SevenBoldPencil.WeaponCamo
             MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Textures/missing.png");
             CamoEditorResources = new(bundle);
             DecalTextures = new();
-            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures);
-            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, DecalTexturesDir, "stickers", bundle, DecalTextures);
-            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, DecalTexturesDir, "masks", bundle, DecalTextures);
-
-            {
-                // TODO
-                // this puts default texture in the end of list, I dont like that
-                AddTexture(DefaultCamoName, Texture2D.whiteTexture, DecalTextureType.Camo, CamosList, DecalTextures);
-                AddTexture(DefaultStickerName, Texture2D.whiteTexture, DecalTextureType.Sticker, StickersList, DecalTextures);
-                AddTexture(DefaultMaskName, Texture2D.whiteTexture, DecalTextureType.Mask, MasksList, DecalTextures);
-            }
+            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures, DefaultCamoName, Texture2D.whiteTexture);
+            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, DecalTexturesDir, "stickers", bundle, DecalTextures, DefaultStickerName, Texture2D.whiteTexture);
+            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, DecalTexturesDir, "masks", bundle, DecalTextures, DefaultMaskName, Texture2D.whiteTexture);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -178,16 +170,23 @@ namespace SevenBoldPencil.WeaponCamo
             string rootDirectoryPath,
             string subfolder,
             AssetBundle bundle,
-            Dictionary<string, DecalTextureData> resultDict)
+            Dictionary<string, DecalTextureData> resultDict,
+            string defaultTextureName,
+            Texture2D defaultTexture)
         {
+            List<string> resultList;
+
             var directoryPath = Path.Combine(rootDirectoryPath, subfolder);
             if (!Directory.Exists(directoryPath))
             {
-                return new();
+                resultList = new List<string>(1);
+                AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
+                return resultList;
             }
 
             var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
-            var resultList = new List<string>(filePaths.Length + 1);
+            resultList = new List<string>(filePaths.Length + 1);
+            AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
 
             foreach (var filePath in filePaths)
             {
