@@ -92,8 +92,8 @@ namespace RuntimeHandle
             var scale = offsetLength / _startOffsetLength;
 
 			var uv = TextureTilingHandle.CalculateUV(_startUV, _uvAxis1 + _uvAxis2, scale);
-			_decalInfo.UV = uv;
-			_decal.ChangeUV(uv);
+			_decalInfo.TextureUV = uv;
+			_decal.ChangeTextureUV(uv);
 
             SetHandlesVisualScale(scale);
         }
@@ -109,7 +109,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-			_startUV = _decalInfo.UV;
+			_startUV = _decalInfo.TextureUV;
 
             SetHandlesVisualScale(1);
             SetHandlesInteractionColor();

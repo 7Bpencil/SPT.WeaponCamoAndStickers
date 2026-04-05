@@ -26,12 +26,12 @@ namespace SevenBoldPencil.WeaponCamo
 {
 	public class Decal : MonoBehaviour
 	{
-		public static readonly int _UvStartEnd = Shader.PropertyToID("_UvStartEnd");
+		public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
+		public static readonly int _MainTexUV = Shader.PropertyToID("_MainTexUV");
+		public static readonly int _MaskTex = Shader.PropertyToID("_MaskTex");
+		public static readonly int _MaskTexUV = Shader.PropertyToID("_MaskTexUV");
 		public static readonly int _Temperature = Shader.PropertyToID("_Temperature");
     	public static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
-
-        public static readonly Vector3 LeftSideDecalRotation = new(0, 0, 90);
-        public static readonly Vector3 RightSideDecalRotation = new(0, 0, 270);
 
 		public Material DecalMaterial;
 		public Transform DecalTransform;
@@ -44,7 +44,7 @@ namespace SevenBoldPencil.WeaponCamo
 			DecalTransform = transform;
 		}
 
-		public void Set(DecalInfo decalInfo, Transform root, Texture2D diffuse)
+		public void Set(DecalInfo decalInfo, Transform root, Texture2D diffuse, Texture2D mask)
 		{
             DecalTransform.parent = root;
 			DecalTransform.localPosition = decalInfo.LocalPosition;
@@ -52,25 +52,37 @@ namespace SevenBoldPencil.WeaponCamo
 			DecalTransform.localScale = decalInfo.LocalScale;
 
 			ChangeTexture(diffuse);
+			ChangeTextureUV(decalInfo.TextureUV);
+			ChangeMask(mask);
+			ChangeMaskUV(decalInfo.MaskUV);
 			ChangeColor(decalInfo.ColorHSVA);
-			ChangeUV(decalInfo.UV);
 			ChangeMaxAngle(decalInfo.MaxAngle);
 		}
 
         public void ChangeTexture(Texture2D diffuse)
         {
-            DecalMaterial.SetTexture("_MainTex", diffuse);
+            DecalMaterial.SetTexture(_MainTex, diffuse);
         }
+
+		public void ChangeTextureUV(Vector4 uv)
+		{
+			DecalMaterial.SetVector(_MainTexUV, uv);
+		}
+
+        public void ChangeMask(Texture2D mask)
+        {
+            DecalMaterial.SetTexture(_MaskTex, mask);
+        }
+
+		public void ChangeMaskUV(Vector4 uv)
+		{
+			DecalMaterial.SetVector(_MaskTexUV, uv);
+		}
 
         public void ChangeColor(Vector4 colorHSVA)
         {
             DecalMaterial.color = colorHSVA.HSVAtoRGBA();
         }
-
-		public void ChangeUV(Vector4 uv)
-		{
-			DecalMaterial.SetVector(_UvStartEnd, uv);
-		}
 
         public void ChangeMaxAngle(float maxAngle)
         {

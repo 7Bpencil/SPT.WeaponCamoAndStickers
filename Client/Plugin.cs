@@ -46,8 +46,10 @@ namespace SevenBoldPencil.WeaponCamo
     public class DecalInfo
     {
         public string Texture;
+        public Vector4 TextureUV;
         public Vector4 ColorHSVA;
-        public Vector4 UV;
+        public string Mask;
+        public Vector4 MaskUV;
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
@@ -69,13 +71,16 @@ namespace SevenBoldPencil.WeaponCamo
     public enum DecalTextureType
     {
         Camo,
-        Sticker
+        Sticker,
+        Mask
     }
 
     [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
-        public const string DefaultTextureName = "default";
+        public const string DefaultCamoName = "builtin/camos/default";
+        public const string DefaultStickerName = "builtin/stickers/default";
+        public const string DefaultMaskName = "builtin/masks/default";
 
         public static Plugin Instance;
 
@@ -85,11 +90,12 @@ namespace SevenBoldPencil.WeaponCamo
         private string ItemsDir;
         private string PresetsDir;
         private Shader DecalShader;
-        private Texture2D DefaultTexture;
+        private Texture2D MissingTexture;
         private CamoEditorResources CamoEditorResources;
         private Dictionary<string, DecalTextureData> DecalTextures;
         private List<string> CamosList;
         private List<string> StickersList;
+        private List<string> MasksList;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -114,11 +120,20 @@ namespace SevenBoldPencil.WeaponCamo
 			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            DefaultTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Textures/default.png");
+            MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Textures/missing.png");
             CamoEditorResources = new(bundle);
             DecalTextures = new();
             CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures);
             StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, DecalTexturesDir, "stickers", bundle, DecalTextures);
+            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, DecalTexturesDir, "masks", bundle, DecalTextures);
+
+            {
+                // TODO
+                // this puts default texture in the end of list, I dont like that
+                AddTexture(DefaultCamoName, Texture2D.whiteTexture, DecalTextureType.Camo, CamosList, DecalTextures);
+                AddTexture(DefaultStickerName, Texture2D.whiteTexture, DecalTextureType.Sticker, StickersList, DecalTextures);
+                AddTexture(DefaultMaskName, Texture2D.whiteTexture, DecalTextureType.Mask, MasksList, DecalTextures);
+            }
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -182,19 +197,13 @@ namespace SevenBoldPencil.WeaponCamo
 
                 if (ImageConversion.LoadImage(texture, fileData))
                 {
-                    var decalTextureData = new DecalTextureData()
-                    {
-                        Texture = texture,
-                        Type = decalTextureType,
-                    };
                     var name = filePath
                         .Replace(rootDirectoryPath, "")
                         .Replace(extension, "")
                         .Remove(0, 1) // remove first slash
                         .Replace(@"\", @"/"); // replace windows slashes with unix ones
 
-                    resultList.Add(name);
-                    resultDict.Add(name, decalTextureData);
+                    AddTexture(name, texture, decalTextureType, resultList, resultDict);
                 }
                 else
                 {
@@ -203,6 +212,16 @@ namespace SevenBoldPencil.WeaponCamo
             }
 
             return resultList;
+        }
+
+        public static void AddTexture(string textureName, Texture2D texture, DecalTextureType type, List<string> resultList, Dictionary<string, DecalTextureData> resultDict)
+        {
+            resultList.Add(textureName);
+            resultDict.Add(textureName, new DecalTextureData()
+            {
+                Texture = texture,
+                Type = type
+            });
         }
 
         public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
@@ -316,7 +335,7 @@ namespace SevenBoldPencil.WeaponCamo
             }
             return new DecalTextureData()
             {
-                Texture = DefaultTexture,
+                Texture = MissingTexture,
                 Type = DecalTextureType.Camo
             };
         }
@@ -327,6 +346,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 DecalTextureType.Camo => CamosList.Count,
                 DecalTextureType.Sticker => StickersList.Count,
+                DecalTextureType.Mask => MasksList.Count,
                 _ => throw new ArgumentException(),
             };
         }
@@ -337,6 +357,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 DecalTextureType.Camo => CamosList[textureIndex],
                 DecalTextureType.Sticker => StickersList[textureIndex],
+                DecalTextureType.Mask => MasksList[textureIndex],
                 _ => throw new ArgumentException(),
             };
         }
@@ -347,6 +368,15 @@ namespace SevenBoldPencil.WeaponCamo
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 decal.ChangeTexture(textureData.Texture);
+            });
+        }
+
+        public void ApplyMask(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            var maskData = GetTextureData(decalInfo.Mask);
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeMask(maskData.Texture);
             });
         }
 
@@ -366,11 +396,11 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
-        public void ApplyUV(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ApplyTextureUV(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
-                decal.ChangeUV(decalInfo.UV);
+                decal.ChangeTextureUV(decalInfo.TextureUV);
             });
         }
 
@@ -444,20 +474,23 @@ namespace SevenBoldPencil.WeaponCamo
             }
         }
 
-        // pretty interesting that most rifles are 5 cm in width
-        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-0.026f, -0.35f, -0.003f);
+        // pretty interesting that most rifles are around 5 cm in width
+        private const float defaultDecalDepth = 0.052f;
         private const float defaultDecalSize = 0.2f;
-        private const float defaultDecalDepth = 0.02f;
+        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-defaultDecalDepth / 2f, -0.35f, -0.003f);
+        private static readonly Vector3 leftSideDecalRotation = new(0, 0, 90);
 
         public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera)
         {
             var decalInfo = new DecalInfo()
             {
-                Texture = DefaultTextureName,
+                Texture = DefaultCamoName,
+                TextureUV = new Vector4(0, 0, 1, 1),
                 ColorHSVA = new Vector4(0, 0, 1, 1),
-                UV = new Vector4(0, 0, 1, 1),
+                Mask = DefaultMaskName,
+                MaskUV = new Vector4(0, 0, 1, 1),
                 LocalPosition = typicalRifleLeftSideCenter,
-                LocalEulerAngles = Decal.LeftSideDecalRotation,
+                LocalEulerAngles = leftSideDecalRotation,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                 MaxAngle = 0.5f,
             };
@@ -527,7 +560,7 @@ namespace SevenBoldPencil.WeaponCamo
             // we keep decal width the same and change height to match texture aspect ratio
             var textureData = GetTextureData(decalInfo.Texture);
             var texture = textureData.Texture;
-            var uvAspectRatio = decalInfo.UV.z / decalInfo.UV.w;
+            var uvAspectRatio = decalInfo.TextureUV.z / decalInfo.TextureUV.w;
             var textureAspectRatio = texture.width / (float)texture.height;
             var trueTextureAspectRatio = textureAspectRatio * uvAspectRatio;
             decalInfo.LocalScale.z = decalInfo.LocalScale.x / trueTextureAspectRatio;
@@ -542,8 +575,8 @@ namespace SevenBoldPencil.WeaponCamo
             var textureAspectRatio = texture.width / (float)texture.height;
             var decalAspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
             var k = decalAspectRatio / textureAspectRatio;
-            decalInfo.UV.z = decalInfo.UV.w * k;
-            ApplyUV(itemId, decalIndex, decalInfo);
+            decalInfo.TextureUV.z = decalInfo.TextureUV.w * k;
+            ApplyTextureUV(itemId, decalIndex, decalInfo);
         }
 
         // notice that we modify decal on all items
@@ -596,8 +629,9 @@ namespace SevenBoldPencil.WeaponCamo
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
             var decalTextureData = GetTextureData(decalInfo.Texture);
+            var decalMaskData = GetTextureData(decalInfo.Mask);
 			decal.Init(DecalShader);
-			decal.Set(decalInfo, root, decalTextureData.Texture);
+			decal.Set(decalInfo, root, decalTextureData.Texture, decalMaskData.Texture);
 			return decal;
 		}
 
