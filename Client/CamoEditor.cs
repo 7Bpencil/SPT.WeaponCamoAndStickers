@@ -830,6 +830,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			GUI.DragWindow();
         }
 
+        public void SetupTransformHandle(HandleType handleType)
+        {
+            if (CurrentlyEditedDecalIndex.Some(out var decalIndex))
+            {
+                var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+                SetupTransformHandle(handleType, decalIndex, decalInfo, decal);
+            }
+        }
+
         public void SetupTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             if (TransformHandle)
@@ -837,6 +846,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (TransformHandle.type == handleType)
                 {
                     return;
+                }
+                if (TransformHandle.IsDragging)
+                {
+                    TransformHandle.OnEndedDraggingHandle.Invoke();
                 }
             }
             else

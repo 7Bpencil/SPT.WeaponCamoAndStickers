@@ -6,6 +6,7 @@
 //
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
@@ -13,6 +14,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
+using RuntimeHandle;
 using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
@@ -73,6 +75,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static Plugin Instance;
 
+        public static ConfigEntry<KeyboardShortcut> MoveButton;
+        public static ConfigEntry<KeyboardShortcut> RotateButton;
+        public static ConfigEntry<KeyboardShortcut> ScaleButton;
+
 		public ManualLogSource LoggerInstance;
 
         private string DecalTexturesDir;
@@ -100,6 +106,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             Instance = this;
 			LoggerInstance = Logger;
+
+            MoveButton = Config.Bind("Main", "Camo Editor | Hotkeys | Move", new KeyboardShortcut(KeyCode.G), "");
+            RotateButton = Config.Bind("Main", "Camo Editor | Hotkeys | Rotate", new KeyboardShortcut(KeyCode.R), "");
+            ScaleButton = Config.Bind("Main", "Camo Editor | Hotkeys | Scale", new KeyboardShortcut(KeyCode.S), "");
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var userDir = Path.Combine(assemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamoAndStickers");
@@ -260,6 +270,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             return result;
+        }
+
+        public void Update()
+        {
+            if (CamoEditor.Some(out var camoEditor) && camoEditor.CurrentlyEditedDecalIndex.HasValue)
+            {
+                if (Input.GetKeyDown(MoveButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Position);
+                }
+                else if (Input.GetKeyDown(RotateButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Rotation);
+                }
+                else if (Input.GetKeyDown(ScaleButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Scale);
+                }
+            }
         }
 
         public void LateUpdate()
