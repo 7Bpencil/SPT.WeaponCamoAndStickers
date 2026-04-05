@@ -670,7 +670,7 @@ namespace SevenBoldPencil.WeaponCamo
             // when user tries weapon in hideout shooting range,
             // all his gear gets copied to new items to preserve
             // original durability/ammo count/etc,
-            // but we have to clone decals ourselves
+            // so we have to clone decals ourselves
             if (ItemsWithDecals.ContainsKey(originalId))
             {
                 Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
@@ -695,7 +695,7 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab)
         {
-			Logger.LogWarning($"OnWeaponPreviewOpened: {itemId}");
+			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
             {
                 WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
@@ -708,19 +708,19 @@ namespace SevenBoldPencil.WeaponCamo
 
         public void OnWeaponPreviewClosed(Camera weaponPreviewCamera, string itemId)
         {
-			Logger.LogWarning($"OnWeaponPreviewClosed: {itemId}");
+			Logger.LogInfo($"OnWeaponPreviewClosed: {itemId}");
             WeaponPreviewCameras.Remove(weaponPreviewCamera);
         }
 
 		public void OnPlayerModelViewShown(Camera playerModelViewCamera)
         {
-			Logger.LogWarning($"OnPlayerModelViewShown");
+			Logger.LogInfo($"OnPlayerModelViewShown");
             PlayerModelViewCameras.Add(playerModelViewCamera);
         }
 
 		public void OnPlayerModelViewClosed(Camera playerModelViewCamera)
         {
-			Logger.LogWarning($"OnPlayerModelViewClosed");
+			Logger.LogInfo($"OnPlayerModelViewClosed");
             PlayerModelViewCameras.Remove(playerModelViewCamera);
         }
 
