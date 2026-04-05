@@ -31,6 +31,7 @@ namespace RuntimeHandle
         private RotationHandle _rotationHandle;
         private ScaleHandle _scaleHandle;
         private TextureTilingHandle _textureTilingHandle;
+        private MaskTilingHandle _maskTilingHandle;
 
         public Transform targetTransform;
 		public Transform handleTransform;
@@ -68,6 +69,12 @@ namespace RuntimeHandle
 			_textureTilingHandle = new GameObject("TextureTilingHandle").AddComponent<TextureTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
 		}
 
+		public void CreateHandleMaskTiling(DecalInfo decalInfo, Decal decal)
+		{
+            type = HandleType.MaskTiling;
+			_maskTilingHandle = new GameObject("MaskTilingHandle").AddComponent<MaskTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+		}
+
         public void DestroyHandles()
         {
             _draggingHandle = null;
@@ -76,6 +83,7 @@ namespace RuntimeHandle
             if (_rotationHandle) Destroy(_rotationHandle.gameObject);
             if (_scaleHandle) Destroy(_scaleHandle.gameObject);
             if (_textureTilingHandle) Destroy(_textureTilingHandle.gameObject);
+            if (_maskTilingHandle) Destroy(_maskTilingHandle.gameObject);
         }
 
         private void Update()

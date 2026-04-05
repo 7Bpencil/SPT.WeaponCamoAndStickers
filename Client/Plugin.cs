@@ -403,6 +403,14 @@ namespace SevenBoldPencil.WeaponCamo
             });
         }
 
+        public void ApplyMaskUV(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeMaskUV(decalInfo.MaskUV);
+            });
+        }
+
         public void ApplyLocalPosition(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
@@ -474,9 +482,9 @@ namespace SevenBoldPencil.WeaponCamo
         }
 
         // pretty interesting that most rifles are around 5 cm in width
-        private const float defaultDecalDepth = 0.052f;
+        private const float defaultDecalDepth = 0.026f;
         private const float defaultDecalSize = 0.2f;
-        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-defaultDecalDepth / 2f, -0.35f, -0.003f);
+        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-defaultDecalDepth, -0.35f, -0.003f);
         private static readonly Vector3 leftSideDecalRotation = new(0, 0, 90);
 
         public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera)

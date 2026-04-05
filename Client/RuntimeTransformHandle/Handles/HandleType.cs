@@ -10,5 +10,6 @@ namespace RuntimeHandle
         Rotation,
         Scale,
         TextureTiling,
+        MaskTiling,
     }
 }

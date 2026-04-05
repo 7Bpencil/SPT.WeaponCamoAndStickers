@@ -816,8 +816,7 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureTilingIcon))
                 {
-                    // TODO texture tiling for mask
-                    // SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
+                    SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + buttonHeight + smallMargin + 7;
@@ -826,11 +825,6 @@ namespace SevenBoldPencil.WeaponCamo
                     valueX += longFieldWidth + smallMargin;
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoStyle.LabelStyleName);
-                }
-                if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "fix UV"))
-                {
-                    // TODO is this needed?
-                    // Plugin.FixUV(ItemId, decalIndex, decalInfo);
                 }
                 y += buttonHeight + mediumMargin;
 
@@ -894,6 +888,10 @@ namespace SevenBoldPencil.WeaponCamo
             {
                 TransformHandle.CreateHandleTextureTiling(decalInfo, decal);
             }
+            if (handleType == HandleType.MaskTiling)
+            {
+                TransformHandle.CreateHandleMaskTiling(decalInfo, decal);
+            }
 
 			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
@@ -920,6 +918,10 @@ namespace SevenBoldPencil.WeaponCamo
             if (handleType == HandleType.TextureTiling)
             {
                 Plugin.ApplyTextureUV(ItemId, decalIndex, decalInfo);
+            }
+            if (handleType == HandleType.MaskTiling)
+            {
+                Plugin.ApplyMaskUV(ItemId, decalIndex, decalInfo);
             }
         }
 
