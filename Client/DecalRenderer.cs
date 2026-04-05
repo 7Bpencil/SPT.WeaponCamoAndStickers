@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace SevenBoldPencil.WeaponCamo
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class DecalRenderer
 	{
@@ -40,7 +40,7 @@ namespace SevenBoldPencil.WeaponCamo
 			if (CanCameraSeeDecals(currentCamera) && !CommandBuffers.ContainsKey(currentCamera))
 			{
 				var commandBuffer = new CommandBuffer();
-				commandBuffer.name = "Deferred decals Dynamic (Weapon Camo)";
+				commandBuffer.name = "[WeaponCamoAndStickers] Deferred Decals";
 				currentCamera.AddCommandBuffer(CameraEvent.BeforeLighting, commandBuffer);
 				CommandBuffers.Add(currentCamera, commandBuffer);
 			}

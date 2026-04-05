@@ -5,7 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using SevenBoldPencil.WeaponCamo;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle

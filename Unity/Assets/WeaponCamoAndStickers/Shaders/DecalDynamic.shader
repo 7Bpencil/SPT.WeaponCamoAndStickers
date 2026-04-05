@@ -1,4 +1,4 @@
-Shader "WeaponCamo/Decal/Deferred DecalShader Diffuse+Normals Dynamic" {
+Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
         _MainTex ("Diffuse", 2D) = "white" {}
         _MainTexUV ("Diffuse UV", Vector) = (0, 0, 1, 1)

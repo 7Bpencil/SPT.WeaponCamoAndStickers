@@ -8,7 +8,7 @@
 using SevenBoldPencil.Common;
 using UnityEngine;
 
-namespace SevenBoldPencil.WeaponCamo
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class Decal : MonoBehaviour
 	{

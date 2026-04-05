@@ -10,7 +10,7 @@ using System;
 using RuntimeHandle;
 using UnityEngine;
 
-namespace SevenBoldPencil.WeaponCamo
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     public class CamoEditorResources
     {
@@ -37,23 +37,23 @@ namespace SevenBoldPencil.WeaponCamo
 
         public CamoEditorResources(AssetBundle bundle)
         {
-            PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/HandleShader.shader");
-            RotationHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/AdvancedHandleShader.shader");
-            ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/HandleShader.shader");
+            PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
+            RotationHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/AdvancedHandleShader.shader");
+            ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
 
-            MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/color-palette.png");
-            ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/closed-arrow.png");
-            OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/opened-arrow.png");
-            MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/up-arrow.png");
-            MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/down-arrow.png");
-            EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Move-Icon.png");
-            EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Rotate-Icon.png");
-            EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/Scale-Icon.png");
-            EditTextureTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/UV-Scale-Icon.png");
-            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/copy.png");
-            DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/bin.png");
-            SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/diskette.png");
-            ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Icons/hsv-circle.png");
+            MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/color-palette.png");
+            ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow.png");
+            OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
+            MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/up-arrow.png");
+            MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/down-arrow.png");
+            EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
+            EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
+            EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
+            EditTextureTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Scale-Icon.png");
+            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
+            DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
+            SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
+            ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];

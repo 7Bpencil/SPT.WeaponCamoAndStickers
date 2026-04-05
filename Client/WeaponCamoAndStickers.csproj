@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>SevenBoldPencil.WeaponCamo</RootNamespace>
+    <RootNamespace>SevenBoldPencil.WeaponCamoAndStickers</RootNamespace>
     <Nullable>disable</Nullable>
     <Authors>7Bpencil</Authors>
     <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
-    <AssemblyName>7Bpencil.WeaponCamo</AssemblyName>
+    <AssemblyName>7Bpencil.WeaponCamoAndStickers</AssemblyName>
     <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Configurations>Debug;Release;Package</Configurations>

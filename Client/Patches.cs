@@ -20,7 +20,7 @@ using SPT.Reflection.Patching;
 using HarmonyLib;
 using UnityEngine;
 
-namespace SevenBoldPencil.WeaponCamo
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public struct WeaponPreview_Proxy
 	{

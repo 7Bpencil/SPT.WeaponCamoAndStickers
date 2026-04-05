@@ -1,4 +1,4 @@
-﻿using SevenBoldPencil.WeaponCamo;
+﻿using SevenBoldPencil.WeaponCamoAndStickers;
 using System;
 using UnityEngine;
 

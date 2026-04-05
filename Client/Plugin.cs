@@ -15,7 +15,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SevenBoldPencil.WeaponCamo
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     public class ItemsWithDecals
     {
@@ -64,7 +64,7 @@ namespace SevenBoldPencil.WeaponCamo
         Mask
     }
 
-    [BepInPlugin("7Bpencil.WeaponCamo", "7Bpencil.WeaponCamo", "1.0.0")]
+    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.0.0")]
     public class Plugin : BaseUnityPlugin
     {
         public const string DefaultCamoName = "builtin/camos/default";
@@ -102,14 +102,14 @@ namespace SevenBoldPencil.WeaponCamo
 			LoggerInstance = Logger;
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var userDir = Path.Combine(assemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamo");
+            var userDir = Path.Combine(assemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamoAndStickers");
             DecalTexturesDir = Path.Combine(userDir, "textures");
             ItemsDir = Path.Combine(userDir, "items");
             PresetsDir = Path.Combine(userDir, "presets");
-			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weaponcamo");
+			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamo/Shaders/DecalDynamic.shader");
-            MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamo/Textures/missing.png");
+            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
+            MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             CamoEditorResources = new(bundle);
             DecalTextures = new();
             CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures, DefaultCamoName, Texture2D.whiteTexture);
@@ -742,7 +742,7 @@ namespace SevenBoldPencil.WeaponCamo
                 IsOpened = false,
                 IsColorPickerOpened = false,
                 CurrentPresetName = "",
-                WindowRect = SevenBoldPencil.WeaponCamo.CamoEditor.GetDefaultWindowRect()
+                WindowRect = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect()
             });
         }
 
