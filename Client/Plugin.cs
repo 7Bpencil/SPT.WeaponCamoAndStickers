@@ -500,13 +500,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        // pretty interesting that most rifles are around 5 cm in width
-        private const float defaultDecalDepth = 0.026f;
+        private const float defaultDecalDepth = 0.04f;
         private const float defaultDecalSize = 0.2f;
-        private static readonly Vector3 typicalRifleLeftSideCenter = new Vector3(-defaultDecalDepth, -0.35f, -0.003f);
-        private static readonly Vector3 leftSideDecalRotation = new(0, 0, 90);
 
-        public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera)
+        public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, float previewPivotZ, Camera weaponPreviewCamera)
         {
             var decalInfo = new DecalInfo()
             {
@@ -515,8 +512,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ColorHSVA = new Vector4(0, 0, 1, 1),
                 Mask = DefaultMaskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
-                LocalPosition = typicalRifleLeftSideCenter,
-                LocalEulerAngles = leftSideDecalRotation,
+                LocalPosition = new Vector3(-defaultDecalDepth, -previewPivotZ, 0),
+                LocalEulerAngles = new(0, 0, 90),
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                 MaxAngle = 0.5f,
             };
@@ -720,7 +717,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			IsCamoEditorWaitingForWeaponPreview = true;
         }
 
-        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab)
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, PreviewPivot previewPivot)
         {
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -729,7 +726,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab);
+				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab, previewPivot);
 			}
         }
 
@@ -751,7 +748,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PlayerModelViewCameras.Remove(playerModelViewCamera);
         }
 
-        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab)
+        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab, PreviewPivot previewPivot)
         {
             itemId = GetOriginalItemId(itemId);
             Logger.LogInfo($"SetupCamoEditor: {itemId}");
@@ -768,6 +765,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemId = itemId,
                 InstanceID = instanceID,
                 DecalsRoot = decalsRoot,
+                PreviewPivotZ = previewPivot.pivotPosition.z,
                 IsOpened = false,
                 IsColorPickerOpened = false,
                 CurrentPresetName = "",

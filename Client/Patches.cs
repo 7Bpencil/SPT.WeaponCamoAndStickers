@@ -85,24 +85,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
-			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab))
+			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab, out var previewPivot))
 			{
 				var itemId = item.Id;
 				var camera = weaponPreview.WeaponPreviewCamera;
-				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab);
+				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab, previewPivot);
 			}
 		}
 
-		public static bool TryGetWeaponPrefab(WeaponPreview_Proxy weaponPreview, out WeaponPrefab weaponPrefab)
+		public static bool TryGetWeaponPrefab(WeaponPreview_Proxy weaponPreview, out WeaponPrefab weaponPrefab, out PreviewPivot previewPivot)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview.gameObject_0;
-			if (itemGO && itemGO.TryGetComponent<WeaponPrefab>(out weaponPrefab))
+
+			if (itemGO &&
+				itemGO.TryGetComponent<WeaponPrefab>(out weaponPrefab) &&
+				itemGO.TryGetComponent<PreviewPivot>(out previewPivot))
 			{
 				return true;
 			}
 
 			weaponPrefab = default;
+			previewPivot = default;
 			return false;
 		}
 	}
