@@ -128,6 +128,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public string ItemId;
         public int InstanceID;
         public Transform DecalsRoot;
+        public Transform WeaponPreviewRotator;
         public float PreviewPivotZ;
         public bool IsOpened;
         public bool IsPresetsOpened;
@@ -471,7 +472,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
             {
-                var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, DecalsRoot, PreviewPivotZ, Camera);
+                var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, DecalsRoot, WeaponPreviewRotator, PreviewPivotZ, Camera);
                 var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
                 var textureData = Plugin.GetTextureData(decalInfo.Texture);
                 SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);

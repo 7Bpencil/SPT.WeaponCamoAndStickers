@@ -89,7 +89,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				var itemId = item.Id;
 				var camera = weaponPreview.WeaponPreviewCamera;
-				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab, previewPivot);
+				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab, weaponPreview.Rotator, previewPivot);
 			}
 		}
 

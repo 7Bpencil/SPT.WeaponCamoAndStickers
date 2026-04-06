@@ -503,8 +503,34 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private const float defaultDecalDepth = 0.04f;
         private const float defaultDecalSize = 0.2f;
 
-        public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, float previewPivotZ, Camera weaponPreviewCamera)
+        public (Vector3 localPosition, Vector3 localEulerAngles) GetStartPositionAndRotation(Transform weaponPreviewRotator, float previewPivotZ)
         {
+            var rotatorY = weaponPreviewRotator.localEulerAngles.y;
+            if (Math.Abs(rotatorY - 90) < 10)
+            {
+                // back
+                return (new Vector3(0, -previewPivotZ, 0), new(0, 0, 0));
+            }
+            if (Math.Abs(rotatorY - 270) < 10)
+            {
+                // front
+                return (new Vector3(0, -previewPivotZ, 0), new(0, 0, 180));
+            }
+            if (Math.Cos(rotatorY * Mathf.Deg2Rad) > 0)
+            {
+                // left
+                return (new Vector3(-defaultDecalDepth, -previewPivotZ, 0), new(0, 0, 90));
+            }
+            else
+            {
+                // right
+                return (new Vector3(defaultDecalDepth, -previewPivotZ, 0), new(0, 0, 270));
+            }
+        }
+
+        public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        {
+            var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
             var decalInfo = new DecalInfo()
             {
                 Texture = DefaultCamoName,
@@ -512,8 +538,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ColorHSVA = new Vector4(0, 0, 1, 1),
                 Mask = DefaultMaskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
-                LocalPosition = new Vector3(-defaultDecalDepth, -previewPivotZ, 0),
-                LocalEulerAngles = new(0, 0, 90),
+                LocalPosition = startLocalPosition,
+                LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                 MaxAngle = 0.5f,
             };
@@ -717,7 +743,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			IsCamoEditorWaitingForWeaponPreview = true;
         }
 
-        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, PreviewPivot previewPivot)
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
         {
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -726,7 +752,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab, previewPivot);
+				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab, rotator, previewPivot);
 			}
         }
 
@@ -748,7 +774,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PlayerModelViewCameras.Remove(playerModelViewCamera);
         }
 
-        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab, PreviewPivot previewPivot)
+        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
         {
             itemId = GetOriginalItemId(itemId);
             Logger.LogInfo($"SetupCamoEditor: {itemId}");
@@ -765,6 +791,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemId = itemId,
                 InstanceID = instanceID,
                 DecalsRoot = decalsRoot,
+                WeaponPreviewRotator = rotator,
                 PreviewPivotZ = previewPivot.pivotPosition.z,
                 IsOpened = false,
                 IsColorPickerOpened = false,
