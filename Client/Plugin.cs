@@ -604,6 +604,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
         }
 
+        public void RotateZ(string itemId, int decalIndex, DecalInfo decalInfo, float angle)
+        {
+            decalInfo.LocalEulerAngles.z += angle;
+            ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
+        }
+
         public void FixScale(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             // we keep decal width the same and change height to match texture aspect ratio

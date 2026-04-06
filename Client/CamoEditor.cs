@@ -167,6 +167,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int nameWidth = 120;
         public const int longFieldWidth = 60;
         public const int fixTransformButtonWidth = 110;
+        public const int halfFixTransformButtonWidth = (fixTransformButtonWidth - smallMargin) / 2;
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
@@ -671,9 +672,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localEulerAngles.z:F3}", CamoStyle.LabelStyleName);
             }
-            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "round to degree"))
+            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, halfFixTransformButtonWidth, buttonHeight), "round"))
             {
                 Plugin.RoundLocalEulerAnglesToDegree(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle();
+            }
+            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth + halfFixTransformButtonWidth + smallMargin, y, halfFixTransformButtonWidth, buttonHeight), "-90°Z"))
+            {
+                Plugin.RotateZ(ItemId, decalIndex, decalInfo, -90);
                 SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
