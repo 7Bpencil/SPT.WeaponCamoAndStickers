@@ -160,9 +160,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             // TODO
             // are gifs possible?
-
-            // TODO
-            // make keyboard shortcuts for move/rotate/scale
         }
 
         public List<string> LoadTexturesFromDirectory(

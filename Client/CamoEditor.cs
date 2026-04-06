@@ -409,6 +409,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
                     PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
+                    Option<string> deletedPresetNameOption = default;
                     foreach (var name in Plugin.GetPresetNames())
                     {
                         if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), name))
@@ -417,10 +418,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         }
                         if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                         {
-                            // TODO removing elements while iterating
-                            Plugin.DeletePreset(name);
+                            // theres no way user will click on multiple buttons in one frame, right?
+                            deletedPresetNameOption = new(name);
                         }
                         decalsY += buttonHeight + smallMargin;
+                    }
+                    if (deletedPresetNameOption.Some(out var deletedPresetName))
+                    {
+                        Plugin.DeletePreset(deletedPresetName);
                     }
 
                     GUI.EndScrollView();
