@@ -149,10 +149,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerBody_SetSkin().Enable();
 
             // TODO
-            // seems like default decals are not drawing on gun (because of stencil)
-            // does it mean we can make decals that will only apply on gun (and not hands and env)?
-
-            // TODO
             // maybe apply camo texture on top of diffuse texture?
 
             // TODO
