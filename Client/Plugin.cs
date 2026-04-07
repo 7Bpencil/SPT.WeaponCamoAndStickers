@@ -726,8 +726,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // so we have to clone decals ourselves
             if (ItemsWithDecals.ContainsKey(originalId))
             {
-                Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
-                Clones.Add(cloneId, originalId);
+                if (Clones.TryAdd(cloneId, originalId))
+                {
+                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
+                }
+                else
+                {
+                    Logger.LogWarning($"OnCloneItem: original: {originalId}, clone: {cloneId}, already added???");
+                }
             }
         }
 
