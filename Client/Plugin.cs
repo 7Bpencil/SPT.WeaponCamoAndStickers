@@ -112,7 +112,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ScaleButton = Config.Bind("Main", "Camo Editor | Hotkeys | Scale", new KeyboardShortcut(KeyCode.S), "");
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var userDir = Path.Combine(assemblyDir, "..", "..", "..", "SPT", "user", "mods", "7Bpencil.WeaponCamoAndStickers");
+            var userDir = Path.Combine(assemblyDir, "..", "7Bpencil.WeaponCamoAndStickers.Assets");
             DecalTexturesDir = Path.Combine(userDir, "textures");
             ItemsDir = Path.Combine(userDir, "items");
             PresetsDir = Path.Combine(userDir, "presets");
