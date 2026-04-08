@@ -108,9 +108,8 @@
     <PropertyGroup>
       <OutDir>$(ProjectDir)\..\..\..\BepInEx\plugins\$(TargetName)</OutDir>
     </PropertyGroup>
-    <Exec Command="rmdir /s /q &quot;$(OutDir)&quot;" />
-    <Exec Command="mkdir &quot;$(OutDir)&quot;" />
+    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
     <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(OutDir)\$(TargetFileName)&quot;" />
-    <Exec Command="xcopy /hievry &quot;$(ProjectDir)\assets&quot; &quot;$(OutDir)\assets&quot;" />
+    <Exec Command="xcopy /hievry &quot;$(ProjectDir)\bundles&quot; &quot;$(OutDir)\bundles&quot;" />
   </Target>
 </Project>

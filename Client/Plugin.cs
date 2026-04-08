@@ -112,11 +112,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ScaleButton = Config.Bind("Main", "Camo Editor | Hotkeys | Scale", new KeyboardShortcut(KeyCode.S), "");
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var userDir = Path.Combine(assemblyDir, "..", "7Bpencil.WeaponCamoAndStickers.Assets");
-            DecalTexturesDir = Path.Combine(userDir, "textures");
-            ItemsDir = Path.Combine(userDir, "items");
-            PresetsDir = Path.Combine(userDir, "presets");
-			var bundlePath = Path.Combine(assemblyDir, "assets", "bundles", "weapon-camo-and-stickers");
+            DecalTexturesDir = Path.Combine(assemblyDir, "textures");
+            ItemsDir = Path.Combine(assemblyDir, "items");
+            PresetsDir = Path.Combine(assemblyDir, "presets");
+			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
             MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
