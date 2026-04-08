@@ -198,7 +198,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
-                    Logger.LogError($"Failed to load decal texture: {name}");
+                    Logger.LogError($"Failed to load decal texture: {filePath}");
                 }
             }
 
