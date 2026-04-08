@@ -130,9 +130,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		private void DrawAllDecals(Camera currentCamera, CommandBuffer buffer)
 		{
 			// TODO some simple culling
-			foreach (var (_, itemsWithDecals) in ItemsWithDecals)
+			foreach (var itemsWithDecals in ItemsWithDecals.Values)
 			{
-				foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
 				{
 					foreach (var decal in itemWithDecals.Decals)
 					{
@@ -146,7 +146,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
 			if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
 			{
-				foreach (var (_, itemWithDecals) in itemsWithDecals.Items)
+				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
 				{
 					foreach (var decal in itemWithDecals.Decals)
 					{
