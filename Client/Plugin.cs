@@ -36,6 +36,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
+        public const int CurrentSchemaVersion = 1;
+
+        public int SchemaVersion;
+        public string Name;
         public string Texture;
         public Vector4 TextureUV;
         public Vector4 ColorHSVA;
@@ -230,6 +234,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var presetName = Path.GetFileNameWithoutExtension(filePath);
                 var json = File.ReadAllText(filePath);
                 var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                UpgradeOldVersionsOfDecalsInfo(decalsInfo);
 
                 result.Add(presetName, decalsInfo);
             }
@@ -252,6 +257,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var itemId = Path.GetFileNameWithoutExtension(filePath);
                 var json = File.ReadAllText(filePath);
                 var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                UpgradeOldVersionsOfDecalsInfo(decalsInfo);
                 var itemsWithDecals = new ItemsWithDecals()
                 {
                     Items = new(),
@@ -262,6 +268,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             return result;
+        }
+
+        public static void UpgradeOldVersionsOfDecalsInfo(List<DecalInfo> decalsInfo)
+        {
+            foreach (var decalInfo in decalsInfo)
+            {
+                if (decalInfo.SchemaVersion == 0)
+                {
+                    decalInfo.Name = "";
+                }
+            }
         }
 
         public void Update()
@@ -523,6 +540,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
             var decalInfo = new DecalInfo()
             {
+                SchemaVersion = DecalInfo.CurrentSchemaVersion,
+                Name = "",
                 Texture = DefaultCamoName,
                 TextureUV = new Vector4(0, 0, 1, 1),
                 ColorHSVA = new Vector4(0, 0, 1, 1),

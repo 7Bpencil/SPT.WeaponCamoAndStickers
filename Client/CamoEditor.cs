@@ -152,6 +152,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int maxDecalsVisibleWhenPresetsAreNotOpened = 9;
         public const int maxDecalsVisibleWhenPresetsAreOpened = 5;
         public const int maxPresetsVisible = 9;
+        public const int maxPresetNameLength = 25;
+        public const int maxDecalNameLength = 30;
 
         public const int smallMargin = 4;
         public const int mediumMargin = 8;
@@ -272,6 +274,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
+                    buttonHeight + mediumMargin + // decal name
                     3 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
@@ -290,6 +293,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
+                    buttonHeight + mediumMargin + // decal name
                     3 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
@@ -376,7 +380,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             y += bigMargin;
 
             var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            CurrentPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, 25, CamoStyle.TextFieldStyle);
+            CurrentPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoStyle.TextFieldStyle);
             if (string.IsNullOrWhiteSpace(CurrentPresetName))
             {
                 GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter preset name", CamoStyle.LabelStyleName);
@@ -507,7 +511,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var labelX = textureIconX + iconSize + smallMargin + 2;
-            GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalInfo.Texture, CamoStyle.TextureNameStyle);
+            var decalName = string.IsNullOrWhiteSpace(decalInfo.Name) ? decalInfo.Texture : decalInfo.Name;
+            GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalName, CamoStyle.TextureNameStyle);
 
             var deleteX = x + boxWidth - (smallMargin + buttonHeight) * 3;
             if (GUI.Button(new Rect(deleteX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
@@ -637,6 +642,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 DestroyTransformHandle();
             }
             y += buttonHeight + bigMargin;
+
+
+            decalInfo.Name = GUI.TextField(new Rect(x, y, boxWidth, buttonHeight), decalInfo.Name, maxDecalNameLength, CamoStyle.TextFieldStyle);
+            if (string.IsNullOrWhiteSpace(decalInfo.Name))
+            {
+                GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, boxWidth, buttonHeight), "enter decal name (optional)", CamoStyle.LabelStyleName);
+            }
+            y += buttonHeight + mediumMargin;
 
 
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
