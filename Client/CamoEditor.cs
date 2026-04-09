@@ -168,7 +168,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
         public const int longFieldWidth = 60;
-        public const int fixTransformButtonWidth = 110;
+        public const int fixTransformButtonWidth = (boxWidth - smallMargin * 2) / 3;
         public const int halfFixTransformButtonWidth = (fixTransformButtonWidth - smallMargin) / 2;
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
@@ -275,7 +275,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
-                    3 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale
+                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
                     buttonHeight + mediumMargin + // UV
@@ -294,7 +294,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
-                    3 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale
+                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
                     buttonHeight + mediumMargin + // UV
@@ -667,11 +667,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localPosition.z:F3}", CamoStyle.LabelStyleName);
             }
-            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "flip left/right"))
-            {
-                Plugin.FlipSideLeftRight(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle();
-            }
             y += buttonHeight + smallMargin;
 
 
@@ -720,6 +715,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "fix scale"))
             {
                 Plugin.FixScale(ItemId, decalIndex, decalInfo);
+            }
+            y += buttonHeight + smallMargin;
+
+            {
+                var lineX = x;
+                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip left/right"))
+                {
+                    Plugin.FlipSideLeftRight(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle();
+                }
+                lineX += fixTransformButtonWidth + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip horz"))
+                {
+                    Plugin.FlipHorizontally(ItemId, decalIndex, decalInfo);
+                }
+                lineX += fixTransformButtonWidth + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip vert"))
+                {
+                    Plugin.FlipVertically(ItemId, decalIndex, decalInfo);
+                }
             }
             y += buttonHeight + bigMargin;
 

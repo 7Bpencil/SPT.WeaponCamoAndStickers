@@ -593,16 +593,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        // this works only left/right,
-        // to make it work in more cases would require defining
-        // proper mirror plane, which is obvious for left/right,
-        // but not so obvious in other cases
         public void FlipSideLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            decalInfo.LocalPosition.x *= -1f;
+            decalInfo.LocalPosition.x *= -1;
             decalInfo.LocalEulerAngles.z += -180;
+			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
+
             ApplyLocalPosition(itemId, decalIndex, decalInfo);
             ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
+            ApplyLocalScale(itemId, decalIndex, decalInfo);
+        }
+
+        public void FlipHorizontally(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
+            ApplyLocalScale(itemId, decalIndex, decalInfo);
+        }
+
+        public void FlipVertically(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledZ(-1);
+            ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
         public void RoundLocalEulerAnglesToDegree(string itemId, int decalIndex, DecalInfo decalInfo)
@@ -627,7 +638,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var uvAspectRatio = decalInfo.TextureUV.z / decalInfo.TextureUV.w;
             var textureAspectRatio = texture.width / (float)texture.height;
             var trueTextureAspectRatio = textureAspectRatio * uvAspectRatio;
-            decalInfo.LocalScale.z = decalInfo.LocalScale.x / trueTextureAspectRatio;
+            var signZ = Math.Sign(decalInfo.LocalScale.z);
+            decalInfo.LocalScale.z = signZ * Math.Abs(decalInfo.LocalScale.x) / trueTextureAspectRatio;
             ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
@@ -637,7 +649,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var textureData = GetTextureData(decalInfo.Texture);
             var texture = textureData.Texture;
             var textureAspectRatio = texture.width / (float)texture.height;
-            var decalAspectRatio = decalInfo.LocalScale.x / decalInfo.LocalScale.z;
+            var decalAspectRatio = Math.Abs(decalInfo.LocalScale.x) / Math.Abs(decalInfo.LocalScale.z);
             var k = decalAspectRatio / textureAspectRatio;
             decalInfo.TextureUV.z = decalInfo.TextureUV.w * k;
             ApplyTextureUV(itemId, decalIndex, decalInfo);
