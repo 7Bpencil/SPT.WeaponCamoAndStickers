@@ -111,9 +111,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Instance = this;
 			LoggerInstance = Logger;
 
-            MoveButton = Config.Bind("Main", "Camo Editor | Hotkeys | Move", new KeyboardShortcut(KeyCode.G), "");
-            RotateButton = Config.Bind("Main", "Camo Editor | Hotkeys | Rotate", new KeyboardShortcut(KeyCode.R), "");
-            ScaleButton = Config.Bind("Main", "Camo Editor | Hotkeys | Scale", new KeyboardShortcut(KeyCode.S), "");
+            MoveButton = Config.Bind("Main", "Camo Editor | Keybinds | Move", new KeyboardShortcut(KeyCode.G), "");
+            RotateButton = Config.Bind("Main", "Camo Editor | Keybinds | Rotate", new KeyboardShortcut(KeyCode.R), "");
+            ScaleButton = Config.Bind("Main", "Camo Editor | Keybinds | Scale", new KeyboardShortcut(KeyCode.S), "");
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             DecalTexturesDir = Path.Combine(assemblyDir, "textures");
