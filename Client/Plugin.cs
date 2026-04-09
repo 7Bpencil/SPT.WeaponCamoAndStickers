@@ -70,7 +70,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Mask
     }
 
-    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.0.1")]
+    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.1.0")]
     public class Plugin : BaseUnityPlugin
     {
         public const string DefaultCamoName = "builtin/camos/default";
