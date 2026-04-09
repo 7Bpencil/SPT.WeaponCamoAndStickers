@@ -70,6 +70,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Mask
     }
 
+    public class TextureCreatedEvent
+    {
+        public const int MaxTriesCount = 100;
+
+        public string FilePath;
+        public DecalTextureType Type;
+        public int TriesCount;
+    }
+
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.0.1")]
     public class Plugin : BaseUnityPlugin
     {
@@ -95,6 +104,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private List<string> CamosList;
         private List<string> StickersList;
         private List<string> MasksList;
+        private FileSystemWatcher CamosWatcher;
+        private FileSystemWatcher StickersWatcher;
+        private FileSystemWatcher MasksWatcher;
+        private List<TextureCreatedEvent> TextureCreatedEvents;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -111,9 +124,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Instance = this;
 			LoggerInstance = Logger;
 
-            MoveButton = Config.Bind("Main", "Camo Editor | Hotkeys | Move", new KeyboardShortcut(KeyCode.G), "");
-            RotateButton = Config.Bind("Main", "Camo Editor | Hotkeys | Rotate", new KeyboardShortcut(KeyCode.R), "");
-            ScaleButton = Config.Bind("Main", "Camo Editor | Hotkeys | Scale", new KeyboardShortcut(KeyCode.S), "");
+            MoveButton = Config.Bind("Main", "Camo Editor | Keybinds | Move", new KeyboardShortcut(KeyCode.G), "");
+            RotateButton = Config.Bind("Main", "Camo Editor | Keybinds | Rotate", new KeyboardShortcut(KeyCode.R), "");
+            ScaleButton = Config.Bind("Main", "Camo Editor | Keybinds | Scale", new KeyboardShortcut(KeyCode.S), "");
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             DecalTexturesDir = Path.Combine(assemblyDir, "textures");
@@ -125,9 +138,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             CamoEditorResources = new(bundle);
             DecalTextures = new();
-            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures, DefaultCamoName, Texture2D.whiteTexture);
-            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, DecalTexturesDir, "stickers", bundle, DecalTextures, DefaultStickerName, Texture2D.whiteTexture);
-            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, DecalTexturesDir, "masks", bundle, DecalTextures, DefaultMaskName, Texture2D.whiteTexture);
+            (CamosList, CamosWatcher) = LoadTexturesFromDirectory(DecalTextureType.Camo, DecalTexturesDir, "camos", bundle, DecalTextures, DefaultCamoName, Texture2D.whiteTexture);
+            (StickersList, StickersWatcher) = LoadTexturesFromDirectory(DecalTextureType.Sticker, DecalTexturesDir, "stickers", bundle, DecalTextures, DefaultStickerName, Texture2D.whiteTexture);
+            (MasksList, MasksWatcher) = LoadTexturesFromDirectory(DecalTextureType.Mask, DecalTexturesDir, "masks", bundle, DecalTextures, DefaultMaskName, Texture2D.whiteTexture);
+            TextureCreatedEvents = new();
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -161,62 +175,119 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // are gifs possible?
         }
 
-        public List<string> LoadTexturesFromDirectory(
+        public (List<string>, FileSystemWatcher) LoadTexturesFromDirectory(
             DecalTextureType decalTextureType,
             string rootDirectoryPath,
             string subfolder,
             AssetBundle bundle,
-            Dictionary<string, DecalTextureData> resultDict,
+            Dictionary<string, DecalTextureData> texturesDict,
             string defaultTextureName,
             Texture2D defaultTexture)
         {
-            List<string> resultList;
+            List<string> texturesList;
 
             var directoryPath = Path.Combine(rootDirectoryPath, subfolder);
-            if (!Directory.Exists(directoryPath))
+            if (Directory.Exists(directoryPath))
             {
-                resultList = new List<string>(1);
-                AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
-                return resultList;
-            }
-
-            var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
-            resultList = new List<string>(filePaths.Length + 1);
-            AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
-
-            foreach (var filePath in filePaths)
-            {
-                var extension = Path.GetExtension(filePath);
-                var fileData = File.ReadAllBytes(filePath);
-                var texture = new Texture2D(2, 2);
-
-                if (ImageConversion.LoadImage(texture, fileData))
+                var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
+                texturesList = new List<string>(filePaths.Length + 1);
+                AddTexture(defaultTextureName, defaultTexture, decalTextureType, texturesList, texturesDict);
+                foreach (var filePath in filePaths)
                 {
-                    var name = filePath
-                        .Replace(rootDirectoryPath, "")
-                        .Replace(extension, "")
-                        .Remove(0, 1) // remove first slash
-                        .Replace(@"\", @"/"); // replace windows slashes with unix ones
-
-                    AddTexture(name, texture, decalTextureType, resultList, resultDict);
-                }
-                else
-                {
-                    Logger.LogError($"Failed to load decal texture: {filePath}");
+                    TryLoadTexture(decalTextureType, rootDirectoryPath, filePath, texturesList, texturesDict);
                 }
             }
+            else
+            {
+                texturesList = new List<string>(1);
+                AddTexture(defaultTextureName, defaultTexture, decalTextureType, texturesList, texturesDict);
+            }
 
-            return resultList;
+            var fileWatcher = new FileSystemWatcher(directoryPath);
+
+            // TODO do we really need that many attributes?
+            fileWatcher.NotifyFilter =
+                NotifyFilters.Attributes |
+                NotifyFilters.CreationTime |
+                NotifyFilters.DirectoryName |
+                NotifyFilters.FileName |
+                NotifyFilters.LastAccess |
+                NotifyFilters.LastWrite |
+                NotifyFilters.Security |
+                NotifyFilters.Size;
+
+            fileWatcher.Created += (_, e) => {
+                // TODO
+                // it works with logging, doesnt work without logging
+                // probably some locking
+                Logger.LogWarning($"Created: {e.FullPath}");
+                TextureCreatedEvents.Add(new()
+                {
+                    FilePath = e.FullPath,
+                    Type = decalTextureType,
+                    TriesCount = 0,
+                });
+            };
+            fileWatcher.Error += (_, e) => {
+                Logger.LogError(e.GetException().Message);
+            };
+
+            fileWatcher.Filter = "*.png";
+            fileWatcher.IncludeSubdirectories = true;
+            fileWatcher.EnableRaisingEvents = true;
+
+            return (texturesList, fileWatcher);
         }
 
-        public static void AddTexture(string textureName, Texture2D texture, DecalTextureType type, List<string> resultList, Dictionary<string, DecalTextureData> resultDict)
+        public void TryLoadTexture(
+            DecalTextureType type,
+            string rootDirectoryPath,
+            string filePath,
+            List<string> texturesList,
+            Dictionary<string, DecalTextureData> texturesDict)
         {
-            resultList.Add(textureName);
-            resultDict.Add(textureName, new DecalTextureData()
+            var extension = Path.GetExtension(filePath);
+            if (extension != ".png")
+            {
+                return;
+            }
+
+            var fileData = File.ReadAllBytes(filePath);
+            var texture = new Texture2D(2, 2);
+
+            if (ImageConversion.LoadImage(texture, fileData))
+            {
+                var name = filePath
+                    .Replace(rootDirectoryPath, "")
+                    .Replace(extension, "")
+                    .Remove(0, 1) // remove first slash
+                    .Replace(@"\", @"/"); // replace windows slashes with unix ones
+
+                AddTexture(name, texture, type, texturesList, texturesDict);
+            }
+            else
+            {
+                Logger.LogError($"Failed to load decal texture: {filePath}");
+            }
+        }
+
+        public static void AddTexture(
+            string textureName,
+            Texture2D texture,
+            DecalTextureType type,
+            List<string> texturesList,
+            Dictionary<string, DecalTextureData> texturesDict)
+        {
+            var textureData = new DecalTextureData()
             {
                 Texture = texture,
                 Type = type
-            });
+            };
+            if (texturesDict.TryAdd(textureName, textureData))
+            {
+                // fileWatcher can return false positive Created events
+                texturesList.Add(textureName);
+            }
         }
 
         public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
@@ -283,6 +354,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void Update()
         {
+            CheckKeybinds();
+            CheckFileWatchers();
+        }
+
+        public void CheckKeybinds()
+        {
             if (CamoEditor.Some(out var camoEditor) && camoEditor.CurrentlyEditedDecalIndex.HasValue)
             {
                 if (Input.GetKeyDown(MoveButton.Value.MainKey))
@@ -298,6 +375,47 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     camoEditor.SetupTransformHandle(HandleType.Scale);
                 }
             }
+        }
+
+        public void CheckFileWatchers()
+        {
+            var holesCount = 0;
+            for (var i = 0; i < TextureCreatedEvents.Count; i++)
+            {
+                var eventData = TextureCreatedEvents[i];
+                if (eventData == null)
+                {
+                    holesCount++;
+                    continue;
+                }
+                // file watcher returns events too soon, so file may be locked,
+                // we have to try multiple times, but not too many
+                try
+                {
+                    Logger.LogWarning($"Load: {eventData.FilePath}");
+                    switch (eventData.Type)
+                    {
+                        case DecalTextureType.Camo: TryLoadTexture(eventData.Type, DecalTexturesDir, eventData.FilePath, CamosList, DecalTextures); break;
+                        case DecalTextureType.Sticker: TryLoadTexture(eventData.Type, DecalTexturesDir, eventData.FilePath, StickersList, DecalTextures); break;
+                        case DecalTextureType.Mask: TryLoadTexture(eventData.Type, DecalTexturesDir, eventData.FilePath, MasksList, DecalTextures); break;
+                    }
+                    TextureCreatedEvents[i] = null;
+                    holesCount++;
+                }
+                catch
+                {
+                    eventData.TriesCount++;
+                    if (eventData.TriesCount >= TextureCreatedEvent.MaxTriesCount)
+                    {
+                        TextureCreatedEvents[i] = null;
+                        holesCount++;
+                    }
+                }
+            }
+            // if (holesCount != 0 && holesCount == TextureCreatedEvents.Count)
+            // {
+            //     TextureCreatedEvents.Clear();
+            // }
         }
 
         public void LateUpdate()
