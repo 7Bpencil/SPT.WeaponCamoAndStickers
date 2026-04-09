@@ -166,57 +166,84 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             string rootDirectoryPath,
             string subfolder,
             AssetBundle bundle,
-            Dictionary<string, DecalTextureData> resultDict,
+            Dictionary<string, DecalTextureData> texturesDict,
             string defaultTextureName,
             Texture2D defaultTexture)
         {
-            List<string> resultList;
+            List<string> texturesList;
 
             var directoryPath = Path.Combine(rootDirectoryPath, subfolder);
-            if (!Directory.Exists(directoryPath))
+            if (Directory.Exists(directoryPath))
             {
-                resultList = new List<string>(1);
-                AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
-                return resultList;
-            }
-
-            var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
-            resultList = new List<string>(filePaths.Length + 1);
-            AddTexture(defaultTextureName, defaultTexture, decalTextureType, resultList, resultDict);
-
-            foreach (var filePath in filePaths)
-            {
-                var extension = Path.GetExtension(filePath);
-                var fileData = File.ReadAllBytes(filePath);
-                var texture = new Texture2D(2, 2);
-
-                if (ImageConversion.LoadImage(texture, fileData))
+                var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
+                texturesList = new List<string>(filePaths.Length + 1);
+                TryAddTexture(defaultTextureName, defaultTexture, decalTextureType, texturesList, texturesDict);
+                foreach (var filePath in filePaths)
                 {
-                    var name = filePath
-                        .Replace(rootDirectoryPath, "")
-                        .Replace(extension, "")
-                        .Remove(0, 1) // remove first slash
-                        .Replace(@"\", @"/"); // replace windows slashes with unix ones
-
-                    AddTexture(name, texture, decalTextureType, resultList, resultDict);
-                }
-                else
-                {
-                    Logger.LogError($"Failed to load decal texture: {filePath}");
+                    TryLoadTexture(decalTextureType, rootDirectoryPath, filePath, texturesList, texturesDict);
                 }
             }
+            else
+            {
+                texturesList = new List<string>(1);
+                TryAddTexture(defaultTextureName, defaultTexture, decalTextureType, texturesList, texturesDict);
+            }
 
-            return resultList;
+            return texturesList;
         }
 
-        public static void AddTexture(string textureName, Texture2D texture, DecalTextureType type, List<string> resultList, Dictionary<string, DecalTextureData> resultDict)
+        public void TryLoadTexture(
+            DecalTextureType type,
+            string rootDirectoryPath,
+            string filePath,
+            List<string> texturesList,
+            Dictionary<string, DecalTextureData> texturesDict)
         {
-            resultList.Add(textureName);
-            resultDict.Add(textureName, new DecalTextureData()
+            var extension = Path.GetExtension(filePath);
+            var name = filePath
+                .Replace(rootDirectoryPath, "")
+                .Replace(extension, "")
+                .Remove(0, 1) // remove first slash
+                .Replace(@"\", @"/"); // replace windows slashes with unix ones
+
+            // can happen in some circumstances
+            if (texturesDict.ContainsKey(name))
+            {
+                return;
+            }
+
+            var fileData = File.ReadAllBytes(filePath);
+            var texture = new Texture2D(2, 2);
+            var isSuccess =
+                ImageConversion.LoadImage(texture, fileData) &&
+                TryAddTexture(name, texture, type, texturesList, texturesDict);
+
+            if (!isSuccess)
+            {
+                Logger.LogError($"Failed to load decal texture: {filePath}");
+            }
+        }
+
+        public static bool TryAddTexture(
+            string textureName,
+            Texture2D texture,
+            DecalTextureType type,
+            List<string> texturesList,
+            Dictionary<string, DecalTextureData> texturesDict)
+        {
+            var textureData = new DecalTextureData()
             {
                 Texture = texture,
                 Type = type
-            });
+            };
+
+            if (texturesDict.TryAdd(textureName, textureData))
+            {
+                texturesList.Add(textureName);
+                return true;
+            }
+
+            return false;
         }
 
         public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
