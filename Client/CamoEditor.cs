@@ -720,9 +720,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             {
                 var lineX = x;
-                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip left/right"))
+                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip side"))
                 {
-                    Plugin.FlipSideLeftRight(ItemId, decalIndex, decalInfo);
+                    Plugin.FlipSide(ItemId, decalIndex, decalInfo);
                     SyncTransformHandle();
                 }
                 lineX += fixTransformButtonWidth + smallMargin;

@@ -625,9 +625,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void FlipSideLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void FlipSide(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            decalInfo.LocalPosition.x *= -1;
+            var offset = Vector3.up * (decalInfo.LocalScale.y * 2 * -1);
+            var rotation = Quaternion.Euler(decalInfo.LocalEulerAngles.x, decalInfo.LocalEulerAngles.y, decalInfo.LocalEulerAngles.z);
+            var offsetRotated = rotation * offset;
+
+            decalInfo.LocalPosition += offsetRotated;
             decalInfo.LocalEulerAngles.z += -180;
 			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
 
