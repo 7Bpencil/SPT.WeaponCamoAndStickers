@@ -818,7 +818,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
             {
-                WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+                if (!WeaponPreviewCameras.TryAdd(weaponPreviewCamera, itemId))
+                {
+        			Logger.LogWarning($"OnWeaponPreviewOpened: {itemId}, already added weapon preview camera?");
+                }
             }
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
