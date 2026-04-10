@@ -814,6 +814,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
         {
+            itemId = GetOriginalItemId(itemId);
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
             if (ItemsWithDecals.ContainsKey(itemId))
             {
