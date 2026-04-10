@@ -526,6 +526,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             decalIndexA = (decalsInfo.Count + decalIndexA) % decalsInfo.Count;
             decalIndexB = (decalsInfo.Count + decalIndexB) % decalsInfo.Count;
 
+            if (decalIndexA == decalIndexB)
+            {
+                return;
+            }
+
             (decalsInfo[decalIndexA], decalsInfo[decalIndexB]) = (decalsInfo[decalIndexB], decalsInfo[decalIndexA]);
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
