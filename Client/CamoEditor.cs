@@ -173,7 +173,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly Rect colorPickerRect = new(0, 182, 230, 304);
+        public static readonly Rect colorPickerRect = new(0, 258, 230, 304);
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
         public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
