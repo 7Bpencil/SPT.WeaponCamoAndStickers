@@ -625,14 +625,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void FlipSide(string itemId, int decalIndex, DecalInfo decalInfo)
+        // mirror around YZ plane
+        public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            var offset = Vector3.up * (decalInfo.LocalScale.y * 2 * -1);
             var rotation = Quaternion.Euler(decalInfo.LocalEulerAngles.x, decalInfo.LocalEulerAngles.y, decalInfo.LocalEulerAngles.z);
-            var offsetRotated = rotation * offset;
+            rotation.x *= -1;
+            rotation.w *= -1;
 
-            decalInfo.LocalPosition += offsetRotated;
-            decalInfo.LocalEulerAngles.z += -180;
+            decalInfo.LocalPosition.x *= -1;
+            decalInfo.LocalEulerAngles = rotation.eulerAngles;
 			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
 
             ApplyLocalPosition(itemId, decalIndex, decalInfo);
@@ -650,6 +651,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
 			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledZ(-1);
             ApplyLocalScale(itemId, decalIndex, decalInfo);
+        }
+
+        public void FlipDirection(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            var offset = Vector3.up * (decalInfo.LocalScale.y * 2 * -1);
+            var rotation = Quaternion.Euler(decalInfo.LocalEulerAngles.x, decalInfo.LocalEulerAngles.y, decalInfo.LocalEulerAngles.z);
+            var offsetRotated = rotation * offset;
+
+            decalInfo.LocalPosition += offsetRotated;
+            decalInfo.LocalEulerAngles.z += -180;
+
+            ApplyLocalPosition(itemId, decalIndex, decalInfo);
+            ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
         }
 
         public void RoundLocalEulerAnglesToDegree(string itemId, int decalIndex, DecalInfo decalInfo)

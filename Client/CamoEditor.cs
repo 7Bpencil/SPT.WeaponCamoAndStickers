@@ -26,7 +26,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D EditPositionIcon;
         public Texture2D EditRotationIcon;
         public Texture2D EditScaleIcon;
-        public Texture2D EditTextureTilingIcon;
+        public Texture2D EditUVOffsetIcon;
+        public Texture2D EditUVTilingIcon;
         public Texture2D DuplicateIcon;
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
@@ -49,7 +50,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
             EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
             EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
-            EditTextureTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Scale-Icon.png");
+            EditUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Move-Icon.png");
+            EditUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Scale-Icon.png");
             DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
@@ -159,8 +161,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int mediumMargin = 8;
         public const int bigMargin = 14;
 
-        public const int startX = 25;
-        public const int startY = 19;
+        public const int startX = 10;
+        public const int startY = 10;
         public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
         public const int buttonHeight = 32;
         public const int iconSize = buttonHeight * 2 + smallMargin;
@@ -168,8 +170,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
         public const int longFieldWidth = 60;
-        public const int fixTransformButtonWidth = (boxWidth - smallMargin * 2) / 3;
-        public const int halfFixTransformButtonWidth = (fixTransformButtonWidth - smallMargin) / 2;
+        public const int halfBoxWidthButton = (boxWidth - smallMargin) / 2;
+        public const int thirdBoxWidthButton = (boxWidth - smallMargin * 2) / 3;
+        public const int fourthBoxWidthButton = (halfBoxWidthButton - smallMargin) / 2;
+        public const int sixthBoxWidthButton = (thirdBoxWidthButton - smallMargin) / 2;
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
@@ -278,7 +282,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
-                    buttonHeight + mediumMargin + // UV
+                    buttonHeight + smallMargin + // UV offset
+                    buttonHeight + mediumMargin + // UV tiling
                     buttonHeight + bigMargin + // color
                     buttonHeight + smallMargin + // opacity
                     buttonHeight + bigMargin + // max angle
@@ -297,7 +302,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
-                    buttonHeight + mediumMargin + // UV
+                    buttonHeight + smallMargin + // UV offset
+                    buttonHeight + mediumMargin + // UV tiling
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
                     visibleHeight + bigMargin; // icons grid
@@ -667,6 +673,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localPosition.z:F3}", CamoStyle.LabelStyleName);
             }
+            if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "mirror left/right"))
+            {
+                Plugin.MirrorLeftRight(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle();
+            }
             y += buttonHeight + smallMargin;
 
 
@@ -685,12 +696,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localEulerAngles.z:F3}", CamoStyle.LabelStyleName);
             }
-            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, halfFixTransformButtonWidth, buttonHeight), "round"))
+            if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, sixthBoxWidthButton, buttonHeight), "round"))
             {
                 Plugin.RoundLocalEulerAnglesToDegree(ItemId, decalIndex, decalInfo);
                 SyncTransformHandle();
             }
-            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth + halfFixTransformButtonWidth + smallMargin, y, halfFixTransformButtonWidth, buttonHeight), "-90°Z"))
+            if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton + sixthBoxWidthButton + smallMargin, y, sixthBoxWidthButton, buttonHeight), "-90°Z"))
             {
                 Plugin.RotateZ(ItemId, decalIndex, decalInfo, -90);
                 SyncTransformHandle();
@@ -712,7 +723,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localScale.z:F3}", CamoStyle.LabelStyleName);
             }
-            if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "fix scale"))
+            if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "fix scale"))
             {
                 Plugin.FixScale(ItemId, decalIndex, decalInfo);
             }
@@ -720,22 +731,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             {
                 var lineX = x;
-                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip side"))
-                {
-                    Plugin.FlipSide(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle();
-                }
-                lineX += fixTransformButtonWidth + smallMargin;
-
-                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip horz"))
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip horz"))
                 {
                     Plugin.FlipHorizontally(ItemId, decalIndex, decalInfo);
                 }
-                lineX += fixTransformButtonWidth + smallMargin;
+                lineX += thirdBoxWidthButton + smallMargin;
 
-                if (GUI.Button(new Rect(lineX, y, fixTransformButtonWidth, buttonHeight), "flip vert"))
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip vert"))
                 {
                     Plugin.FlipVertically(ItemId, decalIndex, decalInfo);
+                }
+                lineX += thirdBoxWidthButton + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip dir"))
+                {
+                    Plugin.FlipDirection(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + bigMargin;
@@ -748,7 +759,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (DecalSettingType == DecalSettingType.Texture)
             {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureTilingIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
+                {
+                    // TODO
+                }
+                {
+                    var valueX = x + buttonHeight + smallMargin + 7;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.x:F3}", CamoStyle.LabelStyleName);
+                    valueX += longFieldWidth + smallMargin;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.y:F3}", CamoStyle.LabelStyleName);
+                }
+                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    // TODO
+                }
+                y += buttonHeight + smallMargin;
+
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVTilingIcon))
                 {
                     SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
                 }
@@ -760,9 +789,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.w:F3}", CamoStyle.LabelStyleName);
                 }
-                if (GUI.Button(new Rect(x + boxWidth - fixTransformButtonWidth, y, fixTransformButtonWidth, buttonHeight), "fix UV"))
                 {
-                    Plugin.FixUV(ItemId, decalIndex, decalInfo);
+                    var valueX = x + boxWidth - halfBoxWidthButton;
+                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                    {
+                        // TODO
+                    }
+                    valueX += fourthBoxWidthButton + smallMargin;
+
+                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "fix UV"))
+                    {
+                        Plugin.FixUV(ItemId, decalIndex, decalInfo);
+                    }
                 }
                 y += buttonHeight + mediumMargin;
 
@@ -841,7 +879,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureTilingIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
+                {
+                    // TODO
+                }
+                {
+                    var valueX = x + buttonHeight + smallMargin + 7;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoStyle.LabelStyleName);
+                    valueX += longFieldWidth + smallMargin;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
+                }
+                y += buttonHeight + smallMargin;
+
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVTilingIcon))
                 {
                     SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
                 }

@@ -9,7 +9,9 @@ namespace RuntimeHandle
         Position,
         Rotation,
         Scale,
+        TextureOffset,
         TextureTiling,
+        MaskOffset,
         MaskTiling,
     }
 }
