@@ -693,7 +693,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
-        public void FixUV(string itemId, int decalIndex, DecalInfo decalInfo)
+        public void ResetTextureUVOffset(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+			var (_, _, size) = UVTools.DeconstructUV(decalInfo.TextureUV);
+            decalInfo.TextureUV = UVTools.ConstructUV(Vector2.zero, size);
+            ApplyTextureUV(itemId, decalIndex, decalInfo);
+        }
+
+        public void ResetTextureUVScale(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+			var (nonScaleOffset, _, size) = UVTools.DeconstructUV(decalInfo.TextureUV);
+            decalInfo.TextureUV = UVTools.ConstructUV(nonScaleOffset, Vector2.one);
+            ApplyTextureUV(itemId, decalIndex, decalInfo);
+        }
+
+        public void FixTextureUV(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             // we keep uv height and modify width to match it
             var textureData = GetTextureData(decalInfo.Texture);
