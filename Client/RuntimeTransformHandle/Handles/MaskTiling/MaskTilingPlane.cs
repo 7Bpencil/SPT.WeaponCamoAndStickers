@@ -23,8 +23,8 @@ namespace RuntimeHandle
         private MaskTilingAxis _axis1Handle;
         private MaskTilingAxis _axis2Handle;
 
-		private Vector4 _uvAxis1;
-		private Vector4 _uvAxis2;
+		private Vector2 _uvAxis1;
+		private Vector2 _uvAxis2;
 		private DecalInfo _decalInfo;
 		private Decal _decal;
 
@@ -39,8 +39,8 @@ namespace RuntimeHandle
 			Vector3 perp,
 			Color color,
 			Shader handleShader,
-			Vector4 uvAxis1,
-			Vector4 uvAxis2,
+			Vector2 uvAxis1,
+			Vector2 uvAxis2,
 			DecalInfo decalInfo,
             Decal decal)
         {
@@ -62,13 +62,15 @@ namespace RuntimeHandle
 
             transform.SetParent(uvHandle.transform, false);
 
-            _handle = new GameObject("ScalePlane");
+            _handle = new GameObject("Plane");
             _handle.transform.SetParent(transform, false);
             _handle.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
             _handle.transform.localPosition = _axis1 + _axis2;
             _handle.AddComponent<MeshRenderer>().material = _material;
             _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
             _handle.AddComponent<MeshCollider>();
+
+			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
 
             return this;
         }
@@ -80,8 +82,8 @@ namespace RuntimeHandle
 
         public override void Interact()
         {
-            var rperp = Target.TransformDirection(_perp);
-            var position = Target.position;
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
             var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);
@@ -90,17 +92,17 @@ namespace RuntimeHandle
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-			var uv = TextureTilingHandle.CalculateUV(_startUV, _uvAxis1 + _uvAxis2, scale);
+			var uv = UVTools.ScaleUV(_startUV, _uvAxis1 + _uvAxis2, scale);
 			_decalInfo.MaskUV = uv;
-			_decal.ChangeMaskUV(uv);
+			_decal.ChangeMaskUV(_decalInfo.MaskUV);
 
             SetHandlesVisualScale(scale);
         }
 
         public override void StartInteraction()
         {
-            var rperp = Target.TransformDirection(_perp);
-            var position = Target.position;
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
             var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);

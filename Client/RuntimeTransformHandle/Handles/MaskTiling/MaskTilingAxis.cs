@@ -19,7 +19,7 @@ namespace RuntimeHandle
 		private Transform _arm;
 		private Transform _tip;
 
-		private Vector4 _uvAxis;
+		private Vector2 _uvAxis;
 		private DecalInfo _decalInfo;
 		private Decal _decal;
 
@@ -34,7 +34,7 @@ namespace RuntimeHandle
 			Vector3 axis,
 			Color color,
 			Shader handleShader,
-			Vector4 uvAxis,
+			Vector2 uvAxis,
 			DecalInfo decalInfo,
             Decal decal)
 		{
@@ -71,6 +71,8 @@ namespace RuntimeHandle
 				_tip = o.transform;
             }
 
+			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
+
             return this;
         }
 
@@ -87,8 +89,8 @@ namespace RuntimeHandle
 
         public override void Interact()
         {
-            var raxis = Target.TransformDirection(_axis);
-            var position = Target.position;
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
             var ray = new Ray(position, raxis);
             var cameraRay = _transformHandle.GetCameraRay();
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
@@ -97,17 +99,17 @@ namespace RuntimeHandle
 			var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-			var uv = TextureTilingHandle.CalculateUV(_startUV, _uvAxis, scale);
+			var uv = UVTools.ScaleUV(_startUV, _uvAxis, scale);
 			_decalInfo.MaskUV = uv;
-			_decal.ChangeMaskUV(uv);
+			_decal.ChangeMaskUV(_decalInfo.MaskUV);
 
 			SetHandleVisualScale(scale);
         }
 
         public override void StartInteraction()
         {
-            var raxis = Target.TransformDirection(_axis);
-            var position = Target.position;
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
             var ray = new Ray(position, raxis);
             var cameraRay = _transformHandle.GetCameraRay();
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);

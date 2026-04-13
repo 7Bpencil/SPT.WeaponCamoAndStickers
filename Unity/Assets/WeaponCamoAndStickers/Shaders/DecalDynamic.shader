@@ -120,13 +120,8 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 
                 tmp0.xy = tmp0.xz + 0.5;
 
-                // TODO
-                // currently UV.xy always equals (0, 0) so equation below
-                // can be simplified to "float2 uv = tmp0.xy * UV.xy;"
-                // but we will utilize xy for texture offset in the future (hopefully)
-
-                float2 mainUV = tmp0.xy * (_MainTexUV.zw - _MainTexUV.xy) + _MainTexUV.xy;
-                float2 maskUV = tmp0.xy * (_MaskTexUV.zw - _MaskTexUV.xy) + _MaskTexUV.xy;
+                float2 mainUV = (tmp0.xy + _MainTexUV.xy) * _MainTexUV.zw;
+                float2 maskUV = (tmp0.xy + _MaskTexUV.xy) * _MaskTexUV.zw;
 
                 tmp0 = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
                 tmp1.x = _ThermalVisionOn > 0;

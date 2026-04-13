@@ -27,7 +27,9 @@ namespace RuntimeHandle
         private PositionHandle _positionHandle;
         private RotationHandle _rotationHandle;
         private ScaleHandle _scaleHandle;
+        private TextureOffsetHandle _textureOffsetHandle;
         private TextureTilingHandle _textureTilingHandle;
+		private MaskOffsetHandle _maskOffsetHandle;
         private MaskTilingHandle _maskTilingHandle;
 
         public Transform targetTransform;
@@ -60,10 +62,22 @@ namespace RuntimeHandle
 			_scaleHandle = new GameObject("ScaleHandle").AddComponent<ScaleHandle>().Initialize(this, scaleHandleShader);
         }
 
+		public void CreateHandleTextureOffset(DecalInfo decalInfo, Decal decal)
+		{
+            type = HandleType.TextureOffset;
+			_textureOffsetHandle = new GameObject("TextureOffsetHandle").AddComponent<TextureOffsetHandle>().Initialize(this, positionHandleShader, decalInfo, decal);
+		}
+
 		public void CreateHandleTextureTiling(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.TextureTiling;
 			_textureTilingHandle = new GameObject("TextureTilingHandle").AddComponent<TextureTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+		}
+
+		public void CreateHandleMaskOffset(DecalInfo decalInfo, Decal decal)
+		{
+            type = HandleType.MaskOffset;
+			_maskOffsetHandle = new GameObject("MaskOffsetHandle").AddComponent<MaskOffsetHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
 		}
 
 		public void CreateHandleMaskTiling(DecalInfo decalInfo, Decal decal)
@@ -79,7 +93,9 @@ namespace RuntimeHandle
             if (_positionHandle) Destroy(_positionHandle.gameObject);
             if (_rotationHandle) Destroy(_rotationHandle.gameObject);
             if (_scaleHandle) Destroy(_scaleHandle.gameObject);
+            if (_textureOffsetHandle) Destroy(_textureOffsetHandle.gameObject);
             if (_textureTilingHandle) Destroy(_textureTilingHandle.gameObject);
+            if (_maskOffsetHandle) Destroy(_maskOffsetHandle.gameObject);
             if (_maskTilingHandle) Destroy(_maskTilingHandle.gameObject);
         }
 

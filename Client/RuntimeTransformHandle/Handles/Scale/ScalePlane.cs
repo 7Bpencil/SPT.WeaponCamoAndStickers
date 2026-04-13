@@ -39,7 +39,7 @@ namespace RuntimeHandle
 
             transform.SetParent(scaleHandle.transform, false);
 
-            _handle = new GameObject("ScalePlane");
+            _handle = new GameObject("Plane");
             _handle.transform.SetParent(transform, false);
             _handle.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
             _handle.transform.localPosition = _axis1 + _axis2;

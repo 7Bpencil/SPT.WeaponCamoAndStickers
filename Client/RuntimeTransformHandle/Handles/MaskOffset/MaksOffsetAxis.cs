@@ -11,33 +11,28 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-    public class TextureTilingAxis : HandleBase
+    public class MaskOffsetAxis : HandleBase
     {
-        private const float SIZE = 2;
-
         private Vector3 _axis;
-		private Transform _arm;
-		private Transform _tip;
 
-		private Vector2 _uvAxis;
+		private Vector4 _uvAxis;
 		private DecalInfo _decalInfo;
 		private Decal _decal;
 
         private float _startOffsetLength;
+		private Vector3 _startLocalPosition;
 		private Vector4 _startUV;
 
-		public Vector3 Axis => _axis;
-
-        public TextureTilingAxis Initialize(
+        public MaskOffsetAxis Initialize(
 			RuntimeTransformHandle transformHandle,
-			TextureTilingHandle uvHandle,
+			MaskOffsetHandle uvHandle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader,
-			Vector2 uvAxis,
+			Vector4 uvAxis,
 			DecalInfo decalInfo,
             Decal decal)
-		{
+        {
             _transformHandle = transformHandle;
             _axis = axis;
             _defaultColor = color.WithAlpha(0.5f);
@@ -55,31 +50,23 @@ namespace RuntimeHandle
                 o.transform.SetParent(transform, false);
                 o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, axis);
                 o.AddComponent<MeshRenderer>().material = _material;
-                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateCone(axis.magnitude * SIZE, .02f, .02f, 8, 1);
-                o.AddComponent<MeshCollider>().sharedMesh = MeshUtils.CreateCone(axis.magnitude * SIZE, .1f, .02f, 8, 1);
-				_arm = o.transform;
+                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateCone(2f, .02f, .02f, 8, 1);
+                o.AddComponent<MeshCollider>().sharedMesh = MeshUtils.CreateCone(2f, .1f, .02f, 8, 1);
             }
 
             {
                 var o = new GameObject("Tip");
                 o.transform.SetParent(transform, false);
-                o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, axis);
-                o.transform.localPosition = axis * SIZE;
+                o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _axis);
+                o.transform.localPosition = axis * 2;
                 o.AddComponent<MeshRenderer>().material = _material;
-                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(.25f, .25f, .25f);
+                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateCone(.4f, .2f, .0f, 8, 1);
                 o.AddComponent<MeshCollider>();
-				_tip = o.transform;
             }
 
-			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.TextureUV);
+			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
 
             return this;
-        }
-
-        public void SetHandleVisualScale(float scale)
-        {
-            _arm.localScale = new Vector3(1, scale, 1);
-            _tip.localPosition = _axis * (SIZE * scale);
         }
 
 		public override bool CanInteract(Vector3 hitPoint)
@@ -95,15 +82,20 @@ namespace RuntimeHandle
             var cameraRay = _transformHandle.GetCameraRay();
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
             var hitPoint = ray.GetPoint(closestT);
-            var offset = hitPoint - position;
-			var offsetLength = offset.magnitude;
-            var scale = offsetLength / _startOffsetLength;
+            var offset = raxis * _startOffsetLength;
+            var newPosition = hitPoint - offset;
 
-			var uv = UVTools.ScaleUV(_startUV, _uvAxis, scale);
-			_decalInfo.TextureUV = uv;
-			_decal.ChangeTextureUV(_decalInfo.TextureUV);
+			var newLocalPosition = Target.InverseTransformPoint(newPosition);
+			var delta = newLocalPosition - _startLocalPosition;
+			var uvOffset = delta.Sum(_axis);
 
-			SetHandleVisualScale(scale);
+			var newUV = Vector4.Scale(_startUV, _uvAxis) - _uvAxis * uvOffset;
+			var otherUV = Vector4.Scale(_startUV, UVTools.InverseMask(_uvAxis));
+
+			_decalInfo.MaskUV = otherUV + newUV;
+			_decal.ChangeMaskUV(_decalInfo.MaskUV);
+
+            TransformHandle.position = newPosition;
         }
 
         public override void StartInteraction()
@@ -117,14 +109,13 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-			_startUV = _decalInfo.TextureUV;
-
-			SetHandleVisualScale(1);
+			_startLocalPosition = UVTools.GetHandleLocalPosition(_decalInfo.MaskUV);
+			_startUV = _decalInfo.MaskUV;
         }
 
         public override void EndInteraction()
-		{
-			SetHandleVisualScale(1);
-		}
+        {
+
+        }
     }
 }

@@ -25,5 +25,25 @@ namespace SevenBoldPencil.Common
 		{
 			return new(v.x, v.y, v.z * scale);
 		}
+
+		public static float Sum(this Vector3 v)
+		{
+			return v.x + v.y + v.z;
+		}
+
+		public static float Sum(this Vector3 v, Vector3 mask)
+		{
+			return Vector3.Scale(v, mask).Sum();
+		}
+
+		public static float Sum(this Vector4 v)
+		{
+			return v.x + v.y + v.z + v.w;
+		}
+
+		public static float Sum(this Vector4 v, Vector4 mask)
+		{
+			return Vector4.Scale(v, mask).Sum();
+		}
     }
 }

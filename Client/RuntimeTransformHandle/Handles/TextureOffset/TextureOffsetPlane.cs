@@ -11,47 +11,40 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-    public class TextureTilingPlane : HandleBase
+    public class TextureOffsetPlane : HandleBase
     {
-        private const float SIZE = 2;
-
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
         private GameObject _handle;
 
-        private TextureTilingAxis _axis1Handle;
-        private TextureTilingAxis _axis2Handle;
-
-		private Vector2 _uvAxis1;
-		private Vector2 _uvAxis2;
+		private Vector4 _uvAxis1;
+		private Vector4 _uvAxis2;
 		private DecalInfo _decalInfo;
 		private Decal _decal;
 
-        private float _startOffsetLength;
+        private Vector3 _offsetLocalSpace;
+		private Vector3 _startLocalPosition;
 		private Vector4 _startUV;
 
-        public TextureTilingPlane Initialize(
+        public TextureOffsetPlane Initialize(
 			RuntimeTransformHandle transformHandle,
-			TextureTilingHandle uvHandle,
-			TextureTilingAxis axis1,
-			TextureTilingAxis axis2,
+			TextureOffsetHandle positionHandle,
+			Vector3 axis1,
+			Vector3 axis2,
 			Vector3 perp,
 			Color color,
 			Shader handleShader,
-			Vector2 uvAxis1,
-			Vector2 uvAxis2,
+			Vector4 uvAxis1,
+			Vector4 uvAxis2,
 			DecalInfo decalInfo,
             Decal decal)
         {
             _transformHandle = transformHandle;
             _defaultColor = color.WithAlpha(0.5f);
-            _axis1 = axis1.Axis;
-            _axis2 = axis2.Axis;
+            _axis1 = axis1;
+            _axis2 = axis2;
             _perp = perp;
-
-            _axis1Handle = axis1;
-            _axis2Handle = axis2;
 
 			_uvAxis1 = uvAxis1;
 			_uvAxis2 = uvAxis2;
@@ -60,7 +53,7 @@ namespace RuntimeHandle
 
             InitializeMaterial(handleShader);
 
-            transform.SetParent(uvHandle.transform, false);
+            transform.SetParent(positionHandle.transform, false);
 
             _handle = new GameObject("Plane");
             _handle.transform.SetParent(transform, false);
@@ -88,15 +81,21 @@ namespace RuntimeHandle
             var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);
             var hitPoint = cameraRay.GetPoint(closestT);
-            var offset = hitPoint - position;
-            var offsetLength = offset.magnitude;
-            var scale = offsetLength / _startOffsetLength;
+            var offset = TransformHandle.TransformDirection(_offsetLocalSpace);
+            var newPosition = hitPoint - offset;
 
-			var uv = UVTools.ScaleUV(_startUV, _uvAxis1 + _uvAxis2, scale);
-			_decalInfo.TextureUV = uv;
+			var newLocalPosition = Target.InverseTransformPoint(newPosition);
+			var delta = newLocalPosition - _startLocalPosition;
+			var uvOffset1 = delta.Sum(_axis1);
+			var uvOffset2 = delta.Sum(_axis2);
+
+			var newUV = Vector4.Scale(_startUV, _uvAxis1 + _uvAxis2) - (_uvAxis1 * uvOffset1 + _uvAxis2 * uvOffset2);
+			var otherUV = Vector4.Scale(_startUV, UVTools.InverseMask(_uvAxis1 + _uvAxis2));
+
+			_decalInfo.TextureUV = otherUV + newUV;
 			_decal.ChangeTextureUV(_decalInfo.TextureUV);
 
-            SetHandlesVisualScale(scale);
+            TransformHandle.position = newPosition;
         }
 
         public override void StartInteraction()
@@ -109,35 +108,14 @@ namespace RuntimeHandle
             var hitPoint = cameraRay.GetPoint(closestT);
             var offset = hitPoint - position;
 
-            _startOffsetLength = offset.magnitude;
+            _offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			_startLocalPosition = UVTools.GetHandleLocalPosition(_decalInfo.TextureUV);
 			_startUV = _decalInfo.TextureUV;
-
-            SetHandlesVisualScale(1);
-            SetHandlesInteractionColor();
         }
 
         public override void EndInteraction()
         {
-            SetHandlesVisualScale(1);
-            SetHandlesDefaultColor();
-        }
 
-        public void SetHandlesVisualScale(float scale)
-        {
-            _axis1Handle.SetHandleVisualScale(scale);
-            _axis2Handle.SetHandleVisualScale(scale);
         }
-
-        public void SetHandlesInteractionColor()
-        {
-            _axis1Handle.SetInteractionColor();
-            _axis2Handle.SetInteractionColor();
-        }
-
-        public void SetHandlesDefaultColor()
-        {
-            _axis1Handle.SetDefaultColor();
-            _axis2Handle.SetDefaultColor();
-        }
-	}
+    }
 }

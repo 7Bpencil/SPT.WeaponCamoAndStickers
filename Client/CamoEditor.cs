@@ -761,7 +761,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
                 {
-                    // TODO
+                    SetupTransformHandle(HandleType.TextureOffset, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + buttonHeight + smallMargin + 7;
@@ -881,7 +881,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
                 {
-                    // TODO
+                    SetupTransformHandle(HandleType.MaskOffset, decalIndex, decalInfo, decal);
                 }
                 {
                     var valueX = x + buttonHeight + smallMargin + 7;
@@ -976,9 +976,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
                 TransformHandle.CreateHandleScale();
 			}
+            if (handleType == HandleType.TextureOffset)
+            {
+                TransformHandle.CreateHandleTextureOffset(decalInfo, decal);
+            }
             if (handleType == HandleType.TextureTiling)
             {
                 TransformHandle.CreateHandleTextureTiling(decalInfo, decal);
+            }
+            if (handleType == HandleType.MaskOffset)
+            {
+                TransformHandle.CreateHandleMaskOffset(decalInfo, decal);
             }
             if (handleType == HandleType.MaskTiling)
             {
@@ -1007,9 +1015,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 decalInfo.LocalScale = decal.DecalTransform.localScale;
                 Plugin.ApplyLocalScale(ItemId, decalIndex, decalInfo);
             }
+            if (handleType == HandleType.TextureOffset)
+            {
+                Plugin.ApplyTextureUV(ItemId, decalIndex, decalInfo);
+            }
             if (handleType == HandleType.TextureTiling)
             {
                 Plugin.ApplyTextureUV(ItemId, decalIndex, decalInfo);
+            }
+            if (handleType == HandleType.MaskOffset)
+            {
+                Plugin.ApplyMaskUV(ItemId, decalIndex, decalInfo);
             }
             if (handleType == HandleType.MaskTiling)
             {
