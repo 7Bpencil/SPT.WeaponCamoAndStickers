@@ -71,8 +71,6 @@ namespace RuntimeHandle
 				_tip = o.transform;
             }
 
-			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
-
             return this;
         }
 

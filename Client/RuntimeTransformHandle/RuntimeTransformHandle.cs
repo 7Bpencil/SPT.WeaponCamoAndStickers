@@ -86,17 +86,44 @@ namespace RuntimeHandle
 			_maskTilingHandle = new GameObject("MaskTilingHandle").AddComponent<MaskTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
 		}
 
+		public void ResetHandleTransform(DecalInfo decalInfo, Decal decal)
+		{
+            handleTransform.position = targetTransform.position;
+            handleTransform.rotation = targetTransform.rotation;
+
+	        if (type == HandleType.TextureOffset)
+			{
+				_textureOffsetHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
+			}
+	        if (type == HandleType.TextureTiling)
+			{
+				_textureTilingHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
+			}
+	        if (type == HandleType.MaskOffset)
+			{
+				_maskOffsetHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
+			}
+	        if (type == HandleType.MaskTiling)
+			{
+				_maskTilingHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
+			}
+		}
+
         public void DestroyHandles()
         {
             _draggingHandle = null;
 			_previousHandle = null;
-            if (_positionHandle) Destroy(_positionHandle.gameObject);
-            if (_rotationHandle) Destroy(_rotationHandle.gameObject);
-            if (_scaleHandle) Destroy(_scaleHandle.gameObject);
-            if (_textureOffsetHandle) Destroy(_textureOffsetHandle.gameObject);
-            if (_textureTilingHandle) Destroy(_textureTilingHandle.gameObject);
-            if (_maskOffsetHandle) Destroy(_maskOffsetHandle.gameObject);
-            if (_maskTilingHandle) Destroy(_maskTilingHandle.gameObject);
+
+			switch (type)
+			{
+		        case HandleType.Position: Destroy(_positionHandle.gameObject); break;
+		        case HandleType.Rotation: Destroy(_rotationHandle.gameObject); break;
+		        case HandleType.Scale: Destroy(_scaleHandle.gameObject); break;
+		        case HandleType.TextureOffset: Destroy(_textureOffsetHandle.gameObject); break;
+		        case HandleType.TextureTiling: Destroy(_textureTilingHandle.gameObject); break;
+		        case HandleType.MaskOffset: Destroy(_maskOffsetHandle.gameObject); break;
+		        case HandleType.MaskTiling: Destroy(_maskTilingHandle.gameObject); break;
+			}
         }
 
         private void Update()

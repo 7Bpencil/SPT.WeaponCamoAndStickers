@@ -64,8 +64,6 @@ namespace RuntimeHandle
                 o.AddComponent<MeshCollider>();
             }
 
-			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
-
             return this;
         }
 

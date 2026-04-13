@@ -1075,6 +1075,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
+            camoEditor.ForceOnEndedDraggingHandle();
+
             var itemId = camoEditor.ItemId;
             if (GetDecalsInfo(itemId).Some(out var decalsInfo))
             {

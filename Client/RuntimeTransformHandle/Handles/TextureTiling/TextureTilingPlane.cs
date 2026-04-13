@@ -70,8 +70,6 @@ namespace RuntimeHandle
             _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
             _handle.AddComponent<MeshCollider>();
 
-			TransformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.TextureUV);
-
             return this;
         }
 

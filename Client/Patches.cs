@@ -185,8 +185,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Close));
         }
 
-        [PatchPostfix]
-        public static void Postfix(WeaponModdingScreen __instance)
+        [PatchPrefix]
+        public static void Prefix(WeaponModdingScreen __instance)
 		{
 			Plugin.Instance.CloseCamoEditor();
 		}

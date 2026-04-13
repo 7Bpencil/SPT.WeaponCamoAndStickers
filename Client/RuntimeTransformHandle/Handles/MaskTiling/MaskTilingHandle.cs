@@ -18,13 +18,18 @@ namespace RuntimeHandle
             DecalInfo decalInfo,
             Decal decal)
         {
-            transform.SetParent(transformHandle.transform, false);
+            transform.SetParent(transformHandle.handleTransform, false);
 
             var axisX = new GameObject("MaskTilingAxis.X").AddComponent<MaskTilingAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader, new(1, 0), decalInfo, decal);
             var axisZ = new GameObject("MaskTilingAxis.Z").AddComponent<MaskTilingAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader, new(0, 1), decalInfo, decal);
             var planeXZ = new GameObject("MaskTilingPlane.XZ").AddComponent<MaskTilingPlane>().Initialize(transformHandle, this, axisX, axisZ, Vector3.up, Color.green, handleShader, new(1, 0), new(0, 1), decalInfo, decal);
 
             return this;
+        }
+
+        public void ResetHandleTransform(Transform transformHandle, DecalInfo decalInfo, Decal decal)
+        {
+			transformHandle.position = UVTools.GetHandlePosition(decal, decalInfo.MaskUV);
         }
     }
 }

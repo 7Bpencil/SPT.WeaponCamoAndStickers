@@ -18,13 +18,18 @@ namespace RuntimeHandle
             DecalInfo decalInfo,
             Decal decal)
         {
-            transform.SetParent(transformHandle.transform, false);
+            transform.SetParent(transformHandle.handleTransform, false);
 
             var axisX = new GameObject("TextureOffsetAxis.X").AddComponent<TextureOffsetAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader, new Vector4(1, 0, 0, 0), decalInfo, decal);
             var axisZ = new GameObject("TextureOffsetAxis.Z").AddComponent<TextureOffsetAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader, new Vector4(0, 1, 0, 0), decalInfo, decal);
             var planeXZ = new GameObject("TextureOffsetPlane.XZ").AddComponent<TextureOffsetPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), decalInfo, decal);
 
             return this;
+        }
+
+        public void ResetHandleTransform(Transform transformHandle, DecalInfo decalInfo, Decal decal)
+        {
+			transformHandle.position = UVTools.GetHandlePosition(decal, decalInfo.TextureUV);
         }
     }
 }
