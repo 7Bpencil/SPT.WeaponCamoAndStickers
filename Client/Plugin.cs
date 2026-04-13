@@ -303,7 +303,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (decalInfo.SchemaVersion == 0)
                 {
-                    decalInfo.Name = "";
+                    decalInfo.SchemaVersion = 1;
+                    // I forgot to set schema version, so now
+                    // there are camos with schema version 0
+                    // and non null names...
+                    if (decalInfo.Name == null)
+                    {
+                        decalInfo.Name = "";
+                    }
                 }
             }
         }
