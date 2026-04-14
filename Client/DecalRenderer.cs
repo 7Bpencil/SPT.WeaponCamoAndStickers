@@ -64,7 +64,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return false;
 			}
-			if (currentCamera.renderingPath != RenderingPath.DeferredShading)
+			if (currentCamera.actualRenderingPath != RenderingPath.DeferredShading)
 			{
 				return false;
 			}
@@ -112,18 +112,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			if (CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera)
 			{
 				DrawAllDecals(currentCamera, buffer);
+				return;
 			}
 			if (currentCamera.CompareTag("OpticCamera"))
 			{
 				DrawAllDecals(currentCamera, buffer);
+				return;
 			}
 			if (WeaponPreviewCameras.TryGetValue(currentCamera, out var itemId))
 			{
 				DrawDecalsOnItem(currentCamera, buffer, itemId);
+				return;
 			}
 			if (PlayerModelViewCameras.Contains(currentCamera))
 			{
 				DrawAllDecals(currentCamera, buffer);
+				return;
 			}
 		}
 
