@@ -1,3 +1,5 @@
+using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -8,14 +10,18 @@ namespace RuntimeHandle
      */
     public class ScaleHandle : MonoBehaviour
     {
-        public ScaleHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
+        public ScaleHandle Initialize(
+			RuntimeTransformHandle transformHandle,
+			Shader handleShader,
+            DecalInfo decalInfo,
+            Decal decal)
         {
             transform.SetParent(transformHandle.transform, false);
 
-            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, this, axisX, axisZ, Vector3.up, Color.green, handleShader);
+            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader, decalInfo, decal);
+            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.up, Color.green, handleShader, decalInfo, decal);
+            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader, decalInfo, decal);
+            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, this, axisX, axisZ, Vector3.up, Color.green, handleShader, decalInfo, decal);
 
             return this;
         }

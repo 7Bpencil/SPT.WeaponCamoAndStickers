@@ -87,10 +87,34 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             float4 _Temperature;
             float _MaxAngle;
             float _ThermalVisionOn;
+
             sampler2D _CameraDepthTexture;
             sampler2D _NormalsCopy;
             sampler2D _MainTex;
             sampler2D _MaskTex;
+
+            float _AspectRatio;
+            float4 _MainTexRotation;
+            float4 _MaskTexRotation;
+
+			float2 rotate(float2 vec, float2 rot)
+			{
+				return float2(
+	                rot.x * vec.x - rot.y * vec.y,
+	                rot.y * vec.x + rot.x * vec.y
+				);
+			}
+
+			float2 transformUV(float2 uv, float2 rot, float2 offset, float2 scale, float aspect)
+			{
+				uv += offset;
+				uv.x *= aspect;
+				uv = rotate(uv, rot);
+				uv.x /= aspect;
+				uv *= scale;
+				uv += 0.5;
+			    return uv;
+			}
 
             fout frag(v2f inp)
             {
@@ -118,10 +142,8 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                     discard;
                 }
 
-                tmp0.xy = tmp0.xz + 0.5;
-
-                float2 mainUV = (tmp0.xy + _MainTexUV.xy) * _MainTexUV.zw;
-                float2 maskUV = (tmp0.xy + _MaskTexUV.xy) * _MaskTexUV.zw;
+                float2 mainUV = transformUV(tmp0.xz, _MainTexRotation.xy, _MainTexUV.xy, _MainTexUV.zw, _AspectRatio);
+                float2 maskUV = transformUV(tmp0.xz, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
 
                 tmp0 = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
                 tmp1.x = _ThermalVisionOn > 0;

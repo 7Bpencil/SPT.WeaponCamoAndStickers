@@ -30,6 +30,7 @@ namespace RuntimeHandle
         public void ResetHandleTransform(Transform transformHandle, DecalInfo decalInfo, Decal decal)
         {
 			transformHandle.position = UVTools.GetHandlePosition(decal, decalInfo.MaskUV);
+            transformHandle.localRotation *= UVTools.GetHandleLocalRotation(decalInfo.MaskAngle);
         }
     }
 }

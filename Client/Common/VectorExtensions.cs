@@ -45,5 +45,10 @@ namespace SevenBoldPencil.Common
 		{
 			return Vector4.Scale(v, mask).Sum();
 		}
+
+		public static Quaternion ToQuaternion(this Vector3 v)
+		{
+            return Quaternion.Euler(v.x, v.y, v.z);
+		}
     }
 }

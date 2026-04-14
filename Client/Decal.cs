@@ -18,6 +18,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public static readonly int _MaskTexUV = Shader.PropertyToID("_MaskTexUV");
 		public static readonly int _Temperature = Shader.PropertyToID("_Temperature");
     	public static readonly int _MaxAngle = Shader.PropertyToID("_MaxAngle");
+    	public static readonly int _AspectRatio = Shader.PropertyToID("_AspectRatio");
+    	public static readonly int _MainTexRotation = Shader.PropertyToID("_MainTexRotation");
+    	public static readonly int _MaskTexRotation = Shader.PropertyToID("_MaskTexRotation");
 
 		public Material DecalMaterial;
 		public Transform DecalTransform;
@@ -35,14 +38,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTransform.parent = root;
 			DecalTransform.localPosition = decalInfo.LocalPosition;
 			DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
-			DecalTransform.localScale = decalInfo.LocalScale;
+			ChangeLocalScale(decalInfo.LocalScale);
 
 			ChangeTexture(diffuse);
 			ChangeTextureUV(decalInfo.TextureUV);
+			ChangeTextureAngle(decalInfo.TextureAngle);
 			ChangeMask(mask);
 			ChangeMaskUV(decalInfo.MaskUV);
+			ChangeMaskAngle(decalInfo.MaskAngle);
 			ChangeColor(decalInfo.ColorHSVA);
 			ChangeMaxAngle(decalInfo.MaxAngle);
+		}
+
+		public void ChangeLocalScale(Vector3 localScale)
+		{
+			var aspectRatio = Mathf.Abs(localScale.x / localScale.z);
+			DecalTransform.localScale = localScale;
+            DecalMaterial.SetFloat(_AspectRatio, aspectRatio);
 		}
 
         public void ChangeTexture(Texture2D diffuse)
@@ -55,10 +67,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DecalMaterial.SetVector(_MainTexUV, uv);
 		}
 
+		public void ChangeTextureAngle(float angle)
+		{
+			var rotationVector = UVTools.GetRotationVector(angle);
+            DecalMaterial.SetVector(_MainTexRotation, rotationVector);
+		}
+
         public void ChangeMask(Texture2D mask)
         {
             DecalMaterial.SetTexture(_MaskTex, mask);
         }
+
+		public void ChangeMaskAngle(float angle)
+		{
+			var rotationVector = UVTools.GetRotationVector(angle);
+            DecalMaterial.SetVector(_MaskTexRotation, rotationVector);
+		}
 
 		public void ChangeMaskUV(Vector4 uv)
 		{

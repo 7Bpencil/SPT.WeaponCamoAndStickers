@@ -6,6 +6,7 @@
 //
 
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -17,6 +18,8 @@ namespace RuntimeHandle
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
+		private DecalInfo _decalInfo;
+		private Decal _decal;
 
         private float _startOffsetLength;
         private Vector3 _startLocalScale;
@@ -24,13 +27,24 @@ namespace RuntimeHandle
         private ScaleAxis _axis1Handle;
         private ScaleAxis _axis2Handle;
 
-        public ScalePlane Initialize(RuntimeTransformHandle transformHandle, ScaleHandle scaleHandle, ScaleAxis axis1, ScaleAxis axis2, Vector3 perp, Color color, Shader handleShader)
+        public ScalePlane Initialize(
+			RuntimeTransformHandle transformHandle,
+			ScaleHandle scaleHandle,
+			ScaleAxis axis1,
+			ScaleAxis axis2,
+			Vector3 perp,
+			Color color,
+			Shader handleShader,
+			DecalInfo decalInfo,
+            Decal decal)
         {
             _transformHandle = transformHandle;
             _defaultColor = color.WithAlpha(0.5f);
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
             _perp = perp;
+			_decalInfo = decalInfo;
+			_decal = decal;
 
             _axis1Handle = axis1;
             _axis2Handle = axis2;
@@ -69,7 +83,9 @@ namespace RuntimeHandle
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-            Target.localScale = ScaleHandle.CalculateScale(_startLocalScale, _axis1 + _axis2, scale);
+			var newLocalScale = ScaleHandle.CalculateScale(_startLocalScale, _axis1 + _axis2, scale);
+			_decalInfo.LocalScale = newLocalScale;
+			_decal.ChangeLocalScale(newLocalScale);
 
             SetHandlesVisualScale(scale);
         }

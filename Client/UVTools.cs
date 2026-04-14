@@ -28,11 +28,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			return decal.DecalTransform.TransformPoint(GetHandleLocalPosition(uv));
 		}
 
+		public static Quaternion GetHandleLocalRotation(float angle)
+		{
+			return Quaternion.AngleAxis(angle, Vector3.up);
+		}
+
 		public static Vector3 GetHandleLocalPosition(Vector4 uv)
 		{
-			var (nonScaleOffset, scaleOffset, size) = UVTools.DeconstructUV(uv);
-			var offset = GetUVOffset(uv);
-			return -1f * new Vector3(nonScaleOffset.x, 0, nonScaleOffset.y);
+			return -1f * GetUVOffset(uv);
 		}
 
 		public static Vector3 GetUVOffset(Vector4 uv)
@@ -50,42 +53,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			return new Vector4(1, 1, 1, 1) - mask;
 		}
 
-		public static Vector3 InverseScale(Vector3 left, Vector3 right)
-		{
-			return new Vector3(left.x / right.x, left.y / right.y, left.z / right.z);
-		}
-
 		public static Vector4 ScaleUV(Vector4 start, Vector2 mask, float scale)
 		{
-			var (nonScaleOffset, scaleOffset, size) = DeconstructUV(start);
+			var size = new Vector2(start.z, start.w);
 			var newSize = Vector2.Scale(size, Vector2.one + mask * (1f / scale - 1));
-			return ConstructUV(nonScaleOffset, newSize);
-		}
-
-		public static (Vector2 nonScaleOffset, Vector2 scaleOffset, Vector2 size) DeconstructUV(Vector4 uv)
-		{
-			var offset = new Vector2(uv.x, uv.y);
-			var size = new Vector2(uv.z, uv.w);
-			var scaleOffset = GetUVScaleOffset(size);
-			var nonScaleOffset = offset - scaleOffset;
-			return (nonScaleOffset, scaleOffset, size);
-		}
-
-		public static Vector4 ConstructUV(Vector2 nonScaleOffset, Vector2 size)
-		{
-			var scaleOffset = GetUVScaleOffset(size);
-			var offset = nonScaleOffset + scaleOffset;
-			return new Vector4(offset.x, offset.y, size.x, size.y);
-		}
-
-		public static Vector2 GetUVScaleOffset(Vector2 size)
-		{
-			return 0.5f * (Divide(Vector2.one, size) - Vector2.one);
+			return new Vector4(start.x, start.y, newSize.x, newSize.y);
 		}
 
 		public static Vector2 Divide(Vector2 left, Vector2 right)
 		{
 			return new Vector2(left.x / right.x, left.y / right.y);
 		}
+
+        public static Vector2 GetRotationVector(float angleDegrees)
+        {
+			var angleRadians = angleDegrees * Mathf.Deg2Rad;
+            return new Vector2(MathF.Cos(angleRadians), MathF.Sin(angleRadians));
+        }
 	}
 }

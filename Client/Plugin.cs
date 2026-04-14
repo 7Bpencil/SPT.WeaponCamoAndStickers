@@ -36,15 +36,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
 
         public int SchemaVersion;
         public string Name;
         public string Texture;
         public Vector4 TextureUV;
+        public float TextureAngle;
         public Vector4 ColorHSVA;
         public string Mask;
         public Vector4 MaskUV;
+        public float MaskAngle;
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
@@ -312,7 +314,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         decalInfo.Name = "";
                     }
                 }
+                if (decalInfo.SchemaVersion == 1)
+                {
+                    decalInfo.SchemaVersion = 2;
+                    decalInfo.TextureUV = UpgradeUV_from_1_to_2(decalInfo.TextureUV);
+                    decalInfo.MaskUV = UpgradeUV_from_1_to_2(decalInfo.MaskUV);
+                }
             }
+        }
+
+        public static Vector4 UpgradeUV_from_1_to_2(Vector4 uv)
+        {
+            var size = new Vector2(uv.z, uv.w);
+            var offset = 0.5f * (Vector2.one - UVTools.Divide(Vector2.one, size));
+            var result = new Vector4(offset.x, offset.y, size.x, size.y);
+            return result;
         }
 
         public void Update()
@@ -465,11 +481,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             });
         }
 
+        public void ApplyTextureAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeTextureAngle(decalInfo.TextureAngle);
+            });
+        }
+
         public void ApplyMaskUV(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 decal.ChangeMaskUV(decalInfo.MaskUV);
+            });
+        }
+
+        public void ApplyMaskAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            ModfiyDecalOnItems(itemId, decalIndex, decal =>
+            {
+                decal.ChangeMaskAngle(decalInfo.MaskAngle);
             });
         }
 
@@ -493,7 +525,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
-                decal.DecalTransform.localScale = decalInfo.LocalScale;
+                decal.ChangeLocalScale(decalInfo.LocalScale);
             });
         }
 
@@ -583,9 +615,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Name = "",
                 Texture = DefaultCamoName,
                 TextureUV = new Vector4(0, 0, 1, 1),
+                TextureAngle = 0,
                 ColorHSVA = new Vector4(0, 0, 1, 1),
                 Mask = DefaultMaskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
+                MaskAngle = 0,
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
@@ -635,7 +669,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // mirror around YZ plane
         public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            var rotation = Quaternion.Euler(decalInfo.LocalEulerAngles.x, decalInfo.LocalEulerAngles.y, decalInfo.LocalEulerAngles.z);
+            var rotation = decalInfo.LocalEulerAngles.ToQuaternion();
             rotation.x *= -1;
             rotation.w *= -1;
 
@@ -663,7 +697,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void FlipDirection(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             var offset = Vector3.up * (decalInfo.LocalScale.y * 2 * -1);
-            var rotation = Quaternion.Euler(decalInfo.LocalEulerAngles.x, decalInfo.LocalEulerAngles.y, decalInfo.LocalEulerAngles.z);
+            var rotation = decalInfo.LocalEulerAngles.ToQuaternion();
             var offsetRotated = rotation * offset;
 
             decalInfo.LocalPosition += offsetRotated;
@@ -702,15 +736,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ResetTextureUVOffset(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-			var (_, _, size) = UVTools.DeconstructUV(decalInfo.TextureUV);
-            decalInfo.TextureUV = UVTools.ConstructUV(Vector2.zero, size);
+            decalInfo.TextureUV.x = 0;
+            decalInfo.TextureUV.y = 0;
             ApplyTextureUV(itemId, decalIndex, decalInfo);
+        }
+
+        public void ResetTextureAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.TextureAngle = 0;
+            ApplyTextureAngle(itemId, decalIndex, decalInfo);
         }
 
         public void ResetTextureUVScale(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-			var (nonScaleOffset, _, size) = UVTools.DeconstructUV(decalInfo.TextureUV);
-            decalInfo.TextureUV = UVTools.ConstructUV(nonScaleOffset, Vector2.one);
+            decalInfo.TextureUV.z = 1;
+            decalInfo.TextureUV.w = 1;
             ApplyTextureUV(itemId, decalIndex, decalInfo);
         }
 
