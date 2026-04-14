@@ -766,6 +766,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyTextureUV(itemId, decalIndex, decalInfo);
         }
 
+        public void ResetMaskUVOffset(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.MaskUV.x = 0;
+            decalInfo.MaskUV.y = 0;
+            ApplyMaskUV(itemId, decalIndex, decalInfo);
+        }
+
+        public void ResetMaskAngle(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.MaskAngle = 0;
+            ApplyMaskAngle(itemId, decalIndex, decalInfo);
+        }
+
+        public void ResetMaskUVScale(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.MaskUV.z = 1;
+            decalInfo.MaskUV.w = 1;
+            ApplyMaskUV(itemId, decalIndex, decalInfo);
+        }
+
         // notice that we modify decal on all items
         public void ModfiyDecalOnItems(string itemId, int decalIndex, Action<Decal> changeDecal)
         {

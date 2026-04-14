@@ -917,6 +917,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
                 }
+                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
+                }
                 y += buttonHeight + smallMargin;
 
                 if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVAngleIcon))
@@ -927,6 +932,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var valueX = x + buttonHeight + smallMargin + 7;
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoStyle.LabelStyleName);
+                }
+                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
                 }
                 y += buttonHeight + smallMargin;
 
@@ -941,6 +951,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     valueX += longFieldWidth + smallMargin;
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoStyle.LabelStyleName);
+                }
+                {
+                    var valueX = x + boxWidth - halfBoxWidthButton;
+                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                    {
+                        Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
+                        SyncTransformHandle(decalInfo, decal);
+                    }
                 }
                 y += buttonHeight + mediumMargin;
 
