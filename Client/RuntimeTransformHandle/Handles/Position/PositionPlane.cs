@@ -12,7 +12,7 @@ namespace RuntimeHandle
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
-        private GameObject _handle;
+
         private Vector3 _offsetLocalSpace;
 
         public PositionPlane Initialize(RuntimeTransformHandle transformHandle, PositionHandle positionHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
@@ -27,13 +27,15 @@ namespace RuntimeHandle
 
             transform.SetParent(positionHandle.transform, false);
 
-            _handle = new GameObject("PositionPlane");
-            _handle.transform.SetParent(transform, false);
-            _handle.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
-            _handle.transform.localPosition = _axis1 + _axis2;
-            _handle.AddComponent<MeshRenderer>().material = _material;
-            _handle.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
-            _handle.AddComponent<MeshCollider>();
+			{
+	            var o = new GameObject("PositionPlane");
+	            o.transform.SetParent(transform, false);
+	            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
+	            o.transform.localPosition = _axis1 + _axis2;
+	            o.AddComponent<MeshRenderer>().material = _material;
+	            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
+	            o.AddComponent<MeshCollider>();
+			}
 
             return this;
         }
