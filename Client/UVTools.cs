@@ -28,9 +28,32 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			return decal.DecalTransform.TransformPoint(GetHandleLocalPosition(uv));
 		}
 
-		public static Quaternion GetHandleLocalRotation(float angle)
+		public static Quaternion GetHandleLocalRotation(Vector3 localScale, float angle)
 		{
-			return Quaternion.AngleAxis(angle, Vector3.up);
+			var r = Quaternion.AngleAxis(angle, Vector3.up);
+            var (signX, signY) = GetSignsBool(localScale);
+            if (signX)
+            {
+                if (signY)
+                {
+					return r;
+                }
+                else
+                {
+					return new(r.w, r.x, r.y, r.z);
+                }
+            }
+            else
+            {
+                if (signY)
+                {
+					return new(r.y, r.x, -r.w, r.z);
+                }
+                else
+                {
+					return new(r.x, r.w, r.z, -r.y);
+                }
+            }
 		}
 
 		public static Vector3 GetHandleLocalPosition(Vector4 uv)
@@ -51,6 +74,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public static Vector4 InverseMask(Vector4 mask)
 		{
 			return new Vector4(1, 1, 1, 1) - mask;
+		}
+
+		public static (bool signX, bool signY) GetSignsBool(Vector3 localScale)
+		{
+			return (Mathf.Sign(localScale.x) > 0, Mathf.Sign(localScale.z) > 0);
 		}
 
 		public static Vector4 ScaleUV(Vector4 start, Vector2 mask, float scale)

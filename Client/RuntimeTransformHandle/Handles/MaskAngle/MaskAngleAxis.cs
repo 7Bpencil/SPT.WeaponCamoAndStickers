@@ -67,9 +67,8 @@ namespace RuntimeHandle
 			var offset = hitPoint - position;
 			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
-			var sign = Mathf.Sign(_decalInfo.LocalScale.x) * Mathf.Sign(_decalInfo.LocalScale.z);
 
-			_decalInfo.MaskAngle = _startAngle + angle * sign;
+			_decalInfo.MaskAngle = _startAngle + angle;
 			_decal.ChangeMaskAngle(_decalInfo.MaskAngle);
         }
 
