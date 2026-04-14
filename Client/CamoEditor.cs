@@ -27,6 +27,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D EditRotationIcon;
         public Texture2D EditScaleIcon;
         public Texture2D EditUVOffsetIcon;
+        public Texture2D EditUVAngleIcon;
         public Texture2D EditUVTilingIcon;
         public Texture2D DuplicateIcon;
         public Texture2D DeleteIcon;
@@ -51,6 +52,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
             EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
             EditUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Move-Icon.png");
+            EditUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Rotate-Icon.png");
             EditUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Scale-Icon.png");
             DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
@@ -283,6 +285,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
                     buttonHeight + smallMargin + // UV offset
+                    buttonHeight + smallMargin + // UV angle
                     buttonHeight + mediumMargin + // UV tiling
                     buttonHeight + bigMargin + // color
                     buttonHeight + smallMargin + // opacity
@@ -303,6 +306,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     smallMargin + bigMargin + // separator
                     buttonHeight + mediumMargin + // toolbar texture/mask
                     buttonHeight + smallMargin + // UV offset
+                    buttonHeight + smallMargin + // UV angle
                     buttonHeight + mediumMargin + // UV tiling
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
@@ -781,6 +785,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 y += buttonHeight + smallMargin;
 
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVAngleIcon))
+                {
+                    // TODO
+                }
+                {
+                    var valueX = x + buttonHeight + smallMargin + 7;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUVAngle:F3}", CamoStyle.LabelStyleName);
+                }
+                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    // TODO
+                }
+                y += buttonHeight + smallMargin;
+
                 if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVTilingIcon))
                 {
                     SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
@@ -896,6 +915,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     valueX += longFieldWidth + smallMargin;
 
                     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
+                }
+                y += buttonHeight + smallMargin;
+
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVAngleIcon))
+                {
+                    // TODO
+                }
+                {
+                    var valueX = x + buttonHeight + smallMargin + 7;
+
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUVAngle:F3}", CamoStyle.LabelStyleName);
                 }
                 y += buttonHeight + smallMargin;
 
