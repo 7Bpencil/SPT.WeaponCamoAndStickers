@@ -205,6 +205,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 CamoStyle = new(GUI.skin);
             }
 
+            var originalMatrix = GUI.matrix;
+            var baseUIScale = Math.Max(DivideIntRound(Screen.height, 1080), 1);
+            var uiScale = baseUIScale * Plugin.UIScale.Value;
+            GUI.matrix = Matrix4x4.Scale(new(uiScale, uiScale, 1f));
+
             if (IsOpened)
             {
                 if (CurrentlyEditedDecalIndex.HasValue)
@@ -251,6 +256,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                 GUI.Window(2, openColorPickerWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
             }
+
+            GUI.matrix = originalMatrix;
         }
 
         private void DrawClosedWindow(int windowID)
@@ -276,7 +283,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (DecalSettingType == DecalSettingType.Texture)
             {
-                var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(DecalTypeMenu), iconColumns);
+                var totalRows = DivideIntCeil(Plugin.GetTexturesCount(DecalTypeMenu), iconColumns);
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
@@ -297,7 +304,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(DecalTextureType.Mask), iconColumns);
+                var totalRows = DivideIntCeil(Plugin.GetTexturesCount(DecalTextureType.Mask), iconColumns);
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
                 return
                     bigMargin + buttonHeight + bigMargin + // back button
@@ -1139,7 +1146,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType)
         {
-            var totalRows = DivideIntRoundUp(Plugin.GetTexturesCount(decalTextureType), iconColumns);
+            var totalRows = DivideIntCeil(Plugin.GetTexturesCount(decalTextureType), iconColumns);
             var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalRows, maxIconRows, iconSize, smallMargin);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
@@ -1196,9 +1203,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DestroyTransformHandle();
         }
 
-        private static int DivideIntRoundUp(int left, int right)
+        private static int DivideIntCeil(int left, int right)
         {
             return (left + right - 1) / right;
+        }
+
+        private static int DivideIntRound(int left, int right)
+        {
+            return (left + right / 2) / right;
         }
 
         private static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)

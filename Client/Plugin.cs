@@ -81,6 +81,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static Plugin Instance;
 
+        public static ConfigEntry<float> UIScale;
         public static ConfigEntry<KeyboardShortcut> MoveButton;
         public static ConfigEntry<KeyboardShortcut> RotateButton;
         public static ConfigEntry<KeyboardShortcut> ScaleButton;
@@ -113,6 +114,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Instance = this;
 			LoggerInstance = Logger;
 
+            UIScale = Config.Bind<float>("Main", "Camo Editor | UI Scale", 1f, new ConfigDescription("", new AcceptableValueRange<float>(0.5f, 2f)));
             MoveButton = Config.Bind("Main", "Camo Editor | Keybinds | Move", new KeyboardShortcut(KeyCode.G), "");
             RotateButton = Config.Bind("Main", "Camo Editor | Keybinds | Rotate", new KeyboardShortcut(KeyCode.R), "");
             ScaleButton = Config.Bind("Main", "Camo Editor | Keybinds | Scale", new KeyboardShortcut(KeyCode.S), "");
