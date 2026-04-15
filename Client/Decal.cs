@@ -24,6 +24,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public Material DecalMaterial;
 		public Transform DecalTransform;
+		public string TextureName;
+		public string MaskName;
 
 		public void Init(Shader shader)
 		{

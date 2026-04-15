@@ -501,7 +501,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, DecalsRoot, WeaponPreviewRotator, PreviewPivotZ, Camera);
                 var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
-                var textureData = Plugin.GetTextureData(decalInfo.Texture);
+                var textureData = Plugin.GetThumbnail(decalInfo.Texture);
                 SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
             }
         }
@@ -514,7 +514,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
-            var textureData = Plugin.GetTextureData(decalInfo.Texture);
+            var textureData = Plugin.GetThumbnail(decalInfo.Texture);
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), default(string));
 
@@ -647,8 +647,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var decalIndex = CurrentlyEditedDecalIndex.Value;
             var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
-            var textureData = Plugin.GetTextureData(decalInfo.Texture);
-            var maskData = Plugin.GetTextureData(decalInfo.Mask);
+            var textureData = Plugin.GetThumbnail(decalInfo.Texture);
+            var maskData = Plugin.GetThumbnail(decalInfo.Mask);
 
             var x = bigMargin;
             var y = bigMargin;
@@ -1158,7 +1158,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             for (var i = 0; i < Plugin.GetTexturesCount(decalTextureType); i++)
             {
                 var textureName = Plugin.GetTextureName(decalTextureType, i);
-                var textureData = Plugin.GetTextureData(textureName);
+                var textureData = Plugin.GetThumbnail(textureName);
 
                 var ix = i % iconColumns;
                 var iy = i / iconColumns;

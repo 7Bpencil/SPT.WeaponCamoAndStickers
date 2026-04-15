@@ -39,6 +39,11 @@ namespace SevenBoldPencil.Common
             }
         }
 
+        private void OnDestroy()
+        {
+            if (LineMaterial) Destroy(LineMaterial);
+        }
+
         private void OnPostRender()
         {
             if (Cubes.Count == 0 && Lines.Count == 0)
