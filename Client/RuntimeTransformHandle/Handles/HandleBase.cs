@@ -38,5 +38,13 @@ namespace RuntimeHandle
         public abstract void Interact();
 
         public abstract void EndInteraction();
+
+		public void OnDestroy()
+		{
+			if (_material)
+			{
+				Destroy(_material);
+			}
+		}
     }
 }

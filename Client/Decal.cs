@@ -98,5 +98,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             DecalMaterial.SetFloat(_MaxAngle, maxAngle);
         }
+
+		public void OnDestroy()
+		{
+			if (DecalMaterial)
+			{
+				Destroy(DecalMaterial);
+			}
+		}
 	}
 }

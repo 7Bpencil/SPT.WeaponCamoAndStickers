@@ -33,10 +33,7 @@ namespace SevenBoldPencil.Common
 
         private void Awake()
         {
-            if (!LineMaterial)
-            {
-                LineMaterial = new Material(Shader.Find("Unlit/Color"));
-            }
+            LineMaterial = new Material(Shader.Find("Unlit/Color"));
         }
 
         private void OnPostRender()
@@ -150,5 +147,13 @@ namespace SevenBoldPencil.Common
 
             return 24;
         }
+
+		public void OnDestroy()
+		{
+			if (LineMaterial)
+			{
+				Destroy(LineMaterial);
+			}
+		}
     }
 }
