@@ -522,7 +522,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var bottomLineY = topLineY + buttonHeight + smallMargin;
 
             var textureIconX = x + smallMargin;
-            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), textureData.Texture))
+            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), textureData.Preview))
             {
                 SetCurrentlyEditedDecal(decalIndex, textureData.Type);
             }
@@ -894,7 +894,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
 
                 {
-                    GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Texture);
+                    GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
 
                     var labelX = x + iconSize + smallMargin + 12;
                     GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoStyle.TextureNameStyle);
@@ -970,7 +970,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 y += buttonHeight + mediumMargin;
 
                 {
-                    GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Texture);
+                    GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
 
                     var labelX = x + iconSize + smallMargin + 12;
                     GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoStyle.TextureNameStyle);
@@ -1166,26 +1166,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var xi = x + ix * (iconSize + smallMargin);
                 var yi = y + iy * (iconSize + smallMargin);
 
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Texture))
+                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
                 {
                     if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
                     {
-                        decalInfo.Texture = textureName;
-                        Plugin.ApplyTexture(ItemId, decalIndex, decalInfo);
+                        Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
                         Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
                         SyncTransformHandle(decalInfo, decal);
                     }
                     if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
                     {
-                        decalInfo.Texture = textureName;
-                        Plugin.ApplyTexture(ItemId, decalIndex, decalInfo);
+                        Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
                         Plugin.FixScale(ItemId, decalIndex, decalInfo);
                         SyncTransformHandle(decalInfo, decal);
                     }
                     if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
                     {
-                        decalInfo.Mask = textureName;
-                        Plugin.ApplyMask(ItemId, decalIndex, decalInfo);
+                        Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
                     }
                 }
             }
