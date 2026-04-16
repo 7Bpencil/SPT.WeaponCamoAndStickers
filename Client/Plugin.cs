@@ -269,9 +269,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // depending on will they be thrown away, written on disk, etc.
         public static Option<Texture2D> LoadPreviewFromDisk(FileInfo previewFileInfo)
         {
+            // preview will look blurry with mip chain
             var previewFileData = File.ReadAllBytes(previewFileInfo.FullName);
-            var preview = new Texture2D(2, 2);
-            if (ImageConversion.LoadImage(preview, previewFileData))
+            var preview = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false, linear: false, createUninitialized: true);
+            if (ImageConversion.LoadImage(preview, previewFileData, markNonReadable: true))
             {
                 return new(preview);
             }
@@ -286,9 +287,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // depending on will they be thrown away, written on disk, etc.
         public static Option<Texture2D> CreatePreviewAndStoreOnDisk(FileInfo previewFileInfo, string textureFilePath)
         {
+            // preview will look oversampled without mip chain on full size texture
             var textureFileData = File.ReadAllBytes(textureFilePath);
-            var texture = new Texture2D(2, 2);
-            if (!ImageConversion.LoadImage(texture, textureFileData))
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+            if (!ImageConversion.LoadImage(texture, textureFileData, markNonReadable: true))
             {
                 Destroy(texture);
                 return default;
@@ -306,7 +308,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Graphics.Blit(texture, tmpRT);
 
             RenderTexture.active = tmpRT;
-            var preview = new Texture2D(previewWidth, previewHeight);
+            var preview = new Texture2D(previewWidth, previewHeight, TextureFormat.RGBA32, mipChain: false, linear: false, createUninitialized: false);
             preview.ReadPixels(new Rect(0, 0, previewWidth, previewHeight), 0, 0, false);
             preview.Apply();
 
@@ -554,8 +556,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static Option<Texture2D> LoadFullSizeTextureFromDisk(string textureFilePath)
         {
             var textureFileData = File.ReadAllBytes(textureFilePath);
-            var texture = new Texture2D(2, 2);
-            if (ImageConversion.LoadImage(texture, textureFileData))
+            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+            if (ImageConversion.LoadImage(texture, textureFileData, markNonReadable: true))
             {
                 return new(texture);
             }
