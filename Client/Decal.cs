@@ -33,7 +33,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DecalTransform = transform;
 		}
 
-		public void Set(DecalInfo decalInfo, Transform root, Texture2D diffuse, Texture2D mask)
+		public void Set(DecalInfo decalInfo, Transform root, Texture diffuse, Texture mask)
 		{
             DecalTransform.parent = root;
 			DecalTransform.localPosition = decalInfo.LocalPosition;
@@ -57,7 +57,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalMaterial.SetFloat(_AspectRatio, aspectRatio);
 		}
 
-        public void ChangeTexture(Texture2D diffuse)
+        public void ChangeTexture(Texture diffuse)
         {
             DecalMaterial.SetTexture(_MainTex, diffuse);
         }
@@ -73,7 +73,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalMaterial.SetVector(_MainTexRotation, rotationVector);
 		}
 
-        public void ChangeMask(Texture2D mask)
+        public void ChangeMask(Texture mask)
         {
             DecalMaterial.SetTexture(_MaskTex, mask);
         }

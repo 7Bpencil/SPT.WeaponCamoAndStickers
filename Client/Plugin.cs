@@ -75,7 +75,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class FullSizeTextureData
     {
-        public Texture2D Texture;
+        public Texture Texture;
         public int InstancesCount;
     }
 
@@ -83,7 +83,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     // or each decal have its own one?
     public class AnimationData
     {
-        // public
         public AnimationFrame[] Frames;
         public int FrameIndex;
         public double NextFrameTime;
@@ -92,7 +91,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public struct AnimationFrame
     {
-        public Texture2D Texture;
+        public Texture Texture;
         public float Delay;
     }
 
@@ -366,7 +365,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return new(preview);
         }
 
-        private static Texture2D CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture2D texture)
+        private static Texture2D CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture texture)
         {
             const int previewMaxSize = 128;
 
@@ -644,7 +643,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
         }
 
-        public Texture2D AcquireFullSizeTexture(Decal decal, string textureName)
+        public Texture AcquireFullSizeTexture(Decal decal, string textureName)
         {
             var textureData = GetTextureData(textureName);
             if (textureData.Format == DecalTextureFormat.PNG)
@@ -659,7 +658,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             throw new ArgumentException("unknown texture data format");
         }
 
-        public Texture2D AcquireFullSizeTexture_PNG(Decal decal, string textureName, string textureFilePath)
+        public Texture AcquireFullSizeTexture_PNG(Decal decal, string textureName, string textureFilePath)
         {
             if (FullSizeTextures.TryGetValue(textureFilePath, out var fullSizeTexture))
             {
@@ -693,7 +692,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return AcquireMissingFullSizeTexture();
         }
 
-        public static Option<Texture2D> LoadFullSizeTextureFromDisk_PNG(string textureFilePath)
+        public static Option<Texture> LoadFullSizeTextureFromDisk_PNG(string textureFilePath)
         {
             var textureFileData = File.ReadAllBytes(textureFilePath);
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
@@ -708,7 +707,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public Texture2D AcquireFullSizeTexture_GIF(Decal decal, string textureName, string textureFilePath)
+        public Texture AcquireFullSizeTexture_GIF(Decal decal, string textureName, string textureFilePath)
         {
             if (Animations.TryGetValue(textureFilePath, out var animation))
             {
@@ -773,7 +772,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return result;
         }
 
-        public Texture2D AcquireMissingFullSizeTexture()
+        public Texture AcquireMissingFullSizeTexture()
         {
             var fullSizeTexture = FullSizeTextures[MissingTextureFilePath];
             fullSizeTexture.InstancesCount++;
@@ -782,7 +781,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         // doesn't change ref count, expects full size texture to be already loaded, panics otherwise,
         // if texture is gif, returns first frame
-        public Texture2D GetFullSizeTexture(string textureName)
+        public Texture GetFullSizeTexture(string textureName)
         {
             Logger.LogInfo($"[Textures] Get: {textureName}");
             var textureData = GetTextureData(textureName);
