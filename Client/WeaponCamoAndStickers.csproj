@@ -96,12 +96,18 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.13" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+  </ItemGroup>
+
   <Target Name="CopyToSPT" AfterTargets="AfterBuild">
     <PropertyGroup>
       <OutDir>$(ProjectDir)\..\..\..\BepInEx\plugins\$(TargetName)</OutDir>
     </PropertyGroup>
     <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
-    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;$(OutDir)\$(TargetFileName)&quot;" />
     <Exec Command="xcopy /hievry &quot;$(ProjectDir)\bundles&quot; &quot;$(OutDir)\bundles&quot;" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="$(NuGetPackageRoot)sixlabors.imagesharp\2.1.13\lib\netstandard2.1\SixLabors.ImageSharp.dll" DestinationFolder="$(OutDir)" />
   </Target>
 </Project>
