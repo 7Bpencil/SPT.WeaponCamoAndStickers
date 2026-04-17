@@ -20,6 +20,8 @@ using UnityEngine;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Formats.Gif;
+using SixLabors.ImageSharp.Metadata;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -81,6 +83,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     // or each decal have its own one?
     public class AnimationData
     {
+        // public
         public AnimationFrame[] Frames;
         public int FrameIndex;
         public double NextFrameTime;
@@ -393,18 +396,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static Option<Texture2D> CreatePreviewAndStoreOnDisk_GIF(FileInfo previewFileInfo, string gifFilePath)
         {
-            using (var image = Image.Load<Rgba32>(gifFilePath))
-            {
-                var frame = image.Frames[0];
-                var texture = new Texture2D(frame.Width, frame.Height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
-                var pixels = new Color32[frame.Width * frame.Height];
-                frame.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
-                texture.SetPixels32(pixels);
-                texture.Apply();
+            // notice that we load only first frame
+            var decoder = new GifDecoder { DecodingMode = FrameDecodingMode.First };
+            using var image = Image.Load<Rgba32>(gifFilePath, decoder);
 
-                var preview = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
-                return new(preview);
-            }
+            var texture = new Texture2D(image.Width, image.Height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+            var pixels = new Color32[image.Width * image.Height];
+            image.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
+            texture.SetPixels32(pixels);
+            texture.Apply();
+
+            var preview = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
+            return new(preview);
         }
 
         public static void CopyPixels(PixelAccessor<Rgba32> accessor, Color32[] pixels)
@@ -734,35 +737,37 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return frames[0].Texture;
         }
 
+        // TODO
+        // we load every frame into memory,
+        // maybe we should only load next frame only when its needed?
+        // SixLabors.ImageSharp doesnt support such mode
         public static AnimationFrame[] LoadGIF(string path)
         {
-            AnimationFrame[] result;
-            using (var image = Image.Load<Rgba32>(path))
+            using var image = Image.Load<Rgba32>(path);
+
+            var result = new AnimationFrame[image.Frames.Count];
+
+            var width = image.Width;
+            var height = image.Height;
+            var pixels = new Color32[width * height];
+            for (var i = 0; i < image.Frames.Count; i++)
             {
-                result = new AnimationFrame[image.Frames.Count];
+                var frame = image.Frames[i];
 
-                var width = image.Width;
-                var height = image.Height;
-                var pixels = new Color32[width * height];
-                for (var i = 0; i < image.Frames.Count; i++)
+                var texture = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+                frame.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
+                texture.SetPixels32(pixels);
+                texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+
+                var frameMetadata = frame.Metadata.GetGifMetadata();
+                var frameDelaySeconds = frameMetadata.FrameDelay / 100f;
+                var animationFrame = new AnimationFrame
                 {
-                    var frame = image.Frames[i];
+                    Texture = texture,
+                    Delay = frameDelaySeconds
+                };
 
-                    var texture = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
-                    frame.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
-                    texture.SetPixels32(pixels);
-                    texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
-
-                    var frameMetadata = frame.Metadata.GetGifMetadata();
-                    var frameDelaySeconds = frameMetadata.FrameDelay / 100f;
-                    var animationFrame = new AnimationFrame
-                    {
-                        Texture = texture,
-                        Delay = frameDelaySeconds
-                    };
-
-                    result[i] = animationFrame;
-                }
+                result[i] = animationFrame;
             }
 
             return result;
