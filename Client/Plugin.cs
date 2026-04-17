@@ -17,6 +17,10 @@ using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
 
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.PixelFormats;
+
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     public class ItemsWithDecals
@@ -63,6 +67,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public Texture2D Preview;
         public DecalTextureType Type;
+        public DecalTextureFormat Format;
         public string FilePath;
     }
 
@@ -72,11 +77,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public int InstancesCount;
     }
 
+    // TODO should decals share frame timer
+    // or each decal have its own one?
+    public class AnimationData
+    {
+        public AnimationFrame[] Frames;
+        public int FrameIndex;
+        public double NextFrameTime;
+        public HashSet<Decal> Decals;
+    }
+
+    public struct AnimationFrame
+    {
+        public Texture2D Texture;
+        public float Delay;
+    }
+
     public enum DecalTextureType
     {
         Camo,
         Sticker,
         Mask
+    }
+
+    public enum DecalTextureFormat
+    {
+        PNG,
+        GIF,
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.3.0")]
@@ -105,6 +132,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private CamoEditorResources CamoEditorResources;
         private Dictionary<string, TextureData> DecalTextures;
         private Dictionary<string, FullSizeTextureData> FullSizeTextures;
+        private Dictionary<string, AnimationData> Animations;
         private List<string> CamosList;
         private List<string> StickersList;
         private List<string> MasksList;
@@ -146,9 +174,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Texture = MissingTexture,
                 InstancesCount = 1,
             });
-            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, Texture2D.whiteTexture);
-            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, Texture2D.whiteTexture);
-            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, Texture2D.whiteTexture);
+            Animations = new();
+            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -179,13 +208,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // hear me out: we can place 3D models as decorations on guns and equipment
 
             // TODO
-            // are gifs possible?
+            // would be nice to load textures and gifs in background thread...
+
+            // TODO
+            // figure out optimal settings for preview textures and full size textures
+            // depending on will they be thrown away, written on disk, etc.
         }
 
         public List<string> LoadTexturesFromDirectory(
             DecalTextureType decalTextureType,
             string subfolder,
             string defaultTextureName,
+            DecalTextureFormat defaultTextureFormat,
             Texture2D defaultTexture)
         {
             List<string> texturesList;
@@ -193,9 +227,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var directoryPath = Path.Combine(TexturesDir, subfolder);
             if (Directory.Exists(directoryPath))
             {
-                var filePaths = Directory.GetFiles(directoryPath, "*.png", new EnumerationOptions() { RecurseSubdirectories = true });
+                var filePaths = Directory.GetFiles(directoryPath, "*", new EnumerationOptions() { RecurseSubdirectories = true });
                 texturesList = new List<string>(filePaths.Length + 1);
-                TryAddTexture(defaultTextureName, defaultTextureName, defaultTexture, decalTextureType, texturesList);
+                TryAddTexture(defaultTextureName, defaultTextureName, defaultTexture, decalTextureType, defaultTextureFormat, texturesList);
                 FullSizeTextures.Add(defaultTextureName, new FullSizeTextureData()
                 {
                     Texture = defaultTexture,
@@ -210,7 +244,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 texturesList = new List<string>(1);
-                TryAddTexture(defaultTextureName, defaultTextureName, defaultTexture, decalTextureType, texturesList);
+                TryAddTexture(defaultTextureName, defaultTextureName, defaultTexture, decalTextureType, defaultTextureFormat, texturesList);
                 FullSizeTextures.Add(defaultTextureName, new FullSizeTextureData()
                 {
                     Texture = defaultTexture,
@@ -227,6 +261,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             List<string> texturesList)
         {
             var extension = Path.GetExtension(textureFilePath);
+            if (!GetTextureFormatFromExtension(extension).Some(out var format))
+            {
+                return;
+            }
+
             var textureName = textureFilePath
                 .Replace(TexturesDir, "")
                 .Replace(extension, "")
@@ -245,7 +284,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (LoadPreviewFromDisk(previewFileInfo).Some(out var preview))
                 {
-                    TryAddTexture(textureFilePath, textureName, preview, type, texturesList);
+                    TryAddTexture(textureFilePath, textureName, preview, type, format, texturesList);
                 }
                 else
                 {
@@ -254,9 +293,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                if (CreatePreviewAndStoreOnDisk(previewFileInfo, textureFilePath).Some(out var preview))
+                if (CreatePreviewAndStoreOnDisk(previewFileInfo, textureFilePath, format).Some(out var preview))
                 {
-                    TryAddTexture(textureFilePath, textureName, preview, type, texturesList);
+                    TryAddTexture(textureFilePath, textureName, preview, type, format, texturesList);
                 }
                 else
                 {
@@ -265,8 +304,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        // TODO figure out optimal settings for preview textures and full size textures
-        // depending on will they be thrown away, written on disk, etc.
+        public static Option<DecalTextureFormat> GetTextureFormatFromExtension(string extension)
+        {
+            if (extension == ".png")
+            {
+                return new(DecalTextureFormat.PNG);
+            }
+            if (extension == ".gif")
+            {
+                return new(DecalTextureFormat.GIF);
+            }
+
+            return default;
+        }
+
         public static Option<Texture2D> LoadPreviewFromDisk(FileInfo previewFileInfo)
         {
             // preview will look blurry with mip chain
@@ -283,9 +334,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        // TODO figure out optimal settings for preview textures and full size textures
-        // depending on will they be thrown away, written on disk, etc.
-        public static Option<Texture2D> CreatePreviewAndStoreOnDisk(FileInfo previewFileInfo, string textureFilePath)
+        public static Option<Texture2D> CreatePreviewAndStoreOnDisk(FileInfo previewFileInfo, string textureFilePath, DecalTextureFormat textureFormat)
+        {
+            if (textureFormat == DecalTextureFormat.PNG)
+            {
+                return CreatePreviewAndStoreOnDisk_PNG(previewFileInfo, textureFilePath);
+            }
+            if (textureFormat == DecalTextureFormat.GIF)
+            {
+                return CreatePreviewAndStoreOnDisk_GIF(previewFileInfo, textureFilePath);
+            }
+
+            return default;
+        }
+
+        public static Option<Texture2D> CreatePreviewAndStoreOnDisk_PNG(FileInfo previewFileInfo, string textureFilePath)
         {
             // preview will look oversampled without mip chain on full size texture
             var textureFileData = File.ReadAllBytes(textureFilePath);
@@ -296,6 +359,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return default;
             }
 
+            var preview = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
+            return new(preview);
+        }
+
+        private static Texture2D CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture2D texture)
+        {
             const int previewMaxSize = 128;
 
             var textureMaxSize = Math.Max(texture.width, texture.height);
@@ -319,7 +388,37 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             File.WriteAllBytes(previewFileInfo.FullName, preview.EncodeToPNG());
             Destroy(texture);
 
-            return new(preview);
+            return preview;
+        }
+
+        public static Option<Texture2D> CreatePreviewAndStoreOnDisk_GIF(FileInfo previewFileInfo, string gifFilePath)
+        {
+            using (var image = Image.Load<Rgba32>(gifFilePath))
+            {
+                var frame = image.Frames[0];
+                var texture = new Texture2D(frame.Width, frame.Height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+                var pixels = new Color32[frame.Width * frame.Height];
+                frame.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
+                texture.SetPixels32(pixels);
+                texture.Apply();
+
+                var preview = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
+                return new(preview);
+            }
+        }
+
+        public static void CopyPixels(PixelAccessor<Rgba32> accessor, Color32[] pixels)
+        {
+            for (var y = 0; y < accessor.Height; y++)
+            {
+                var pixelRow = accessor.GetRowSpan(y);
+                var flippedY = accessor.Height - 1 - y;
+                for (var x = 0; x < pixelRow.Length; x++)
+                {
+                    ref var p = ref pixelRow[x];
+                    pixels[flippedY * pixelRow.Length + x] = new Color32(p.R, p.G, p.B, p.A);
+                }
+            }
         }
 
         public bool TryAddTexture(
@@ -327,13 +426,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             string textureName,
             Texture2D preview,
             DecalTextureType type,
+            DecalTextureFormat format,
             List<string> texturesList)
         {
             var textureData = new TextureData()
             {
                 Preview = preview,
                 Type = type,
-                FilePath = textureFilePath
+                Format = format,
+                FilePath = textureFilePath,
             };
 
             if (DecalTextures.TryAdd(textureName, textureData))
@@ -430,6 +531,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void Update()
         {
+            CheckCamoEditorKeybinds();
+            TickAnimations();
+        }
+
+        public void CheckCamoEditorKeybinds()
+        {
             if (CamoEditor.Some(out var camoEditor) && camoEditor.CurrentlyEditedDecalIndex.HasValue)
             {
                 if (Input.GetKeyDown(MoveButton.Value.MainKey))
@@ -443,6 +550,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 else if (Input.GetKeyDown(ScaleButton.Value.MainKey))
                 {
                     camoEditor.SetupTransformHandle(HandleType.Scale);
+                }
+            }
+        }
+
+        public void TickAnimations()
+        {
+            var time = Time.realtimeSinceStartupAsDouble;
+            foreach (var animation in Animations.Values)
+            {
+                if (time >= animation.NextFrameTime)
+                {
+                    var newFrameIndex = (animation.FrameIndex + 1) % animation.Frames.Length;
+                    var newFrame = animation.Frames[newFrameIndex];
+                    animation.FrameIndex = newFrameIndex;
+                    animation.NextFrameTime = time + newFrame.Delay;
+                    foreach (var decal in animation.Decals)
+                    {
+                        decal.ChangeTexture(newFrame.Texture);
+                    }
                 }
             }
         }
@@ -515,11 +641,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
         }
 
-        public Texture2D AcquireFullSizeTexture(string textureName)
+        public Texture2D AcquireFullSizeTexture(Decal decal, string textureName)
         {
             var textureData = GetTextureData(textureName);
+            if (textureData.Format == DecalTextureFormat.PNG)
+            {
+                return AcquireFullSizeTexture_PNG(decal, textureName, textureData.FilePath);
+            }
+            if (textureData.Format == DecalTextureFormat.GIF)
+            {
+                return AcquireFullSizeTexture_GIF(decal, textureName, textureData.FilePath);
+            }
 
-            if (FullSizeTextures.TryGetValue(textureData.FilePath, out var fullSizeTexture))
+            throw new ArgumentException("unknown texture data format");
+        }
+
+        public Texture2D AcquireFullSizeTexture_PNG(Decal decal, string textureName, string textureFilePath)
+        {
+            if (FullSizeTextures.TryGetValue(textureFilePath, out var fullSizeTexture))
             {
                 Logger.LogInfo($"[Textures] Load from cache: {textureName}");
                 fullSizeTexture.InstancesCount++;
@@ -528,14 +667,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             Logger.LogInfo($"[Textures] Load from disk: {textureName}");
 
-            if (!File.Exists(textureData.FilePath))
+            if (!File.Exists(textureFilePath))
             {
                 return AcquireMissingFullSizeTexture();
             }
 
-            if (LoadFullSizeTextureFromDisk(textureData.FilePath).Some(out var texture))
+            if (LoadFullSizeTextureFromDisk_PNG(textureFilePath).Some(out var texture))
             {
-                FullSizeTextures.Add(textureData.FilePath, new FullSizeTextureData()
+                FullSizeTextures.Add(textureFilePath, new FullSizeTextureData()
                 {
                     Texture = texture,
                     InstancesCount = 1
@@ -551,9 +690,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return AcquireMissingFullSizeTexture();
         }
 
-        // TODO figure out optimal settings for preview textures and full size textures
-        // depending on will they be thrown away, written on disk, etc.
-        public static Option<Texture2D> LoadFullSizeTextureFromDisk(string textureFilePath)
+        public static Option<Texture2D> LoadFullSizeTextureFromDisk_PNG(string textureFilePath)
         {
             var textureFileData = File.ReadAllBytes(textureFilePath);
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
@@ -568,6 +705,69 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public Texture2D AcquireFullSizeTexture_GIF(Decal decal, string textureName, string textureFilePath)
+        {
+            if (Animations.TryGetValue(textureFilePath, out var animation))
+            {
+                Logger.LogInfo($"[Textures] Load from cache: {textureName}");
+                animation.Decals.Add(decal);
+                return animation.Frames[0].Texture;
+            }
+
+            Logger.LogInfo($"[Textures] Load from disk: {textureName}");
+
+            if (!File.Exists(textureFilePath))
+            {
+                return AcquireMissingFullSizeTexture();
+            }
+
+            var frames = LoadGIF(textureFilePath);
+            var time = Time.realtimeSinceStartupAsDouble;
+            Animations.Add(textureFilePath, new AnimationData()
+            {
+                Frames = frames,
+                FrameIndex = 0,
+                NextFrameTime = time + frames[0].Delay,
+                Decals = new() { decal }
+            });
+
+            return frames[0].Texture;
+        }
+
+        public static AnimationFrame[] LoadGIF(string path)
+        {
+            AnimationFrame[] result;
+            using (var image = Image.Load<Rgba32>(path))
+            {
+                result = new AnimationFrame[image.Frames.Count];
+
+                var width = image.Width;
+                var height = image.Height;
+                var pixels = new Color32[width * height];
+                for (var i = 0; i < image.Frames.Count; i++)
+                {
+                    var frame = image.Frames[i];
+
+                    var texture = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
+                    frame.ProcessPixelRows(accessor => CopyPixels(accessor, pixels));
+                    texture.SetPixels32(pixels);
+                    texture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+
+                    var frameMetadata = frame.Metadata.GetGifMetadata();
+                    var frameDelaySeconds = frameMetadata.FrameDelay / 100f;
+                    var animationFrame = new AnimationFrame
+                    {
+                        Texture = texture,
+                        Delay = frameDelaySeconds
+                    };
+
+                    result[i] = animationFrame;
+                }
+            }
+
+            return result;
+        }
+
         public Texture2D AcquireMissingFullSizeTexture()
         {
             var fullSizeTexture = FullSizeTextures[MissingTextureFilePath];
@@ -575,26 +775,53 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return fullSizeTexture.Texture;
         }
 
-        // doesn't change ref count, expects full size texture to be already loaded, panics otherwise
+        // doesn't change ref count, expects full size texture to be already loaded, panics otherwise,
+        // if texture is gif, returns first frame
         public Texture2D GetFullSizeTexture(string textureName)
         {
             Logger.LogInfo($"[Textures] Get: {textureName}");
             var textureData = GetTextureData(textureName);
-            var fullSizeTexture = FullSizeTextures[textureData.FilePath];
-            return fullSizeTexture.Texture;
+            if (textureData.Format == DecalTextureFormat.PNG)
+            {
+                var fullSizeTexture = FullSizeTextures[textureData.FilePath];
+                return fullSizeTexture.Texture;
+            }
+            if (textureData.Format == DecalTextureFormat.GIF)
+            {
+                var animation = Animations[textureData.FilePath];
+                return animation.Frames[0].Texture;
+            }
+            throw new ArgumentException();
         }
 
-        public void ReleaseFullSizeTexture(string textureName)
+        public void ReleaseFullSizeTexture(Decal decal, string textureName)
         {
             Logger.LogInfo($"[Textures] Decrement: {textureName}");
             var textureData = GetTextureData(textureName);
-            var fullSizeTexture = FullSizeTextures[textureData.FilePath];
-            fullSizeTexture.InstancesCount--;
-            if (fullSizeTexture.InstancesCount <= 0)
+            if (textureData.Format == DecalTextureFormat.PNG)
             {
-                FullSizeTextures.Remove(textureData.FilePath);
-                Destroy(fullSizeTexture.Texture);
-                Logger.LogInfo($"[Textures] Release: {textureName}");
+                var fullSizeTexture = FullSizeTextures[textureData.FilePath];
+                fullSizeTexture.InstancesCount--;
+                if (fullSizeTexture.InstancesCount <= 0)
+                {
+                    FullSizeTextures.Remove(textureData.FilePath);
+                    Destroy(fullSizeTexture.Texture);
+                    Logger.LogInfo($"[Textures] Release: {textureName}");
+                }
+            }
+            if (textureData.Format == DecalTextureFormat.GIF)
+            {
+                var animation = Animations[textureData.FilePath];
+                animation.Decals.Remove(decal);
+                if (animation.Decals.Count <= 0)
+                {
+                    Animations.Remove(textureData.FilePath);
+                    foreach (var frame in animation.Frames)
+                    {
+                        Destroy(frame.Texture);
+                    }
+                    Logger.LogInfo($"[Textures] Release: {textureName}");
+                }
             }
         }
 
@@ -622,24 +849,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ChangeTexture(string itemId, int decalIndex, DecalInfo decalInfo, string textureName)
         {
-            ReleaseFullSizeTexture(decalInfo.Texture);
+            var oldTextureName = decalInfo.Texture;
             decalInfo.Texture = textureName;
 
-            var texture = AcquireFullSizeTexture(decalInfo.Texture);
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
+                ReleaseFullSizeTexture(decal, oldTextureName);
+                var texture = AcquireFullSizeTexture(decal, decalInfo.Texture);
                 decal.ChangeTexture(texture);
             });
         }
 
         public void ChangeMask(string itemId, int decalIndex, DecalInfo decalInfo, string maskName)
         {
-            ReleaseFullSizeTexture(decalInfo.Mask);
+            var oldMaskName = decalInfo.Mask;
             decalInfo.Mask = maskName;
 
-            var mask = AcquireFullSizeTexture(decalInfo.Mask);
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
+                ReleaseFullSizeTexture(decal, oldMaskName);
+                var mask = AcquireFullSizeTexture(decal, decalInfo.Mask);
                 decal.ChangeMask(mask);
             });
         }
@@ -721,14 +950,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var itemsWithDecals = ItemsWithDecals[itemId];
             var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
             var decalInfoDuplicate = decalInfo.GetCopy();
-            itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfoDuplicate);
+            var newDecalIndex = decalIndex + 1;
+            itemsWithDecals.DecalsInfo.Insert(newDecalIndex, decalInfoDuplicate);
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
                 var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
-                itemWithDecals.Decals.Insert(decalIndex, decal);
+                itemWithDecals.Decals.Insert(newDecalIndex, decal);
             }
 
-            return decalIndex + 1;
+            return newDecalIndex;
         }
 
         public void Delete(string itemId, int decalIndex)
@@ -1021,8 +1251,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public Decal CreateDecal(DecalInfo decalInfo, Transform root)
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
-            var decalTexture = AcquireFullSizeTexture(decalInfo.Texture);
-            var decalMask = AcquireFullSizeTexture(decalInfo.Mask);
+            var decalTexture = AcquireFullSizeTexture(decal, decalInfo.Texture);
+            var decalMask = AcquireFullSizeTexture(decal, decalInfo.Mask);
 			decal.Init(DecalShader);
 			decal.Set(decalInfo, root, decalTexture, decalMask);
 			return decal;
@@ -1067,13 +1297,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void DestroyDecal(Decal decal, DecalInfo decalInfo)
         {
+            ReleaseFullSizeTexture(decal, decalInfo.Texture);
+            ReleaseFullSizeTexture(decal, decalInfo.Mask);
+
             if (decal)
             {
                 Destroy(decal.gameObject);
             }
-
-            ReleaseFullSizeTexture(decalInfo.Texture);
-            ReleaseFullSizeTexture(decalInfo.Mask);
         }
 
         public void OnCloneItem(string originalId, string cloneId)
