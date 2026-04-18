@@ -80,7 +80,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public VideoPlayer VideoPlayer;
         public RenderTexture RenderTexture;
-        public bool PlayAudio; // TODO
         public HashSet<Decal> Decals;
     }
 
@@ -107,6 +106,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static Plugin Instance;
 
+        public static ConfigEntry<bool> PlayVideoAudio;
         public static ConfigEntry<float> UIScale;
         public static ConfigEntry<KeyboardShortcut> MoveButton;
         public static ConfigEntry<KeyboardShortcut> RotateButton;
@@ -143,6 +143,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Instance = this;
 			LoggerInstance = Logger;
 
+            PlayVideoAudio = Config.Bind<bool>("Main", "Video | Play Audio", false, "");
+            PlayVideoAudio.SettingChanged += (_, _) => ChangeAudioOnAllVideos(PlayVideoAudio.Value);
             UIScale = Config.Bind<float>("Main", "Camo Editor | UI Scale", 1f, new ConfigDescription("", new AcceptableValueRange<float>(0.5f, 2f)));
             MoveButton = Config.Bind("Main", "Camo Editor | Keybinds | Move", new KeyboardShortcut(KeyCode.G), "");
             RotateButton = Config.Bind("Main", "Camo Editor | Keybinds | Rotate", new KeyboardShortcut(KeyCode.R), "");
@@ -415,7 +417,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Logger.LogError(message);
                 hitError = true;
             };
-            videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            videoPlayer.audioOutputMode = GetVideoAudioOutputMode(false);
             videoPlayer.playOnAwake = false;
             videoPlayer.url = param.FilePath;
             videoPlayer.renderMode = VideoRenderMode.RenderTexture;
@@ -767,7 +769,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Logger.LogError(message);
                 hitError = true;
             };
-            // videoPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            videoPlayer.audioOutputMode = GetVideoAudioOutputMode(PlayVideoAudio.Value);
             videoPlayer.playOnAwake = false;
             videoPlayer.url = videoFilePath;
             videoPlayer.renderMode = VideoRenderMode.RenderTexture;
@@ -796,12 +798,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 VideoPlayer = videoPlayer,
                 RenderTexture = renderTexture,
-                PlayAudio = true,
                 Decals = new() { decal }
             });
 
             afterLoad(decal, renderTexture);
             Logger.LogInfo($"[Textures] Load from disk: {textureName}");
+        }
+
+        public void ChangeAudioOnAllVideos(bool isEnabled)
+        {
+            var mode = GetVideoAudioOutputMode(isEnabled);
+            foreach (var video in Videos.Values)
+            {
+                video.VideoPlayer.Stop();
+                video.VideoPlayer.audioOutputMode = mode;
+                video.VideoPlayer.Play();
+            }
+        }
+
+        // TODO potential optimization, weird behaviour tho: videoPlayer.EnableAudioTrack
+        public VideoAudioOutputMode GetVideoAudioOutputMode(bool isEnabled)
+        {
+            return isEnabled ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
         }
 
         public Texture AcquireMissingFullSizeTexture()
