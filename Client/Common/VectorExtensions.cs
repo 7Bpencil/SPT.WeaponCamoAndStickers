@@ -50,5 +50,10 @@ namespace SevenBoldPencil.Common
 		{
             return Quaternion.Euler(v.x, v.y, v.z);
 		}
+
+		public static float AspectRatio(this Vector2Int v)
+		{
+			return (float)v.x / (float)v.y;
+		}
     }
 }
