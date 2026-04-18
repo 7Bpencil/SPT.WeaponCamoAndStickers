@@ -80,7 +80,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public VideoPlayer VideoPlayer;
         public RenderTexture RenderTexture;
-        public HashSet<Decal> Decals;
+        public int InstancesCount;
     }
 
     public enum DecalTextureType
@@ -744,7 +744,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (Videos.TryGetValue(textureFilePath, out var video))
             {
-                video.Decals.Add(decal);
+                video.InstancesCount++;
                 afterLoad(decal, video.RenderTexture);
                 Logger.LogInfo($"[Textures] Load from cache: {textureName}");
                 return;
@@ -798,7 +798,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 VideoPlayer = videoPlayer,
                 RenderTexture = renderTexture,
-                Decals = new() { decal }
+                InstancesCount = 1
             });
 
             afterLoad(decal, renderTexture);
@@ -849,8 +849,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (textureData.Format == DecalTextureFormat.Video)
             {
                 var video = Videos[textureData.FilePath];
-                video.Decals.Remove(decal);
-                if (video.Decals.Count <= 0)
+                video.InstancesCount--;
+                if (video.InstancesCount <= 0)
                 {
                     Videos.Remove(textureData.FilePath);
                     video.VideoPlayer.Stop();
