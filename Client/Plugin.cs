@@ -8,6 +8,8 @@
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using EFT;
+using EFT.InventoryLogic;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
@@ -38,9 +40,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
 
         public int SchemaVersion;
+        public long SaveTime;
         public string Name;
         public string Texture;
         public Vector4 TextureUV;
@@ -560,6 +563,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static void UpgradeOldVersionsOfDecalsInfo(List<DecalInfo> decalsInfo)
         {
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             foreach (var decalInfo in decalsInfo)
             {
                 if (decalInfo.SchemaVersion == 0)
@@ -578,6 +582,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 2;
                     decalInfo.TextureUV = UpgradeUV_from_1_to_2(decalInfo.TextureUV);
                     decalInfo.MaskUV = UpgradeUV_from_1_to_2(decalInfo.MaskUV);
+                }
+                if (decalInfo.SchemaVersion == 2)
+                {
+                    decalInfo.SchemaVersion = 3;
+                    decalInfo.SaveTime = time; // this wont cause any issues, right?
                 }
             }
         }
@@ -1064,6 +1073,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
+                SaveTime = 0,
                 Name = "",
                 Texture = DefaultCamoName,
                 TextureUV = new Vector4(0, 0, 1, 1),
@@ -1581,7 +1591,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var fileInfo = GetPresetFileInfo(presetName);
             var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
             Directory.CreateDirectory(fileInfo.Directory.FullName);
-            File.WriteAllText(fileInfo.FullName, json);
+            File.WriteAllTextAsync(fileInfo.FullName, json);
         }
 
         public void DeletePreset(string presetName)
@@ -1630,6 +1640,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
+                    var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    foreach (var decalInfo in decalsInfo)
+                    {
+                        decalInfo.SaveTime = time;
+                    }
+
                     WriteDecalsToFile(itemId, decalsInfo);
                     Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite decals");
                 }
@@ -1644,7 +1660,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var fileInfo = GetItemFileInfo(itemId);
             var json = JsonConvert.SerializeObject(decalsInfo, Formatting.Indented);
             Directory.CreateDirectory(fileInfo.Directory.FullName);
-            File.WriteAllText(fileInfo.FullName, json);
+            File.WriteAllTextAsync(fileInfo.FullName, json);
         }
 
         public void RemoveDecalsFile(string itemId)
@@ -1658,6 +1674,81 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var fileName = $"{itemId}.json";
             var filePath = Path.Combine(ItemsDir, fileName);
             return new FileInfo(filePath);
+        }
+
+        public Dictionary<string, List<DecalInfo>> SnapshotLocalDecals()
+        {
+            var snapshot = new Dictionary<string, List<DecalInfo>>();
+    		if (!TarkovApplication.Exist(out var tarkovApplication))
+            {
+                return snapshot;
+            }
+
+            // copies all guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
+            var profile = tarkovApplication.Session.Profile;
+            var inventoryItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+
+            foreach (var item in inventoryItems)
+            {
+                if (item is Weapon && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
+                {
+                    var decalsCopy = new List<DecalInfo>(itemsWithDecals.DecalsInfo.Count);
+                    CopyDecalsInfo(itemsWithDecals.DecalsInfo, decalsCopy);
+                    snapshot[item.Id] = decalsCopy;
+                }
+            }
+
+            return snapshot;
+        }
+
+        public void IngestRemoteDecals(Dictionary<string, List<DecalInfo>> remoteDecals)
+        {
+            foreach (var (itemId, decalsInfo) in remoteDecals)
+            {
+                IngestRemoteDecals(itemId, decalsInfo);
+            }
+        }
+
+        public void IngestRemoteDecals(string itemId, List<DecalInfo> remoteDecalsInfo)
+        {
+            if (remoteDecalsInfo.Count == 0)
+            {
+                Logger.LogWarning($"IngestRemoteDecals: {itemId} has no decals, but was replicated?");
+                return;
+            }
+
+            // TODO not sure if copying remoteDecalsInfo is necessary
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                // pick newer version
+                var itemsWithDecals = ItemsWithDecals[itemId];
+                var decalsInfo = itemsWithDecals.DecalsInfo;
+                if (decalsInfo[0].SaveTime >= remoteDecalsInfo[0].SaveTime)
+                {
+                    Logger.LogInfo($"IngestRemoteDecals: {itemId}, mine is newer");
+                    return;
+                }
+
+                decalsInfo.Clear();
+                CopyDecalsInfo(remoteDecalsInfo, decalsInfo);
+                WriteDecalsToFile(itemId, decalsInfo);
+                Logger.LogInfo($"IngestRemoteDecals: {itemId}, his is newer, already spawned count: {itemsWithDecals.Items.Count}");
+            }
+            else
+            {
+                Logger.LogInfo($"IngestRemoteDecals: {itemId}, new");
+                var decalsInfo = new List<DecalInfo>(remoteDecalsInfo.Count);
+                CopyDecalsInfo(remoteDecalsInfo, decalsInfo);
+
+                var itemsWithDecals = new ItemsWithDecals()
+                {
+                    Items = new(),
+                    DecalsInfo = decalsInfo,
+                };
+
+                ItemsWithDecals.Add(itemId, itemsWithDecals);
+                WriteDecalsToFile(itemId, decalsInfo);
+            }
         }
     }
 }
