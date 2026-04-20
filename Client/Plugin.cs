@@ -64,26 +64,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
     }
 
-    public struct TextureData
+    public class DecalTextureData
     {
         public Texture2D Preview;
         public Vector2Int OriginalSize;
         public DecalTextureType Type;
         public DecalTextureFormat Format;
         public string FilePath;
-    }
-
-    public class FullSizeTextureData
-    {
-        public Texture Texture;
-        public int InstancesCount;
-    }
-
-    public class VideoData
-    {
-        public VideoPlayer VideoPlayer;
-        public RenderTexture RenderTexture;
-        public int InstancesCount;
+        public bool Error; // this flag is needed so we dont try to load corrupted asset over and over again
     }
 
     public enum DecalTextureType
@@ -95,8 +83,39 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public enum DecalTextureFormat
     {
+        Unknown,
         PNG,
         Video,
+    }
+
+    public abstract class DecalTextureAsset
+    {
+        public bool IsLoaded;
+        public int InstancesCount;
+        public Dictionary<Decal, Action<Decal, Texture>> WaitingAfterLoad;
+        public Texture Texture;
+
+        public abstract void Release();
+    }
+
+    public class DecalTexturePNG : DecalTextureAsset
+    {
+        public override void Release()
+        {
+            UnityEngine.Object.Destroy(Texture);
+        }
+    }
+
+    public class DecalTextureVideo : DecalTextureAsset
+    {
+        public VideoPlayer VideoPlayer;
+
+        public override void Release()
+        {
+            VideoPlayer.Stop();
+            UnityEngine.Object.Destroy(VideoPlayer);
+            UnityEngine.Object.Destroy(Texture);
+        }
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.3.0")]
@@ -105,7 +124,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const string DefaultCamoName = "builtin/camos/default";
         public const string DefaultStickerName = "builtin/stickers/default";
         public const string DefaultMaskName = "builtin/masks/default";
-        public const string MissingTextureFilePath = "builtin/missing";
+        public const string ErrorTextureFilePath = "builtin/error";
 
         public static Plugin Instance;
 
@@ -122,11 +141,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string ItemsDir;
         private string PresetsDir;
         private Shader DecalShader;
-        private Texture2D MissingTexture;
+        private Texture2D ErrorTexture;
+        private DecalTextureData ErrorTextureData;
         private CamoEditorResources CamoEditorResources;
-        private Dictionary<string, TextureData> DecalTextures;
-        private Dictionary<string, FullSizeTextureData> FullSizeTextures;
-        private Dictionary<string, VideoData> Videos;
+        private Dictionary<string, DecalTextureData> DecalTextures;
+        private Dictionary<string, DecalTextureAsset> DecalTextureAssets;
         private string[] CamosList;
         private string[] StickersList;
         private string[] MasksList;
@@ -161,16 +180,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
-            MissingTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
+            ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
+            ErrorTextureData = new()
+            {
+                Preview = ErrorTexture,
+                OriginalSize = new(ErrorTexture.width, ErrorTexture.height),
+                Type = DecalTextureType.Camo,
+                Format = DecalTextureFormat.PNG,
+                FilePath = ErrorTextureFilePath,
+                Error = true,
+            };
             CamoEditorResources = new(bundle);
             DecalTextures = new();
-            FullSizeTextures = new();
-            FullSizeTextures.Add(MissingTextureFilePath, new FullSizeTextureData()
-            {
-                Texture = MissingTexture,
-                InstancesCount = 1,
-            });
-            Videos = new();
+            DecalTextureAssets = new();
             CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
@@ -260,10 +282,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Index = 0,
                 Textures = textures,
             });
-            FullSizeTextures.Add(textureName, new FullSizeTextureData()
+            DecalTextureAssets.Add(textureName, new DecalTexturePNG()
             {
-                Texture = texture,
+                IsLoaded = true,
                 InstancesCount = 1,
+                WaitingAfterLoad = null,
+                Texture = texture,
             });
         }
 
@@ -280,21 +304,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 .Remove(0, 1) // remove first slash
                 .Replace(@"\", @"/"); // replace windows slashes with unix ones
 
-            if (!GetTextureFormatFromExtension(extension).Some(out var format))
-            {
-                AddTextureError(textureName, textureType, textureIndex, textures);
-                return;
-            }
-
+            var textureFormat = GetTextureFormatFromExtension(extension);
             var param = new AddTexturePararms()
             {
                 FilePath = textureFilePath,
                 Name = textureName,
                 Type = textureType,
-                Format = format,
+                Format = textureFormat,
                 Index = textureIndex,
                 Textures = textures,
             };
+
+            if (textureFormat == DecalTextureFormat.Unknown)
+            {
+                AddTextureError(param);
+                return;
+            }
 
             var previewPath = Path.Combine(PreviewsDir, textureName);
             var previewFileInfo = new FileInfo(previewPath);
@@ -308,18 +333,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public static Option<DecalTextureFormat> GetTextureFormatFromExtension(string extension)
+        public static DecalTextureFormat GetTextureFormatFromExtension(string extension)
         {
             if (EIC(extension, ".png"))
             {
-                return new(DecalTextureFormat.PNG);
+                return DecalTextureFormat.PNG;
             }
             if (EIC(extension, ".mp4") || EIC(extension, ".webm"))
             {
-                return new(DecalTextureFormat.Video);
+                return DecalTextureFormat.Video;
             }
 
-            return default;
+            return DecalTextureFormat.Unknown;
         }
 
         public static bool EIC(string current, string target)
@@ -345,7 +370,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                AddTextureError(param.Name, param.Type, param.Index, param.Textures);
+                AddTextureError(param);
                 Destroy(preview);
             }
         }
@@ -374,7 +399,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                AddTextureError(param.Name, param.Type, param.Index, param.Textures);
+                AddTextureError(param);
             }
             Destroy(texture);
         }
@@ -433,7 +458,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (hitError)
             {
-                AddTextureError(param.Name, param.Type, param.Index, param.Textures);
+                AddTextureError(param);
                 videoPlayer.Stop();
                 Destroy(videoPlayer);
                 yield break;
@@ -450,7 +475,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (hitError)
             {
-                AddTextureError(param.Name, param.Type, param.Index, param.Textures);
+                AddTextureError(param);
                 videoPlayer.Stop();
                 Destroy(videoPlayer);
                 Destroy(renderTexture);
@@ -477,37 +502,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             public string[] Textures;
         }
 
-        public void AddTexture(Texture2D preview, Vector2Int originalSize, AddTexturePararms param)
+        public void AddTexture(Texture2D preview, Vector2Int originalSize, AddTexturePararms param, bool error = false)
         {
-            var textureData = new TextureData()
+            var textureData = new DecalTextureData()
             {
                 Preview = preview,
                 OriginalSize = originalSize,
                 Type = param.Type,
                 Format = param.Format,
                 FilePath = param.FilePath,
+                Error = error,
             };
 
             DecalTextures.Add(param.Name, textureData);
             param.Textures[param.Index] = param.Name;
         }
 
-        public void AddTextureError(
-            string textureName,
-            DecalTextureType textureType,
-            int textureIndex,
-            string[] textures)
+        public void AddTextureError(AddTexturePararms param)
         {
-            AddTexture(MissingTexture, new(MissingTexture.width, MissingTexture.height), new()
-            {
-                FilePath = MissingTextureFilePath,
-                Name = textureName,
-                Type = textureType,
-                Format = DecalTextureFormat.PNG,
-                Index = textureIndex,
-                Textures = textures,
-            });
-            Logger.LogError($"[Textures] Failed to load preview: {textureName}");
+            AddTexture(ErrorTexture, new(ErrorTexture.width, ErrorTexture.height), param, error: true);
+            Logger.LogError($"[Textures] Failed to load preview: {param.Name}");
         }
 
         public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
@@ -677,100 +691,108 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return DecalPresets.Keys;
         }
 
-        public TextureData GetTextureData(string textureName)
+        public DecalTextureData GetTextureData(string textureName)
         {
 			if (DecalTextures.TryGetValue(textureName, out var textureData))
             {
                 return textureData;
             }
-            return new TextureData()
-            {
-                Preview = MissingTexture,
-                OriginalSize = new(MissingTexture.width, MissingTexture.height),
-                Type = DecalTextureType.Camo,
-                Format = DecalTextureFormat.PNG,
-                FilePath = MissingTextureFilePath,
-            };
+
+            return ErrorTextureData;
         }
 
-        public void AcquireFullSizeTexture(Decal decal, string textureName, Action<Decal, Texture> afterLoad)
+        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal, Texture> afterLoad)
         {
             var textureData = GetTextureData(textureName);
-            if (textureData.Format == DecalTextureFormat.PNG)
-            {
-                AcquireFullSizeTexture_PNG(decal, textureName, textureData.FilePath, afterLoad);
-            }
-            if (textureData.Format == DecalTextureFormat.Video)
-            {
-                AcquireFullSizeTexture_Video(decal, textureName, textureData.FilePath, afterLoad);
-            }
-        }
 
-        public void AcquireFullSizeTexture_PNG(Decal decal, string textureName, string textureFilePath, Action<Decal, Texture> afterLoad)
-        {
-            if (FullSizeTextures.TryGetValue(textureFilePath, out var fullSizeTexture))
+            if (textureData.Error)
             {
-                fullSizeTexture.InstancesCount++;
-                afterLoad(decal, fullSizeTexture.Texture);
-                Logger.LogInfo($"[Textures] Load from cache: {textureName}");
+                AcquireDecalTextureError(decal, afterLoad);
                 return;
             }
 
-            if (!File.Exists(textureFilePath))
+            if (DecalTextureAssets.TryGetValue(textureData.FilePath, out var asset))
             {
-                afterLoad(decal, AcquireMissingFullSizeTexture());
+                asset.InstancesCount++;
+                if (asset.IsLoaded)
+                {
+                    afterLoad(decal, asset.Texture);
+                    Logger.LogInfo($"[Textures] Load from cache: {textureName}");
+                }
+                else
+                {
+                    asset.WaitingAfterLoad.Add(decal, afterLoad);
+                    Logger.LogInfo($"[Textures] Already loading: {textureName}");
+                }
+            }
+            else
+            {
+                Logger.LogInfo($"[Textures] Start loading from disk: {textureName}");
+                if (textureData.Format == DecalTextureFormat.PNG)
+                {
+                    LoadPNG(decal, textureName, textureData, afterLoad);
+                }
+                if (textureData.Format == DecalTextureFormat.Video)
+                {
+                    StartCoroutine(LoadVideo(decal, textureName, textureData, afterLoad));
+                }
+            }
+        }
+
+        public void LoadPNG(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
+        {
+            if (!File.Exists(textureData.FilePath))
+            {
+                textureData.Error = true;
+                AcquireDecalTextureError(decal, afterLoad);
                 Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
                 return;
             }
 
-            LoadFullSizeTextureFromDisk_PNG(decal, textureName, textureFilePath, afterLoad);
-        }
-
-        public void LoadFullSizeTextureFromDisk_PNG(Decal decal, string textureName, string textureFilePath, Action<Decal, Texture> afterLoad)
-        {
-            var textureBytes = File.ReadAllBytes(textureFilePath);
+            var textureBytes = File.ReadAllBytes(textureData.FilePath);
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
             if (ImageConversion.LoadImage(texture, textureBytes, markNonReadable: true))
             {
-                FullSizeTextures.Add(textureFilePath, new FullSizeTextureData()
+                DecalTextureAssets.Add(textureData.FilePath, new DecalTexturePNG()
                 {
+                    IsLoaded = true,
+                    InstancesCount = 1,
+                    WaitingAfterLoad = null,
                     Texture = texture,
-                    InstancesCount = 1
                 });
 
                 afterLoad(decal, texture);
-                Logger.LogInfo($"[Textures] Load from disk: {textureName}");
+                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
             }
             else
             {
-                afterLoad(decal, AcquireMissingFullSizeTexture());
+                textureData.Error = true;
+                AcquireDecalTextureError(decal, afterLoad);
                 Destroy(texture);
                 Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
             }
         }
 
-        public void AcquireFullSizeTexture_Video(Decal decal, string textureName, string textureFilePath, Action<Decal, Texture> afterLoad)
+        public IEnumerator LoadVideo(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
         {
-            if (Videos.TryGetValue(textureFilePath, out var video))
+            if (!File.Exists(textureData.FilePath))
             {
-                video.InstancesCount++;
-                afterLoad(decal, video.RenderTexture);
-                Logger.LogInfo($"[Textures] Load from cache: {textureName}");
-                return;
-            }
-
-            if (!File.Exists(textureFilePath))
-            {
-                afterLoad(decal, AcquireMissingFullSizeTexture());
+                textureData.Error = true;
+                AcquireDecalTextureError(decal, afterLoad);
                 Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
-                return;
+                yield break;
             }
 
-            StartCoroutine(LoadVideo(decal, textureName, textureFilePath, afterLoad));
-        }
+            var video = new DecalTextureVideo()
+            {
+                IsLoaded = false,
+                InstancesCount = 1,
+                WaitingAfterLoad = new() { { decal, afterLoad } },
+                Texture = null,
+                VideoPlayer = null,
+            };
+            DecalTextureAssets.Add(textureData.FilePath, video);
 
-        public IEnumerator LoadVideo(Decal decal, string textureName, string videoFilePath, Action<Decal, Texture> afterLoad)
-        {
             var hitError = false;
             var videoPlayer = gameObject.AddComponent<VideoPlayer>();
             videoPlayer.errorReceived += (_, message) =>
@@ -780,7 +802,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
             videoPlayer.audioOutputMode = GetVideoAudioOutputMode(PlayVideoAudio.Value);
             videoPlayer.playOnAwake = false;
-            videoPlayer.url = videoFilePath;
+            videoPlayer.url = textureData.FilePath;
             videoPlayer.renderMode = VideoRenderMode.RenderTexture;
             videoPlayer.isLooping = true;
             videoPlayer.Prepare();
@@ -792,7 +814,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (hitError)
             {
-                afterLoad(decal, AcquireMissingFullSizeTexture());
+                textureData.Error = true;
+                DecalTextureAssets.Remove(textureData.FilePath);
+                foreach (var (waitingDecal, waitingDecalAfterLoad) in video.WaitingAfterLoad)
+                {
+                    AcquireDecalTextureError(waitingDecal, waitingDecalAfterLoad);
+                }
+                video.WaitingAfterLoad.Clear();
+                video.WaitingAfterLoad = null;
+
                 videoPlayer.Stop();
                 Destroy(videoPlayer);
                 yield break;
@@ -803,25 +833,40 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.targetTexture = renderTexture;
             videoPlayer.Play();
 
-            Videos.Add(videoFilePath, new VideoData()
+            video.Texture = renderTexture;
+            video.VideoPlayer = videoPlayer;
+            video.IsLoaded = true;
+            foreach (var (waitingDecal, waitingDecalAfterLoad) in video.WaitingAfterLoad)
             {
-                VideoPlayer = videoPlayer,
-                RenderTexture = renderTexture,
-                InstancesCount = 1
-            });
+                waitingDecalAfterLoad(waitingDecal, renderTexture);
+            }
+            video.WaitingAfterLoad.Clear();
+            video.WaitingAfterLoad = null;
 
-            afterLoad(decal, renderTexture);
-            Logger.LogInfo($"[Textures] Load from disk: {textureName}");
+            // we finished loading, but player quickly closed window
+            if (video.InstancesCount == 0)
+            {
+                DecalTextureAssets.Remove(textureData.FilePath);
+                video.Release();
+                Logger.LogWarning($"[Textures] Finished loading, but no instances: {textureName}");
+            }
+            else
+            {
+                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
+            }
         }
 
         public void ChangeAudioOnAllVideos(bool isEnabled)
         {
             var mode = GetVideoAudioOutputMode(isEnabled);
-            foreach (var video in Videos.Values)
+            foreach (var asset in DecalTextureAssets.Values)
             {
-                video.VideoPlayer.Stop();
-                video.VideoPlayer.audioOutputMode = mode;
-                video.VideoPlayer.Play();
+                if (asset.IsLoaded && asset is DecalTextureVideo video)
+                {
+                    video.VideoPlayer.Stop();
+                    video.VideoPlayer.audioOutputMode = mode;
+                    video.VideoPlayer.Play();
+                }
             }
         }
 
@@ -831,42 +876,42 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return isEnabled ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
         }
 
-        public Texture AcquireMissingFullSizeTexture()
+        public void AcquireDecalTextureError(Decal decal, Action<Decal, Texture> afterLoad)
         {
-            var fullSizeTexture = FullSizeTextures[MissingTextureFilePath];
-            fullSizeTexture.InstancesCount++;
-            return fullSizeTexture.Texture;
+            afterLoad(decal, ErrorTexture);
         }
 
-        public void ReleaseFullSizeTexture(Decal decal, string textureName)
+        public void ReleaseDecalTextureAsset(Decal decal, string textureName)
         {
             Logger.LogInfo($"[Textures] Decrement: {textureName}");
             var textureData = GetTextureData(textureName);
 
-            if (textureData.Format == DecalTextureFormat.PNG)
+            if (textureData.Error)
             {
-                var fullSizeTexture = FullSizeTextures[textureData.FilePath];
-                fullSizeTexture.InstancesCount--;
-                if (fullSizeTexture.InstancesCount <= 0)
-                {
-                    FullSizeTextures.Remove(textureData.FilePath);
-                    Destroy(fullSizeTexture.Texture);
-                    Logger.LogInfo($"[Textures] Release: {textureName}");
-                }
+                return;
             }
 
-            if (textureData.Format == DecalTextureFormat.Video)
+            if (DecalTextureAssets.TryGetValue(textureData.FilePath, out var asset))
             {
-                var video = Videos[textureData.FilePath];
-                video.InstancesCount--;
-                if (video.InstancesCount <= 0)
+                asset.InstancesCount--;
+                if (asset.IsLoaded)
                 {
-                    Videos.Remove(textureData.FilePath);
-                    video.VideoPlayer.Stop();
-                    Destroy(video.VideoPlayer);
-                    Destroy(video.RenderTexture);
-                    Logger.LogInfo($"[Textures] Release: {textureName}");
+                    if (asset.InstancesCount <= 0)
+                    {
+                        DecalTextureAssets.Remove(textureData.FilePath);
+                        asset.Release();
+                        Logger.LogInfo($"[Textures] Release: {textureName}");
+                    }
                 }
+                else
+                {
+                    asset.WaitingAfterLoad.Remove(decal);
+                    Logger.LogInfo($"[Textures] Release still loading: {textureName}");
+                }
+            }
+            else
+            {
+                Logger.LogWarning($"[Textures] Tried to unload, but its already unloaded: {textureName}");
             }
         }
 
@@ -899,8 +944,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
-                ReleaseFullSizeTexture(decal, oldTextureName);
-                AcquireFullSizeTexture(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
+                ReleaseDecalTextureAsset(decal, oldTextureName);
+                AcquireDecalTextureAsset(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
             });
         }
 
@@ -911,8 +956,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
-                ReleaseFullSizeTexture(decal, oldMaskName);
-                AcquireFullSizeTexture(decal, decalInfo.Mask, AfterLoad_ChangeMask);
+                ReleaseDecalTextureAsset(decal, oldMaskName);
+                AcquireDecalTextureAsset(decal, decalInfo.Mask, AfterLoad_ChangeMask);
             });
         }
 
@@ -1296,8 +1341,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
 			decal.Init(DecalShader, root, decalInfo);
-            AcquireFullSizeTexture(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
-            AcquireFullSizeTexture(decal, decalInfo.Mask, AfterLoad_ChangeMask);
+            AcquireDecalTextureAsset(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
+            AcquireDecalTextureAsset(decal, decalInfo.Mask, AfterLoad_ChangeMask);
 			return decal;
 		}
 
@@ -1350,8 +1395,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void DestroyDecal(Decal decal, DecalInfo decalInfo)
         {
-            ReleaseFullSizeTexture(decal, decalInfo.Texture);
-            ReleaseFullSizeTexture(decal, decalInfo.Mask);
+            ReleaseDecalTextureAsset(decal, decalInfo.Texture);
+            ReleaseDecalTextureAsset(decal, decalInfo.Mask);
 
             if (decal)
             {
