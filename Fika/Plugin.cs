@@ -6,16 +6,12 @@
 //
 
 using BepInEx;
-using BepInEx.Bootstrap;
-using BepInEx.Configuration;
-using BepInEx.Logging;
 using Comfort.Common;
 using Fika.Core.Main.Utils;
 using Fika.Core.Modding;
 using Fika.Core.Modding.Events;
 using Fika.Core.Networking;
 using Fika.Core.Networking.LiteNetLib;
-using System;
 using System.Collections.Generic;
 
 using MainPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;

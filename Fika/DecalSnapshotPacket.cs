@@ -6,7 +6,6 @@
 //
 
 using Fika.Core.Networking.LiteNetLib.Utils;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using System.Collections.Generic;
 using UnityEngine;
 

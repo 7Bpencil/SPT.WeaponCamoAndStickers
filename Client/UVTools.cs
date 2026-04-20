@@ -5,16 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using Newtonsoft.Json;
-using SevenBoldPencil.Common;
 using System;
-using System.IO;
-using System.Reflection;
-using System.Collections.Generic;
-using RuntimeHandle;
 using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
