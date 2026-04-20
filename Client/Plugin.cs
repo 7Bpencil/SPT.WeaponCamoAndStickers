@@ -1522,10 +1522,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var decalsInfo = new List<DecalInfo>(presetDecalsInfo.Count);
-                CopyDecalsInfo(presetDecalsInfo, decalsInfo);
-
-                var decals = new List<Decal>(presetDecalsInfo.Count);
+                var decalsInfo = CopyDecalsInfo(presetDecalsInfo);
+                var decals = new List<Decal>(decalsInfo.Count);
                 foreach (var decalInfo in decalsInfo)
                 {
                     var decal = CreateDecal(decalInfo, decalsRoot);
@@ -1571,8 +1569,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var newPresetDecalsInfo = new List<DecalInfo>(decalsInfo.Count);
-                CopyDecalsInfo(decalsInfo, newPresetDecalsInfo);
+                var newPresetDecalsInfo = CopyDecalsInfo(decalsInfo);
                 DecalPresets.Add(presetName, newPresetDecalsInfo);
                 WritePresetToFile(presetName, newPresetDecalsInfo);
             }
@@ -1584,6 +1581,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 destination.Add(decalInfo.GetCopy());
             }
+        }
+
+        public List<DecalInfo> CopyDecalsInfo(List<DecalInfo> source)
+        {
+            var destination = new List<DecalInfo>(source.Count);
+            CopyDecalsInfo(source, destination);
+            return destination;
         }
 
         public void WritePresetToFile(string presetName, List<DecalInfo> preset)
@@ -1692,9 +1696,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (item is Weapon && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
                 {
-                    var decalsCopy = new List<DecalInfo>(itemsWithDecals.DecalsInfo.Count);
-                    CopyDecalsInfo(itemsWithDecals.DecalsInfo, decalsCopy);
-                    snapshot[item.Id] = decalsCopy;
+                    snapshot[item.Id] = CopyDecalsInfo(itemsWithDecals.DecalsInfo);
                 }
             }
 
@@ -1737,9 +1739,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 Logger.LogInfo($"IngestRemoteDecals: {itemId}, new");
-                var decalsInfo = new List<DecalInfo>(remoteDecalsInfo.Count);
-                CopyDecalsInfo(remoteDecalsInfo, decalsInfo);
-
+                var decalsInfo = CopyDecalsInfo(remoteDecalsInfo);
                 var itemsWithDecals = new ItemsWithDecals()
                 {
                     Items = new(),
