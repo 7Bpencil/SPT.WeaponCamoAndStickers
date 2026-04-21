@@ -888,7 +888,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 textureData.Error = true;
                 AcquireDecalTextureError(decal, afterLoad);
-                Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
+                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
                 yield break;
             }
 
@@ -909,7 +909,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 textureData.Error = true;
                 DecalTextureAssets.Remove(textureData.FilePath);
                 ClearWaitingAfterLoadError(asset);
-                Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
+                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
                 yield break;
             }
 
@@ -958,7 +958,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 textureData.Error = true;
                 AcquireDecalTextureError(decal, afterLoad);
-                Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
+                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
                 yield break;
             }
 
