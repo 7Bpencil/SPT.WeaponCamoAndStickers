@@ -119,6 +119,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
     }
 
+    public class TexturesDirectory
+    {
+        public bool IsFolded;
+        public string Name;
+        public string[] Textures;
+        public TexturesDirectory[] Directories;
+    }
+
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.3.0")]
     public class Plugin : BaseUnityPlugin
     {
@@ -126,6 +134,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const string DefaultStickerName = "builtin/stickers/default";
         public const string DefaultMaskName = "builtin/masks/default";
         public const string ErrorTextureFilePath = "builtin/error";
+        public const string BuiltinDirectoryName = "builtin";
 
         public static Plugin Instance;
 
@@ -147,9 +156,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private CamoEditorResources CamoEditorResources;
         private Dictionary<string, DecalTextureData> DecalTextures;
         private Dictionary<string, DecalTextureAsset> DecalTextureAssets;
-        private string[] CamosList;
-        private string[] StickersList;
-        private string[] MasksList;
+        private TexturesDirectory CamosDirectory;
+        private TexturesDirectory StickersDirectory;
+        private TexturesDirectory MasksDirectory;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -194,9 +203,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             CamoEditorResources = new(bundle);
             DecalTextures = new();
             DecalTextureAssets = new();
-            CamosList = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            StickersList = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            MasksList = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            CamosDirectory = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            StickersDirectory = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            MasksDirectory = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -229,51 +238,118 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // TODO
             // figure out optimal settings for preview textures and full size textures
             // depending on will they be thrown away, written on disk, etc.
+
+            // TODO
+            // highlight currently selected texture
+
+            // TODO
+            // mark as favourite + favourite folder at the top
         }
 
-        public string[] LoadTexturesFromDirectory(
+        public TexturesDirectory LoadTexturesFromDirectory(
             DecalTextureType textureType,
             string subfolder,
             string defaultTextureName,
             DecalTextureFormat defaultTextureFormat,
             Texture2D defaultTexture)
         {
-            string[] textures;
+            TexturesDirectory directory;
 
             var directoryPath = Path.Combine(TexturesDir, subfolder);
             if (Directory.Exists(directoryPath))
             {
-                // we check every file in directory even if its not a supported type,
-                // this way user can see what files are broken (they will have missing texture), and remove them (or not),
-                // this also makes it easier to architect loading big assets via coroutines
-
-                var filePaths = Directory.GetFiles(directoryPath, "*", new EnumerationOptions() { RecurseSubdirectories = true });
-                textures = new string[filePaths.Length + 1];
-                AddDefaultTexture(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, textures);
-
-                for (var i = 0; i < filePaths.Length; i++)
-                {
-                    var filePath = filePaths[i];
-                    var textureIndex = i + 1; // first one is default texture
-                    TryLoadTexture(filePath, textureType, textureIndex, textures);
-                }
+                directory = WalkTextureDirectory(directoryPath, directoryPath, textureType, 1);
             }
             else
             {
-                textures = new string[1];
-                AddDefaultTexture(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, textures);
+                directory = new TexturesDirectory()
+                {
+                    IsFolded = false,
+                    Name = GetDirectoryName(directoryPath, directoryPath),
+                    Textures = [],
+                    Directories = new TexturesDirectory[1] // reserve space for builtin folder
+                };
             }
 
-            return textures;
+            AddBuiltinDirectory(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, directory);
+            return directory;
         }
 
-        public void AddDefaultTexture(
+        public string GetDirectoryName(string directoryPath, string rootPath)
+        {
+            if (directoryPath == rootPath)
+            {
+                return "";
+            }
+
+            var directoryName = directoryPath
+                .Replace(rootPath, "")
+                .Remove(0, 1) // remove first slash
+                .Replace(@"\", @"/"); // replace windows slashes with unix ones
+
+            return directoryName;
+        }
+
+        public (string name, string extension) GetTextureName(string filePath)
+        {
+            var extension = Path.GetExtension(filePath);
+            var textureName = filePath
+                .Replace(extension, "")
+                .Replace(TexturesDir, "")
+                .Remove(0, 1) // remove first slash
+                .Replace(@"\", @"/"); // replace windows slashes with unix ones
+
+            return (textureName, extension);
+        }
+
+        public TexturesDirectory WalkTextureDirectory(string directoryPath, string rootPath, DecalTextureType textureType, int suffix = 0)
+        {
+            // we check every file in directory even if its not a supported type,
+            // this way user can see what files are broken (they will have error texture), and remove them (or not),
+            // this also makes it easier to architect loading big assets asynchronously
+
+            var filePaths = Directory.GetFiles(directoryPath);
+            var textures = new string[filePaths.Length];
+
+            for (var i = 0; i < filePaths.Length; i++)
+            {
+                var filePath = filePaths[i];
+                var textureIndex = i;
+                TryLoadTexture(filePath, textureType, textureIndex, textures);
+            }
+
+            var directoryPaths = Directory.GetDirectories(directoryPath);
+            var directories = new TexturesDirectory[directoryPaths.Length + suffix]; // suffix to reserve space for builtin folder
+            for (var i = 0; i < directoryPaths.Length; i++)
+            {
+                var subDirectoryPath = directoryPaths[i];
+                directories[i] = WalkTextureDirectory(subDirectoryPath, rootPath, textureType);
+            }
+
+            return new()
+            {
+                IsFolded = false,
+                Name = GetDirectoryName(directoryPath, rootPath),
+                Textures = textures,
+                Directories = directories
+            };
+        }
+
+        public void AddBuiltinDirectory(
             Texture2D texture,
             string textureName,
             DecalTextureType textureType,
             DecalTextureFormat textureFormat,
-            string[] textures)
+            TexturesDirectory root)
         {
+            var builtinDirectory = new TexturesDirectory()
+            {
+                IsFolded = false,
+                Name = BuiltinDirectoryName,
+                Textures = new string[1],
+                Directories = []
+            };
+            root.Directories[root.Directories.Length - 1] = builtinDirectory;
             AddTexture(texture, new(texture.width, texture.height), new()
             {
                 FilePath = textureName,
@@ -281,7 +357,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Type = textureType,
                 Format = textureFormat,
                 Index = 0,
-                Textures = textures,
+                Textures = builtinDirectory.Textures,
             });
             DecalTextureAssets.Add(textureName, new DecalTexturePNG()
             {
@@ -298,13 +374,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             int textureIndex,
             string[] textures)
         {
-            var extension = Path.GetExtension(textureFilePath);
-            var textureName = textureFilePath
-                .Replace(TexturesDir, "")
-                .Replace(extension, "")
-                .Remove(0, 1) // remove first slash
-                .Replace(@"\", @"/"); // replace windows slashes with unix ones
-
+            var (textureName, extension) = GetTextureName(textureFilePath);
             var textureFormat = GetTextureFormatFromExtension(extension);
             var param = new AddTexturePararms()
             {
@@ -730,7 +800,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 Logger.LogInfo($"[Textures] Start loading from disk: {textureName}");
-                // TODO I dont like how it flashes white
+                // TODO I dont like how it flashes white when decal loads any texture for the first time
                 if (textureData.Format == DecalTextureFormat.PNG)
                 {
                     StartCoroutine(LoadPNG(decal, textureName, textureData, afterLoad));
@@ -943,24 +1013,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public int GetTexturesCount(DecalTextureType texturesType)
+        public TexturesDirectory GetTexturesDirectory(DecalTextureType texturesType)
         {
             return texturesType switch
             {
-                DecalTextureType.Camo => CamosList.Length,
-                DecalTextureType.Sticker => StickersList.Length,
-                DecalTextureType.Mask => MasksList.Length,
-                _ => throw new ArgumentException(),
-            };
-        }
-
-        public string GetTextureName(DecalTextureType texturesType, int textureIndex)
-        {
-            return texturesType switch
-            {
-                DecalTextureType.Camo => CamosList[textureIndex],
-                DecalTextureType.Sticker => StickersList[textureIndex],
-                DecalTextureType.Mask => MasksList[textureIndex],
+                DecalTextureType.Camo => CamosDirectory,
+                DecalTextureType.Sticker => StickersDirectory,
+                DecalTextureType.Mask => MasksDirectory,
                 _ => throw new ArgumentException(),
             };
         }
