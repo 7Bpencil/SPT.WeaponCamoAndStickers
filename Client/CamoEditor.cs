@@ -342,7 +342,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 y += buttonHeight + smallMargin;
             }
 
-            if (texturesDirectory.IsFolded)
+            if (texturesDirectory.IsClosed)
             {
                 return;
             }
@@ -1203,18 +1203,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoStyle.DirectoryButtonStyle))
                 {
-                    texturesDirectory.IsFolded = !texturesDirectory.IsFolded;
+                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
                 }
 
                 var iconSize = 20;
                 var iconMargin = (buttonHeight - iconSize) / 2;
-                var icon = texturesDirectory.IsFolded ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
+                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
                 GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
 
                 y += buttonHeight + smallMargin;
             }
 
-            if (texturesDirectory.IsFolded)
+            if (texturesDirectory.IsClosed)
             {
                 return;
             }

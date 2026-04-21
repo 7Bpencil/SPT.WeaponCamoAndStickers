@@ -121,10 +121,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class TexturesDirectory
     {
-        public bool IsFolded;
+        public bool IsClosed;
         public string Name;
         public string[] Textures;
         public TexturesDirectory[] Directories;
+    }
+
+    public class ClosedTexturesDirectories
+    {
+        public HashSet<string> CamosDirectory;
+        public HashSet<string> StickersDirectory;
+        public HashSet<string> MasksDirectory;
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.3.0")]
@@ -150,12 +157,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string PreviewsDir;
         private string ItemsDir;
         private string PresetsDir;
+        private string ClosedDirectoriesPath;
         private Shader DecalShader;
         private Texture2D ErrorTexture;
         private DecalTextureData ErrorTextureData;
         private CamoEditorResources CamoEditorResources;
         private Dictionary<string, DecalTextureData> DecalTextures;
         private Dictionary<string, DecalTextureAsset> DecalTextureAssets;
+        private ClosedTexturesDirectories ClosedDirectories;
         private TexturesDirectory CamosDirectory;
         private TexturesDirectory StickersDirectory;
         private TexturesDirectory MasksDirectory;
@@ -184,9 +193,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             TexturesDir = Path.Combine(assemblyDir, "textures");
-            PreviewsDir = Path.Combine(assemblyDir, "previews");
+            PreviewsDir = Path.Combine(assemblyDir, "temp", "previews");
             ItemsDir = Path.Combine(assemblyDir, "items");
             PresetsDir = Path.Combine(assemblyDir, "presets");
+            ClosedDirectoriesPath = Path.Combine(assemblyDir, "temp", "closed-directories.json");
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
@@ -203,9 +213,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             CamoEditorResources = new(bundle);
             DecalTextures = new();
             DecalTextureAssets = new();
-            CamosDirectory = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            StickersDirectory = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            MasksDirectory = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+
+            ClosedDirectories = LoadClosedTexturesDirectories(ClosedDirectoriesPath);
+            CamosDirectory = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            StickersDirectory = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", ClosedDirectories.StickersDirectory, DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            MasksDirectory = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", ClosedDirectories.MasksDirectory, DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -246,9 +258,57 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // mark as favourite + favourite folder at the top
         }
 
+        public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                var json = File.ReadAllText(filePath);
+                var result = JsonConvert.DeserializeObject<ClosedTexturesDirectories>(json);
+                return result;
+            }
+            else
+            {
+                return new ClosedTexturesDirectories()
+                {
+                    CamosDirectory = new(),
+                    StickersDirectory = new(),
+                    MasksDirectory = new(),
+                };
+            }
+        }
+
+        public void SaveClosedTexturesDirectoriesToDisk(ClosedTexturesDirectories closedDirectories, string filePath)
+        {
+            closedDirectories.CamosDirectory.Clear();
+            closedDirectories.StickersDirectory.Clear();
+            closedDirectories.MasksDirectory.Clear();
+
+            SaveClosedTexturesDirectories(CamosDirectory, closedDirectories.CamosDirectory);
+            SaveClosedTexturesDirectories(StickersDirectory, closedDirectories.StickersDirectory);
+            SaveClosedTexturesDirectories(MasksDirectory, closedDirectories.MasksDirectory);
+
+            var fileInfo = new FileInfo(filePath);
+            var json = JsonConvert.SerializeObject(closedDirectories, Formatting.Indented);
+            Directory.CreateDirectory(fileInfo.Directory.FullName);
+            File.WriteAllTextAsync(fileInfo.FullName, json);
+        }
+
+        public void SaveClosedTexturesDirectories(TexturesDirectory directory, HashSet<string> result)
+        {
+            if (directory.IsClosed)
+            {
+                result.Add(directory.Name);
+            }
+            foreach (var subDirectory in directory.Directories)
+            {
+                SaveClosedTexturesDirectories(subDirectory, result);
+            }
+        }
+
         public TexturesDirectory LoadTexturesFromDirectory(
             DecalTextureType textureType,
             string subfolder,
+            HashSet<string> closedDirectories,
             string defaultTextureName,
             DecalTextureFormat defaultTextureFormat,
             Texture2D defaultTexture)
@@ -258,20 +318,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var directoryPath = Path.Combine(TexturesDir, subfolder);
             if (Directory.Exists(directoryPath))
             {
-                directory = WalkTextureDirectory(directoryPath, directoryPath, textureType, 1);
+                directory = WalkTextureDirectory(directoryPath, directoryPath, textureType, closedDirectories, 1);
             }
             else
             {
+                var directoryName = GetDirectoryName(directoryPath, directoryPath);
                 directory = new TexturesDirectory()
                 {
-                    IsFolded = false,
-                    Name = GetDirectoryName(directoryPath, directoryPath),
+                    IsClosed = closedDirectories.Contains(directoryName),
+                    Name = directoryName,
                     Textures = [],
                     Directories = new TexturesDirectory[1] // reserve space for builtin folder
                 };
             }
 
-            AddBuiltinDirectory(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, directory);
+            AddBuiltinDirectory(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, directory, closedDirectories);
             return directory;
         }
 
@@ -302,7 +363,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return (textureName, extension);
         }
 
-        public TexturesDirectory WalkTextureDirectory(string directoryPath, string rootPath, DecalTextureType textureType, int suffix = 0)
+        public TexturesDirectory WalkTextureDirectory(string directoryPath, string rootPath, DecalTextureType textureType, HashSet<string> closedDirectories, int suffix = 0)
         {
             // we check every file in directory even if its not a supported type,
             // this way user can see what files are broken (they will have error texture), and remove them (or not),
@@ -323,13 +384,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             for (var i = 0; i < directoryPaths.Length; i++)
             {
                 var subDirectoryPath = directoryPaths[i];
-                directories[i] = WalkTextureDirectory(subDirectoryPath, rootPath, textureType);
+                directories[i] = WalkTextureDirectory(subDirectoryPath, rootPath, textureType, closedDirectories);
             }
 
+            var directoryName = GetDirectoryName(directoryPath, rootPath);
             return new()
             {
-                IsFolded = false,
-                Name = GetDirectoryName(directoryPath, rootPath),
+                IsClosed = closedDirectories.Contains(directoryName),
+                Name = directoryName,
                 Textures = textures,
                 Directories = directories
             };
@@ -340,11 +402,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             string textureName,
             DecalTextureType textureType,
             DecalTextureFormat textureFormat,
-            TexturesDirectory root)
+            TexturesDirectory root,
+            HashSet<string> closedDirectories)
         {
             var builtinDirectory = new TexturesDirectory()
             {
-                IsFolded = false,
+                IsClosed = closedDirectories.Contains(BuiltinDirectoryName),
                 Name = BuiltinDirectoryName,
                 Textures = new string[1],
                 Directories = []
@@ -1786,6 +1849,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite decals");
                 }
             }
+
+            SaveClosedTexturesDirectoriesToDisk(ClosedDirectories, ClosedDirectoriesPath);
 
             camoEditor.Destroy();
             CamoEditor = default;
