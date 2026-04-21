@@ -1184,7 +1184,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
 
-            var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(Plugin.GetTexturesDirectory(decalTextureType));
+            var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
 

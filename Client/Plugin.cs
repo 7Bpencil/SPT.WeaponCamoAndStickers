@@ -41,7 +41,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 3;
+        public const int CurrentSchemaVersion = 4;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -137,10 +137,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.3.0")]
     public class Plugin : BaseUnityPlugin
     {
-        public const string DefaultCamoName = "builtin/camos/default";
-        public const string DefaultStickerName = "builtin/stickers/default";
-        public const string DefaultMaskName = "builtin/masks/default";
-        public const string ErrorTextureFilePath = "builtin/error";
+        public const string DefaultCamoName = "builtin/camos/default.png";
+        public const string DefaultStickerName = "builtin/stickers/default.png";
+        public const string DefaultMaskName = "builtin/masks/default.png";
+        public const string ErrorTextureFilePath = "builtin/error.png";
         public const string BuiltinDirectoryName = "builtin";
 
         public static Plugin Instance;
@@ -355,7 +355,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             var extension = Path.GetExtension(filePath);
             var textureName = filePath
-                .Replace(extension, "")
                 .Replace(TexturesDir, "")
                 .Remove(0, 1) // remove first slash
                 .Replace(@"\", @"/"); // replace windows slashes with unix ones
@@ -735,6 +734,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     decalInfo.SchemaVersion = 3;
                     decalInfo.SaveTime = time; // this wont cause any issues, right?
+                }
+                if (decalInfo.SchemaVersion == 3)
+                {
+                    // here I realized that extension is useful
+                    decalInfo.SchemaVersion = 4;
+                    decalInfo.Texture += ".png";
+                    decalInfo.Mask += ".png";
                 }
             }
         }
