@@ -467,16 +467,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
                     Option<string> deletedPresetNameOption = default;
-                    foreach (var name in Plugin.GetPresetNames())
+                    foreach (var presetName in Plugin.GetPresetNames())
                     {
-                        if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), name))
+                        if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                         {
-                            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, name);
+                            CurrentPresetName = presetName;
+                            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, presetName);
                         }
                         if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                         {
                             // theres no way user will click on multiple buttons in one frame, right?
-                            deletedPresetNameOption = new(name);
+                            deletedPresetNameOption = new(presetName);
                         }
                         decalsY += buttonHeight + smallMargin;
                     }
