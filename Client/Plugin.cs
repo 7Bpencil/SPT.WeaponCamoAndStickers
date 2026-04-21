@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.Video;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
@@ -703,6 +704,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal, Texture> afterLoad)
         {
+            Logger.LogInfo($"[Textures] Increment: {textureName}");
             var textureData = GetTextureData(textureName);
 
             if (textureData.Error)
@@ -728,9 +730,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 Logger.LogInfo($"[Textures] Start loading from disk: {textureName}");
+                // TODO I dont like how it flashes white
                 if (textureData.Format == DecalTextureFormat.PNG)
                 {
-                    LoadPNG(decal, textureName, textureData, afterLoad);
+                    StartCoroutine(LoadPNG(decal, textureName, textureData, afterLoad));
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
@@ -739,38 +742,74 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void LoadPNG(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
+        public IEnumerator LoadPNG(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
         {
             if (!File.Exists(textureData.FilePath))
             {
                 textureData.Error = true;
                 AcquireDecalTextureError(decal, afterLoad);
                 Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
-                return;
+                yield break;
             }
 
-            var textureBytes = File.ReadAllBytes(textureData.FilePath);
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
-            if (ImageConversion.LoadImage(texture, textureBytes, markNonReadable: true))
+            var asset = new DecalTexturePNG()
             {
-                DecalTextureAssets.Add(textureData.FilePath, new DecalTexturePNG()
-                {
-                    IsLoaded = true,
-                    InstancesCount = 1,
-                    WaitingAfterLoad = null,
-                    Texture = texture,
-                });
+                IsLoaded = false,
+                InstancesCount = 1,
+                WaitingAfterLoad = new() { { decal, afterLoad } },
+                Texture = null,
+            };
+            DecalTextureAssets.Add(textureData.FilePath, asset);
 
-                afterLoad(decal, texture);
-                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
+            using var uwr = UnityWebRequestTexture.GetTexture(textureData.FilePath, nonReadable: true);
+            yield return uwr.SendWebRequest();
+
+            if (uwr.result != UnityWebRequest.Result.Success)
+            {
+                textureData.Error = true;
+                DecalTextureAssets.Remove(textureData.FilePath);
+                ClearWaitingAfterLoadError(asset);
+                Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
+                yield break;
+            }
+
+            var texture = DownloadHandlerTexture.GetContent(uwr);
+
+            asset.Texture = texture;
+            asset.IsLoaded = true;
+            ClearWaitingAfterLoadSuccess(asset);
+
+            // we finished loading, but player quickly closed window
+            if (asset.InstancesCount == 0)
+            {
+                DecalTextureAssets.Remove(textureData.FilePath);
+                asset.Release();
+                Logger.LogWarning($"[Textures] Finished loading, but no instances: {textureName}");
             }
             else
             {
-                textureData.Error = true;
-                AcquireDecalTextureError(decal, afterLoad);
-                Destroy(texture);
-                Logger.LogInfo($"[Textures] Failed to load from disk: {textureName}");
+                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
             }
+        }
+
+        public void ClearWaitingAfterLoadSuccess(DecalTextureAsset asset)
+        {
+            foreach (var (waitingDecal, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
+            {
+                waitingDecalAfterLoad(waitingDecal, asset.Texture);
+            }
+            asset.WaitingAfterLoad.Clear();
+            asset.WaitingAfterLoad = null;
+        }
+
+        public void ClearWaitingAfterLoadError(DecalTextureAsset asset)
+        {
+            foreach (var (waitingDecal, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
+            {
+                AcquireDecalTextureError(waitingDecal, waitingDecalAfterLoad);
+            }
+            asset.WaitingAfterLoad.Clear();
+            asset.WaitingAfterLoad = null;
         }
 
         public IEnumerator LoadVideo(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
@@ -783,7 +822,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 yield break;
             }
 
-            var video = new DecalTextureVideo()
+            var asset = new DecalTextureVideo()
             {
                 IsLoaded = false,
                 InstancesCount = 1,
@@ -791,7 +830,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Texture = null,
                 VideoPlayer = null,
             };
-            DecalTextureAssets.Add(textureData.FilePath, video);
+            DecalTextureAssets.Add(textureData.FilePath, asset);
 
             var hitError = false;
             var videoPlayer = gameObject.AddComponent<VideoPlayer>();
@@ -816,13 +855,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 textureData.Error = true;
                 DecalTextureAssets.Remove(textureData.FilePath);
-                foreach (var (waitingDecal, waitingDecalAfterLoad) in video.WaitingAfterLoad)
-                {
-                    AcquireDecalTextureError(waitingDecal, waitingDecalAfterLoad);
-                }
-                video.WaitingAfterLoad.Clear();
-                video.WaitingAfterLoad = null;
-
+                ClearWaitingAfterLoadError(asset);
                 videoPlayer.Stop();
                 Destroy(videoPlayer);
                 yield break;
@@ -833,21 +866,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.targetTexture = renderTexture;
             videoPlayer.Play();
 
-            video.Texture = renderTexture;
-            video.VideoPlayer = videoPlayer;
-            video.IsLoaded = true;
-            foreach (var (waitingDecal, waitingDecalAfterLoad) in video.WaitingAfterLoad)
-            {
-                waitingDecalAfterLoad(waitingDecal, renderTexture);
-            }
-            video.WaitingAfterLoad.Clear();
-            video.WaitingAfterLoad = null;
+            asset.Texture = renderTexture;
+            asset.VideoPlayer = videoPlayer;
+            asset.IsLoaded = true;
+            ClearWaitingAfterLoadSuccess(asset);
 
             // we finished loading, but player quickly closed window
-            if (video.InstancesCount == 0)
+            if (asset.InstancesCount == 0)
             {
                 DecalTextureAssets.Remove(textureData.FilePath);
-                video.Release();
+                asset.Release();
                 Logger.LogWarning($"[Textures] Finished loading, but no instances: {textureName}");
             }
             else
