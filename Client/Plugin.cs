@@ -871,7 +871,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 Logger.LogInfo($"[Textures] Start loading from disk: {textureName}");
-                // TODO I dont like how it flashes white when decal loads any texture for the first time
                 if (textureData.Format == DecalTextureFormat.PNG)
                 {
                     StartCoroutine(LoadPNG(decal, textureName, textureData, afterLoad));
