@@ -380,7 +380,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (param.Format == DecalTextureFormat.PNG)
             {
-                CreatePreviewAndStoreOnDisk_PNG(previewFileInfo, param);
+                StartCoroutine(CreatePreviewAndStoreOnDisk_PNG(previewFileInfo, param));
             }
             if (param.Format == DecalTextureFormat.Video)
             {
@@ -388,20 +388,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void CreatePreviewAndStoreOnDisk_PNG(FileInfo previewFileInfo, AddTexturePararms param)
+        public IEnumerator CreatePreviewAndStoreOnDisk_PNG(FileInfo previewFileInfo, AddTexturePararms param)
         {
-            // preview will look oversampled without mip chain on full size texture
-            var textureBytes = File.ReadAllBytes(param.FilePath);
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: true, linear: false, createUninitialized: true);
-            if (ImageConversion.LoadImage(texture, textureBytes, markNonReadable: true))
-            {
-                var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
-                AddTexture(preview, originalSize, param);
-            }
-            else
+            using var uwr = UnityWebRequestTexture.GetTexture(param.FilePath, nonReadable: true);
+            yield return uwr.SendWebRequest();
+
+            if (uwr.result != UnityWebRequest.Result.Success)
             {
                 AddTextureError(param);
+                yield break;
             }
+
+            var texture = DownloadHandlerTexture.GetContent(uwr);
+            var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
+            AddTexture(preview, originalSize, param);
             Destroy(texture);
         }
 
