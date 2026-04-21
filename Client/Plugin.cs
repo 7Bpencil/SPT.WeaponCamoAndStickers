@@ -841,9 +841,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return ErrorTextureData;
         }
 
-        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal, Texture> afterLoad)
+        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal> beforeLoad, Action<Decal, Texture> afterLoad)
         {
             Logger.LogInfo($"[Textures] Increment: {textureName}");
+
+            beforeLoad(decal);
             var textureData = GetTextureData(textureName);
 
             if (textureData.Error)
@@ -1101,7 +1103,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 ReleaseDecalTextureAsset(decal, oldTextureName);
-                AcquireDecalTextureAsset(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
+                AcquireDecalTextureAsset(decal, decalInfo.Texture, BeforeLoad_ChangeTexture, AfterLoad_ChangeTexture);
             });
         }
 
@@ -1113,7 +1115,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 ReleaseDecalTextureAsset(decal, oldMaskName);
-                AcquireDecalTextureAsset(decal, decalInfo.Mask, AfterLoad_ChangeMask);
+                AcquireDecalTextureAsset(decal, decalInfo.Mask, BeforeLoad_ChangeMask, AfterLoad_ChangeMask);
             });
         }
 
@@ -1497,14 +1499,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
 			decal.Init(DecalShader, root, decalInfo);
-            AcquireDecalTextureAsset(decal, decalInfo.Texture, AfterLoad_ChangeTexture);
-            AcquireDecalTextureAsset(decal, decalInfo.Mask, AfterLoad_ChangeMask);
+            AcquireDecalTextureAsset(decal, decalInfo.Texture, BeforeLoad_ChangeTexture, AfterLoad_ChangeTexture);
+            AcquireDecalTextureAsset(decal, decalInfo.Mask, BeforeLoad_ChangeMask, AfterLoad_ChangeMask);
 			return decal;
 		}
+
+        public void BeforeLoad_ChangeTexture(Decal decal)
+        {
+            // otherwise texture will flash white which is disturbing
+            decal.ChangeTexture(Texture2D.blackTexture);
+        }
 
         public void AfterLoad_ChangeTexture(Decal decal, Texture texture)
         {
             decal.ChangeTexture(texture);
+        }
+
+        public void BeforeLoad_ChangeMask(Decal decal)
+        {
+            // otherwise texture will flash white which is disturbing
+            decal.ChangeMask(Texture2D.blackTexture);
         }
 
         public void AfterLoad_ChangeMask(Decal decal, Texture mask)
