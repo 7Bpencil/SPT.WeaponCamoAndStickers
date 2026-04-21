@@ -33,6 +33,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
         public Texture2D ColorWheelHSV;
+        public Texture2D PlayIcon;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -58,6 +59,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
             ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
+            PlayIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/play-icon.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
@@ -1255,6 +1257,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     {
                         Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
                     }
+                }
+                if (textureData.Format == DecalTextureFormat.Video)
+                {
+                    GUI.DrawTexture(new Rect(xi + 4, yi + 4, 16, 16), CamoEditorResources.PlayIcon);
                 }
             }
 
