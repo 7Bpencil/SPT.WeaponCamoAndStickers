@@ -260,21 +260,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
         {
-            if (File.Exists(filePath))
+            if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
             {
-                var json = File.ReadAllText(filePath);
                 var result = JsonConvert.DeserializeObject<ClosedTexturesDirectories>(json);
                 return result;
             }
             else
             {
-                return new ClosedTexturesDirectories()
-                {
-                    CamosDirectory = new(),
-                    StickersDirectory = new(),
-                    MasksDirectory = new(),
-                };
+                Logger.LogError($"Failed to load closed directories, rolling back to default config: {e}");
             }
+
+            return new ClosedTexturesDirectories()
+            {
+                CamosDirectory = new(),
+                StickersDirectory = new(),
+                MasksDirectory = new(),
+            };
         }
 
         public void SaveClosedTexturesDirectoriesToDisk(ClosedTexturesDirectories closedDirectories, string filePath)
@@ -287,10 +288,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             SaveClosedTexturesDirectories(StickersDirectory, closedDirectories.StickersDirectory);
             SaveClosedTexturesDirectories(MasksDirectory, closedDirectories.MasksDirectory);
 
-            var fileInfo = new FileInfo(filePath);
             var json = JsonConvert.SerializeObject(closedDirectories, Formatting.Indented);
-            Directory.CreateDirectory(fileInfo.Directory.FullName);
-            File.WriteAllTextAsync(fileInfo.FullName, json);
+            SafeIO.WriteAllTextAsync(filePath, json);
         }
 
         public void SaveClosedTexturesDirectories(TexturesDirectory directory, HashSet<string> result)
@@ -368,9 +367,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // this way user can see what files are broken (they will have error texture), and remove them (or not),
             // this also makes it easier to architect loading big assets asynchronously
 
-            var filePaths = Directory.GetFiles(directoryPath);
+            var filePaths = SafeIO.GetFiles(directoryPath);
             var textures = new string[filePaths.Length];
-
             for (var i = 0; i < filePaths.Length; i++)
             {
                 var filePath = filePaths[i];
@@ -378,7 +376,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 TryLoadTexture(filePath, textureType, textureIndex, textures);
             }
 
-            var directoryPaths = Directory.GetDirectories(directoryPath);
+            var directoryPaths = SafeIO.GetDirectories(directoryPath);
             var directories = new TexturesDirectory[directoryPaths.Length + suffix]; // suffix to reserve space for builtin folder
             for (var i = 0; i < directoryPaths.Length; i++)
             {
@@ -458,7 +456,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var previewFileInfo = new FileInfo(previewPath);
             if (previewFileInfo.Exists)
             {
-                LoadPreviewFromDisk(previewFileInfo, param);
+                try
+                {
+                    LoadPreviewFromDisk(previewFileInfo, param);
+                }
+                catch
+                {
+                    AddTextureError(param);
+                }
             }
             else
             {
@@ -537,7 +542,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Destroy(texture);
         }
 
-        private static (Texture2D, Vector2Int) CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture texture)
+        private (Texture2D, Vector2Int) CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture texture)
         {
             const int previewMaxSize = 128;
 
@@ -558,13 +563,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             RenderTexture.active = previousActive;
             RenderTexture.ReleaseTemporary(tmpRT);
 
-            Directory.CreateDirectory(previewFileInfo.Directory.FullName);
-            using var stream = File.Open(previewFileInfo.FullName, FileMode.Create);
-            using var writer = new BinaryWriter(stream);
+            try
+            {
+                Directory.CreateDirectory(previewFileInfo.Directory.FullName);
+                using var stream = File.Open(previewFileInfo.FullName, FileMode.Create);
+                using var writer = new BinaryWriter(stream);
 
-            writer.Write(textureSize.x);
-            writer.Write(textureSize.y);
-            writer.Write(preview.EncodeToPNG());
+                writer.Write(textureSize.x);
+                writer.Write(textureSize.y);
+                writer.Write(preview.EncodeToPNG());
+            }
+            catch (Exception e)
+            {
+                Logger.LogError($"Failed to save preview: {previewFileInfo.FullName}, error: {e}");
+            }
 
             return (preview, textureSize);
         }
@@ -654,55 +666,56 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void AddTextureError(AddTexturePararms param)
         {
             AddTexture(ErrorTexture, new(ErrorTexture.width, ErrorTexture.height), param, error: true);
-            Logger.LogError($"[Textures] Failed to load preview: {param.Name}");
+            Logger.LogError($"[Textures] Failed to load texture: {param.Name}");
         }
 
-        public static Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
+        public Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
         {
-            if (!Directory.Exists(directoryPath))
-            {
-                return new();
-            }
-
-            var filePaths = Directory.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
             var result = new Dictionary<string, List<DecalInfo>>();
 
             foreach (var filePath in filePaths)
             {
                 var presetName = Path.GetFileNameWithoutExtension(filePath);
-                var json = File.ReadAllText(filePath);
-                var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
-                UpgradeOldVersionsOfDecalsInfo(decalsInfo);
-
-                result.Add(presetName, decalsInfo);
+                if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+                {
+                    var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                    UpgradeOldVersionsOfDecalsInfo(decalsInfo);
+                    result.Add(presetName, decalsInfo);
+                }
+                else
+                {
+                    Logger.LogError($"Failed to load preset: {presetName}, error: {e}");
+                }
             }
 
             return result;
         }
 
-        public static Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
+        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
         {
-            if (!Directory.Exists(directoryPath))
-            {
-                return new();
-            }
-
-            var filePaths = Directory.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
             var result = new Dictionary<string, ItemsWithDecals>();
 
             foreach (var filePath in filePaths)
             {
                 var itemId = Path.GetFileNameWithoutExtension(filePath);
-                var json = File.ReadAllText(filePath);
-                var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
-                UpgradeOldVersionsOfDecalsInfo(decalsInfo);
-                var itemsWithDecals = new ItemsWithDecals()
+                if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    Items = new(),
-                    DecalsInfo = decalsInfo,
-                };
+                    var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                    UpgradeOldVersionsOfDecalsInfo(decalsInfo);
+                    var itemsWithDecals = new ItemsWithDecals()
+                    {
+                        Items = new(),
+                        DecalsInfo = decalsInfo,
+                    };
 
-                result.Add(itemId, itemsWithDecals);
+                    result.Add(itemId, itemsWithDecals);
+                }
+                else
+                {
+                    Logger.LogError($"Failed to load item: {itemId}, error: {e}");
+                }
             }
 
             return result;
@@ -1804,26 +1817,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void WritePresetToFile(string presetName, List<DecalInfo> preset)
         {
-            var fileInfo = GetPresetFileInfo(presetName);
             var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
-            Directory.CreateDirectory(fileInfo.Directory.FullName);
-            File.WriteAllTextAsync(fileInfo.FullName, json);
+            var filePath = GetPresetFilePath(presetName);
+            SafeIO.WriteAllTextAsync(filePath, json);
         }
 
         public void DeletePreset(string presetName)
         {
             if (DecalPresets.Remove(presetName))
             {
-                var fileInfo = GetPresetFileInfo(presetName);
-                File.Delete(fileInfo.FullName);
+                var filePath = GetPresetFilePath(presetName);
+                SafeIO.DeleteFile(filePath);
             }
         }
 
-        public FileInfo GetPresetFileInfo(string presetName)
+        public string GetPresetFilePath(string presetName)
         {
             var fileName = $"{presetName}.json";
             var filePath = Path.Combine(PresetsDir, fileName);
-            return new FileInfo(filePath);
+            return filePath;
         }
 
         public void CloseCamoEditor()
@@ -1875,23 +1887,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void WriteDecalsToFile(string itemId, List<DecalInfo> decalsInfo)
         {
-            var fileInfo = GetItemFileInfo(itemId);
             var json = JsonConvert.SerializeObject(decalsInfo, Formatting.Indented);
-            Directory.CreateDirectory(fileInfo.Directory.FullName);
-            File.WriteAllTextAsync(fileInfo.FullName, json);
+            var filePath = GetItemFilePath(itemId);
+            SafeIO.WriteAllTextAsync(filePath, json);
         }
 
         public void RemoveDecalsFile(string itemId)
         {
-            var fileInfo = GetItemFileInfo(itemId);
-            File.Delete(fileInfo.FullName);
+            var filePath = GetItemFilePath(itemId);
+            SafeIO.DeleteFile(filePath);
         }
 
-        public FileInfo GetItemFileInfo(string itemId)
+        public string GetItemFilePath(string itemId)
         {
             var fileName = $"{itemId}.json";
             var filePath = Path.Combine(ItemsDir, fileName);
-            return new FileInfo(filePath);
+            return filePath;
         }
 
         public Dictionary<string, List<DecalInfo>> SnapshotLocalDecals()
