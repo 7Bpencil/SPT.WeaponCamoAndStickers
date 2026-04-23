@@ -452,13 +452,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
-            var previewPath = Path.Combine(PreviewsDir, textureName);
-            var previewFileInfo = new FileInfo(previewPath);
-            if (previewFileInfo.Exists)
+            var previewFilePath = Path.Combine(PreviewsDir, textureName);
+            if (File.Exists(previewFilePath))
             {
                 try
                 {
-                    LoadPreviewFromDisk(previewFileInfo, param);
+                    LoadPreviewFromDisk(previewFilePath, param);
                 }
                 catch
                 {
@@ -467,7 +466,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                CreatePreviewAndStoreOnDisk(previewFileInfo, param);
+                CreatePreviewAndStoreOnDisk(previewFilePath, param);
             }
         }
 
@@ -490,9 +489,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return target.Equals(current, StringComparison.OrdinalIgnoreCase);
         }
 
-        public void LoadPreviewFromDisk(FileInfo previewFileInfo, AddTexturePararms param)
+        public void LoadPreviewFromDisk(string previewFilePath, AddTexturePararms param)
         {
-            using var stream = File.Open(previewFileInfo.FullName, FileMode.Open);
+            using var stream = File.Open(previewFilePath, FileMode.Open);
             using var reader = new BinaryReader(stream);
 
             var originalWidth = reader.ReadInt32();
@@ -513,19 +512,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void CreatePreviewAndStoreOnDisk(FileInfo previewFileInfo, AddTexturePararms param)
+        public void CreatePreviewAndStoreOnDisk(string previewFilePath, AddTexturePararms param)
         {
             if (param.Format == DecalTextureFormat.PNG)
             {
-                StartCoroutine(CreatePreviewAndStoreOnDisk_PNG(previewFileInfo, param));
+                StartCoroutine(CreatePreviewAndStoreOnDisk_PNG(previewFilePath, param));
             }
             if (param.Format == DecalTextureFormat.Video)
             {
-                StartCoroutine(CreatePreviewAndStoreOnDisk_Video(previewFileInfo, param));
+                StartCoroutine(CreatePreviewAndStoreOnDisk_Video(previewFilePath, param));
             }
         }
 
-        public IEnumerator CreatePreviewAndStoreOnDisk_PNG(FileInfo previewFileInfo, AddTexturePararms param)
+        public IEnumerator CreatePreviewAndStoreOnDisk_PNG(string previewFilePath, AddTexturePararms param)
         {
             using var uwr = UnityWebRequestTexture.GetTexture(param.FilePath, nonReadable: true);
             yield return uwr.SendWebRequest();
@@ -537,12 +536,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var texture = DownloadHandlerTexture.GetContent(uwr);
-            var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, texture);
+            var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFilePath, texture);
             AddTexture(preview, originalSize, param);
             Destroy(texture);
         }
 
-        private (Texture2D, Vector2Int) CreatePreviewAndStoreOnDisk_Texture(FileInfo previewFileInfo, Texture texture)
+        private (Texture2D, Vector2Int) CreatePreviewAndStoreOnDisk_Texture(string previewFilePath, Texture texture)
         {
             const int previewMaxSize = 128;
 
@@ -565,6 +564,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             try
             {
+                var previewFileInfo = new FileInfo(previewFilePath);
                 Directory.CreateDirectory(previewFileInfo.Directory.FullName);
                 using var stream = File.Open(previewFileInfo.FullName, FileMode.Create);
                 using var writer = new BinaryWriter(stream);
@@ -575,13 +575,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             catch (Exception e)
             {
-                Logger.LogError($"Failed to save preview: {previewFileInfo.FullName}, error: {e}");
+                Logger.LogError($"Failed to save preview: {previewFilePath}, error: {e}");
             }
 
             return (preview, textureSize);
         }
 
-        public IEnumerator CreatePreviewAndStoreOnDisk_Video(FileInfo previewFileInfo, AddTexturePararms param)
+        public IEnumerator CreatePreviewAndStoreOnDisk_Video(string previewFilePath, AddTexturePararms param)
         {
             var hitError = false;
             var videoPlayer = gameObject.AddComponent<VideoPlayer>();
@@ -629,7 +629,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             videoPlayer.Pause();
 
-            var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFileInfo, renderTexture);
+            var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFilePath, renderTexture);
             AddTexture(preview, originalSize, param);
 
             videoPlayer.Stop();

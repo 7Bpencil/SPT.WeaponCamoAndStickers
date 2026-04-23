@@ -43,14 +43,9 @@ namespace SevenBoldPencil.Common
 
 		public static Option<Exception> WriteAllTextAsync(string filePath, string text)
 		{
-            var fileInfo = new FileInfo(filePath);
-			return WriteAllTextAsync(fileInfo, text);
-		}
-
-		public static Option<Exception> WriteAllTextAsync(FileInfo fileInfo, string text)
-		{
 			try
 			{
+	            var fileInfo = new FileInfo(filePath);
 	            Directory.CreateDirectory(fileInfo.Directory.FullName);
 	            File.WriteAllTextAsync(fileInfo.FullName, text);
 				return default;
