@@ -562,6 +562,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void SetCurrentlyEditedDecal(int decalIndex, DecalTextureType decalTextureType)
         {
             CurrentlyEditedDecalIndex = new(decalIndex);
+            DecalSettingType = DecalSettingType.Decal;
             DecalTypeMenu = decalTextureType;
         }
 
