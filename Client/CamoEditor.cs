@@ -161,8 +161,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public const int iconColumns = 5;
         public const int maxIconRows = 5;
-        public const int maxDecalsVisibleWhenPresetsAreNotOpened = 9;
-        public const int maxDecalsVisibleWhenPresetsAreOpened = 5;
+        public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
+        public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
         public const int maxPresetsVisible = 9;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
