@@ -35,7 +35,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class ItemWithDecals
     {
-        public Transform DecalsRoot;
+        public WeaponPrefab WeaponPrefab;
         public List<Decal> Decals;
     }
 
@@ -1212,7 +1212,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemsWithDecals.DecalsInfo.Insert(newDecalIndex, decalInfoDuplicate);
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
-                var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
                 itemWithDecals.Decals.Insert(newDecalIndex, decal);
             }
 
@@ -1280,7 +1280,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public int AddNewDecal(string itemId, int instanceID, Transform decalsRoot, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        public int AddNewDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
         {
             var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
             var decalInfo = new DecalInfo()
@@ -1307,7 +1307,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 itemsWithDecals.DecalsInfo.Add(decalInfo);
                 foreach (var itemWithDecals in itemsWithDecals.Items.Values)
                 {
-                    var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                    var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
                     itemWithDecals.Decals.Add(decal);
                 }
 
@@ -1315,7 +1315,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var decal = CreateDecal(decalInfo, decalsRoot);
+                var decal = CreateDecal(decalInfo, weaponPrefab);
                 var decals = new List<Decal>() { decal };
                 var decalsInfo = new List<DecalInfo>() { decalInfo };
                 var itemsWithDecals = new ItemsWithDecals()
@@ -1326,7 +1326,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             instanceID,
                             new ItemWithDecals()
                             {
-                                DecalsRoot = decalsRoot,
+                                WeaponPrefab = weaponPrefab,
                                 Decals = decals,
                             }
                         }
@@ -1485,18 +1485,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
-            var decalsRoot = GetWeaponRoot(weaponPrefab);
             var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
             {
-                var decal = CreateDecal(decalInfo, decalsRoot);
+                var decal = CreateDecal(decalInfo, weaponPrefab);
                 decals.Add(decal);
             }
 
             var itemWithDecals = new ItemWithDecals()
             {
-                DecalsRoot = decalsRoot,
+                WeaponPrefab = weaponPrefab,
                 Decals = decals,
             };
 
@@ -1505,9 +1504,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, success");
         }
 
-		public Decal CreateDecal(DecalInfo decalInfo, Transform root)
+		public Decal CreateDecal(DecalInfo decalInfo, WeaponPrefab weaponPrefab)
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
+            var root = GetWeaponRoot(weaponPrefab);
 			decal.Init(DecalShader, root, decalInfo);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, BeforeLoad_ChangeTexture, AfterLoad_ChangeTexture);
             AcquireDecalTextureAsset(decal, decalInfo.Mask, BeforeLoad_ChangeMask, AfterLoad_ChangeMask);
@@ -1659,7 +1659,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Logger.LogInfo($"SetupCamoEditor: {itemId}");
             IsCamoEditorWaitingForWeaponPreview = false;
             var instanceID = weaponPrefab.GetInstanceID();
-            var decalsRoot = GetWeaponRoot(weaponPrefab);
             var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
             CamoEditor = new(new CamoEditor()
             {
@@ -1669,7 +1668,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 RuntimeGizmos = runtimeGizmos,
                 ItemId = itemId,
                 InstanceID = instanceID,
-                DecalsRoot = decalsRoot,
+                WeaponPrefab = weaponPrefab,
                 WeaponPreviewRotator = rotator,
                 PreviewPivotZ = previewPivot.pivotPosition.z,
                 IsOpened = false,
@@ -1709,7 +1708,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return true;
         }
 
-        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, string presetName)
+        public void SwitchToPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, string presetName)
         {
             if (!DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
             {
@@ -1740,7 +1739,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var decals = itemWithDecals.Decals;
                     foreach (var decalInfo in decalsInfo)
                     {
-                        var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                        var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
                         decals.Add(decal);
                     }
                 }
@@ -1751,7 +1750,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var decals = new List<Decal>(decalsInfo.Count);
                 foreach (var decalInfo in decalsInfo)
                 {
-                    var decal = CreateDecal(decalInfo, decalsRoot);
+                    var decal = CreateDecal(decalInfo, weaponPrefab);
                     decals.Add(decal);
                 }
 
@@ -1763,7 +1762,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             instanceID,
                             new ItemWithDecals()
                             {
-                                DecalsRoot = decalsRoot,
+                                WeaponPrefab = weaponPrefab,
                                 Decals = decals,
                             }
                         }

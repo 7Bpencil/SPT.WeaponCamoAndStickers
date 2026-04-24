@@ -139,7 +139,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public RuntimeGizmos RuntimeGizmos;
         public string ItemId;
         public int InstanceID;
-        public Transform DecalsRoot;
+        public WeaponPrefab WeaponPrefab;
         public Transform WeaponPreviewRotator;
         public float PreviewPivotZ;
         public bool IsOpened;
@@ -474,7 +474,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                         {
                             CurrentPresetName = presetName;
-                            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, presetName);
+                            Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
                         }
                         if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                         {
@@ -538,7 +538,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
             {
-                var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, DecalsRoot, WeaponPreviewRotator, PreviewPivotZ, Camera);
+                var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
                 var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
                 var textureData = Plugin.GetTextureData(decalInfo.Texture);
                 SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
