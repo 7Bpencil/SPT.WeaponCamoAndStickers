@@ -21,6 +21,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     	public static readonly int _AspectRatio = Shader.PropertyToID("_AspectRatio");
     	public static readonly int _MainTexRotation = Shader.PropertyToID("_MainTexRotation");
     	public static readonly int _MaskTexRotation = Shader.PropertyToID("_MaskTexRotation");
+		public static readonly int _StencilRef = Shader.PropertyToID("_StencilRef");
 
 		public Material DecalMaterial;
 		public Transform DecalTransform;
@@ -93,6 +94,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             DecalMaterial.SetFloat(_MaxAngle, maxAngle);
         }
+
+		// what works:
+		// Mask 63
+		// ref: 2, 3, 4, 5, 6, 7, 8, 9
+		public void ChangeStencil(float stencil)
+		{
+			DecalMaterial.SetFloat(_StencilRef, stencil);
+		}
 
 		public void OnDestroy()
 		{

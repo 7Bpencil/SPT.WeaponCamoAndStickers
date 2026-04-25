@@ -35,17 +35,30 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class ItemWithDecals
     {
+        public const string RootSlotID = "root";
+
         public WeaponPrefab WeaponPrefab;
+        public SlotInfo[] WeaponSlots;
         public List<Decal> Decals;
+    }
+
+    public class SlotInfo
+    {
+        public string ID;
+        public float Stencil;
+        public Transform Transform;
+        public Vector3 OriginalLocalPosition;
+        public Quaternion OriginalLocalRotation;
     }
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 4;
+        public const int CurrentSchemaVersion = 5;
 
         public int SchemaVersion;
         public long SaveTime;
         public string Name;
+        public HashSet<string> ExcludedSlots;
         public string Texture;
         public Vector4 TextureUV;
         public float TextureAngle;
@@ -60,8 +73,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public DecalInfo GetCopy()
         {
-            // this is enough for now
-            return (DecalInfo)MemberwiseClone();
+            // don't forget to properly copy reference types
+            var shallowCopy = (DecalInfo)MemberwiseClone();
+            shallowCopy.ExcludedSlots = new HashSet<string>(ExcludedSlots);
+            return shallowCopy;
         }
     }
 
@@ -158,7 +173,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string ItemsDir;
         private string PresetsDir;
         private string ClosedDirectoriesPath;
-        private Shader DecalShader;
+        public Shader DecalShader;
+        private Shader WeaponShader;
         private Texture2D ErrorTexture;
         private DecalTextureData ErrorTextureData;
         private CamoEditorResources CamoEditorResources;
@@ -200,6 +216,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
+            WeaponShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/Bumped Specular SMap.shader");
             ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             ErrorTextureData = new()
             {
@@ -260,6 +277,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
         {
+            // TODO make SafeIO.ReadJson<T>(filePath)
             if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
             {
                 var result = JsonConvert.DeserializeObject<ClosedTexturesDirectories>(json);
@@ -755,6 +773,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.Texture += ".png";
                     decalInfo.Mask += ".png";
                 }
+                if (decalInfo.SchemaVersion == 4)
+                {
+                    decalInfo.SchemaVersion = 5;
+                    decalInfo.ExcludedSlots = new();
+                }
             }
         }
 
@@ -842,6 +865,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Dictionary<string, List<DecalInfo>>.KeyCollection GetPresetNames()
         {
             return DecalPresets.Keys;
+        }
+
+        // TODO are GetXCount methods really needed?
+        public int GetWeaponSlotsCount(string itemId, int instanceID)
+        {
+            var slots = GetWeaponSlots(itemId, instanceID);
+            return slots.Length;
+        }
+
+        public SlotInfo[] GetWeaponSlots(string itemId, int instanceID)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            var itemWithDecals = itemsWithDecals.Items[instanceID];
+            return itemWithDecals.WeaponSlots;
         }
 
         public DecalTextureData GetTextureData(string textureName)
@@ -1288,6 +1325,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
                 SaveTime = 0,
                 Name = "",
+                ExcludedSlots = new(),
                 Texture = DefaultCamoName,
                 TextureUV = new Vector4(0, 0, 1, 1),
                 TextureAngle = 0,
@@ -1315,6 +1353,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
+                var weaponSlots = GetWeaponSlots(weaponPrefab);
                 var decal = CreateDecal(decalInfo, weaponPrefab);
                 var decals = new List<Decal>() { decal };
                 var decalsInfo = new List<DecalInfo>() { decalInfo };
@@ -1327,6 +1366,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             new ItemWithDecals()
                             {
                                 WeaponPrefab = weaponPrefab,
+                                WeaponSlots = weaponSlots,
                                 Decals = decals,
                             }
                         }
@@ -1459,6 +1499,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaskUV(itemId, decalIndex, decalInfo);
         }
 
+        public void SwitchExcludedSlot(string itemId, int decalIndex, DecalInfo decalInfo, string slotName)
+        {
+            if (!decalInfo.ExcludedSlots.Remove(slotName))
+            {
+                decalInfo.ExcludedSlots.Add(slotName);
+            }
+        }
+
+        // TODO rewrite ModfiyDecalOnItems to remove closures
         // notice that we modify decal on all items
         public void ModfiyDecalOnItems(string itemId, int decalIndex, Action<Decal> changeDecal)
         {
@@ -1485,6 +1534,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
+            var weaponSlots = GetWeaponSlots(weaponPrefab);
             var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
@@ -1496,6 +1546,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var itemWithDecals = new ItemWithDecals()
             {
                 WeaponPrefab = weaponPrefab,
+                WeaponSlots = weaponSlots,
                 Decals = decals,
             };
 
@@ -1541,7 +1592,115 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			return weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.weapon);
 		}
 
-        // TODO add ability to select attachment point (ECharacterWeaponBones.weapon or EWeaponModType.mod_magazine)
+        public SlotInfo[] GetWeaponSlots(WeaponPrefab weaponPrefab)
+        {
+            var _weaponPrefab = new WeaponPrefab_Proxy(weaponPrefab);
+            var slots = _weaponPrefab.weapon_0.Slots;
+            var result = new SlotInfo[slots.Length + 1];
+
+            // while root is technically not a slot, it does act as a slot with hardcoded meshes,
+            // also people want to exclude receiver to cleanly paint mags for example
+            var weaponRoot = GetWeaponRoot(weaponPrefab);
+            var rootSlotInfo = BuildSlotInfo(ItemWithDecals.RootSlotID, 0, weaponRoot);
+            result[0] = rootSlotInfo;
+
+            // get all slots children mesh renderers and set their stencils,
+            // all other meshes are considered as root slot meshes
+            var slotRenderers = new HashSet<MeshRenderer>();
+            var slotRenderersList = new List<MeshRenderer>();
+            for (var i = 0; i < slots.Length; i++)
+            {
+                var slot = slots[i];
+                var slotID = slot.ID;
+                var slotTransform = TransformHelperClass.FindTransformRecursive(weaponRoot, slotID);
+                var slotIndex = i + 1;
+                var slotInfo = BuildSlotInfo(slotID, slotIndex, slotTransform);
+                result[slotIndex] = slotInfo;
+
+                slotTransform.GetComponentsInChildren(slotRenderersList);
+                foreach (var slotRenderer in slotRenderersList)
+                {
+                    if (slotRenderers.Add(slotRenderer))
+                    {
+                        PatchWeaponMaterial(slotRenderer, slotInfo.Stencil);
+                    }
+                    else
+                    {
+                        Logger.LogError($"MeshRenderer: {slotRenderer.gameObject.name} was already iterated");
+                    }
+                }
+                slotRenderersList.Clear();
+            }
+            {
+                weaponRoot.GetComponentsInChildren(slotRenderersList);
+                foreach (var slotRenderer in slotRenderersList)
+                {
+                    if (slotRenderers.Contains(slotRenderer))
+                    {
+                        continue;
+                    }
+                    PatchWeaponMaterial(slotRenderer, rootSlotInfo.Stencil);
+                }
+                slotRenderersList.Clear();
+                slotRenderers.Clear();
+            }
+
+            return result;
+        }
+
+        public SlotInfo BuildSlotInfo(string slotID, int slotIndex, Transform slotTransform)
+        {
+            return new SlotInfo()
+            {
+                ID = slotID,
+                Stencil = 3 + slotIndex, // default is 2, root will be 3
+                Transform = slotTransform,
+                OriginalLocalPosition = slotTransform.localPosition,
+                OriginalLocalRotation = slotTransform.localRotation,
+            };
+        }
+
+        // TODO patch on every mod change (different mag, attached sight, etc)
+		public void PatchWeaponMaterial(Renderer renderer, float stencil)
+		{
+            Logger.LogWarning($"patch weapon: {renderer.gameObject.name}, value: {stencil}");
+            var materials = renderer.materials;
+            var newMaterials = new Material[materials.Length];
+            for (var i = 0; i < materials.Length; i++)
+            {
+                var material = materials[i];
+				if (material.shader.name == "p0/Reflective/Bumped Specular SMap")
+                {
+                    var newMaterial = new Material(WeaponShader);
+                    newMaterial.CopyPropertiesFromMaterial(material);
+                    newMaterial.SetFloat(Decal._StencilRef, stencil);
+                    newMaterials[i] = newMaterial;
+                }
+                else
+                {
+                    newMaterials[i] = material;
+                }
+            }
+            renderer.materials = newMaterials;
+		}
+
+        // TODO
+        // add ability to select attachment point (ECharacterWeaponBones.weapon or EWeaponModType.mod_magazine)
+        // HandsControllerClass.SetupMod
+        // WeaponManagerClass.SetupMod
+        // WeaponPrefab.InitHotObjects uses GClass3380.GetAllItemsNonAlloc(weapon_0, list_2) to get all mods
+        // if layer is bound to bone/mod that doesnt exist, just dont render it
+        // WeaponModPoolObject.Renderers = renderes of weapon mod, first one is lod0, second is lod1
+        // Weapon.AllSlots
+        // Weapon.Containers
+        // Weapon.Mods
+        // Weapon.Mods_1
+        // CompoundItem.Slots
+        // TODO okay, at first make it work with weapon slots, then expand to slots on mods
+        // some pistols have slide builtin, not slot: weapon_slide
+        // TODO it needs multiple attachement points: sticker on mag can partialy cover recevier
+        // TODO its not about attachment point, its about which parts are painted (draw decal for every part separately)
+        // exclude or include?
         // public static Transform GetModTransform(WeaponPrefab weaponPrefab, EWeaponModType modType)
         // {
         //     return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
@@ -1746,6 +1905,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
+                var weaponSlots = GetWeaponSlots(weaponPrefab);
                 var decalsInfo = CopyDecalsInfo(presetDecalsInfo);
                 var decals = new List<Decal>(decalsInfo.Count);
                 foreach (var decalInfo in decalsInfo)
@@ -1763,6 +1923,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             new ItemWithDecals()
                             {
                                 WeaponPrefab = weaponPrefab,
+                                WeaponSlots = weaponSlots,
                                 Decals = decals,
                             }
                         }

@@ -136,13 +136,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// TODO some simple culling
 			foreach (var itemsWithDecals in ItemsWithDecals.Values)
 			{
-				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
-				{
-					foreach (var decal in itemWithDecals.Decals)
-					{
-						DrawDecal(decal, buffer);
-					}
-				}
+				DrawDecalsOnItem(currentCamera, buffer, itemsWithDecals);
 			}
 		}
 
@@ -150,28 +144,93 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
 			if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
 			{
-				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+				DrawDecalsOnItem(currentCamera, buffer, itemsWithDecals);
+			}
+		}
+
+		private void DrawDecalsOnItem(Camera currentCamera, CommandBuffer buffer, ItemsWithDecals itemsWithDecals)
+		{
+			// TODO
+			// 1) simple OOB culling to not render decals on parts that are not covered by it
+			// 2) render only on root and moving slots (if they are not excluded)? (interesting idea but wont work?)
+			// 3) instancing? yes, we cannot change refs per instance, so batch per ref?
+
+			var decalsInfo = itemsWithDecals.DecalsInfo;
+			foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+			{
+				var weaponSlots = itemWithDecals.WeaponSlots;
+				var decals = itemWithDecals.Decals;
+				for (var i = 0; i < decals.Count; i++)
 				{
-					foreach (var decal in itemWithDecals.Decals)
+					var decalInfo = decalsInfo[i];
+					var decal = decals[i];
+					foreach (var slot in weaponSlots)
 					{
-						DrawDecal(decal, buffer);
+						if (!decalInfo.ExcludedSlots.Contains(slot.ID))
+						{
+							DrawDecal(decal, slot, buffer);
+						}
 					}
 				}
 			}
 		}
 
-		private void DrawDecal(Decal decal, CommandBuffer buffer)
+		private void DrawDecal(Decal decal, SlotInfo slot, CommandBuffer buffer)
 		{
 			if (decal)
 			{
+				var localToWorldMatrix = GetLocalToWorldMatrix(decal, slot);
+
 				// its easier to accurately place decal when
 				// its transform handle is located on the face
 				// of projector volume, instead of geometric center.
-
 				var offset = new Vector3(0, -0.5f, 0);
-				var resultMatrix = decal.DecalTransform.localToWorldMatrix * Matrix4x4.Translate(offset);
-				buffer.DrawMesh(Cube, resultMatrix, decal.DecalMaterial);
+				var resultMatrix = localToWorldMatrix * Matrix4x4.Translate(offset);
+
+				// TODO remove copy
+				// we set stencil ref value which is part of render state that
+				// cannot be changed by MaterialPropertyBlock, so there's no
+				// option other than CopyPropertiesFromMaterial
+				var newMaterial = new Material(Plugin.Instance.DecalShader);
+	            newMaterial.CopyPropertiesFromMaterial(decal.DecalMaterial);
+	            newMaterial.SetFloat(Decal._StencilRef, slot.Stencil);
+				buffer.DrawMesh(Cube, resultMatrix, newMaterial);
 			}
 		}
+
+		public Matrix4x4 GetLocalToWorldMatrix(Decal decal, SlotInfo slot)
+		{
+			if (slot.ID == ItemWithDecals.RootSlotID)
+			{
+				return decal.DecalTransform.localToWorldMatrix;
+			}
+			else
+			{
+				// calculate decal transform as if it was attached to slot and not weapon root
+
+				var positionSlotSpace = InverseTransformPoint(decal.DecalTransform.localPosition, slot.OriginalLocalPosition, slot.OriginalLocalRotation);
+				var rotationSlotSpace = InverseTransformRotation(decal.DecalTransform.localRotation, slot.OriginalLocalRotation);
+				var position = slot.Transform.TransformPoint(positionSlotSpace);
+				var rotation = TransformRotation(rotationSlotSpace, slot.Transform.rotation);
+				var localToWorldMatrix = Matrix4x4.TRS(position, rotation, decal.DecalTransform.lossyScale);
+				return localToWorldMatrix;
+			}
+		}
+
+		public static Vector3 InverseTransformPoint(Vector3 worldPoint, Vector3 position, Quaternion rotation)
+		{
+		    return Quaternion.Inverse(rotation) * (worldPoint - position);
+		}
+
+		public static Quaternion InverseTransformRotation(Quaternion worldRotation, Quaternion rotation)
+		{
+		    return Quaternion.Inverse(rotation) * worldRotation;
+		}
+
+		public static Quaternion TransformRotation(Quaternion localRotation, Quaternion rotation)
+		{
+		    return rotation * localRotation;
+		}
+
 	}
 }

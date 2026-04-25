@@ -1,5 +1,6 @@
 Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
+		_StencilRef ("Stencil Ref", Float) = 2
         _MainTex ("Diffuse", 2D) = "white" {}
         _MainTexUV ("Diffuse UV", Vector) = (0, 0, 1, 1)
         _MaskTex ("Mask", 2D) = "white" {}
@@ -24,13 +25,10 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             // 0: everything else
 
             Stencil {
-                Ref 2
-                ReadMask 3
+				Ref [_StencilRef]
+                ReadMask 63
                 Comp Equal
-                Pass Keep
-                Fail Keep
-                ZFail Keep
-            }
+			}
             CGPROGRAM
 
             #pragma vertex vert

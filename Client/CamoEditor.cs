@@ -10,6 +10,8 @@ using System;
 using RuntimeHandle;
 using UnityEngine;
 
+// TODO cache all generated strings
+
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     public class CamoEditorResources
@@ -23,6 +25,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D OpenedIcon;
         public Texture2D MoveUpIcon;
         public Texture2D MoveDownIcon;
+        public Texture2D CloseIcon;
         public Texture2D EditPositionIcon;
         public Texture2D EditRotationIcon;
         public Texture2D EditScaleIcon;
@@ -52,6 +55,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
             MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/up-arrow.png");
             MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/down-arrow.png");
+            CloseIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/close.png");
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
             EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
             EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
@@ -157,6 +161,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Option<int> CurrentlyEditedDecalIndex;
         public DecalSettingType DecalSettingType;
         public DecalTextureType DecalTypeMenu;
+        public bool IsSlotsOpened;
+        public Vector2 SlotsScrollPosition;
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
         public Vector2 MasksScrollPosition;
@@ -172,6 +178,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int maxPresetsVisible = 9;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
+        public const int maxSlotsVisible = 7;
 
         public const int smallMargin = 4;
         public const int mediumMargin = 8;
@@ -305,9 +312,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (DecalSettingType == DecalSettingType.Decal)
             {
-                return
-                    header +
-                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin; // position, rotation, scale, flip
+                if (IsSlotsOpened)
+                {
+                    var slotsCount = Plugin.GetWeaponSlotsCount(ItemId, InstanceID);
+                    var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(slotsCount, maxSlotsVisible, buttonHeight, smallMargin);
+                    return
+                        header +
+                        4 * (buttonHeight + smallMargin) - smallMargin + mediumMargin + // position, rotation, scale, flip
+                        buttonHeight + mediumMargin + // open/close slots button
+                        visibleHeight + bigMargin; // all slots
+                }
+                else
+                {
+                    return
+                        header +
+                        4 * (buttonHeight + smallMargin) - smallMargin + mediumMargin + // position, rotation, scale, flip
+                        buttonHeight + bigMargin; // open/close slots button
+                }
             }
             if (DecalSettingType == DecalSettingType.Texture)
             {
@@ -564,6 +585,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             CurrentlyEditedDecalIndex = new(decalIndex);
             DecalSettingType = DecalSettingType.Decal;
             DecalTypeMenu = decalTextureType;
+            IsSlotsOpened = false;
         }
 
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
@@ -841,7 +863,57 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     SyncTransformHandle(decalInfo, decal);
                 }
             }
-            y += buttonHeight + bigMargin;
+            y += buttonHeight + mediumMargin;
+
+            var slotsButtonText = IsSlotsOpened ? "Hide Painted Slots" : "Select Painted Slots";
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), slotsButtonText))
+            {
+                IsSlotsOpened = !IsSlotsOpened;
+            }
+            {
+                var iconSize = 20;
+                var iconMargin = (buttonHeight - iconSize) / 2;
+                var icon = IsSlotsOpened ? CamoEditorResources.MoveDownIcon : CamoEditorResources.MoveUpIcon;
+                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+            }
+            y += buttonHeight + mediumMargin;
+
+            var slots = Plugin.GetWeaponSlots(ItemId, InstanceID);
+            if (IsSlotsOpened)
+            {
+                var slotsY = y;
+
+                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(slots.Length, maxSlotsVisible, buttonHeight, smallMargin);
+                var totalRect = new Rect(x, slotsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, slotsY, boxWidth + 16, visibleHeight);
+
+                DrawScrollBar(x + boxWidth + 5, slotsY, totalHeight, visibleHeight, SlotsScrollPosition);
+                SlotsScrollPosition = GUI.BeginScrollView(visibleRect, SlotsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+                foreach (var slot in slots)
+                {
+                    var isExcluded = decalInfo.ExcludedSlots.Contains(slot.ID);
+                    var buttonBackgroundColor = isExcluded ? Color.red : Color.green;
+                    var previousBackgroundColor = GUI.backgroundColor;
+
+                    GUI.backgroundColor = buttonBackgroundColor;
+                    if (GUI.Button(new Rect(x, slotsY, boxWidth, buttonHeight), slot.ID))
+                    {
+                        Plugin.SwitchExcludedSlot(ItemId, decalIndex, decalInfo, slot.ID);
+                    }
+                    GUI.backgroundColor = previousBackgroundColor;
+
+                    if (isExcluded)
+                    {
+                        var iconSize = 20;
+                        var iconMargin = (buttonHeight - iconSize) / 2;
+                        GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, slotsY + iconMargin, iconSize, iconSize), CamoEditorResources.CloseIcon);
+                    }
+                    slotsY += buttonHeight + smallMargin;
+                }
+
+                GUI.EndScrollView();
+            }
         }
 
         public void DrawDecalEditUI_Texture(int x, int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1238,11 +1310,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
                 }
-
-                var iconSize = 20;
-                var iconMargin = (buttonHeight - iconSize) / 2;
-                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
-                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+                {
+                    var iconSize = 20;
+                    var iconMargin = (buttonHeight - iconSize) / 2;
+                    var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
+                    GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+                }
 
                 y += buttonHeight + smallMargin;
             }

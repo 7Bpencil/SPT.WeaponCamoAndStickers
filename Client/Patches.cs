@@ -366,19 +366,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var _skin = new LoddedSkin_Proxy(skin);
 			foreach (var lod in _skin._lods)
 			{
-				var skinnedMeshRenderer = lod.SkinnedMeshRenderer;
-                foreach (var material in skinnedMeshRenderer.materials)
-                {
-					var shaderName = material.shader.name;
-					if (shaderName == "p0/Reflective/Bumped Specular SMap" ||
-						shaderName == "p0/Reflective/Bumped Specular SMap_Decal")
-					{
-						// decal shader works only on fragments with _StencilType = 2
-						// so set everything on player body to 1, to keept it clean from decals
-						material.SetFloat(_StencilType, 1);
-					}
-                }
+				SetStencil(lod.SkinnedMeshRenderer, 1);
 			}
+		}
+
+		public static void SetStencil(Renderer renderer, float stencil)
+		{
+            foreach (var material in renderer.materials)
+            {
+				var shaderName = material.shader.name;
+				if (shaderName == "p0/Reflective/Bumped Specular SMap" ||
+					shaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+				{
+					material.SetFloat(_StencilType, stencil);
+				}
+            }
 		}
 	}
 
