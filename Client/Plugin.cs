@@ -142,6 +142,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const string DefaultMaskName = "builtin/masks/default.png";
         public const string ErrorTextureFilePath = "builtin/error.png";
         public const string BuiltinDirectoryName = "builtin";
+        public const int MaxVideoLoadTicks = 300; // most videos I tried took 5-10 ticks to load, so 300 should be enough (around 5 sec)
 
         public static Plugin Instance;
 
@@ -527,6 +528,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public IEnumerator CreatePreviewAndStoreOnDisk_PNG(string previewFilePath, AddTexturePararms param)
         {
             using var uwr = UnityWebRequestTexture.GetTexture(param.FilePath, nonReadable: true);
+            uwr.timeout = 5;
+
             yield return uwr.SendWebRequest();
 
             if (uwr.result != UnityWebRequest.Result.Success)
@@ -583,7 +586,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public IEnumerator CreatePreviewAndStoreOnDisk_Video(string previewFilePath, AddTexturePararms param)
         {
+            var loadTicks = 0;
             var hitError = false;
+
+            bool hitErrorOrTimeout()
+            {
+                return hitError || loadTicks >= MaxVideoLoadTicks;
+            }
+
             var videoPlayer = gameObject.AddComponent<VideoPlayer>();
             videoPlayer.errorReceived += (_, message) =>
             {
@@ -596,12 +606,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.renderMode = VideoRenderMode.RenderTexture;
             videoPlayer.Prepare();
 
-            while (!hitError && !videoPlayer.isPrepared)
+            while (!videoPlayer.isPrepared && !hitErrorOrTimeout())
             {
                 yield return null;
+                loadTicks++;
             }
 
-            if (hitError)
+            if (hitErrorOrTimeout())
             {
                 AddTextureError(param);
                 videoPlayer.Stop();
@@ -613,12 +624,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.targetTexture = renderTexture;
             videoPlayer.Play();
 
-            while (!hitError && videoPlayer.frame <= 1)
+            while (videoPlayer.frame <= 1 && !hitErrorOrTimeout())
             {
                 yield return null;
+                loadTicks++;
             }
 
-            if (hitError)
+            if (hitErrorOrTimeout())
             {
                 AddTextureError(param);
                 videoPlayer.Stop();
@@ -915,6 +927,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTextureAssets.Add(textureData.FilePath, asset);
 
             using var uwr = UnityWebRequestTexture.GetTexture(textureData.FilePath, nonReadable: true);
+            uwr.timeout = 5;
+
             yield return uwr.SendWebRequest();
 
             if (uwr.result != UnityWebRequest.Result.Success)
@@ -985,7 +999,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
             DecalTextureAssets.Add(textureData.FilePath, asset);
 
+            var loadTicks = 0;
             var hitError = false;
+
+            bool hitErrorOrTimeout()
+            {
+                return hitError || loadTicks >= MaxVideoLoadTicks;
+            }
+
             var videoPlayer = gameObject.AddComponent<VideoPlayer>();
             videoPlayer.errorReceived += (_, message) =>
             {
@@ -999,12 +1020,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.isLooping = true;
             videoPlayer.Prepare();
 
-            while (!hitError && !videoPlayer.isPrepared)
+            while (!videoPlayer.isPrepared && !hitErrorOrTimeout())
             {
                 yield return null;
+                loadTicks++;
             }
 
-            if (hitError)
+            if (hitErrorOrTimeout())
             {
                 textureData.Error = true;
                 DecalTextureAssets.Remove(textureData.FilePath);
