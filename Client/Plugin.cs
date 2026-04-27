@@ -1304,11 +1304,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public int AddNewDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
         {
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
-                SaveTime = 0,
+                SaveTime = time,
                 Name = "",
                 Texture = DefaultCamoName,
                 TextureUV = new Vector4(0, 0, 1, 1),
@@ -1936,9 +1937,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             // copies all guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
             var profile = tarkovApplication.Session.Profile;
-            var inventoryItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
 
-            foreach (var item in inventoryItems)
+            foreach (var item in equipmentItems)
             {
                 if (item is Weapon && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
                 {
