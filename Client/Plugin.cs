@@ -407,7 +407,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 IsClosed = closedDirectories.Contains(BuiltinDirectoryName),
                 Name = BuiltinDirectoryName,
-                Textures = new string[1],
+                Textures = [textureName],
                 Directories = []
             };
             root.Directories[root.Directories.Length - 1] = builtinDirectory;
@@ -417,8 +417,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Name = textureName,
                 Type = textureType,
                 Format = textureFormat,
-                Index = 0,
-                Textures = builtinDirectory.Textures,
             });
             DecalTextureAssets.Add(textureName, new DecalTexturePNG()
             {
@@ -443,9 +441,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Name = textureName,
                 Type = textureType,
                 Format = textureFormat,
-                Index = textureIndex,
-                Textures = textures,
             };
+
+            textures[textureIndex] = textureName;
 
             if (textureFormat == DecalTextureFormat.Unknown)
             {
@@ -655,8 +653,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             public string Name;
             public DecalTextureType Type;
             public DecalTextureFormat Format;
-            public int Index;
-            public string[] Textures;
         }
 
         public void AddTexture(Texture2D preview, Vector2Int originalSize, AddTexturePararms param, bool error = false)
@@ -672,7 +668,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
 
             DecalTextures.Add(param.Name, textureData);
-            param.Textures[param.Index] = param.Name;
         }
 
         public void AddTextureError(AddTexturePararms param)
