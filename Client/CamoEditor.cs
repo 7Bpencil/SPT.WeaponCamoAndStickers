@@ -370,6 +370,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     return
                         bigMargin + buttonHeight + mediumMargin + // preset name
                         buttonHeight + mediumMargin + // hide presets button
+                        buttonHeight + mediumMargin + // generate random camo button
                         presetsScrollHeight + bigMargin; // presets
                 }
                 else
@@ -377,6 +378,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     return
                         bigMargin + buttonHeight + mediumMargin + // preset name
                         buttonHeight + mediumMargin + // hide presets button
+                        buttonHeight + mediumMargin + // generate random camo button
                         buttonHeight + bigMargin; // no presets text
                 }
             }
@@ -453,6 +455,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
                 {
                     ArePresetsOpened = false;
+                }
+                y += buttonHeight + mediumMargin;
+
+                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
+                {
+                    Plugin.SwitchToRandomPreset(ItemId, InstanceID, WeaponPrefab, Camera);
                 }
                 y += buttonHeight + mediumMargin;
 

@@ -10,6 +10,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
 using EFT.InventoryLogic;
+using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
@@ -169,6 +170,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private TexturesDirectory CamosDirectory;
         private TexturesDirectory StickersDirectory;
         private TexturesDirectory MasksDirectory;
+        private string[] Camos;
+        private string[] Stickers;
+        private string[] Masks;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -216,9 +220,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTextureAssets = new();
 
             ClosedDirectories = LoadClosedTexturesDirectories(ClosedDirectoriesPath);
-            CamosDirectory = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            StickersDirectory = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", ClosedDirectories.StickersDirectory, DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            MasksDirectory = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", ClosedDirectories.MasksDirectory, DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            (CamosDirectory, Camos) = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            (StickersDirectory, Stickers) = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", ClosedDirectories.StickersDirectory, DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            (MasksDirectory, Masks) = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", ClosedDirectories.MasksDirectory, DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -305,7 +309,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public TexturesDirectory LoadTexturesFromDirectory(
+        public (TexturesDirectory, string[]) LoadTexturesFromDirectory(
             DecalTextureType textureType,
             string subfolder,
             HashSet<string> closedDirectories,
@@ -333,7 +337,44 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             AddBuiltinDirectory(defaultTexture, defaultTextureName, textureType, defaultTextureFormat, directory, closedDirectories);
-            return directory;
+
+            var totalTextures = CollectAllTexturesFromDirectory(directory);
+            return (directory, totalTextures);
+        }
+
+        public string[] CollectAllTexturesFromDirectory(TexturesDirectory directory)
+        {
+            var totalTexturesCount = 0;
+            GetTotalTexturesCountInDirectory(directory, ref totalTexturesCount);
+
+            var totalTextures = new string[totalTexturesCount];
+            var totalTextureIndex = 0;
+            AddTexturesFromDirectory(directory, totalTextures, ref totalTextureIndex);
+
+            return totalTextures;
+        }
+
+        public void GetTotalTexturesCountInDirectory(TexturesDirectory directory, ref int count)
+        {
+            count += directory.Textures.Length;
+            foreach (var subDirectory in directory.Directories)
+            {
+                GetTotalTexturesCountInDirectory(subDirectory, ref count);
+            }
+        }
+
+        public void AddTexturesFromDirectory(TexturesDirectory directory, string[] array, ref int index)
+        {
+            for (var i = 0; i < directory.Textures.Length; i++)
+            {
+                array[index + i] = directory.Textures[i];
+            }
+            index += directory.Textures.Length;
+
+            foreach (var subDirectory in directory.Directories)
+            {
+                AddTexturesFromDirectory(subDirectory, array, ref index);
+            }
         }
 
         public string GetDirectoryName(string directoryPath, string rootPath)
@@ -1448,13 +1489,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void FixTextureUV(string itemId, int decalIndex, DecalInfo decalInfo)
         {
+            FixTextureUV(decalInfo);
+            ApplyTextureUV(itemId, decalIndex, decalInfo);
+        }
+
+        public void FixTextureUV(DecalInfo decalInfo)
+        {
             // we keep uv height and modify width to match it
             var textureData = GetTextureData(decalInfo.Texture);
             var textureAspectRatio = textureData.OriginalSize.AspectRatio();
             var decalAspectRatio = Math.Abs(decalInfo.LocalScale.x) / Math.Abs(decalInfo.LocalScale.z);
             var k = decalAspectRatio / textureAspectRatio;
             decalInfo.TextureUV.z = decalInfo.TextureUV.w * k;
-            ApplyTextureUV(itemId, decalIndex, decalInfo);
         }
 
         public void ResetMaskUVOffset(string itemId, int decalIndex, DecalInfo decalInfo)
@@ -1726,9 +1772,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return true;
         }
 
+        public void SwitchToRandomPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera)
+        {
+            if (GenerateRandomCamo(weaponPrefab).Some(out var presetDecalsInfo))
+            {
+                SwitchToPreset(itemId, instanceID, weaponPrefab, weaponPreviewCamera, presetDecalsInfo);
+            }
+        }
+
         public void SwitchToPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, string presetName)
         {
-            if (!DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
+            if (DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
+            {
+                SwitchToPreset(itemId, instanceID, weaponPrefab, weaponPreviewCamera, presetDecalsInfo);
+            }
+        }
+
+        public void SwitchToPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, List<DecalInfo> presetDecalsInfo)
+        {
+            if (presetDecalsInfo.Count == 0)
             {
                 return;
             }
@@ -1991,6 +2053,100 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 WriteDecalsToFile(itemId, decalsInfo);
             }
+        }
+
+        public Option<List<DecalInfo>> GenerateRandomCamo(WeaponPrefab weaponPrefab)
+        {
+            if (!weaponPrefab.TryGetComponent<PreviewPivot>(out var previewPivot))
+            {
+                return default;
+            }
+            if (!GetRandomTexture(Camos).Some(out var camo))
+            {
+                return default;
+            }
+            if (!GetRandomTexture(Masks).Some(out var mask))
+            {
+                return default;
+            }
+
+            var (weaponCenter, weaponSize) = GetWeaponBounds(weaponPrefab);
+            var positionY = weaponCenter.x;
+            var positionZ = weaponCenter.y / 2f; // I have no idea why center.y gets multiplied by 2
+            var size = new Vector3(weaponSize.x, defaultDecalDepth, weaponSize.y);
+            var opacity = UnityEngine.Random.Range(0.6f, 1f);
+            var left = GenerateRandomDecal(new(-defaultDecalDepth, positionY, positionZ), new(0, 0, 90), size, camo, mask, opacity);
+            var right = GenerateRandomDecal(new(defaultDecalDepth, positionY, positionZ), new(0, 0, 270), size, camo, mask, opacity);
+
+            FixTextureUV(left);
+            FixTextureUV(right);
+
+            // TODO generate a couple of stickers
+
+            return new([left, right]);
+        }
+
+        public (Vector3 center, Vector3 scale) GetWeaponBounds(WeaponPrefab weaponPrefab)
+        {
+            var weaponTransform = weaponPrefab.transform;
+            var originalPosition = weaponTransform.position;
+            var originalRotation = weaponTransform.rotation;
+
+            weaponTransform.position = Vector3.zero;
+            weaponTransform.eulerAngles = new(0, 270, 0);
+
+            var weaponRoot = GetWeaponRoot(weaponPrefab);
+            var weaponBounds = WeaponPreview.GetBounds(weaponRoot.gameObject);
+            var weaponScale = weaponTransform.lossyScale.x; // scale is uniform, right?
+            var center = weaponBounds.center / weaponScale;
+            var size = weaponBounds.size / weaponScale;
+
+            weaponTransform.position = originalPosition;
+            weaponTransform.rotation = originalRotation;
+
+            return (center, size);
+        }
+
+        private static readonly System.Random random = new();
+        public Option<string> GetRandomTexture(string[] array)
+        {
+            // never give builtin pure white texture
+            if (array.Length == 1)
+            {
+                return default;
+            }
+
+            var randomIndex = random.Next(array.Length - 1);
+            var randomElement = array[randomIndex];
+            return new(randomElement);
+        }
+
+        public DecalInfo GenerateRandomDecal(
+            Vector3 startLocalPosition,
+            Vector3 startLocalEulerAngles,
+            Vector3 startLocalScale,
+            string textureName,
+            string maskName,
+            float opacity)
+        {
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            return new DecalInfo()
+            {
+                SchemaVersion = DecalInfo.CurrentSchemaVersion,
+                SaveTime = time,
+                Name = "",
+                Texture = textureName,
+                TextureUV = new Vector4(0, 0, 1, 1),
+                TextureAngle = 0,
+                ColorHSVA = new Vector4(0, 0, 1, opacity),
+                Mask = maskName,
+                MaskUV = new Vector4(0, 0, 1, 1),
+                MaskAngle = 0,
+                LocalPosition = startLocalPosition,
+                LocalEulerAngles = startLocalEulerAngles,
+                LocalScale = startLocalScale,
+                MaxAngle = 0.5f,
+            };
         }
     }
 }
