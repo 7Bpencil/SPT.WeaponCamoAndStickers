@@ -731,7 +731,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void AddTextureError(AddTexturePararms param)
         {
             AddTexture(ErrorTexture, new(ErrorTexture.width, ErrorTexture.height), param, error: true);
-            Logger.LogError($"[Textures] Failed to load texture: {param.Name}");
+            LogTexture(LogLevel.Error, "Failed to load texture", param.Name);
         }
 
         public Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
@@ -921,7 +921,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal> beforeLoad, Action<Decal, Texture> afterLoad)
         {
-            Logger.LogInfo($"[Textures] Increment: {textureName}");
+            LogTexture(LogLevel.Info, "Increment", textureName);
 
             beforeLoad(decal);
             var textureData = GetTextureData(textureName);
@@ -938,17 +938,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (asset.IsLoaded)
                 {
                     afterLoad(decal, asset.Texture);
-                    Logger.LogInfo($"[Textures] Load from cache: {textureName}");
+                    LogTexture(LogLevel.Info, "Load from cache", textureName);
                 }
                 else
                 {
                     asset.WaitingAfterLoad.Add(decal, afterLoad);
-                    Logger.LogInfo($"[Textures] Already loading: {textureName}");
+                    LogTexture(LogLevel.Info, "Already loading", textureName);
                 }
             }
             else
             {
-                Logger.LogInfo($"[Textures] Start loading from disk: {textureName}");
+                LogTexture(LogLevel.Info, "Start loading from disk", textureName);
                 if (textureData.Format == DecalTextureFormat.PNG)
                 {
                     StartCoroutine(LoadPNG(decal, textureName, textureData, afterLoad));
@@ -966,7 +966,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 textureData.Error = true;
                 AcquireDecalTextureError(decal, afterLoad);
-                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
+                LogTexture(LogLevel.Error, "Failed to load from disk", textureName);
                 yield break;
             }
 
@@ -989,7 +989,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 textureData.Error = true;
                 DecalTextureAssets.Remove(textureData.FilePath);
                 ClearWaitingAfterLoadError(asset);
-                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
+                LogTexture(LogLevel.Error, "Failed to load from disk", textureName);
                 yield break;
             }
 
@@ -1004,11 +1004,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 DecalTextureAssets.Remove(textureData.FilePath);
                 asset.Release();
-                Logger.LogWarning($"[Textures] Finished loading, but no instances: {textureName}");
+                LogTexture(LogLevel.Warning, "Finished loading, but no instances", textureName);
             }
             else
             {
-                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
+                LogTexture(LogLevel.Info, "Finished loading from disk", textureName);
             }
         }
 
@@ -1038,7 +1038,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 textureData.Error = true;
                 AcquireDecalTextureError(decal, afterLoad);
-                Logger.LogError($"[Textures] Failed to load from disk: {textureName}");
+                LogTexture(LogLevel.Error, "Failed to load from disk", textureName);
                 yield break;
             }
 
@@ -1104,11 +1104,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 DecalTextureAssets.Remove(textureData.FilePath);
                 asset.Release();
-                Logger.LogWarning($"[Textures] Finished loading, but no instances: {textureName}");
+                LogTexture(LogLevel.Warning, "Finished loading, but no instances", textureName);
             }
             else
             {
-                Logger.LogInfo($"[Textures] Finished loading from disk: {textureName}");
+                LogTexture(LogLevel.Info, "Finished loading from disk", textureName);
             }
         }
 
@@ -1139,7 +1139,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ReleaseDecalTextureAsset(Decal decal, string textureName)
         {
-            Logger.LogInfo($"[Textures] Decrement: {textureName}");
+            LogTexture(LogLevel.Info, "Decrement", textureName);
             var textureData = GetTextureData(textureName);
 
             if (textureData.Error)
@@ -1156,19 +1156,31 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     {
                         DecalTextureAssets.Remove(textureData.FilePath);
                         asset.Release();
-                        Logger.LogInfo($"[Textures] Release: {textureName}");
+                        LogTexture(LogLevel.Info, "Release", textureName);
                     }
                 }
                 else
                 {
                     asset.WaitingAfterLoad.Remove(decal);
-                    Logger.LogInfo($"[Textures] Release still loading: {textureName}");
+                    LogTexture(LogLevel.Info, "Release still loading", textureName);
                 }
             }
             else
             {
-                Logger.LogWarning($"[Textures] Tried to unload, but its already unloaded: {textureName}");
+                LogTexture(LogLevel.Warning, "Tried to unload, but its already unloaded", textureName);
             }
+        }
+
+        public void LogPrefab(LogLevel level, string message, string itemId, int instanceID)
+        {
+            Logger.Log(level, $"[Prefab] {message}: {itemId} {instanceID}");
+        }
+
+        public void LogTexture(LogLevel level, string message, string textureName)
+        {
+#if LOG_TEXTURE
+            Logger.Log(level, $"[Texture] {message}: {textureName}");
+#endif
         }
 
         public TexturesDirectory GetTexturesDirectory(DecalTextureType texturesType)
@@ -1558,6 +1570,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
+            var instanceID = weaponPrefab.GetInstanceID();
+
             if (ItemsWaitingForRandomCamo.Remove(itemId))
             {
                 GenerateRandomCamoForWeapon(itemId, weaponPrefab);
@@ -1565,14 +1579,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, no decals info");
+                LogPrefab(LogLevel.Info, "Created, no decals", itemId, instanceID);
                 return;
             }
 
-            var instanceID = weaponPrefab.GetInstanceID();
             if (itemsWithDecals.Items.ContainsKey(instanceID))
             {
-                Logger.LogError($"OnWeaponPrefabCreated: {itemId}, tried to init multiple times?");
+                LogPrefab(LogLevel.Error, "Created, tried to init multiple times?", itemId, instanceID);
                 return;
             }
 
@@ -1592,7 +1605,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             itemsWithDecals.Items.Add(instanceID, itemWithDecals);
 
-            Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, success");
+            LogPrefab(LogLevel.Info, "Created, with decals", itemId, instanceID);
         }
 
 		public Decal CreateDecal(DecalInfo decalInfo, WeaponPrefab weaponPrefab)
@@ -1647,7 +1660,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var decalsInfo = itemsWithDecals.DecalsInfo;
                 if (itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
                 {
-        			Logger.LogInfo($"OnWeaponPrefabDestroyed: {itemId}, {instanceID}");
+                    LogPrefab(LogLevel.Info, "Destroyed", itemId, instanceID);
                     var decals = itemWithDecals.Decals;
                     for (var i = 0; i < itemWithDecals.Decals.Count; i++)
                     {
