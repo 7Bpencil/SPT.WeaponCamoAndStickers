@@ -157,6 +157,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
 			MainPlugin.Instance.IsFikaServer = default;
 			MainPlugin.Instance.OnBotWeaponCamoGenerated = default;
+	        MainPlugin.Instance.WeaponsWaitingForRemoteCamo.Clear();
 		}
 	}
 }

@@ -192,6 +192,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public bool IsFikaHeadless;
         public Option<bool> IsFikaServer;
         public Action<Dictionary<string, List<DecalInfo>>> OnBotWeaponCamoGenerated;
+        public Dictionary<string, WeaponPrefab> WeaponsWaitingForRemoteCamo;
 
         private void Awake()
         {
@@ -244,6 +245,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PlayerModelViewCameras = new();
 
             DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, PlayerModelViewCameras);
+
+            WeaponsWaitingForRemoteCamo = new();
 
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
@@ -1579,7 +1582,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                LogPrefab(LogLevel.Info, "Created, no decals", itemId, instanceID);
+                // true only if fika client,
+                // only non fika client and fika host can decide if camo will be spawned,
+                // in some cases client can spawn weapon earlier than
+                // host sends info about its camo, so save weapon for future
+                if (IsFikaSupportEnabled && IsFikaServer.Some(out var isFikaServer) && !isFikaServer)
+                {
+                    WeaponsWaitingForRemoteCamo.TryAdd(itemId, weaponPrefab);
+                    LogPrefab(LogLevel.Info, "Created, cache for possible future camo", itemId, instanceID);
+                    return;
+                }
+                else
+                {
+                    LogPrefab(LogLevel.Info, "Created, no decals", itemId, instanceID);
+                }
                 return;
             }
 
@@ -2093,46 +2109,34 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 WriteDecalsToFile(itemId, decalsInfo);
             }
+
+            if (WeaponsWaitingForRemoteCamo.Remove(itemId, out var weaponPrefab))
+            {
+                Logger.LogWarning($"WeaponsWaitingForRemoteCamo: {itemId}");
+                OnWeaponPrefabCreated(itemId, weaponPrefab);
+            }
         }
 
         public float GetCamoSpawnChanceFromBotRole(WildSpawnType botRole)
         {
-            // only non fika client and fika host get non zero spawn chance
-            float getSpawnChance(WildSpawnType botRole)
+            switch (botRole)
             {
-                switch (botRole)
-                {
-                    case WildSpawnType.bossKnight:
-                    case WildSpawnType.followerBigPipe:
-                    case WildSpawnType.followerBirdEye:
-                        return GoonsWeaponCamoSpawnChance.Value;
-                    case WildSpawnType.pmcBEAR:
-                    case WildSpawnType.pmcUSEC:
-                        return PMCWeaponCamoSpawnChance.Value;
-                }
-    			if (BotSettingsRepoClass.IsBossOrFollower(botRole))
-    			{
-                    return OtherBossesWeaponCamoSpawnChance.Value;
-    			}
-                // TODO we can give scavs dirty/rusty camos
-                return 0;
+                case WildSpawnType.bossKnight:
+                case WildSpawnType.followerBigPipe:
+                case WildSpawnType.followerBirdEye:
+                    return GoonsWeaponCamoSpawnChance.Value;
+                case WildSpawnType.pmcBEAR:
+                case WildSpawnType.pmcUSEC:
+                    return PMCWeaponCamoSpawnChance.Value;
             }
 
-            if (IsFikaSupportEnabled)
-            {
-                if (IsFikaServer.Some(out var isFikaServer) && isFikaServer)
-                {
-                    return getSpawnChance(botRole);
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-            else
-            {
-                return getSpawnChance(botRole);
-            }
+			if (BotSettingsRepoClass.IsBossOrFollower(botRole))
+			{
+                return OtherBossesWeaponCamoSpawnChance.Value;
+			}
+
+            // TODO we can give scavs dirty/rusty camos
+            return 0;
         }
 
         public void QueueItemForRandomCamoGeneration(string itemId, float spawnChance)
@@ -2142,10 +2146,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Logger.LogWarning($"Tried to generate camo for item that already has one: {itemId}");
                 return;
             }
-			if (UnityEngine.Random.value > spawnChance / 100f)
-			{
-                return;
-			}
 
             // to generate adequate camo we need to know
             // dimensions of a weapon, the only reasonable
@@ -2153,14 +2153,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // which requires spawned GameObject, so
             // we have to wait until weapon is constructed
 
-            // this method gets called only on non fika clients or fika host, so we can omit checks
-            if (ItemsWaitingForRandomCamo.Add(itemId))
+            void queueItemForCamoGeneraion(string itemId)
             {
-                Logger.LogWarning($"Queue item for random camo: {itemId}");
+    			if (UnityEngine.Random.value <= spawnChance / 100f)
+    			{
+                    ItemsWaitingForRandomCamo.Add(itemId);
+                    Logger.LogWarning($"Queue item for random camo: {itemId}");
+    			}
+            }
+
+            if (IsFikaSupportEnabled)
+            {
+                if (IsFikaServer.Some(out var isFikaServer) && isFikaServer)
+                {
+                    queueItemForCamoGeneraion(itemId);
+                }
             }
             else
             {
-                Logger.LogWarning($"Tried to generate camo for item that already waiting random camo: {itemId}");
+                queueItemForCamoGeneraion(itemId);
             }
         }
 
