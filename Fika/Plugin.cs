@@ -18,7 +18,7 @@ using MainPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 {
-    [BepInPlugin("7Bpencil.WeaponCamoAndStickers.Fika", "7Bpencil.WeaponCamoAndStickers.Fika", "1.0.1")]
+    [BepInPlugin("7Bpencil.WeaponCamoAndStickers.Fika", "7Bpencil.WeaponCamoAndStickers.Fika", "1.1.0")]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.HardDependency)]
     public class Plugin : BaseUnityPlugin
