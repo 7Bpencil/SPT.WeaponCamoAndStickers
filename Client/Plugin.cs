@@ -152,6 +152,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static ConfigEntry<KeyboardShortcut> MoveButton;
         public static ConfigEntry<KeyboardShortcut> RotateButton;
         public static ConfigEntry<KeyboardShortcut> ScaleButton;
+        public static ConfigEntry<int> GoonsWeaponCamoSpawnChance;
+        public static ConfigEntry<int> PMCWeaponCamoSpawnChance;
+        public static ConfigEntry<int> OtherBossesWeaponCamoSpawnChance;
 
 		public ManualLogSource LoggerInstance;
 
@@ -177,12 +180,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
+        private HashSet<string> ItemsWaitingForRandomCamo;
         private Dictionary<Camera, string> WeaponPreviewCameras;
         private HashSet<Camera> PlayerModelViewCameras;
 
         private DecalRenderer DecalRenderer;
         private Option<CamoEditor> CamoEditor;
         private bool IsCamoEditorWaitingForWeaponPreview;
+
+        public bool IsFikaSupportEnabled;
+        public bool IsFikaHeadless;
+        public Option<bool> IsFikaServer;
+        public Action<Dictionary<string, List<DecalInfo>>> OnBotWeaponCamoGenerated;
 
         private void Awake()
         {
@@ -195,6 +204,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MoveButton = Config.Bind("Main", "Camo Editor | Keybinds | Move", new KeyboardShortcut(KeyCode.G), "");
             RotateButton = Config.Bind("Main", "Camo Editor | Keybinds | Rotate", new KeyboardShortcut(KeyCode.R), "");
             ScaleButton = Config.Bind("Main", "Camo Editor | Keybinds | Scale", new KeyboardShortcut(KeyCode.S), "");
+            GoonsWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Goons", 100, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
+            PMCWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | PMC", 33, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
+            OtherBossesWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Other Bosses", 50, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             TexturesDir = Path.Combine(assemblyDir, "textures");
@@ -227,6 +239,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
             Clones = new();
+            ItemsWaitingForRandomCamo = new();
             WeaponPreviewCameras = new();
             PlayerModelViewCameras = new();
 
@@ -245,6 +258,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_method_0().Enable();
             new Patch_PlayerModelView_method_1().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
+            new Patch_BotCreatorClass_method_2().Enable();
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
@@ -261,6 +275,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             // TODO
             // mark as favourite + favourite folder at the top
+
+            // TODO
+            // clean all orphan items
         }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
@@ -1536,6 +1553,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
+            if (ItemsWaitingForRandomCamo.Remove(itemId))
+            {
+                GenerateRandomCamoForWeapon(itemId, weaponPrefab);
+            }
+
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
                 Logger.LogInfo($"OnWeaponPrefabCreated: {itemId}, no decals info");
@@ -2050,6 +2072,113 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     DecalsInfo = decalsInfo,
                 };
 
+                ItemsWithDecals.Add(itemId, itemsWithDecals);
+                WriteDecalsToFile(itemId, decalsInfo);
+            }
+        }
+
+        public float GetCamoSpawnChanceFromBotRole(WildSpawnType botRole)
+        {
+            // only non fika client and fika host get non zero spawn chance
+            float getSpawnChance(WildSpawnType botRole)
+            {
+                switch (botRole)
+                {
+                    case WildSpawnType.bossKnight:
+                    case WildSpawnType.followerBigPipe:
+                    case WildSpawnType.followerBirdEye:
+                        return GoonsWeaponCamoSpawnChance.Value;
+                    case WildSpawnType.pmcBEAR:
+                    case WildSpawnType.pmcUSEC:
+                        return PMCWeaponCamoSpawnChance.Value;
+                }
+    			if (BotSettingsRepoClass.IsBossOrFollower(botRole))
+    			{
+                    return OtherBossesWeaponCamoSpawnChance.Value;
+    			}
+                // TODO we can give scavs dirty/rusty camos
+                return 0;
+            }
+
+            if (IsFikaSupportEnabled)
+            {
+                if (IsFikaServer.Some(out var isFikaServer) && isFikaServer)
+                {
+                    return getSpawnChance(botRole);
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                return getSpawnChance(botRole);
+            }
+        }
+
+        public void QueueItemForRandomCamoGeneration(string itemId, float spawnChance)
+        {
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                Logger.LogWarning($"Tried to generate camo for item that already has one: {itemId}");
+                return;
+            }
+			if (UnityEngine.Random.value > spawnChance / 100f)
+			{
+                return;
+			}
+
+            // to generate adequate camo we need to know
+            // dimensions of a weapon, the only reasonable
+            // way to do it is WeaponPreview.GetBounds,
+            // which requires spawned GameObject, so
+            // we have to wait until weapon is constructed
+
+            // this method gets called only on non fika clients or fika host, so we can omit checks
+            if (ItemsWaitingForRandomCamo.Add(itemId))
+            {
+                Logger.LogWarning($"Queue item for random camo: {itemId}");
+            }
+            else
+            {
+                Logger.LogWarning($"Tried to generate camo for item that already waiting random camo: {itemId}");
+            }
+        }
+
+        public void GenerateRandomCamoForWeapon(string itemId, WeaponPrefab weaponPrefab)
+        {
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                Logger.LogWarning($"Tried to generate camo for item that already has camo: {itemId}");
+                return;
+            }
+
+            // this method gets called only on non fika clients or fika host, so we can omit checks
+            if (!GenerateRandomCamo(weaponPrefab).Some(out var decalsInfo))
+            {
+                Logger.LogWarning($"Generated empty camo: {itemId}");
+                return;
+            }
+            var itemsWithDecals = new ItemsWithDecals()
+            {
+                Items = new(),
+                DecalsInfo = decalsInfo,
+            };
+
+            if (IsFikaSupportEnabled)
+            {
+                Logger.LogWarning($"Generate camo: {itemId}, fika host");
+                OnBotWeaponCamoGenerated?.Invoke(new() {{ itemId, decalsInfo }});
+                if (!IsFikaHeadless)
+                {
+                    ItemsWithDecals.Add(itemId, itemsWithDecals);
+                    WriteDecalsToFile(itemId, decalsInfo);
+                }
+            }
+            else
+            {
+                Logger.LogWarning($"Generate camo: {itemId}, no fika");
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 WriteDecalsToFile(itemId, decalsInfo);
             }

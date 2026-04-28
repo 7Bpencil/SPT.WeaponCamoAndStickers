@@ -15,6 +15,7 @@ using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
 using System;
 using System.Reflection;
+using System.Threading;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
 using HarmonyLib;
@@ -379,6 +380,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 					}
                 }
 			}
+		}
+	}
+
+	// I am pretty certain all bot spawning functions eventually lead to this method
+	public class Patch_BotCreatorClass_method_2 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(BotCreatorClass), nameof(BotCreatorClass.method_2));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(PlayerModelView __instance, Profile profile, GClass682 bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
+		{
+			var spawnChance = Plugin.Instance.GetCamoSpawnChanceFromBotRole(profile.Info.Settings.Role);
+			if (spawnChance <= 0)
+			{
+				return;
+			}
+
+			// GetPlayerItems is pretty expensive, so should be avoided when possible
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+                if (item is Weapon)
+                {
+					Plugin.Instance.QueueItemForRandomCamoGeneration(item.Id, spawnChance);
+				}
+            }
 		}
 	}
 

@@ -24,21 +24,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
     public class Plugin : BaseUnityPlugin
 	{
 		public Dictionary<string, DecalSnapshotPacket> PlayersDecals;
+		public List<DecalSnapshotPacket> BotsDecals;
 
         private void Awake()
 		{
 			PlayersDecals = new();
+			BotsDecals = new();
 
 			FikaEventDispatcher.SubscribeEvent<FikaNetworkManagerCreatedEvent>(OnFikaNetworkManagerCreated);
 			FikaEventDispatcher.SubscribeEvent<FikaGameCreatedEvent>(OnFikaGameCreatedEvent);
 			FikaEventDispatcher.SubscribeEvent<PeerConnectedEvent>(OnPeerConnected);
 			FikaEventDispatcher.SubscribeEvent<FikaNetworkManagerDestroyedEvent>(OnFikaNetworkManagerDestroyedEvent);
+
+			MainPlugin.Instance.IsFikaSupportEnabled = true;
+			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless; // TODO I am not totally sure IsHeadless value is valid at this point, so I keep updating it
 		}
 
 		private void OnFikaNetworkManagerCreated(FikaNetworkManagerCreatedEvent e)
 		{
+			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
             if (FikaBackendUtils.IsServer)
             {
+				MainPlugin.Instance.OnBotWeaponCamoGenerated = OnBotWeaponCamoGenerated;
                 e.Manager.RegisterPacket<DecalSnapshotPacket, NetPeer>(OnDecalSnapshotReceivedServer);
             }
             else
@@ -48,8 +55,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			if (FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
 				var decals = GetLocalDecals();
-				PlayersDecals.Add(decals.ProfileId, decals);
+				if (decals.ItemDecals.Count > 0)
+				{
+					PlayersDecals.Add(decals.ProfileId, decals);
+				}
 			}
+			MainPlugin.Instance.IsFikaServer = new(FikaBackendUtils.IsServer);
 		}
 
 		private DecalSnapshotPacket GetLocalDecals()
@@ -65,12 +76,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			return decals;
 		}
 
+		private void OnBotWeaponCamoGenerated(Dictionary<string, List<DecalInfo>> itemWithDecals)
+		{
+			var decals = new DecalSnapshotPacket()
+			{
+		        ProfileId = null,
+		        ItemDecals = itemWithDecals,
+			};
+			BotsDecals.Add(decals);
+
+			Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
+		}
+
 		private void OnFikaGameCreatedEvent(FikaGameCreatedEvent e)
 		{
 			if (!FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
 				var decals = GetLocalDecals();
-				Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
+				if (decals.ItemDecals.Count > 0)
+				{
+					Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
+				}
 			}
 		}
 
@@ -83,12 +109,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 	                var packet = cached;
 	                e.NetworkManager.SendDataToPeer(ref packet, DeliveryMethod.ReliableUnordered, e.Peer);
 	            }
+	            foreach (var cached in BotsDecals)
+	            {
+	                var packet = cached;
+	                e.NetworkManager.SendDataToPeer(ref packet, DeliveryMethod.ReliableUnordered, e.Peer);
+	            }
 			}
 		}
 
 		private void OnDecalSnapshotReceivedServer(DecalSnapshotPacket packet, NetPeer peer)
 		{
-            if (packet.ProfileId == FikaBackendUtils.Profile.ProfileId)
+            if (packet.ProfileId == null ||
+				packet.ProfileId == FikaBackendUtils.Profile.ProfileId)
             {
                 return;
             }
@@ -120,6 +152,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 		private void OnFikaNetworkManagerDestroyedEvent(FikaNetworkManagerDestroyedEvent e)
 		{
 			PlayersDecals.Clear();
+			BotsDecals.Clear();
+
+			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
+			MainPlugin.Instance.IsFikaServer = default;
+			MainPlugin.Instance.OnBotWeaponCamoGenerated = default;
 		}
 	}
 }
