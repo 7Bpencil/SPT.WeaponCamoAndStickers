@@ -143,7 +143,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Transform WeaponPreviewRotator;
         public float PreviewPivotZ;
         public bool IsOpened;
-        public bool IsPresetsOpened;
+        public bool ArePresetsOpened;
         public string CurrentPresetName;
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
@@ -361,7 +361,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private int CalculatePresetsWindowHeight()
         {
-            if (IsPresetsOpened)
+            if (ArePresetsOpened)
             {
                 var totalPresets = Plugin.GetPresetsCount();
                 if (totalPresets > 0)
@@ -391,7 +391,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private int CalculateDecalsWindowHeight()
         {
             var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
-            var maxDecalsVisible = IsPresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
+            var maxDecalsVisible = ArePresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
             var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, mediumMargin);
             return
                 bigMargin + visibleHeight + mediumMargin + // decals
@@ -448,11 +448,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             y += buttonHeight + mediumMargin;
 
-            if (IsPresetsOpened)
+            if (ArePresetsOpened)
             {
                 if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
                 {
-                    IsPresetsOpened = false;
+                    ArePresetsOpened = false;
                 }
                 y += buttonHeight + mediumMargin;
 
@@ -499,7 +499,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
                 {
-                    IsPresetsOpened = true;
+                    ArePresetsOpened = true;
                 }
             }
         }
@@ -515,7 +515,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var decalsY = y;
 
-                var maxDecalsVisible = IsPresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
+                var maxDecalsVisible = ArePresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
                 var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(decalsInfo.Count, maxDecalsVisible, boxHeight, mediumMargin);
                 var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
