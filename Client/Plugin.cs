@@ -1435,8 +1435,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void FlipHorizontally(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
+			FlipHorizontally(decalInfo);
             ApplyLocalScale(itemId, decalIndex, decalInfo);
+        }
+
+        public void FlipHorizontally(DecalInfo decalInfo)
+        {
+			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
         }
 
         public void FlipVertically(string itemId, int decalIndex, DecalInfo decalInfo)
@@ -2209,6 +2214,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             FixTextureUV(left);
             FixTextureUV(right);
+            FlipHorizontally(right);
 
             // TODO generate a couple of stickers
 
