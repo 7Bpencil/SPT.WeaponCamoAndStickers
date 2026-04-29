@@ -66,6 +66,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.PutUnmanaged<Vector3>(d.LocalEulerAngles);
             writer.PutUnmanaged<Vector3>(d.LocalScale);
             writer.Put(d.MaxAngle);
+            writer.Put(d.IsVisible);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -86,6 +87,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 LocalEulerAngles = reader.GetUnmanaged<Vector3>(),
                 LocalScale = reader.GetUnmanaged<Vector3>(),
                 MaxAngle = reader.GetFloat(),
+                IsVisible = reader.GetBool(),
             };
         }
     }

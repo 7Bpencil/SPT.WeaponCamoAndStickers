@@ -121,7 +121,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			}
 			if (WeaponPreviewCameras.TryGetValue(currentCamera, out var itemId))
 			{
-				DrawDecalsOnItem(currentCamera, buffer, itemId);
+				DrawDecalsOnItem(itemId, currentCamera, buffer);
 				return;
 			}
 			if (PlayerModelViewCameras.Contains(currentCamera))
@@ -136,23 +136,29 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// TODO some simple culling
 			foreach (var itemsWithDecals in ItemsWithDecals.Values)
 			{
-				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
-				{
-					foreach (var decal in itemWithDecals.Decals)
-					{
-						DrawDecal(decal, buffer);
-					}
-				}
+				DrawDecalsOnItem(itemsWithDecals, currentCamera, buffer);
 			}
 		}
 
-		private void DrawDecalsOnItem(Camera currentCamera, CommandBuffer buffer, string itemId)
+		private void DrawDecalsOnItem(string itemId, Camera currentCamera, CommandBuffer buffer)
 		{
 			if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
 			{
-				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+				DrawDecalsOnItem(itemsWithDecals, currentCamera, buffer);
+			}
+		}
+
+		private void DrawDecalsOnItem(ItemsWithDecals itemsWithDecals, Camera currentCamera, CommandBuffer buffer)
+		{
+			var decalsInfo = itemsWithDecals.DecalsInfo;
+			foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+			{
+				var decals = itemWithDecals.Decals;
+				for (var i = 0; i < decals.Count; i++)
 				{
-					foreach (var decal in itemWithDecals.Decals)
+					var decalInfo = decalsInfo[i];
+					var decal = decals[i];
+					if (decalInfo.IsVisible && decal)
 					{
 						DrawDecal(decal, buffer);
 					}
@@ -162,16 +168,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecal(Decal decal, CommandBuffer buffer)
 		{
-			if (decal)
-			{
-				// its easier to accurately place decal when
-				// its transform handle is located on the face
-				// of projector volume, instead of geometric center.
+			// its easier to accurately place decal when
+			// its transform handle is located on the face
+			// of projector volume, instead of geometric center.
 
-				var offset = new Vector3(0, -0.5f, 0);
-				var resultMatrix = decal.DecalTransform.localToWorldMatrix * Matrix4x4.Translate(offset);
-				buffer.DrawMesh(Cube, resultMatrix, decal.DecalMaterial);
-			}
+			var offset = new Vector3(0, -0.5f, 0);
+			var resultMatrix = decal.DecalTransform.localToWorldMatrix * Matrix4x4.Translate(offset);
+			buffer.DrawMesh(Cube, resultMatrix, decal.DecalMaterial);
 		}
 	}
 }

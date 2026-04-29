@@ -42,7 +42,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 4;
+        public const int CurrentSchemaVersion = 5;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -58,6 +58,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
         public float MaxAngle;
+        public bool IsVisible;
 
         public DecalInfo GetCopy()
         {
@@ -281,6 +282,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             // TODO
             // clean all orphan items
+
+			// TODO
+			// instancing
         }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
@@ -823,6 +827,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.Texture += ".png";
                     decalInfo.Mask += ".png";
                 }
+                if (decalInfo.SchemaVersion == 4)
+                {
+                    decalInfo.SchemaVersion = 5;
+                    decalInfo.IsVisible = true;
+                }
             }
         }
 
@@ -1322,6 +1331,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public void SwitchIsVisible(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.IsVisible = !decalInfo.IsVisible;
+        }
+
         public void Swap(string itemId, int decalIndexA, int decalIndexB)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
@@ -1390,6 +1404,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                 MaxAngle = 0.5f,
+                IsVisible = true,
             };
 
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -2305,6 +2320,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = startLocalScale,
                 MaxAngle = 0.5f,
+                IsVisible = true,
             };
         }
     }
