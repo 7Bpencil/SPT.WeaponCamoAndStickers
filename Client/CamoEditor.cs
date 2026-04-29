@@ -26,9 +26,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D EditPositionIcon;
         public Texture2D EditRotationIcon;
         public Texture2D EditScaleIcon;
-        public Texture2D EditUVOffsetIcon;
-        public Texture2D EditUVAngleIcon;
-        public Texture2D EditUVTilingIcon;
+        public Texture2D EditTextureUVOffsetIcon;
+        public Texture2D EditTextureUVAngleIcon;
+        public Texture2D EditTextureUVTilingIcon;
+        public Texture2D EditMaskUVOffsetIcon;
+        public Texture2D EditMaskUVAngleIcon;
+        public Texture2D EditMaskUVTilingIcon;
         public Texture2D DuplicateIcon;
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
@@ -54,9 +57,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
             EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
             EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
-            EditUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Move-Icon.png");
-            EditUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Rotate-Icon.png");
-            EditUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Scale-Icon.png");
+            EditTextureUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Move-Icon.png");
+            EditTextureUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Rotate-Icon.png");
+            EditTextureUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Scale-Icon.png");
+            EditMaskUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Move-Icon.png");
+            EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png");
+            EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png");
             DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
@@ -831,7 +837,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (DecalSettingType == DecalSettingType.Texture)
             {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVOffsetIcon))
                 {
                     SetupTransformHandle(HandleType.TextureOffset, decalIndex, decalInfo, decal);
                 }
@@ -850,7 +856,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 y += buttonHeight + smallMargin;
 
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVAngleIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVAngleIcon))
                 {
                     SetupTransformHandle(HandleType.TextureAngle, decalIndex, decalInfo, decal);
                 }
@@ -866,7 +872,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 y += buttonHeight + smallMargin;
 
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVTilingIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVTilingIcon))
                 {
                     SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
                 }
@@ -970,7 +976,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVOffsetIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVOffsetIcon))
                 {
                     SetupTransformHandle(HandleType.MaskOffset, decalIndex, decalInfo, decal);
                 }
@@ -989,7 +995,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 y += buttonHeight + smallMargin;
 
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVAngleIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVAngleIcon))
                 {
                     SetupTransformHandle(HandleType.MaskAngle, decalIndex, decalInfo, decal);
                 }
@@ -1005,7 +1011,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 y += buttonHeight + smallMargin;
 
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditUVTilingIcon))
+                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVTilingIcon))
                 {
                     SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
                 }
