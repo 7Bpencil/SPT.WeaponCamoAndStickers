@@ -749,6 +749,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     if (CopiedDecalInfo.Some(out var copiedDecalInfo))
                     {
                         Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
+                        SyncTransformHandle(decalInfo, decal);
                     }
                 }
                 lineX += buttonHeight + smallMargin;
