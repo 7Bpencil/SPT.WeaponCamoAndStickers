@@ -39,6 +39,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D PlayIcon;
         public Texture2D HiddenIcon;
         public Texture2D VisibleIcon;
+        public Texture2D MirrorDisabled;
+        public Texture2D MirrorEnabled;
+        public Texture2D MirrorEnabledNoFilp;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -70,6 +73,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PlayIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/play-icon.png");
             HiddenIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hidden.png");
             VisibleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/visible.png");
+            MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
+            MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
+            MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
@@ -588,7 +594,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalName = string.IsNullOrWhiteSpace(decalInfo.Name) ? decalInfo.Texture : decalInfo.Name;
             GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalName, CamoStyle.TextureNameStyle);
 
-            var lineX = x + boxWidth - (smallMargin + buttonHeight) * 4;
+            var lineX = x + boxWidth - (smallMargin + buttonHeight) * 5;
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
             {
                 Plugin.Delete(ItemId, decalIndex);
@@ -599,6 +605,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var newDecalIndex = Plugin.Duplicate(ItemId, decalIndex);
                 SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
+            }
+            lineX += buttonHeight + smallMargin;
+
+            var mirrorModeIcon = decalInfo.MirrorMode switch
+            {
+                DecalMirrorMode.Disabled => CamoEditorResources.MirrorDisabled,
+                DecalMirrorMode.Enabled => CamoEditorResources.MirrorEnabled,
+                DecalMirrorMode.EnabledNoFlip => CamoEditorResources.MirrorEnabledNoFilp,
+            };
+            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), mirrorModeIcon))
+            {
+                Plugin.SwitchMirrorMode(ItemId, decalIndex, decalInfo);
             }
             lineX += buttonHeight + smallMargin;
 

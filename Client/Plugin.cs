@@ -42,7 +42,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 5;
+        public const int CurrentSchemaVersion = 6;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -59,12 +59,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Vector3 LocalScale;
         public float MaxAngle;
         public bool IsVisible;
+        public DecalMirrorMode MirrorMode;
 
         public DecalInfo GetCopy()
         {
             // this is enough for now
             return (DecalInfo)MemberwiseClone();
         }
+    }
+
+    public enum DecalMirrorMode : byte
+    {
+        Disabled,
+        Enabled,
+        EnabledNoFlip,
+        MODES_COUNT,
     }
 
     public class DecalTextureData
@@ -832,6 +841,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 5;
                     decalInfo.IsVisible = true;
                 }
+                if (decalInfo.SchemaVersion == 5)
+                {
+                    decalInfo.SchemaVersion = 6;
+                    decalInfo.MirrorMode = DecalMirrorMode.Disabled;
+                }
             }
         }
 
@@ -1331,6 +1345,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public void SwitchMirrorMode(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.MirrorMode = (DecalMirrorMode)(((int)decalInfo.MirrorMode + 1) % (int)DecalMirrorMode.MODES_COUNT);
+        }
+
         public void SwitchIsVisible(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             decalInfo.IsVisible = !decalInfo.IsVisible;
@@ -1405,6 +1424,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
                 MaxAngle = 0.5f,
                 IsVisible = true,
+                MirrorMode = DecalMirrorMode.Disabled,
             };
 
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -1450,17 +1470,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // mirror around YZ plane
         public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            var rotation = decalInfo.LocalEulerAngles.ToQuaternion();
-            rotation.x *= -1;
-            rotation.w *= -1;
-
-            decalInfo.LocalPosition.x *= -1;
-            decalInfo.LocalEulerAngles = rotation.eulerAngles;
-			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
-
+            MirrorLeftRight(ref decalInfo.LocalPosition, ref decalInfo.LocalEulerAngles, ref decalInfo.LocalScale);
             ApplyLocalPosition(itemId, decalIndex, decalInfo);
             ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
             ApplyLocalScale(itemId, decalIndex, decalInfo);
+        }
+
+        public static void MirrorLeftRight(ref Vector3 localPosition, ref Vector3 localEulerAngles, ref Vector3 localScale, bool flipHorizontally = true)
+        {
+            var rotation = localEulerAngles.ToQuaternion();
+            rotation.x *= -1;
+            rotation.w *= -1;
+
+            localPosition.ScaleX(-1);
+            localEulerAngles = rotation.eulerAngles;
+            if (flipHorizontally)
+            {
+    			localScale.ScaleX(-1);
+            }
         }
 
         public void FlipHorizontally(string itemId, int decalIndex, DecalInfo decalInfo)
@@ -1471,12 +1498,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void FlipHorizontally(DecalInfo decalInfo)
         {
-			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledX(-1);
+			decalInfo.LocalScale.ScaleX(-1);
         }
 
         public void FlipVertically(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-			decalInfo.LocalScale = decalInfo.LocalScale.WithScaledZ(-1);
+			decalInfo.LocalScale.ScaleZ(-1);
             ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
@@ -2321,6 +2348,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalScale = startLocalScale,
                 MaxAngle = 0.5f,
                 IsVisible = true,
+                MirrorMode = DecalMirrorMode.Disabled,
             };
         }
     }

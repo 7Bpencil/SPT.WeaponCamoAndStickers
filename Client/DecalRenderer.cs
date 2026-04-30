@@ -5,6 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using SevenBoldPencil.Common;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -154,13 +155,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			foreach (var itemWithDecals in itemsWithDecals.Items.Values)
 			{
 				var decals = itemWithDecals.Decals;
+				var weaponRoot = Plugin.GetWeaponRoot(itemWithDecals.WeaponPrefab);
 				for (var i = 0; i < decals.Count; i++)
 				{
 					var decalInfo = decalsInfo[i];
 					var decal = decals[i];
 					if (decalInfo.IsVisible && decal)
 					{
-						DrawDecal(decal, buffer);
+						switch (decalInfo.MirrorMode)
+						{
+							case DecalMirrorMode.Disabled:
+							{
+								DrawDecal(decal, buffer);
+								break;
+							}
+							case DecalMirrorMode.Enabled:
+							{
+								DrawDecal(decal, buffer);
+								DrawDecalMirrored(decal, decalInfo, true, weaponRoot, buffer);
+								break;
+							}
+							case DecalMirrorMode.EnabledNoFlip:
+							{
+								DrawDecal(decal, buffer);
+								DrawDecalMirrored(decal, decalInfo, false, weaponRoot, buffer);
+								break;
+							}
+						}
 					}
 				}
 			}
@@ -168,13 +189,31 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecal(Decal decal, CommandBuffer buffer)
 		{
+			DrawDecal(decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial, buffer);
+		}
+
+		private void DrawDecalMirrored(Decal decal, DecalInfo decalInfo, bool flipHorizontally, Transform weaponRoot, CommandBuffer buffer)
+		{
+			var localPosition = decalInfo.LocalPosition;
+			var localEulerAngles = decalInfo.LocalEulerAngles;
+			var localScale = decalInfo.LocalScale;
+			Plugin.MirrorLeftRight(ref localPosition, ref localEulerAngles, ref localScale, flipHorizontally);
+
+			var localMatrix = Matrix4x4.TRS(localPosition, localEulerAngles.ToQuaternion(), localScale);
+			var localToWorldMatrix = weaponRoot.localToWorldMatrix * localMatrix;
+
+			DrawDecal(localToWorldMatrix, decal.DecalMaterial, buffer);
+		}
+
+		private void DrawDecal(in Matrix4x4 localToWorldMatrix, Material material, CommandBuffer buffer)
+		{
 			// its easier to accurately place decal when
 			// its transform handle is located on the face
 			// of projector volume, instead of geometric center.
 
 			var offset = new Vector3(0, -0.5f, 0);
-			var resultMatrix = decal.DecalTransform.localToWorldMatrix * Matrix4x4.Translate(offset);
-			buffer.DrawMesh(Cube, resultMatrix, decal.DecalMaterial);
+			var resultMatrix = localToWorldMatrix * Matrix4x4.Translate(offset);
+			buffer.DrawMesh(Cube, resultMatrix, material);
 		}
 	}
 }

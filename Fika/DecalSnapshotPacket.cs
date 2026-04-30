@@ -67,6 +67,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.PutUnmanaged<Vector3>(d.LocalScale);
             writer.Put(d.MaxAngle);
             writer.Put(d.IsVisible);
+            writer.PutEnum<DecalMirrorMode>(d.MirrorMode);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -88,6 +89,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 LocalScale = reader.GetUnmanaged<Vector3>(),
                 MaxAngle = reader.GetFloat(),
                 IsVisible = reader.GetBool(),
+                MirrorMode = reader.GetEnum<DecalMirrorMode>(),
             };
         }
     }

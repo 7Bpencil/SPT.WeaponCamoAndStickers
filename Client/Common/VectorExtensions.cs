@@ -11,19 +11,19 @@ namespace SevenBoldPencil.Common
 {
     public static class VectorExtensions
     {
-		public static Vector3 WithScaledX(this Vector3 v, float scale)
+		public static void ScaleX(ref this Vector3 v, float scale)
 		{
-			return new(v.x * scale, v.y, v.z);
+			v.x *= scale;
 		}
 
-		public static Vector3 WithScaledY(this Vector3 v, float scale)
+		public static void ScaleY(ref this Vector3 v, float scale)
 		{
-			return new(v.x, v.y * scale, v.z);
+			v.y *= scale;
 		}
 
-		public static Vector3 WithScaledZ(this Vector3 v, float scale)
+		public static void ScaleZ(ref this Vector3 v, float scale)
 		{
-			return new(v.x, v.y, v.z * scale);
+			v.z *= scale;
 		}
 
 		public static float Sum(this Vector3 v)
