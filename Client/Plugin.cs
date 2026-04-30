@@ -1422,7 +1422,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
-                MaxAngle = 0.5f,
+                MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
             };
@@ -2343,7 +2343,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = startLocalScale,
-                MaxAngle = 0.5f,
+                MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
             };
