@@ -294,6 +294,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			// TODO
 			// instancing
+
+			// TODO
+			// add tooltips on all UI elements
         }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
@@ -1353,6 +1356,40 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void SwitchIsVisible(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             decalInfo.IsVisible = !decalInfo.IsVisible;
+        }
+
+        public void ApplyTextureAndMaskInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
+        {
+            // TODO dont forget to update this when new texture data fields are added
+            // TODO should we fix UV or scale? I dont know
+
+            // match flip
+            decalInfo.LocalScale = Vector3.Scale(decalInfo.LocalScale.Abs(), fromDecalInfo.LocalScale.Sign());
+            ApplyLocalScale(itemId, decalIndex, decalInfo);
+
+            ChangeTexture(itemId, decalIndex, decalInfo, fromDecalInfo.Texture);
+
+            decalInfo.TextureUV = fromDecalInfo.TextureUV;
+            ApplyTextureUV(itemId, decalIndex, decalInfo);
+
+            decalInfo.TextureAngle = fromDecalInfo.TextureAngle;
+            ApplyTextureAngle(itemId, decalIndex, decalInfo);
+
+            decalInfo.ColorHSVA = fromDecalInfo.ColorHSVA;
+            ApplyColor(itemId, decalIndex, decalInfo);
+
+            ChangeMask(itemId, decalIndex, decalInfo, fromDecalInfo.Mask);
+
+            decalInfo.MaskUV = fromDecalInfo.MaskUV;
+            ApplyMaskUV(itemId, decalIndex, decalInfo);
+
+            decalInfo.MaskAngle = fromDecalInfo.MaskAngle;
+            ApplyMaskAngle(itemId, decalIndex, decalInfo);
+
+            decalInfo.MaxAngle = fromDecalInfo.MaxAngle;
+            ApplyMaxAngle(itemId, decalIndex, decalInfo);
+
+            decalInfo.MirrorMode = fromDecalInfo.MirrorMode;
         }
 
         public void Swap(string itemId, int decalIndexA, int decalIndexB)

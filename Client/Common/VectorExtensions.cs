@@ -55,5 +55,15 @@ namespace SevenBoldPencil.Common
 		{
 			return (float)v.x / (float)v.y;
 		}
+
+		public static Vector3 Abs(this Vector3 v)
+		{
+			return new(Mathf.Abs(v.x), Mathf.Abs(v.y), Mathf.Abs(v.z));
+		}
+
+		public static Vector3 Sign(this Vector3 v)
+		{
+			return new(Mathf.Sign(v.x), Mathf.Sign(v.y), Mathf.Sign(v.z));
+		}
     }
 }

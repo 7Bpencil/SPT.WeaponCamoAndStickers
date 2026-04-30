@@ -33,6 +33,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D EditMaskUVAngleIcon;
         public Texture2D EditMaskUVTilingIcon;
         public Texture2D DuplicateIcon;
+        public Texture2D CopyIcon;
+        public Texture2D PasteIcon;
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
         public Texture2D ColorWheelHSV;
@@ -66,7 +68,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             EditMaskUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Move-Icon.png");
             EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png");
             EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png");
-            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
+            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/duplicate.png");
+            CopyIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
+            PasteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
             ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
@@ -171,6 +175,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Vector2 MasksScrollPosition;
         public bool IsColorPickerOpened;
         public RuntimeTransformHandle TransformHandle;
+        public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect;
 
         // brace for imGUI shitshow
@@ -594,7 +599,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalName = string.IsNullOrWhiteSpace(decalInfo.Name) ? decalInfo.Texture : decalInfo.Name;
             GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalName, CamoStyle.TextureNameStyle);
 
-            var lineX = x + boxWidth - (smallMargin + buttonHeight) * 5;
+            var lineX = x + boxWidth - (smallMargin + buttonHeight) * 4;
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
             {
                 Plugin.Delete(ItemId, decalIndex);
@@ -605,18 +610,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var newDecalIndex = Plugin.Duplicate(ItemId, decalIndex);
                 SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
-            }
-            lineX += buttonHeight + smallMargin;
-
-            var mirrorModeIcon = decalInfo.MirrorMode switch
-            {
-                DecalMirrorMode.Disabled => CamoEditorResources.MirrorDisabled,
-                DecalMirrorMode.Enabled => CamoEditorResources.MirrorEnabled,
-                DecalMirrorMode.EnabledNoFlip => CamoEditorResources.MirrorEnabledNoFilp,
-            };
-            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), mirrorModeIcon))
-            {
-                Plugin.SwitchMirrorMode(ItemId, decalIndex, decalInfo);
             }
             lineX += buttonHeight + smallMargin;
 
@@ -735,10 +728,41 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var x = bigMargin;
             var y = bigMargin;
 
-            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
             {
-                CurrentlyEditedDecalIndex = default;
-                DestroyTransformHandle();
+                var lineX = x;
+                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * 3;
+                if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
+                {
+                    CurrentlyEditedDecalIndex = default;
+                    DestroyTransformHandle();
+                }
+                lineX += backButtonWidth + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyIcon))
+                {
+                    CopiedDecalInfo = new(decalInfo.GetCopy());
+                }
+                lineX += buttonHeight + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PasteIcon))
+                {
+                    if (CopiedDecalInfo.Some(out var copiedDecalInfo))
+                    {
+                        Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
+                    }
+                }
+                lineX += buttonHeight + smallMargin;
+
+                var mirrorModeIcon = decalInfo.MirrorMode switch
+                {
+                    DecalMirrorMode.Disabled => CamoEditorResources.MirrorDisabled,
+                    DecalMirrorMode.Enabled => CamoEditorResources.MirrorEnabled,
+                    DecalMirrorMode.EnabledNoFlip => CamoEditorResources.MirrorEnabledNoFilp,
+                };
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), mirrorModeIcon))
+                {
+                    Plugin.SwitchMirrorMode(ItemId, decalIndex, decalInfo);
+                }
             }
             y += buttonHeight + bigMargin;
 
