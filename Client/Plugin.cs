@@ -2276,15 +2276,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var size = new Vector3(weaponSize.x, defaultDecalDepth, weaponSize.y);
             var opacity = UnityEngine.Random.Range(0.6f, 1f);
             var left = GenerateRandomDecal(new(-defaultDecalDepth, positionY, positionZ), new(0, 0, 90), size, camo, mask, opacity);
-            var right = GenerateRandomDecal(new(defaultDecalDepth, positionY, positionZ), new(0, 0, 270), size, camo, mask, opacity);
-
+            left.MirrorMode = DecalMirrorMode.Enabled;
             FixTextureUV(left);
-            FixTextureUV(right);
-            FlipHorizontally(right);
 
             // TODO generate a couple of stickers
 
-            return new([left, right]);
+            return new([left]);
         }
 
         public (Vector3 center, Vector3 scale) GetWeaponBounds(WeaponPrefab weaponPrefab)
