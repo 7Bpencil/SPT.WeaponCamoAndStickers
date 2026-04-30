@@ -172,13 +172,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 							case DecalMirrorMode.Enabled:
 							{
 								DrawDecal(decal, buffer);
-								DrawDecalMirrored(decal, decalInfo, true, weaponRoot, buffer);
+								DrawDecalMirrored(decal, true, weaponRoot, buffer);
 								break;
 							}
 							case DecalMirrorMode.EnabledNoFlip:
 							{
 								DrawDecal(decal, buffer);
-								DrawDecalMirrored(decal, decalInfo, false, weaponRoot, buffer);
+								DrawDecalMirrored(decal, false, weaponRoot, buffer);
 								break;
 							}
 						}
@@ -192,14 +192,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DrawDecal(decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial, buffer);
 		}
 
-		private void DrawDecalMirrored(Decal decal, DecalInfo decalInfo, bool flipHorizontally, Transform weaponRoot, CommandBuffer buffer)
+		private void DrawDecalMirrored(Decal decal, bool flipHorizontally, Transform weaponRoot, CommandBuffer buffer)
 		{
-			var localPosition = decalInfo.LocalPosition;
-			var localEulerAngles = decalInfo.LocalEulerAngles;
-			var localScale = decalInfo.LocalScale;
-			Plugin.MirrorLeftRight(ref localPosition, ref localEulerAngles, ref localScale, flipHorizontally);
+			var localPosition = decal.DecalTransform.localPosition;
+			var localRotation = decal.DecalTransform.localRotation;
+			var localScale = decal.DecalTransform.localScale;
+			Plugin.MirrorLeftRight(ref localPosition, ref localRotation, ref localScale, flipHorizontally);
 
-			var localMatrix = Matrix4x4.TRS(localPosition, localEulerAngles.ToQuaternion(), localScale);
+			var localMatrix = Matrix4x4.TRS(localPosition, localRotation, localScale);
 			var localToWorldMatrix = weaponRoot.localToWorldMatrix * localMatrix;
 
 			DrawDecal(localToWorldMatrix, decal.DecalMaterial, buffer);

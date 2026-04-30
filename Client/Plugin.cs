@@ -1507,20 +1507,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // mirror around YZ plane
         public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
         {
-            MirrorLeftRight(ref decalInfo.LocalPosition, ref decalInfo.LocalEulerAngles, ref decalInfo.LocalScale);
+            var localRotation = decalInfo.LocalEulerAngles.ToQuaternion();
+            MirrorLeftRight(ref decalInfo.LocalPosition, ref localRotation, ref decalInfo.LocalScale);
+            decalInfo.LocalEulerAngles = localRotation.eulerAngles;
+
             ApplyLocalPosition(itemId, decalIndex, decalInfo);
             ApplyLocalEulerAngles(itemId, decalIndex, decalInfo);
             ApplyLocalScale(itemId, decalIndex, decalInfo);
         }
 
-        public static void MirrorLeftRight(ref Vector3 localPosition, ref Vector3 localEulerAngles, ref Vector3 localScale, bool flipHorizontally = true)
+        public static void MirrorLeftRight(ref Vector3 localPosition, ref Quaternion localRotation, ref Vector3 localScale, bool flipHorizontally = true)
         {
-            var rotation = localEulerAngles.ToQuaternion();
-            rotation.x *= -1;
-            rotation.w *= -1;
-
             localPosition.ScaleX(-1);
-            localEulerAngles = rotation.eulerAngles;
+            localRotation.x *= -1;
+            localRotation.w *= -1;
             if (flipHorizontally)
             {
     			localScale.ScaleX(-1);
