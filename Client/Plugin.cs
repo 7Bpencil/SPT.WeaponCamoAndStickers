@@ -192,6 +192,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, string> Clones;
         private HashSet<string> ItemsWaitingForRandomCamo;
         private Dictionary<Camera, string> WeaponPreviewCameras;
+        private Dictionary<Camera, string> InventoryIconCameras;
         private HashSet<Camera> PlayerModelViewCameras;
 
         private DecalRenderer DecalRenderer;
@@ -252,9 +253,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Clones = new();
             ItemsWaitingForRandomCamo = new();
             WeaponPreviewCameras = new();
+            InventoryIconCameras = new();
             PlayerModelViewCameras = new();
 
-            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, PlayerModelViewCameras);
+            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, InventoryIconCameras, PlayerModelViewCameras);
 
             WeaponsWaitingForRemoteCamo = new();
 
@@ -272,6 +274,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_method_1().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
             new Patch_BotCreatorClass_method_2().Enable();
+            new Patch_GClass926_GetItemIcon().Enable();
+            new Patch_GClass928_GetItemHash().Enable();
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
@@ -1823,6 +1827,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
 			Logger.LogInfo($"OnWeaponPreviewClosed: {itemId}");
             WeaponPreviewCameras.Remove(weaponPreviewCamera);
+        }
+
+        public void BeforeInventoryIconRecorded(Camera inventoryIconCamera, string itemId)
+        {
+            itemId = GetOriginalItemId(itemId);
+			Logger.LogInfo($"BeforeInventoryIconRecorded: {itemId}");
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                if (!InventoryIconCameras.TryAdd(inventoryIconCamera, itemId))
+                {
+        			Logger.LogWarning($"BeforeInventoryIconRecorded: {itemId}, already added inventory icon camera?");
+                }
+            }
+        }
+
+        public void AfterInventoryIconRecorded(Camera inventoryIconCamera, string itemId)
+        {
+			Logger.LogInfo($"AfterInventoryIconRecorded: {itemId}");
+            InventoryIconCameras.Remove(inventoryIconCamera);
         }
 
 		public void OnPlayerModelViewShown(Camera playerModelViewCamera)

@@ -6,6 +6,7 @@
 //
 
 using Diz.Skinning;
+using Diz.Jobs;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
@@ -14,8 +15,10 @@ using EFT.UI;
 using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
 using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
 using HarmonyLib;
@@ -412,4 +415,220 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
+	public class Patch_GClass926_GetItemIcon : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(GClass926), nameof(GClass926.GetItemIcon));
+        }
+
+        [PatchPrefix]
+		public static bool Prefix(GClass926 __instance, ref GClass929 __result, Item item, in XYCellSizeStruct size, bool forcedGeneration = false)
+		{
+			// only weapons with decals go through custom route
+			if (item is Weapon && Plugin.Instance.GetDecalsCount(item.Id) > 0)
+			{
+				__result = GetItemIcon(__instance, item, size);
+				return false;
+			}
+
+			return true;
+		}
+
+		// everything below is mostly copy-paste of original methods, read comments to know what changed
+		public static GClass929 GetItemIcon(GClass926 __instance, Item item, in XYCellSizeStruct size, bool forcedGeneration = false)
+		{
+			int itemHash = GClass928.GetItemHash(item); // we postfix GetItemHash separately to keep it compatible with other mods that patch it too
+			GClass929 icon;
+			bool flag = __instance.method_7(itemHash, out icon);
+			if (!forcedGeneration && flag && (GClass2340.InRaid || !icon.IsGeneratedInRaid))
+			{
+				return icon;
+			}
+			icon = new GClass929(itemHash)
+			{
+				IsGeneratedInRaid = GClass2340.InRaid
+			};
+			if (!forcedGeneration && __instance.method_8(itemHash, out var path))
+			{
+				__instance.method_6(icon, path, size).HandleExceptions();
+				return icon;
+			}
+			method_1(__instance, icon, item, size, saveToFile: true, requireZeroMip: true).HandleExceptions(); // use our method_1
+			return icon;
+		}
+
+		public static async Task method_1(GClass926 __instance, GClass929 icon, Item item, XYCellSizeStruct size, bool saveToFile, bool requireZeroMip)
+		{
+			__instance.Int_1++;
+			__instance.Dictionary_0[icon.Hash] = icon;
+			// in theory we could rewrite only this delegate, but sadly item is not passed inside and we need it,
+			// and I dont want to build any more scaffolding to get around it
+			GClass926.RenderModelResult renderModelResult = await __instance.RenderModel(item, async delegate(GameObject model, PreviewPivot pivot)
+			{
+				await __instance.method_0(); // this method loads camera first time when it doesnt exist, only after it its safe to use Camera_0
+				while (__instance.Bool_0)
+				{
+					await JobScheduler.Yield();
+				}
+				__instance.Bool_0 = true;
+				await JobScheduler.Yield();
+
+				Plugin.Instance.BeforeInventoryIconRecorded(__instance.Camera_0, item.Id); // we need to know which camera renders which item
+				Sprite result = method_4(__instance, model, in size, pivot); // use our method_4
+				Plugin.Instance.AfterInventoryIconRecorded(__instance.Camera_0, item.Id); // clear info about that camera
+
+				await JobScheduler.Yield();
+				__instance.Bool_0 = false;
+				return result;
+			});
+			if (renderModelResult.sprite != null)
+			{
+				GClass926.smethod_1(icon);
+				Sprite sprite = renderModelResult.sprite;
+				icon.Sprite = sprite;
+				icon.Sprite.texture.filterMode = FilterMode.Trilinear;
+				icon.Changed.Invoke();
+				if ((!requireZeroMip) ? saveToFile : (saveToFile && renderModelResult.zeroMipWasLoaded))
+				{
+					await __instance.method_5(icon);
+				}
+			}
+			else
+			{
+				Debug.LogError("Something went wrong! Sprite for " + icon.Hash + " was not created!");
+			}
+			__instance.Int_1 = Mathf.Max(__instance.Int_1 - 1, 0);
+			if (__instance.Int_1 <= 0)
+			{
+				if (__instance.Nullable_0.HasValue)
+				{
+					QualitySettings.streamingMipmapsMaxLevelReduction = __instance.Nullable_0.Value;
+					__instance.Nullable_0 = null;
+				}
+				if (__instance.Dictionary_1.Count > 0)
+				{
+					__instance.method_10();
+					File.WriteAllText(__instance.String_1, JsonParserClass.ToJson(__instance.Dictionary_1));
+				}
+			}
+		}
+
+		public static Sprite method_4(GClass926 __instance, GameObject model, in XYCellSizeStruct size, PreviewPivot previewPivot)
+		{
+			if (model == null)
+			{
+				return null;
+			}
+			GClass926.Struct115 @struct = GClass926.Struct115.Store();
+			GClass926.Struct115.Reset();
+			// ShaderReplacer.Replace(model); // ShaderReplacer replaces deferred shaders with forward ones, we need original deferred, so disable
+			__instance.method_2(model, in size, previewPivot);
+			Light[] light_ = __instance.Light_0;
+			for (int i = 0; i < light_.Length; i++)
+			{
+				light_[i].enabled = true;
+			}
+			model.SetActive(value: true);
+			Texture2D texture = method_3(__instance, model, in size); // use our method_3
+			model.SetActive(value: false);
+			// ShaderReplacer.Restore();
+			@struct.Restore();
+			return GClass926.smethod_2(texture);
+		}
+
+		public static Texture2D method_3(GClass926 __instance, GameObject model, in XYCellSizeStruct size)
+		{
+			// by default icon camera is forward rendering,
+			// probably because they really wanted to render icons with orthogonal projection,
+			// they even have forward versions of shaders to make it work,
+			// but decals can only work in deferred rendering,
+			// so we have to switch camera renderingPath,
+			// but deferred rendering doesnt work with orthographic projection for Unity reasons,
+			// so we have to also switch to perspective, and change camera position/fov to keep object size the same,
+
+			int x = size.X;
+			int width = x * 2;
+			int y = size.Y;
+			int height = y * 2;
+
+			// change depth to 24, otherwise background turns white
+			RenderTexture temporary = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, 8);
+			temporary.name = "IconCreator TextureDouble";
+			__instance.Camera_0.gameObject.SetActive(value: true);
+
+			// calculate new camera position and fov
+			var cameraTransform = __instance.Camera_0.transform;
+			var modelTransform = model.transform;
+			modelTransform.SetParent(null, worldPositionStays: true); // they keep model as child of camera
+
+			var originalPosition = cameraTransform.position;
+			var originalFov = __instance.Camera_0.fieldOfView;
+
+			// by default distance is around 1, make it 15 for more "orthographic" look,
+			// 15 is max, everything higher makes item disappear (there are probably a way to increase that, but 15 looks fine)
+ 			var targetDistance = 15;
+			var currentDistance = (modelTransform.position - cameraTransform.position).magnitude;
+			var offset = targetDistance - currentDistance;
+			var newPosition = originalPosition - cameraTransform.forward * offset;
+			var newFov = 2 * Mathf.Atan2(__instance.Camera_0.orthographicSize, targetDistance);
+
+			// set
+			__instance.Camera_0.orthographic = false;
+			__instance.Camera_0.renderingPath = RenderingPath.DeferredShading;
+			cameraTransform.position = newPosition;
+			__instance.Camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
+
+			__instance.Camera_0.targetTexture = temporary;
+			__instance.Camera_0.clearFlags = CameraClearFlags.Color;
+			__instance.Camera_0.backgroundColor = new Color(0f, 0f, 0f, 0f);
+			__instance.Camera_0.useOcclusionCulling = false;
+			__instance.IconShadow_0.SetTexDimension(width, height);
+			RenderTexture temporary2 = RenderTexture.GetTemporary(x, y);
+			GClass860.ClearTexture(temporary2);
+			__instance.Camera_0.Render();
+			Graphics.Blit(temporary, temporary2);
+			RenderTexture active = RenderTexture.active;
+			RenderTexture.active = temporary2;
+			Texture2D texture2D = GClass926.smethod_0(x, y);
+			texture2D.ReadPixels(new Rect(0f, 0f, __instance.Camera_0.pixelWidth, __instance.Camera_0.pixelHeight), 0, 0, recalculateMipMaps: false);
+			texture2D.Apply();
+			RenderTexture.active = active;
+			__instance.Camera_0.targetTexture = null;
+			RenderTexture.ReleaseTemporary(temporary);
+			RenderTexture.ReleaseTemporary(temporary2);
+			__instance.Camera_0.gameObject.SetActive(value: false);
+
+			// revert
+			__instance.Camera_0.orthographic = true;
+			__instance.Camera_0.renderingPath = RenderingPath.Forward;
+			cameraTransform.position = originalPosition;
+			__instance.Camera_0.fieldOfView = originalFov;
+
+			return texture2D;
+		}
+	}
+
+	public class Patch_GClass928_GetItemHash : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(GClass928), nameof(GClass928.GetItemHash));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(Item item, ref int __result)
+		{
+			if (item is Weapon && Plugin.Instance.GetDecalsInfo(item.Id).Some(out var decalsInfo) && decalsInfo.Count > 0)
+			{
+				// all this shit to fit SaveTime inside int
+				var saveTime = decalsInfo[0].SaveTime;
+				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
+				var saveTimeOffset = saveTime - newStartPointOffset;
+				var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
+				__result ^= saveTimeOffsetSeconds;
+			}
+		}
+	}
 }
