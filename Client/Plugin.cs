@@ -948,12 +948,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return ErrorTextureData;
         }
 
-        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal> beforeLoad, Action<Decal, Texture> afterLoad)
+        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal, DecalTextureData> beforeLoad, Action<Decal, Texture> afterLoad)
         {
             LogTexture(LogLevel.Info, "Increment", textureName);
 
-            beforeLoad(decal);
             var textureData = GetTextureData(textureName);
+            beforeLoad(decal, textureData);
 
             if (textureData.Error)
             {
@@ -1698,10 +1698,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			return decal;
 		}
 
-        public void BeforeLoad_ChangeTexture(Decal decal)
+        public void BeforeLoad_ChangeTexture(Decal decal, DecalTextureData textureData)
         {
-            // otherwise texture will flash white which is disturbing
-            decal.ChangeTexture(Texture2D.blackTexture);
+            // set low res version immediately, otherwise texture will flash white which is disturbing
+            decal.ChangeTexture(textureData.Preview);
         }
 
         public void AfterLoad_ChangeTexture(Decal decal, Texture texture)
@@ -1709,10 +1709,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             decal.ChangeTexture(texture);
         }
 
-        public void BeforeLoad_ChangeMask(Decal decal)
+        public void BeforeLoad_ChangeMask(Decal decal, DecalTextureData textureData)
         {
-            // otherwise texture will flash white which is disturbing
-            decal.ChangeMask(Texture2D.blackTexture);
+            // set low res version immediately, otherwise texture will flash white which is disturbing
+            decal.ChangeMask(textureData.Preview);
         }
 
         public void AfterLoad_ChangeMask(Decal decal, Texture mask)
