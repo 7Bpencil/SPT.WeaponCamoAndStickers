@@ -317,9 +317,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (DecalSettingType == DecalSettingType.Texture)
             {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(Plugin.GetTexturesDirectory(DecalTypeMenu));
+                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu);
                 return
-                    bigMargin + buttonHeight + bigMargin + // back button
+                    bigMargin +
+                    buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
                     4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
@@ -337,9 +338,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(Plugin.GetTexturesDirectory(DecalTextureType.Mask));
+                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
                 return
-                    bigMargin + buttonHeight + bigMargin + // back button
+                    bigMargin +
+                    buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
                     4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
@@ -351,6 +353,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     smallMargin + bigMargin + // separator
                     visibleHeight + bigMargin; // icons grid
             }
+        }
+
+        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(DecalTextureType decalTextureType)
+        {
+            var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
+            return CalculateTexturesDirectoryHeight(texturesDirectory);
         }
 
         private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory)
@@ -393,7 +401,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     var (_, presetsScrollHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
                     return
-                        bigMargin + buttonHeight + mediumMargin + // preset name
+                        bigMargin +
+                        buttonHeight + mediumMargin + // preset name
                         buttonHeight + mediumMargin + // hide presets button
                         buttonHeight + mediumMargin + // generate random camo button
                         presetsScrollHeight + bigMargin; // presets
@@ -401,7 +410,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 else
                 {
                     return
-                        bigMargin + buttonHeight + mediumMargin + // preset name
+                        bigMargin +
+                        buttonHeight + mediumMargin + // preset name
                         buttonHeight + mediumMargin + // hide presets button
                         buttonHeight + mediumMargin + // generate random camo button
                         buttonHeight + bigMargin; // no presets text
@@ -410,7 +420,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 return
-                    bigMargin + buttonHeight + mediumMargin + // preset name
+                    bigMargin +
+                    buttonHeight + mediumMargin + // preset name
                     buttonHeight + bigMargin; // show presets button
             }
         }
@@ -421,7 +432,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var maxDecalsVisible = ArePresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
             var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, mediumMargin);
             return
-                bigMargin + visibleHeight + mediumMargin + // decals
+                bigMargin +
+                visibleHeight + mediumMargin + // decals
                 buttonHeight + bigMargin; // add new decal button
         }
 
