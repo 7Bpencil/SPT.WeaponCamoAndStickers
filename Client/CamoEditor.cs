@@ -738,12 +738,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var decalIndex = CurrentlyEditedDecalIndex.Value;
             var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
-            var textureData = Plugin.GetTextureData(decalInfo.Texture);
-            var maskData = Plugin.GetTextureData(decalInfo.Mask);
 
             var x = bigMargin;
             var y = bigMargin;
 
+            DrawDecalEditUI_Header(x, ref y, decalIndex, decalInfo, decal);
+            DrawDecalEditUI_Transform(x, ref y, decalIndex, decalInfo, decal);
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
+            y += buttonHeight + mediumMargin;
+
+            if (DecalSettingType == DecalSettingType.Texture)
+            {
+                DrawDecalEditUI_Texture(x, ref y, decalIndex, decalInfo, decal);
+            }
+            else
+            {
+                DrawDecalEditUI_Mask(x, ref y, decalIndex, decalInfo, decal);
+            }
+
+			GUI.DragWindow();
+        }
+
+        private void DrawDecalEditUI_Header(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        {
             {
                 var lineX = x;
                 var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * 4;
@@ -801,8 +822,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, boxWidth, buttonHeight), "enter decal name (optional)", CamoStyle.LabelStyleName);
             }
             y += buttonHeight + mediumMargin;
+        }
 
-
+        private void DrawDecalEditUI_Transform(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        {
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
             {
                 SetupTransformHandle(HandleType.Position, decalIndex, decalInfo, decal);
@@ -898,227 +921,224 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
             }
             y += buttonHeight + bigMargin;
+        }
+
+        private void DrawDecalEditUI_Texture(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        {
+            var textureData = Plugin.GetTextureData(decalInfo.Texture);
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVOffsetIcon))
+            {
+                SetupTransformHandle(HandleType.TextureOffset, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.x:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.y:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetTextureUVOffset(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVAngleIcon))
+            {
+                SetupTransformHandle(HandleType.TextureAngle, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureAngle:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetTextureAngle(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVTilingIcon))
+            {
+                SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.z:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.w:F3}", CamoStyle.LabelStyleName);
+            }
+            {
+                var valueX = x + boxWidth - halfBoxWidthButton;
+                if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    Plugin.ResetTextureUVScale(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
+                }
+                valueX += fourthBoxWidthButton + smallMargin;
+
+                if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "fix UV"))
+                {
+                    Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
+                }
+            }
+            y += buttonHeight + mediumMargin;
+
+            {
+                var colorButtonRect = new Rect(x, y, buttonHeight, buttonHeight);
+
+                DrawColor(colorButtonRect, decalInfo.ColorHSVA.HSVAtoRGBA().WithAlpha(1f));
+                if (GUI.Button(colorButtonRect, GUIContent.none, GUIStyle.none))
+                {
+                    IsColorPickerOpened = !IsColorPickerOpened;
+                }
+
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"H: {decalInfo.ColorHSVA.x:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"S: {decalInfo.ColorHSVA.y:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"V: {decalInfo.ColorHSVA.z:F3}", CamoStyle.LabelStyleName);
+            }
+            y += buttonHeight + bigMargin;
+
+
+            {
+                var sliderWidth = 212;
+
+                var labelX = x;
+                var sliderX = labelX + nameWidth + smallMargin - 42;
+                var valueX = sliderX + sliderWidth + smallMargin;
+
+                var opacityY = y;
+                var maxAngleY = opacityY + buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, opacityY, nameWidth, buttonHeight), "Opacity:", CamoStyle.LabelStyleName);
+                var newAlpha = GUI.HorizontalSlider(new Rect(sliderX, opacityY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.w, 0f, 1f);
+                if (newAlpha != decalInfo.ColorHSVA.w)
+                {
+                    decalInfo.ColorHSVA.w = newAlpha;
+                    Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                }
+                GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoStyle.LabelStyleValue);
+
+
+                GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "MaxAngle:", CamoStyle.LabelStyleName);
+                var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, maxAngleY + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
+                if (newMaxAngle != decalInfo.MaxAngle)
+                {
+                    decalInfo.MaxAngle = newMaxAngle;
+                    Plugin.ApplyMaxAngle(ItemId, decalIndex, decalInfo);
+                }
+                GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoStyle.LabelStyleValue);
+
+
+                y = maxAngleY + buttonHeight + bigMargin;
+            }
+
+            {
+                GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
+
+                var labelX = x + iconSize + smallMargin + 12;
+                GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoStyle.TextureNameStyle);
+
+                y += iconSize + bigMargin;
+            }
 
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
+            DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
+            y += buttonHeight + smallMargin;
+
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTypeMenu);
+        }
+
+        private void DrawDecalEditUI_Mask(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        {
+            var maskData = Plugin.GetTextureData(decalInfo.Mask);
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVOffsetIcon))
+            {
+                SetupTransformHandle(HandleType.MaskOffset, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVAngleIcon))
+            {
+                SetupTransformHandle(HandleType.MaskAngle, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVTilingIcon))
+            {
+                SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.z:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoStyle.LabelStyleName);
+            }
+            {
+                var valueX = x + boxWidth - halfBoxWidthButton;
+                if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
+                }
+            }
             y += buttonHeight + mediumMargin;
 
-            if (DecalSettingType == DecalSettingType.Texture)
             {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVOffsetIcon))
-                {
-                    SetupTransformHandle(HandleType.TextureOffset, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
+                GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
 
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.x:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
+                var labelX = x + iconSize + smallMargin + 12;
+                GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoStyle.TextureNameStyle);
 
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.y:F3}", CamoStyle.LabelStyleName);
-                }
-                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                {
-                    Plugin.ResetTextureUVOffset(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
-                }
-                y += buttonHeight + smallMargin;
-
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVAngleIcon))
-                {
-                    SetupTransformHandle(HandleType.TextureAngle, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureAngle:F3}", CamoStyle.LabelStyleName);
-                }
-                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                {
-                    Plugin.ResetTextureAngle(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
-                }
-                y += buttonHeight + smallMargin;
-
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditTextureUVTilingIcon))
-                {
-                    SetupTransformHandle(HandleType.TextureTiling, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.z:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.w:F3}", CamoStyle.LabelStyleName);
-                }
-                {
-                    var valueX = x + boxWidth - halfBoxWidthButton;
-                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                    {
-                        Plugin.ResetTextureUVScale(ItemId, decalIndex, decalInfo);
-                        SyncTransformHandle(decalInfo, decal);
-                    }
-                    valueX += fourthBoxWidthButton + smallMargin;
-
-                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "fix UV"))
-                    {
-                        Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                        SyncTransformHandle(decalInfo, decal);
-                    }
-                }
-                y += buttonHeight + mediumMargin;
-
-                {
-                    var colorButtonRect = new Rect(x, y, buttonHeight, buttonHeight);
-
-                    DrawColor(colorButtonRect, decalInfo.ColorHSVA.HSVAtoRGBA().WithAlpha(1f));
-                    if (GUI.Button(colorButtonRect, GUIContent.none, GUIStyle.none))
-                    {
-                        IsColorPickerOpened = !IsColorPickerOpened;
-                    }
-
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"H: {decalInfo.ColorHSVA.x:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"S: {decalInfo.ColorHSVA.y:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"V: {decalInfo.ColorHSVA.z:F3}", CamoStyle.LabelStyleName);
-                }
-                y += buttonHeight + bigMargin;
-
-
-                {
-                    var sliderWidth = 212;
-
-                    var labelX = x;
-                    var sliderX = labelX + nameWidth + smallMargin - 42;
-                    var valueX = sliderX + sliderWidth + smallMargin;
-
-                    var opacityY = y;
-                    var maxAngleY = opacityY + buttonHeight + smallMargin;
-
-
-                    GUI.Label(new Rect(labelX, opacityY, nameWidth, buttonHeight), "Opacity:", CamoStyle.LabelStyleName);
-                    var newAlpha = GUI.HorizontalSlider(new Rect(sliderX, opacityY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.w, 0f, 1f);
-                    if (newAlpha != decalInfo.ColorHSVA.w)
-                    {
-                        decalInfo.ColorHSVA.w = newAlpha;
-                        Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
-                    }
-                    GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoStyle.LabelStyleValue);
-
-
-                    GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "MaxAngle:", CamoStyle.LabelStyleName);
-                    var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, maxAngleY + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
-                    if (newMaxAngle != decalInfo.MaxAngle)
-                    {
-                        decalInfo.MaxAngle = newMaxAngle;
-                        Plugin.ApplyMaxAngle(ItemId, decalIndex, decalInfo);
-                    }
-                    GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoStyle.LabelStyleValue);
-
-
-                    y = maxAngleY + buttonHeight + bigMargin;
-                }
-
-                {
-                    GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
-
-                    var labelX = x + iconSize + smallMargin + 12;
-                    GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoStyle.TextureNameStyle);
-
-                    y += iconSize + bigMargin;
-                }
-
-                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-                y += smallMargin + bigMargin;
-
-                DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
-                y += buttonHeight + smallMargin;
-
-                DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTypeMenu);
-            }
-            else
-            {
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVOffsetIcon))
-                {
-                    SetupTransformHandle(HandleType.MaskOffset, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
-                }
-                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                {
-                    Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
-                }
-                y += buttonHeight + smallMargin;
-
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVAngleIcon))
-                {
-                    SetupTransformHandle(HandleType.MaskAngle, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoStyle.LabelStyleName);
-                }
-                if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                {
-                    Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
-                }
-                y += buttonHeight + smallMargin;
-
-                if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVTilingIcon))
-                {
-                    SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
-                }
-                {
-                    var valueX = x + buttonHeight + smallMargin + 7;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.z:F3}", CamoStyle.LabelStyleName);
-                    valueX += longFieldWidth + smallMargin;
-
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoStyle.LabelStyleName);
-                }
-                {
-                    var valueX = x + boxWidth - halfBoxWidthButton;
-                    if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
-                    {
-                        Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
-                        SyncTransformHandle(decalInfo, decal);
-                    }
-                }
-                y += buttonHeight + mediumMargin;
-
-                {
-                    GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
-
-                    var labelX = x + iconSize + smallMargin + 12;
-                    GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoStyle.TextureNameStyle);
-
-                    y += iconSize + bigMargin;
-                }
-
-                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-                y += smallMargin + bigMargin;
-
-                DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
+                y += iconSize + bigMargin;
             }
 
-			GUI.DragWindow();
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
         }
 
         public void SetupTransformHandle(HandleType handleType)
