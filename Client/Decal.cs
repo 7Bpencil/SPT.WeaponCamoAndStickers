@@ -7,11 +7,13 @@
 
 using SevenBoldPencil.Common;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class Decal : MonoBehaviour
 	{
+		public static readonly int _StencilPassOperation = Shader.PropertyToID("_StencilPassOperation");
 		public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
 		public static readonly int _MainTexUV = Shader.PropertyToID("_MainTexUV");
 		public static readonly int _MaskTex = Shader.PropertyToID("_MaskTex");
@@ -23,12 +25,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     	public static readonly int _MaskTexRotation = Shader.PropertyToID("_MaskTexRotation");
 
 		public Material DecalMaterial;
+		public LocalKeyword DecalMaterialKeywordErase;
 		public Transform DecalTransform;
 
 		public void Init(Shader shader, Transform root, DecalInfo decalInfo)
 		{
 			DecalTransform = transform;
 			DecalMaterial = new Material(shader);
+			DecalMaterialKeywordErase = new LocalKeyword(shader, "ERASE");
 
             DecalTransform.parent = root;
 			DecalTransform.localPosition = decalInfo.LocalPosition;
@@ -41,6 +45,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			ChangeMaskAngle(decalInfo.MaskAngle);
 			ChangeColor(decalInfo.ColorHSVA);
 			ChangeMaxAngle(decalInfo.MaxAngle);
+			ChangePaintMode(decalInfo.PaintMode);
 
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 		}
@@ -93,6 +98,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             DecalMaterial.SetFloat(_MaxAngle, maxAngle);
         }
+
+		public void ChangePaintMode(DecalPaintMode paintMode)
+		{
+			if (paintMode == DecalPaintMode.Paint)
+			{
+	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.Keep);
+				DecalMaterial.DisableKeyword(DecalMaterialKeywordErase);
+			}
+			if (paintMode == DecalPaintMode.Erase)
+			{
+				// decals are rendered only on fragments with stencil == 2,
+				// erase downs that number to 1 (same as hands),
+				// preventing other decals from rendering
+
+	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.DecrementSaturate);
+				DecalMaterial.EnableKeyword(DecalMaterialKeywordErase);
+			}
+		}
 
 		public void OnDestroy()
 		{

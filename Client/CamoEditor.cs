@@ -44,7 +44,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorDisabled;
         public Texture2D MirrorEnabled;
         public Texture2D MirrorEnabledNoFilp;
-        public Texture2D PaintBrush;
         public Texture2D Eraser;
 
         public string[] DecalSettingsToolbar;
@@ -82,7 +81,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
-            PaintBrush = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paintbrush.png");
             Eraser = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/eraser.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
@@ -98,6 +96,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public GUIStyle TextFieldStyle;
 		public GUIStyle ColorPickerButtonStyle;
         public GUIStyle DirectoryButtonStyle;
+        public GUIStyle EraserButtonStyle;
 
         public CamoStyle(GUISkin currentSkin)
         {
@@ -144,6 +143,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DirectoryButtonStyle = new(currentSkin.button)
             {
                 alignment = TextAnchor.MiddleLeft
+            };
+
+            EraserButtonStyle = new(currentSkin.button)
+            {
+                padding = new(15, 15, 15, 15)
             };
         }
     }
@@ -246,28 +250,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (IsOpened)
             {
-                if (CurrentlyEditedDecalIndex.HasValue)
+                if (CurrentlyEditedDecalIndex.Some(out var decalIndex))
                 {
-                    WindowRect.height = CalculateDecalEditWindowHeight();
+                    var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+
+                    WindowRect.height = CalculateDecalEditWindowHeight(decalIndex, decalInfo, decal);
                     WindowRect = GUI.Window(1, WindowRect, DrawDecalEditUI, GUIContent.none);
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                     GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
 
-                    if (DecalSettingType == DecalSettingType.Texture)
+                    if (decalInfo.PaintMode == DecalPaintMode.Paint)
                     {
-                        if (IsColorPickerOpened)
+                        if (DecalSettingType == DecalSettingType.Texture)
                         {
-                            var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
-                            GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+                            if (IsColorPickerOpened)
+                            {
+                                var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
+                                GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
 
-                            var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                            GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
-                        }
-                        else
-                        {
-                            var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                            GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                                var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                                GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                            }
+                            else
+                            {
+                                var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                                GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                            }
                         }
                     }
                 }
@@ -313,46 +322,58 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        private int CalculateDecalEditWindowHeight()
+        private int CalculateDecalEditWindowHeight(int decalIndex, DecalInfo decalInfo, Decal decal)
         {
-            if (DecalSettingType == DecalSettingType.Texture)
+            if (decalInfo.PaintMode == DecalPaintMode.Paint)
             {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu);
+                if (DecalSettingType == DecalSettingType.Texture)
+                {
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu);
+                    return
+                        bigMargin +
+                        buttonHeight + bigMargin + // back button
+                        buttonHeight + mediumMargin + // decal name
+                        4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
+                        smallMargin + bigMargin + // separator
+                        buttonHeight + mediumMargin + // toolbar texture/mask
+                        buttonHeight + smallMargin + // UV offset
+                        buttonHeight + smallMargin + // UV angle
+                        buttonHeight + mediumMargin + // UV tiling
+                        buttonHeight + bigMargin + // color
+                        buttonHeight + smallMargin + // opacity
+                        buttonHeight + bigMargin + // max angle
+                        iconSize + bigMargin + // icon
+                        smallMargin + bigMargin + // separator
+                        buttonHeight + smallMargin + // toolbar camos/stickers
+                        visibleHeight + bigMargin; // icons grid
+                }
+                else
+                {
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
+                    return
+                        bigMargin +
+                        buttonHeight + bigMargin + // back button
+                        buttonHeight + mediumMargin + // decal name
+                        4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
+                        smallMargin + bigMargin + // separator
+                        buttonHeight + mediumMargin + // toolbar texture/mask
+                        buttonHeight + smallMargin + // UV offset
+                        buttonHeight + smallMargin + // UV angle
+                        buttonHeight + mediumMargin + // UV tiling
+                        iconSize + bigMargin + // icon
+                        smallMargin + bigMargin + // separator
+                        visibleHeight + bigMargin; // icons grid
+                }
+            }
+            if (decalInfo.PaintMode == DecalPaintMode.Erase)
+            {
                 return
                     bigMargin +
                     buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
-                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
-                    smallMargin + bigMargin + // separator
-                    buttonHeight + mediumMargin + // toolbar texture/mask
-                    buttonHeight + smallMargin + // UV offset
-                    buttonHeight + smallMargin + // UV angle
-                    buttonHeight + mediumMargin + // UV tiling
-                    buttonHeight + bigMargin + // color
-                    buttonHeight + smallMargin + // opacity
-                    buttonHeight + bigMargin + // max angle
-                    iconSize + bigMargin + // icon
-                    smallMargin + bigMargin + // separator
-                    buttonHeight + smallMargin + // toolbar camos/stickers
-                    visibleHeight + bigMargin; // icons grid
+                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin; // position, rotation, scale, flip
             }
-            else
-            {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
-                return
-                    bigMargin +
-                    buttonHeight + bigMargin + // back button
-                    buttonHeight + mediumMargin + // decal name
-                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
-                    smallMargin + bigMargin + // separator
-                    buttonHeight + mediumMargin + // toolbar texture/mask
-                    buttonHeight + smallMargin + // UV offset
-                    buttonHeight + smallMargin + // UV angle
-                    buttonHeight + mediumMargin + // UV tiling
-                    iconSize + bigMargin + // icon
-                    smallMargin + bigMargin + // separator
-                    visibleHeight + bigMargin; // icons grid
-            }
+            throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
         }
 
         private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(DecalTextureType decalTextureType)
@@ -581,12 +602,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 y += mediumMargin;
             }
 
-            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add New Decal"))
             {
-                var newDecalIndex = Plugin.AddNewDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
-                var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
-                var textureData = Plugin.GetTextureData(decalInfo.Texture);
-                SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
+                var lineX = x;
+                if (GUI.Button(new Rect(x, y, halfBoxWidthButton, buttonHeight), "Add Eraser"))
+                {
+                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
+                    SetCurrentlyEditedDecal(newDecalIndex, DecalTextureType.Mask); // technicaly eraser doesnt have texture type, but whatever...
+                }
+                lineX += halfBoxWidthButton + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, halfBoxWidthButton, buttonHeight), "Add Paint"))
+                {
+                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
+                    var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
+                    var textureData = Plugin.GetTextureData(decalInfo.Texture);
+                    SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
+                }
             }
         }
 
@@ -605,14 +636,45 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var topLineY = y + smallMargin;
             var bottomLineY = topLineY + buttonHeight + smallMargin;
 
+            (Texture2D, GUIStyle) getDecalIcon(DecalInfo decalInfo, DecalTextureData textureData)
+            {
+                if (decalInfo.PaintMode == DecalPaintMode.Paint)
+                {
+                    return (textureData.Preview, GUI.skin.button);
+                }
+                if (decalInfo.PaintMode == DecalPaintMode.Erase)
+                {
+                    return (CamoEditorResources.Eraser, CamoStyle.EraserButtonStyle);
+                }
+                throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
+            }
+
             var textureIconX = x + smallMargin;
-            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), textureData.Preview))
+            var (decalIcon, decalIconStyle) = getDecalIcon(decalInfo, textureData);
+            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon, decalIconStyle))
             {
                 SetCurrentlyEditedDecal(decalIndex, textureData.Type);
             }
 
+            static string getDecalName(DecalInfo decalInfo)
+            {
+                if (!string.IsNullOrWhiteSpace(decalInfo.Name))
+                {
+                    return decalInfo.Name;
+                }
+                if (decalInfo.PaintMode == DecalPaintMode.Paint)
+                {
+                    return decalInfo.Texture;
+                }
+                if (decalInfo.PaintMode == DecalPaintMode.Erase)
+                {
+                    return "eraser";
+                }
+                throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
+            }
+
             var labelX = textureIconX + iconSize + smallMargin + 2;
-            var decalName = string.IsNullOrWhiteSpace(decalInfo.Name) ? decalInfo.Texture : decalInfo.Name;
+            var decalName = getDecalName(decalInfo);
             GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalName, CamoStyle.TextureNameStyle);
 
             var lineX = x + boxWidth - (smallMargin + buttonHeight) * 4;
@@ -745,19 +807,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawDecalEditUI_Header(x, ref y, decalIndex, decalInfo, decal);
             DrawDecalEditUI_Transform(x, ref y, decalIndex, decalInfo, decal);
 
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-            y += smallMargin + bigMargin;
-
-            DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
-            y += buttonHeight + mediumMargin;
-
-            if (DecalSettingType == DecalSettingType.Texture)
+            if (decalInfo.PaintMode == DecalPaintMode.Paint)
             {
-                DrawDecalEditUI_Texture(x, ref y, decalIndex, decalInfo, decal);
-            }
-            else
-            {
-                DrawDecalEditUI_Mask(x, ref y, decalIndex, decalInfo, decal);
+                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+                y += smallMargin + bigMargin;
+
+                DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
+                y += buttonHeight + mediumMargin;
+
+                if (DecalSettingType == DecalSettingType.Texture)
+                {
+                    DrawDecalEditUI_Texture(x, ref y, decalIndex, decalInfo, decal);
+                }
+                else
+                {
+                    DrawDecalEditUI_Mask(x, ref y, decalIndex, decalInfo, decal);
+                }
             }
 
 			GUI.DragWindow();
@@ -766,8 +831,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void DrawDecalEditUI_Header(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             {
+                static int getButtonsCount(DecalInfo decalInfo)
+                {
+                    if (decalInfo.PaintMode == DecalPaintMode.Paint)
+                    {
+                       return 3;
+                    }
+                    if (decalInfo.PaintMode == DecalPaintMode.Erase)
+                    {
+                        return 1;
+                    }
+                    throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
+                }
+
                 var lineX = x;
-                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * 4;
+                var buttonsCount = getButtonsCount(decalInfo);
+                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * buttonsCount;
                 if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
                 {
                     CurrentlyEditedDecalIndex = default;
@@ -775,32 +854,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 lineX += backButtonWidth + smallMargin;
 
-                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyIcon))
+                if (decalInfo.PaintMode == DecalPaintMode.Paint)
                 {
-                    CopiedDecalInfo = new(decalInfo.GetCopy());
-                }
-                lineX += buttonHeight + smallMargin;
-
-                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PasteIcon))
-                {
-                    if (CopiedDecalInfo.Some(out var copiedDecalInfo))
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyIcon))
                     {
-                        Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
-                        SyncTransformHandle(decalInfo, decal);
+                        CopiedDecalInfo = new(decalInfo.GetCopy());
                     }
-                }
-                lineX += buttonHeight + smallMargin;
+                    lineX += buttonHeight + smallMargin;
 
-                var paintModeIcon = decalInfo.PaintMode switch
-                {
-                    DecalPaintMode.Paint => CamoEditorResources.PaintBrush,
-                    DecalPaintMode.Erase => CamoEditorResources.Eraser,
-                };
-                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), paintModeIcon))
-                {
-                    Plugin.SwitchPaintMode(ItemId, decalIndex, decalInfo);
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PasteIcon))
+                    {
+                        if (CopiedDecalInfo.Some(out var copiedDecalInfo))
+                        {
+                            Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
+                            SyncTransformHandle(decalInfo, decal);
+                        }
+                    }
+                    lineX += buttonHeight + smallMargin;
                 }
-                lineX += buttonHeight + smallMargin;
 
                 var mirrorModeIcon = decalInfo.MirrorMode switch
                 {

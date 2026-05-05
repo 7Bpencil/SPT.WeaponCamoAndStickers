@@ -1,5 +1,6 @@
 Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
+		_StencilPassOperation ("Stencil Pass Operation", Float) = 0
         _MainTex ("Diffuse", 2D) = "white" {}
         _MainTexUV ("Diffuse UV", Vector) = (0, 0, 1, 1)
         _MaskTex ("Mask", 2D) = "white" {}
@@ -26,12 +27,15 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             Stencil {
                 Ref 2
                 ReadMask 3
+                WriteMask 3
                 Comp Equal
+				Pass [_StencilPassOperation]
             }
             CGPROGRAM
 
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_local _ ERASE
 
             struct appdata
             {
@@ -128,7 +132,13 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                 tmp1 = tex2D(_NormalsCopy, tmp1.xy);
                 tmp1.xyz = tmp1.xyz * 2 - 1;
                 tmp2.xyz = rsqrt(dot(inp.texcoord1.xyz, inp.texcoord1.xyz)) * inp.texcoord1.xyz;
+#if ERASE
+                if (dot(tmp1.xyz, tmp2.xyz) < 0) {
+                    discard;
+                }
 
+				o.sv_target = 0;
+#else
                 if (dot(tmp1.xyz, tmp2.xyz) < _MaxAngle) {
                     discard;
                 }
@@ -144,7 +154,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                 tmp1.yzw = tmp1.yzw + _Temperature.www;
                 o.sv_target.xyz = tmp1.xxx ? tmp1.yzw : tmp0.xyz;
                 o.sv_target.w = tmp0.w;
-
+#endif
                 return o;
             }
             ENDCG

@@ -73,7 +73,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         Paint,
         Erase,
-        MODES_COUNT,
     }
 
     public enum DecalMirrorMode : byte
@@ -1365,11 +1364,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void SwitchPaintMode(string itemId, int decalIndex, DecalInfo decalInfo)
-        {
-            decalInfo.PaintMode = (DecalPaintMode)(((int)decalInfo.PaintMode + 1) % (int)DecalPaintMode.MODES_COUNT);
-        }
-
         public void SwitchMirrorMode(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             decalInfo.MirrorMode = (DecalMirrorMode)(((int)decalInfo.MirrorMode + 1) % (int)DecalMirrorMode.MODES_COUNT);
@@ -1447,7 +1441,50 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public int AddNewDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        public int AddNewEraserDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        {
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
+            var decalInfo = new DecalInfo()
+            {
+                SchemaVersion = DecalInfo.CurrentSchemaVersion,
+                SaveTime = time,
+                Name = "",
+                Texture = DefaultCamoName,
+                TextureUV = new Vector4(0, 0, 1, 1),
+                TextureAngle = 0,
+                ColorHSVA = new Vector4(0, 0, 1, 1),
+                Mask = DefaultMaskName,
+                MaskUV = new Vector4(0, 0, 1, 1),
+                MaskAngle = 0,
+                LocalPosition = startLocalPosition,
+                LocalEulerAngles = startLocalEulerAngles,
+                LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
+                MaxAngle = 0.4f,
+                IsVisible = true,
+                MirrorMode = DecalMirrorMode.Disabled,
+                PaintMode = DecalPaintMode.Erase,
+            };
+
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                var itemsWithDecals = ItemsWithDecals[itemId];
+                itemsWithDecals.DecalsInfo.Insert(0, decalInfo);
+                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+                {
+                    var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
+                    itemWithDecals.Decals.Insert(0, decal);
+                }
+
+                return 0;
+            }
+            else
+            {
+                return CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+            }
+        }
+
+        public int AddNewPaintDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
@@ -1486,31 +1523,37 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                var decal = CreateDecal(decalInfo, weaponPrefab);
-                var decals = new List<Decal>() { decal };
-                var decalsInfo = new List<DecalInfo>() { decalInfo };
-                var itemsWithDecals = new ItemsWithDecals()
-                {
-                    Items = new Dictionary<int, ItemWithDecals>()
-                    {
-                        {
-                            instanceID,
-                            new ItemWithDecals()
-                            {
-                                WeaponPrefab = weaponPrefab,
-                                Decals = decals,
-                            }
-                        }
-                    },
-                    DecalsInfo = decalsInfo
-                };
-
-                ItemsWithDecals.Add(itemId, itemsWithDecals);
-                WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
-
-                return 0;
+                return CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
             }
         }
+
+        public int CreateNewItemsWithDecals(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, DecalInfo decalInfo)
+        {
+            var decal = CreateDecal(decalInfo, weaponPrefab);
+            var decals = new List<Decal>() { decal };
+            var decalsInfo = new List<DecalInfo>() { decalInfo };
+            var itemsWithDecals = new ItemsWithDecals()
+            {
+                Items = new Dictionary<int, ItemWithDecals>()
+                {
+                    {
+                        instanceID,
+                        new ItemWithDecals()
+                        {
+                            WeaponPrefab = weaponPrefab,
+                            Decals = decals,
+                        }
+                    }
+                },
+                DecalsInfo = decalsInfo
+            };
+
+            ItemsWithDecals.Add(itemId, itemsWithDecals);
+            WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+
+            return 0;
+        }
+
 
         // mirror around YZ plane
         public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
