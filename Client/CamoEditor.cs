@@ -44,6 +44,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorDisabled;
         public Texture2D MirrorEnabled;
         public Texture2D MirrorEnabledNoFilp;
+        public Texture2D PaintBrush;
+        public Texture2D Eraser;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -80,6 +82,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
+            PaintBrush = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paintbrush.png");
+            Eraser = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/eraser.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
@@ -730,7 +734,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             {
                 var lineX = x;
-                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * 3;
+                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * 4;
                 if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
                 {
                     CurrentlyEditedDecalIndex = default;
@@ -751,6 +755,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
                         SyncTransformHandle(decalInfo, decal);
                     }
+                }
+                lineX += buttonHeight + smallMargin;
+
+                var paintModeIcon = decalInfo.PaintMode switch
+                {
+                    DecalPaintMode.Paint => CamoEditorResources.PaintBrush,
+                    DecalPaintMode.Erase => CamoEditorResources.Eraser,
+                };
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), paintModeIcon))
+                {
+                    Plugin.SwitchPaintMode(ItemId, decalIndex, decalInfo);
                 }
                 lineX += buttonHeight + smallMargin;
 

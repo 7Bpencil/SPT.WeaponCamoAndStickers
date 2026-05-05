@@ -42,7 +42,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 6;
+        public const int CurrentSchemaVersion = 7;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -60,12 +60,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public float MaxAngle;
         public bool IsVisible;
         public DecalMirrorMode MirrorMode;
+        public DecalPaintMode PaintMode;
 
         public DecalInfo GetCopy()
         {
             // this is enough for now
             return (DecalInfo)MemberwiseClone();
         }
+    }
+
+    public enum DecalPaintMode : byte
+    {
+        Paint,
+        Erase,
+        MODES_COUNT,
     }
 
     public enum DecalMirrorMode : byte
@@ -853,6 +861,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 6;
                     decalInfo.MirrorMode = DecalMirrorMode.Disabled;
                 }
+                if (decalInfo.SchemaVersion == 6)
+                {
+                    decalInfo.SchemaVersion = 7;
+                    decalInfo.PaintMode = DecalPaintMode.Paint;
+                }
             }
         }
 
@@ -1352,6 +1365,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public void SwitchPaintMode(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.PaintMode = (DecalPaintMode)(((int)decalInfo.PaintMode + 1) % (int)DecalPaintMode.MODES_COUNT);
+        }
+
         public void SwitchMirrorMode(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             decalInfo.MirrorMode = (DecalMirrorMode)(((int)decalInfo.MirrorMode + 1) % (int)DecalMirrorMode.MODES_COUNT);
@@ -1451,6 +1469,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
+                PaintMode = DecalPaintMode.Paint,
             };
 
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -2391,6 +2410,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
+                PaintMode = DecalPaintMode.Paint,
             };
         }
     }
