@@ -12,14 +12,14 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
         Pass {
             Name ""
             Tags { "LIGHTMODE" = "DEFERRED" }
-            Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
+            Blend SrcAlpha OneMinusSrcAlpha
             Cull Off
             ZClip False
             ZTest Always
             ZWrite Off
 
             // _StencilType:
-            // 1: equimpent (clothes/helmet/armor/rig/backpack)
+            // 1: equipment (clothes/helmet/armor/rig/backpack)
             // 2: hands/weapon (but we patch hands to be 1)
             // 0: everything else
 
@@ -27,9 +27,6 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                 Ref 2
                 ReadMask 3
                 Comp Equal
-                Pass Keep
-                Fail Keep
-                ZFail Keep
             }
             CGPROGRAM
 
@@ -46,10 +43,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                 float4 position : SV_POSITION;
                 float4 texcoord2 : TEXCOORD2;
                 float3 texcoord3 : TEXCOORD3;
-                float2 texcoord : TEXCOORD;
                 float3 texcoord1 : TEXCOORD1;
-                float3 texcoord6 : TEXCOORD6;
-                float3 texcoord4 : TEXCOORD4;
             };
 
             struct fout
@@ -72,11 +66,8 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 
                 float3 viewPos = mul(unity_MatrixV, worldPos).xyz;
                 o.texcoord3 = viewPos * float3(-1.0, -1.0, 1.0);
-                o.texcoord = v.vertex.xz + 0.5;
 
                 o.texcoord1 = unity_ObjectToWorld._m01_m11_m21;
-                o.texcoord6 = unity_ObjectToWorld._m01_m11_m21;
-                o.texcoord4 = unity_ObjectToWorld._m00_m10_m20;
 
                 return o;
             }
