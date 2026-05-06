@@ -1365,13 +1365,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
             var decalInfoDuplicate = decalInfo.GetCopy();
             var newDecalIndex = decalIndex + 1;
-            itemsWithDecals.DecalsInfo.Insert(newDecalIndex, decalInfoDuplicate);
-            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
-            {
-                var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
-                itemWithDecals.Decals.Insert(newDecalIndex, decal);
-            }
-
+            SpawnNewDecalOnItems(itemId, newDecalIndex, decalInfoDuplicate);
             return newDecalIndex;
         }
 
@@ -1494,20 +1488,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (ItemsWithDecals.ContainsKey(itemId))
             {
-                var itemsWithDecals = ItemsWithDecals[itemId];
-                itemsWithDecals.DecalsInfo.Insert(0, decalInfo);
-                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
-                {
-                    var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
-                    itemWithDecals.Decals.Insert(0, decal);
-                }
-
-                return 0;
+                SpawnNewDecalOnItems(itemId, 0, decalInfo);
             }
             else
             {
-                return CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
             }
+
+            return 0;
         }
 
         public int AddNewPaintDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
@@ -1538,22 +1526,29 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (ItemsWithDecals.ContainsKey(itemId))
             {
                 var itemsWithDecals = ItemsWithDecals[itemId];
-                itemsWithDecals.DecalsInfo.Add(decalInfo);
-                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
-                {
-                    var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
-                    itemWithDecals.Decals.Add(decal);
-                }
-
-                return itemsWithDecals.DecalsInfo.Count - 1;
+                var decalIndex = itemsWithDecals.DecalsInfo.Count;
+                SpawnNewDecalOnItems(itemId, decalIndex, decalInfo);
+                return decalIndex;
             }
             else
             {
-                return CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+                return 0;
             }
         }
 
-        public int CreateNewItemsWithDecals(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, DecalInfo decalInfo)
+        public void SpawnNewDecalOnItems(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfo);
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+            {
+                var decal = CreateDecal(decalInfo, itemWithDecals.WeaponPrefab);
+                itemWithDecals.Decals.Insert(decalIndex, decal);
+            }
+        }
+
+        public void CreateNewItemsWithDecals(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, DecalInfo decalInfo)
         {
             var decal = CreateDecal(decalInfo, weaponPrefab);
             var decals = new List<Decal>() { decal };
@@ -1576,10 +1571,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             ItemsWithDecals.Add(itemId, itemsWithDecals);
             WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
-
-            return 0;
         }
-
 
         // mirror around YZ plane
         public void MirrorLeftRight(string itemId, int decalIndex, DecalInfo decalInfo)
