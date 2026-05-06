@@ -940,6 +940,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        // TODO this sometimes panics, no idea why
         public (DecalInfo, Decal) GetDecal(string itemId, int instanceID, int decalIndex)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
