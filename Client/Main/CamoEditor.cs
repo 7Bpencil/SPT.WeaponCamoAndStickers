@@ -45,7 +45,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorDisabled;
         public Texture2D MirrorEnabled;
         public Texture2D MirrorEnabledNoFilp;
-        public Texture2D Eraser;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -83,7 +82,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
-            Eraser = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/eraser.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
@@ -98,7 +96,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public GUIStyle TextFieldStyle;
 		public GUIStyle ColorPickerButtonStyle;
         public GUIStyle DirectoryButtonStyle;
-        public GUIStyle EraserButtonStyle;
 
         public CamoStyle(GUISkin currentSkin)
         {
@@ -145,11 +142,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DirectoryButtonStyle = new(currentSkin.button)
             {
                 alignment = TextAnchor.MiddleLeft
-            };
-
-            EraserButtonStyle = new(currentSkin.button)
-            {
-                padding = new(15, 15, 15, 15)
             };
         }
     }
@@ -370,11 +362,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             if (decalInfo.PaintMode == DecalPaintMode.Erase)
             {
+                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
                 return
                     bigMargin +
                     buttonHeight + bigMargin + // back button
                     buttonHeight + mediumMargin + // decal name
-                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin; // position, rotation, scale, flip
+                    4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
+                    smallMargin + bigMargin + // separator
+                    buttonHeight + smallMargin + // UV offset
+                    buttonHeight + smallMargin + // UV angle
+                    buttonHeight + bigMargin + // UV tiling
+                    buttonHeight + bigMargin + // max angle
+                    iconSize + bigMargin + // icon
+                    smallMargin + bigMargin + // separator
+                    visibleHeight + bigMargin; // icons grid
             }
             throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
         }
@@ -651,28 +652,29 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
         {
             var textureData = Plugin.GetTextureData(decalInfo.Texture);
+            var maskData = Plugin.GetTextureData(decalInfo.Mask);
 
             GUI.Box(new Rect(x, y, boxWidth, boxHeight), default(string));
 
             var topLineY = y + smallMargin;
             var bottomLineY = topLineY + buttonHeight + smallMargin;
 
-            (Texture2D, GUIStyle) getDecalIcon(DecalInfo decalInfo, DecalTextureData textureData)
+            Texture2D getDecalIcon()
             {
                 if (decalInfo.PaintMode == DecalPaintMode.Paint)
                 {
-                    return (textureData.Preview, GUI.skin.button);
+                    return textureData.Preview;
                 }
                 if (decalInfo.PaintMode == DecalPaintMode.Erase)
                 {
-                    return (CamoEditorResources.Eraser, CamoStyle.EraserButtonStyle);
+                    return maskData.Preview;
                 }
                 throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
             }
 
             var textureIconX = x + smallMargin;
-            var (decalIcon, decalIconStyle) = getDecalIcon(decalInfo, textureData);
-            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon, decalIconStyle))
+            var decalIcon = getDecalIcon();
+            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon))
             {
                 SetCurrentlyEditedDecal(decalIndex, textureData.Type);
             }
@@ -689,7 +691,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 if (decalInfo.PaintMode == DecalPaintMode.Erase)
                 {
-                    return "eraser";
+                    return decalInfo.Mask;
                 }
                 throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
             }
@@ -828,11 +830,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawDecalEditUI_Header(x, ref y, decalIndex, decalInfo, decal);
             DrawDecalEditUI_Transform(x, ref y, decalIndex, decalInfo, decal);
 
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
             if (decalInfo.PaintMode == DecalPaintMode.Paint)
             {
-                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-                y += smallMargin + bigMargin;
-
                 DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
                 y += buttonHeight + mediumMargin;
 
@@ -844,6 +846,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     DrawDecalEditUI_Mask(x, ref y, decalIndex, decalInfo, decal);
                 }
+            }
+            if (decalInfo.PaintMode == DecalPaintMode.Erase)
+            {
+                DrawDecalEditUI_Mask_Erase(x, ref y, decalIndex, decalInfo, decal);
             }
 
 			GUI.DragWindow();
@@ -1233,6 +1239,101 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
         }
 
+        private void DrawDecalEditUI_Mask_Erase(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        {
+            var maskData = Plugin.GetTextureData(decalInfo.Mask);
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVOffsetIcon))
+            {
+                SetupTransformHandle(HandleType.MaskOffset, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVAngleIcon))
+            {
+                SetupTransformHandle(HandleType.MaskAngle, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoStyle.LabelStyleName);
+            }
+            if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
+            {
+                Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle(decalInfo, decal);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditMaskUVTilingIcon))
+            {
+                SetupTransformHandle(HandleType.MaskTiling, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.z:F3}", CamoStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoStyle.LabelStyleName);
+            }
+            {
+                var valueX = x + boxWidth - halfBoxWidthButton;
+                if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
+                {
+                    Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
+                    SyncTransformHandle(decalInfo, decal);
+                }
+            }
+            y += buttonHeight + bigMargin;
+
+            {
+                var sliderWidth = 212;
+
+                var labelX = x;
+                var sliderX = labelX + nameWidth + smallMargin - 42;
+                var valueX = sliderX + sliderWidth + smallMargin;
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Cutoff:", CamoStyle.LabelStyleName);
+                var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
+                if (newMaxAngle != decalInfo.MaxAngle)
+                {
+                    decalInfo.MaxAngle = newMaxAngle;
+                    Plugin.ApplyMaxAngle(ItemId, decalIndex, decalInfo);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoStyle.LabelStyleValue);
+
+                y += buttonHeight + bigMargin;
+            }
+
+            {
+                GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
+
+                var labelX = x + iconSize + smallMargin + 12;
+                GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoStyle.TextureNameStyle);
+
+                y += iconSize + bigMargin;
+            }
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
+        }
+
         public void SetupTransformHandle(HandleType handleType)
         {
             if (CurrentlyEditedDecalIndex.Some(out var decalIndex))
@@ -1467,7 +1568,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
-                    GUI.DrawTexture(new Rect(xi + 4, yi + 4, 16, 16), CamoEditorResources.PlayIcon);
+                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
                 }
             }
 

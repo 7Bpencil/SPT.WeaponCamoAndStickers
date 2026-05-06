@@ -137,6 +137,13 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                     discard;
                 }
 
+                float2 maskUV = transformUV(tmp0.xz, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
+                tmp0 = tex2D(_MaskTex, maskUV);
+
+				if (tmp0.a < _MaxAngle) {
+					discard;
+				}
+
 				o.sv_target = 0;
 #else
                 if (dot(tmp1.xyz, tmp2.xyz) < _MaxAngle) {
