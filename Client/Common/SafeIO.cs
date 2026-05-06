@@ -87,5 +87,24 @@ namespace SevenBoldPencil.Common
                 return [];
             }
         }
+
+		public static char[] InvalidFileNameChars = Path.GetInvalidFileNameChars();
+		public static bool IsValidFileName(string fileName)
+		{
+		    if (string.IsNullOrWhiteSpace(fileName))
+			{
+		        return false;
+			}
+			if (fileName.IndexOfAny(InvalidFileNameChars) >= 0)
+			{
+				return false;
+			}
+			if (fileName.StartsWith(" "))
+			{
+				return false;
+			}
+
+			return true;
+		}
 	}
 }

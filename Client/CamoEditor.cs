@@ -37,6 +37,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D PasteIcon;
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
+        public Texture2D SaveErrorIcon;
         public Texture2D ColorWheelHSV;
         public Texture2D PlayIcon;
         public Texture2D HiddenIcon;
@@ -74,6 +75,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PasteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
+            SaveErrorIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette-error.png");
             ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
             PlayIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/play-icon.png");
             HiddenIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hidden.png");
@@ -173,6 +175,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public bool IsOpened;
         public bool ArePresetsOpened;
         public string CurrentPresetName;
+        public bool IsCurrentPresetNameValid;
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedDecalIndex;
@@ -494,17 +497,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             y += bigMargin;
 
+            // save button turns green only if there is valid input,
+            // text field goes red only if there is actual invalid input, stays default if no input
+            var previousBackgroundColor = GUI.backgroundColor;
+            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName) && !IsCurrentPresetNameValid;
+            var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
+
+            GUI.backgroundColor = buttonBackgroundColor;
             var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            CurrentPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoStyle.TextFieldStyle);
+            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoStyle.TextFieldStyle);
+            GUI.backgroundColor = previousBackgroundColor;
+
+            if (newPresetName != CurrentPresetName)
+            {
+                CurrentPresetName = newPresetName;
+                IsCurrentPresetNameValid = SafeIO.IsValidFileName(newPresetName);
+            }
             if (string.IsNullOrWhiteSpace(CurrentPresetName))
             {
                 GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter preset name", CamoStyle.LabelStyleName);
             }
 
             var saveX = x + boxWidth - buttonHeight;
-            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), CamoEditorResources.SaveIcon))
+            var saveIcon = IsCurrentPresetNameValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
+            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
             {
-                Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName);
+                if (IsCurrentPresetNameValid)
+                {
+                    Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName);
+                }
             }
             y += buttonHeight + mediumMargin;
 

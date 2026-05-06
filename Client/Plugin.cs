@@ -1945,6 +1945,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 IsOpened = false,
                 IsColorPickerOpened = false,
                 CurrentPresetName = "",
+                IsCurrentPresetNameValid = false,
                 WindowRect = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect()
             });
         }
