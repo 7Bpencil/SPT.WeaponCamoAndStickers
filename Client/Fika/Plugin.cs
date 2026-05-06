@@ -5,7 +5,6 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using BepInEx;
 using Comfort.Common;
 using Fika.Core.Main.Utils;
 using Fika.Core.Modding;

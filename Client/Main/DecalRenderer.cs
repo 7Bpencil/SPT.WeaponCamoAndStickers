@@ -5,7 +5,6 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using SevenBoldPencil.Common;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
