@@ -18,15 +18,12 @@ using MainPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 {
-    [BepInPlugin("7Bpencil.WeaponCamoAndStickers.Fika", "7Bpencil.WeaponCamoAndStickers.Fika", "1.2.0")]
-    [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
-    [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.HardDependency)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin
 	{
 		public Dictionary<string, DecalSnapshotPacket> PlayersDecals;
 		public List<DecalSnapshotPacket> BotsDecals;
 
-        private void Awake()
+        public void Awake()
 		{
 			PlayersDecals = new();
 			BotsDecals = new();

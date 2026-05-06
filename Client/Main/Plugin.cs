@@ -6,6 +6,7 @@
 //
 
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
@@ -153,6 +154,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.6.1")]
+    [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string DefaultCamoName = "builtin/camos/default.png";
@@ -284,6 +286,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_GClass926_GetItemIcon().Enable();
             new Patch_GClass928_GetItemHash().Enable();
 
+            TryEnableFikaSupport(assemblyDir);
+
             // TODO
             // maybe apply camo texture on top of diffuse texture?
 
@@ -308,6 +312,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			// TODO
 			// add tooltips on all UI elements
+        }
+
+        public void TryEnableFikaSupport(string mainAssemblyDir)
+        {
+            if (!Chainloader.PluginInfos.ContainsKey("com.fika.core"))
+            {
+                return;
+            }
+
+            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.WeaponCamoAndStickers.Fika.dll");
+            if (!File.Exists(fikaAssemblyPath))
+            {
+                return;
+            }
+
+            var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
+            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.WeaponCamoAndStickers.Fika.Plugin");
+            var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
+            var fikaPlugin = Activator.CreateInstance(fikaPluginType);
+            fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
