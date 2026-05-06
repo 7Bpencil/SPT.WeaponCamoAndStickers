@@ -1376,7 +1376,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyTextureAndMaskInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
         {
-            // why exactly those? ask @Bandoot, he know better
+            // why exactly those? ask @Bandoot, he knows better
 
             // match flip
             decalInfo.LocalScale = Vector3.Scale(decalInfo.LocalScale.Abs(), fromDecalInfo.LocalScale.Sign());
@@ -1393,23 +1393,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             decalInfo.MirrorMode = fromDecalInfo.MirrorMode;
         }
 
-        public void Swap(string itemId, int decalIndexA, int decalIndexB)
+        public void Move(string itemId, int decalIndexOld, int decalIndexNew)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
             var decalsInfo = itemsWithDecals.DecalsInfo;
 
-            // TODO make it correctly wrap
-            if (decalIndexA < 0 || decalIndexA > decalsInfo.Count - 1 ||
-                decalIndexB < 0 || decalIndexB > decalsInfo.Count - 1)
-            {
-                return;
-            }
+            decalIndexNew = (decalsInfo.Count + decalIndexNew) % decalsInfo.Count;
 
-            (decalsInfo[decalIndexA], decalsInfo[decalIndexB]) = (decalsInfo[decalIndexB], decalsInfo[decalIndexA]);
+            // you would think that this can be done with cheap swap operation,
+            // but swap doesnt work correctly when we move first element up or last element down
+
+            var decalInfo = decalsInfo[decalIndexOld];
+            decalsInfo.RemoveAt(decalIndexOld);
+            decalsInfo.Insert(decalIndexNew, decalInfo);
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
                 var decals = itemWithDecals.Decals;
-                (decals[decalIndexA], decals[decalIndexB]) = (decals[decalIndexB], decals[decalIndexA]);
+                var decal = decals[decalIndexOld];
+                decals.RemoveAt(decalIndexOld);
+                decals.Insert(decalIndexNew, decal);
             }
         }
 

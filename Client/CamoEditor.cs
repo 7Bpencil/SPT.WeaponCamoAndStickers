@@ -700,11 +700,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (GUI.Button(new Rect(lineX, topLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveUpIcon))
             {
-                Plugin.Swap(ItemId, decalIndex, decalIndex - 1);
+                Plugin.Move(ItemId, decalIndex, decalIndex - 1);
             }
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveDownIcon))
             {
-                Plugin.Swap(ItemId, decalIndex, decalIndex + 1);
+                Plugin.Move(ItemId, decalIndex, decalIndex + 1);
             }
         }
 
