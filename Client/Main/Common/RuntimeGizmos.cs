@@ -19,17 +19,10 @@ namespace SevenBoldPencil.Common
             public Vector3 End;
         }
 
-        public struct Cube
-        {
-            public Vector3 Position;
-            public Quaternion Rotation;
-            public Vector3 Scale;
-        }
-
         public Material LineMaterial;
         public Vector3[] Vertices = new Vector3[24];
         public List<Line> Lines = new(10);
-        public List<Cube> Cubes = new(10);
+        public List<Matrix4x4> Cubes = new(10);
 
         private void Awake()
         {
@@ -51,9 +44,9 @@ namespace SevenBoldPencil.Common
                 GL.Vertex(line.Start);
                 GL.Vertex(line.End);
             }
-            foreach (var cube in Cubes)
+            foreach (var cubeMatrix in Cubes)
             {
-                var verticesCount = FillCubeVertices(cube.Position, cube.Rotation, cube.Scale, Vertices);
+                var verticesCount = FillCubeVertices(cubeMatrix, Vertices);
                 for (var i = 0; i < verticesCount; i++)
                 {
                     GL.Vertex(Vertices[i]);
@@ -65,43 +58,28 @@ namespace SevenBoldPencil.Common
             Cubes.Clear();
         }
 
-        private static int FillCubeVertices(Vector3 position, Quaternion rotation, Vector3 scale, Vector3[] vertices)
+        private static Vector3[] CubeVertices =
+        [
+            new(-0.5f, -0.5f, -0.5f),
+            new(+0.5f, -0.5f, -0.5f),
+            new(+0.5f, +0.5f, -0.5f),
+            new(-0.5f, +0.5f, -0.5f),
+            new(-0.5f, -0.5f, +0.5f),
+            new(+0.5f, -0.5f, +0.5f),
+            new(+0.5f, +0.5f, +0.5f),
+            new(-0.5f, +0.5f, +0.5f),
+        ];
+
+        private static int FillCubeVertices(in Matrix4x4 trsMatrix, Vector3[] vertices)
         {
-            var size = scale * 0.5f;
-
-            var vertex1 = new Vector3(position.x - size.x, position.y - size.y, position.z - size.z);
-            var vertex2 = new Vector3(position.x + size.x, position.y - size.y, position.z - size.z);
-            var vertex3 = new Vector3(position.x + size.x, position.y + size.y, position.z - size.z);
-            var vertex4 = new Vector3(position.x - size.x, position.y + size.y, position.z - size.z);
-
-            var vertex5 = new Vector3(position.x - size.x, position.y - size.y, position.z + size.z);
-            var vertex6 = new Vector3(position.x + size.x, position.y - size.y, position.z + size.z);
-            var vertex7 = new Vector3(position.x + size.x, position.y + size.y, position.z + size.z);
-            var vertex8 = new Vector3(position.x - size.x, position.y + size.y, position.z + size.z);
-
-            vertex1 = rotation * (vertex1 - position);
-            vertex1 += position;
-
-            vertex2 = rotation * (vertex2 - position);
-            vertex2 += position;
-
-            vertex3 = rotation * (vertex3 - position);
-            vertex3 += position;
-
-            vertex4 = rotation * (vertex4 - position);
-            vertex4 += position;
-
-            vertex5 = rotation * (vertex5 - position);
-            vertex5 += position;
-
-            vertex6 = rotation * (vertex6 - position);
-            vertex6 += position;
-
-            vertex7 = rotation * (vertex7 - position);
-            vertex7 += position;
-
-            vertex8 = rotation * (vertex8 - position);
-            vertex8 += position;
+            var vertex1 = trsMatrix.MultiplyPoint3x4(CubeVertices[0]);
+            var vertex2 = trsMatrix.MultiplyPoint3x4(CubeVertices[1]);
+            var vertex3 = trsMatrix.MultiplyPoint3x4(CubeVertices[2]);
+            var vertex4 = trsMatrix.MultiplyPoint3x4(CubeVertices[3]);
+            var vertex5 = trsMatrix.MultiplyPoint3x4(CubeVertices[4]);
+            var vertex6 = trsMatrix.MultiplyPoint3x4(CubeVertices[5]);
+            var vertex7 = trsMatrix.MultiplyPoint3x4(CubeVertices[6]);
+            var vertex8 = trsMatrix.MultiplyPoint3x4(CubeVertices[7]);
 
             // square
 

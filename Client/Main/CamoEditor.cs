@@ -1629,18 +1629,60 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) && RuntimeGizmos)
             {
                 var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, currentlyEditedDecalIndex);
-                var decalTransform = decal.DecalTransform;
-                var position = decalTransform.position;
-                var scale = decalTransform.lossyScale;
-                var offset = decalTransform.up * (scale.y * 0.5f);
+                var weaponRoot = Plugin.GetWeaponRoot(ItemId, InstanceID);
 
-                RuntimeGizmos.Cubes.Add(new RuntimeGizmos.Cube()
-                {
-                    Position = position - offset,
-                    Rotation = decalTransform.rotation,
-                    Scale = scale,
-                });
+				switch (decalInfo.MirrorMode)
+				{
+					case DecalMirrorMode.Disabled:
+					{
+						DrawDecal(decal, RuntimeGizmos);
+						break;
+					}
+					case DecalMirrorMode.Enabled:
+					{
+						DrawDecal(decal, RuntimeGizmos);
+						DrawDecalMirrored(decal, weaponRoot, RuntimeGizmos);
+						break;
+					}
+					case DecalMirrorMode.EnabledNoFlip:
+					{
+						DrawDecal(decal, RuntimeGizmos);
+						DrawDecalMirrored(decal, weaponRoot, RuntimeGizmos);
+						break;
+					}
+				}
             }
+        }
+
+		private void DrawDecal(Decal decal, RuntimeGizmos runtimeGizmos)
+		{
+			DrawDecal(decal.DecalTransform.localToWorldMatrix, runtimeGizmos);
+		}
+
+		private void DrawDecalMirrored(Decal decal, Transform weaponRoot, RuntimeGizmos runtimeGizmos)
+		{
+			var localPosition = decal.DecalTransform.localPosition;
+			var localRotation = decal.DecalTransform.localRotation;
+			var localScale = decal.DecalTransform.localScale;
+
+            // horizontal flip is irrelevant in wireframe
+			Plugin.MirrorLeftRight(ref localPosition, ref localRotation, ref localScale);
+
+			var localMatrix = Matrix4x4.TRS(localPosition, localRotation, localScale);
+			var localToWorldMatrix = weaponRoot.localToWorldMatrix * localMatrix;
+
+			DrawDecal(localToWorldMatrix, runtimeGizmos);
+		}
+
+        public void DrawDecal(in Matrix4x4 localToWorldMatrix, RuntimeGizmos runtimeGizmos)
+        {
+			// its easier to accurately place decal when
+			// its transform handle is located on the face
+			// of projector volume, instead of geometric center.
+
+			var offset = new Vector3(0, -0.5f, 0);
+			var resultMatrix = localToWorldMatrix * Matrix4x4.Translate(offset);
+            RuntimeGizmos.Cubes.Add(resultMatrix);
         }
     }
 }
