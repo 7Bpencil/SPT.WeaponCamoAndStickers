@@ -308,7 +308,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // clean all orphan items
 
 			// TODO
-			// instancing
+			// instancing: not really possible in Unity on D3D11 (no bindless textures)
 
 			// TODO
 			// add tooltips on all UI elements
