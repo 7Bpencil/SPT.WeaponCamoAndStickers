@@ -184,7 +184,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // brace for imGUI shitshow
 
         public const int iconColumns = 5;
-        public const int maxIconRows = 5;
         public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
         public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
         public const int maxPresetsVisible = 9;
@@ -200,7 +199,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
         public const int buttonHeight = 32;
         public const int iconSize = buttonHeight * 2 + smallMargin;
-        public const int maxIconsVisibleHeight = maxIconRows * (iconSize + smallMargin) - smallMargin;
+        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxEraseMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
@@ -323,7 +324,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (DecalSettingType == DecalSettingType.Texture)
                 {
-                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu);
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu, maxTextureIconsVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + bigMargin + // back button
@@ -344,7 +345,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
-                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxMaskIconsVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + bigMargin + // back button
@@ -362,7 +363,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             if (decalInfo.PaintMode == DecalPaintMode.Erase)
             {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask);
+                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
                 return
                     bigMargin +
                     buttonHeight + bigMargin + // back button
@@ -380,13 +381,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
         }
 
-        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(DecalTextureType decalTextureType)
+        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
-            return CalculateTexturesDirectoryHeight(texturesDirectory);
+            return CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
         }
 
-        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory)
+        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory, int maxIconsVisibleHeight)
         {
             var totalHeight = 0;
             CalculateTexturesDirectoryHeight(ref totalHeight, texturesDirectory, false);
@@ -1160,7 +1161,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTypeMenu);
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTypeMenu, maxTextureIconsVisibleHeight);
         }
 
         private void DrawDecalEditUI_Mask(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1236,7 +1237,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxMaskIconsVisibleHeight);
         }
 
         private void DrawDecalEditUI_Mask_Erase(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1331,7 +1332,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask);
+            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
         }
 
         public void SetupTransformHandle(HandleType handleType)
@@ -1491,11 +1492,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType)
+        private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
 
-            var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory);
+            var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
 
