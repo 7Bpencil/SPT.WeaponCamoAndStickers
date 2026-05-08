@@ -1133,7 +1133,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoStyle.LabelStyleValue);
 
 
-                GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "MaxAngle:", CamoStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "Max Angle:", CamoStyle.LabelStyleName);
                 var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, maxAngleY + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
@@ -1308,7 +1308,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var sliderX = labelX + nameWidth + smallMargin - 42;
                 var valueX = sliderX + sliderWidth + smallMargin;
 
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Cutoff:", CamoStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Max Alpha:", CamoStyle.LabelStyleName);
                 var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
