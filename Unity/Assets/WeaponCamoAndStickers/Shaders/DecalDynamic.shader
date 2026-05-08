@@ -14,6 +14,12 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             Name ""
             Tags { "LIGHTMODE" = "DEFERRED" }
             Blend SrcAlpha OneMinusSrcAlpha
+
+			// this combination prevents decal disappearing
+			// when camera gets inside decal cube and/or
+			// really close to weapon mesh and/or
+			// is viewed under really acute grazing angles
+
             Cull Off
             ZClip False
             ZTest Always
