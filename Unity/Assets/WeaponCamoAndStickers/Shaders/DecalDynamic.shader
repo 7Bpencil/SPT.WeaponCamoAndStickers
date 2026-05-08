@@ -1,6 +1,6 @@
 Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
-		_StencilPassOperation ("Stencil Pass Operation", Float) = 0
+		_StencilPassOperation ("Stencil Pass Operation", Float) = 0 // this has to be float, integer doesn't work
         _MainTex ("Diffuse", 2D) = "white" {}
         _MainTexUV ("Diffuse UV", Vector) = (0, 0, 1, 1)
         _MaskTex ("Mask", 2D) = "white" {}
@@ -143,7 +143,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 
                 float4 visibleColor = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
 
-				if (_ThermalVisionOn > 0) // branching on uniform is fine, right?
+				if (_ThermalVisionOn > 0)
 				{
 	                o.sv_target.xyz = clamp(visibleColor.xyz * _Temperature.z, _Temperature.x, _Temperature.y) + _Temperature.w;
 				}
