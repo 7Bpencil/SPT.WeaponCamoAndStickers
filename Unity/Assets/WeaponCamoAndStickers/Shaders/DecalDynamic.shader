@@ -33,6 +33,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             }
             CGPROGRAM
 
+			#include "UnityCG.cginc"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_local _ ERASE
@@ -45,9 +46,9 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             struct v2f
             {
                 float4 position : SV_POSITION;
-                float4 texcoord2 : TEXCOORD2;
-                float3 texcoord3 : TEXCOORD3;
-                float3 texcoord1 : TEXCOORD1;
+                float4 screenPosition : TEXCOORD0;
+                float3 worldPositionVS : TEXCOORD1;
+                float3 objectAxisY : TEXCOORD2;
             };
 
             struct fout
@@ -59,19 +60,11 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             {
                 v2f o;
 
-                float4 worldPos = mul(unity_ObjectToWorld, v.vertex);
-                float4 clipPos = mul(unity_MatrixVP, worldPos);
-
-                o.position = clipPos;
-                o.texcoord2.zw = clipPos.zw;
-
-                clipPos.y *= _ProjectionParams.x;
-                o.texcoord2.xy = (clipPos.xy + clipPos.ww) * 0.5;
-
-                float3 viewPos = mul(unity_MatrixV, worldPos).xyz;
-                o.texcoord3 = viewPos * float3(-1.0, -1.0, 1.0);
-
-                o.texcoord1 = unity_ObjectToWorld._m01_m11_m21;
+                float4 worldPosition = mul(unity_ObjectToWorld, v.vertex);
+                o.position = mul(unity_MatrixVP, worldPosition);
+                o.screenPosition = ComputeScreenPos(o.position);
+                o.worldPositionVS = mul(unity_MatrixV, worldPosition).xyz * float3(-1, -1, 1);
+                o.objectAxisY = unity_ObjectToWorld._m01_m11_m21;
 
                 return o;
             }
@@ -111,61 +104,53 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 			    return uv;
 			}
 
-            fout frag(v2f inp)
+            fout frag(v2f i)
             {
                 fout o;
-                float4 tmp0;
-                float4 tmp1;
-                float4 tmp2;
 
-                tmp1.xy = inp.texcoord2.xy / inp.texcoord2.ww;
-                tmp2 = tex2D(_CameraDepthTexture, tmp1.xy);
-                tmp0.xyz = (_ProjectionParams.z / inp.texcoord3.z) * inp.texcoord3.xyz;
-                tmp0.xyz *= 1 / (_ZBufferParams.x * tmp2.x + _ZBufferParams.y);
-                tmp0.xyz = mul(unity_CameraToWorld, float4(tmp0.xyz, 1));
-                tmp0.xyz = mul(unity_WorldToObject, float4(tmp0.xyz, 1));
+                float2 screenUV = i.screenPosition.xy / i.screenPosition.ww;
+                float3 viewRay = i.worldPositionVS * (_ProjectionParams.z / i.worldPositionVS.z);
+                float3 viewPosition = viewRay * Linear01Depth(tex2D(_CameraDepthTexture, screenUV));
+				float3 worldPosition = mul(unity_CameraToWorld, float4(viewPosition, 1));
+				float3 localPosition = mul(unity_WorldToObject, float4(worldPosition, 1));
 
-                if (any(abs(tmp0.xyz) > 0.5)) {
-                    discard;
-                }
+				clip(0.5 - abs(localPosition));
 
-                tmp1 = tex2D(_NormalsCopy, tmp1.xy);
-                tmp1.xyz = tmp1.xyz * 2 - 1;
-                tmp2.xyz = rsqrt(dot(inp.texcoord1.xyz, inp.texcoord1.xyz)) * inp.texcoord1.xyz;
+                float3 normal = tex2D(_NormalsCopy, screenUV) * 2 - 1;
+                float3 objectAxisY = normalize(i.objectAxisY);
 #if ERASE
-                if (dot(tmp1.xyz, tmp2.xyz) < 0) {
-                    discard;
-                }
+				clip(dot(normal, objectAxisY));
 
-                float2 maskUV = transformUV(tmp0.xz, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
-                tmp0 = tex2D(_MaskTex, maskUV);
+				float2 uvY = localPosition.xz;
+                float2 maskUV = transformUV(uvY, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
+                float maskAlpha = tex2D(_MaskTex, maskUV).a;
 
-				if (tmp0.a < _MaxAngle) {
-					discard;
-				}
+				clip(maskAlpha - _MaxAngle);
 
 				o.sv_target = 0;
 #else
-                if (dot(tmp1.xyz, tmp2.xyz) < _MaxAngle) {
-                    discard;
-                }
+				clip(dot(normal, objectAxisY) - _MaxAngle);
 
-                float2 mainUV = transformUV(tmp0.xz, _MainTexRotation.xy, _MainTexUV.xy, _MainTexUV.zw, _AspectRatio);
-                float2 maskUV = transformUV(tmp0.xz, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
+				float2 uvY = localPosition.xz;
+                float2 mainUV = transformUV(uvY, _MainTexRotation.xy, _MainTexUV.xy, _MainTexUV.zw, _AspectRatio);
+                float2 maskUV = transformUV(uvY, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
 
-                tmp0 = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
-                tmp1.x = _ThermalVisionOn > 0;
-                tmp1.yzw = tmp0.xyz * _Temperature.zzz;
-                tmp1.yzw = max(tmp1.yzw, _Temperature.xxx);
-                tmp1.yzw = min(tmp1.yzw, _Temperature.yyy);
-                tmp1.yzw = tmp1.yzw + _Temperature.www;
-                o.sv_target.xyz = tmp1.xxx ? tmp1.yzw : tmp0.xyz;
-                o.sv_target.w = tmp0.w;
+                float4 visibleColor = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
+
+				if (_ThermalVisionOn > 0) // branching on uniform is fine, right?
+				{
+	                o.sv_target.xyz = clamp(visibleColor.xyz * _Temperature.z, _Temperature.x, _Temperature.y) + _Temperature.w;
+				}
+				else
+				{
+	                o.sv_target.xyz = visibleColor.xyz;
+				}
+
+                o.sv_target.w = visibleColor.w;
 #endif
                 return o;
             }
             ENDCG
-
         }
     }
 }
