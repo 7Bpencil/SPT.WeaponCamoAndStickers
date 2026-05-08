@@ -373,7 +373,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     buttonHeight + smallMargin + // UV offset
                     buttonHeight + smallMargin + // UV angle
                     buttonHeight + bigMargin + // UV tiling
-                    buttonHeight + bigMargin + // max angle
+                    buttonHeight + bigMargin + // max alpha
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
                     visibleHeight + bigMargin; // icons grid
