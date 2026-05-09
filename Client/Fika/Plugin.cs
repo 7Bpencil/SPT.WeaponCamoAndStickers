@@ -20,12 +20,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
     public class Plugin
 	{
 		public Dictionary<string, DecalSnapshotPacket> PlayersDecals;
-		public List<DecalSnapshotPacket> BotsDecals;
 
         public void Awake()
 		{
 			PlayersDecals = new();
-			BotsDecals = new();
 
 			FikaEventDispatcher.SubscribeEvent<FikaNetworkManagerCreatedEvent>(OnFikaNetworkManagerCreated);
 			FikaEventDispatcher.SubscribeEvent<FikaGameCreatedEvent>(OnFikaGameCreatedEvent);
@@ -41,7 +39,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
             if (FikaBackendUtils.IsServer)
             {
-				MainPlugin.Instance.OnBotWeaponCamoGenerated = OnBotWeaponCamoGenerated;
                 e.Manager.RegisterPacket<DecalSnapshotPacket, NetPeer>(OnDecalSnapshotReceivedServer);
             }
             else
@@ -56,7 +53,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 					PlayersDecals.Add(decals.ProfileId, decals);
 				}
 			}
-			MainPlugin.Instance.IsFikaServer = new(FikaBackendUtils.IsServer);
 		}
 
 		private DecalSnapshotPacket GetLocalDecals()
@@ -70,18 +66,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 			};
 
 			return decals;
-		}
-
-		private void OnBotWeaponCamoGenerated(Dictionary<string, List<DecalInfo>> itemWithDecals)
-		{
-			var decals = new DecalSnapshotPacket()
-			{
-		        ProfileId = null,
-		        ItemDecals = itemWithDecals,
-			};
-			BotsDecals.Add(decals);
-
-			Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
 		}
 
 		private void OnFikaGameCreatedEvent(FikaGameCreatedEvent e)
@@ -101,11 +85,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 			if (FikaBackendUtils.IsServer)
 			{
 	            foreach (var cached in PlayersDecals.Values)
-	            {
-	                var packet = cached;
-	                e.NetworkManager.SendDataToPeer(ref packet, DeliveryMethod.ReliableUnordered, e.Peer);
-	            }
-	            foreach (var cached in BotsDecals)
 	            {
 	                var packet = cached;
 	                e.NetworkManager.SendDataToPeer(ref packet, DeliveryMethod.ReliableUnordered, e.Peer);
@@ -148,12 +127,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 		private void OnFikaNetworkManagerDestroyedEvent(FikaNetworkManagerDestroyedEvent e)
 		{
 			PlayersDecals.Clear();
-			BotsDecals.Clear();
 
 			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
-			MainPlugin.Instance.IsFikaServer = default;
-			MainPlugin.Instance.OnBotWeaponCamoGenerated = default;
-	        MainPlugin.Instance.WeaponsWaitingForRemoteCamo.Clear();
 		}
 	}
 }
