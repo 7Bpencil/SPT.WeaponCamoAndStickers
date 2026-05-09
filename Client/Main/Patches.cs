@@ -28,6 +28,22 @@ using UnityEngine;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
+	public struct WeaponPreview_Proxy
+	{
+		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
+		private static TypedFieldInfo<WeaponPreview, Item> __item_0 = new("item_0");
+
+		public GameObject gameObject_0 { get { return __gameObject_0.Get(__instance); } set { __gameObject_0.Set(__instance, value); } }
+		public Item item_0 { get { return __item_0.Get(__instance); } set { __item_0.Set(__instance, value); } }
+
+        private WeaponPreview __instance;
+
+        public WeaponPreview_Proxy(WeaponPreview instance)
+        {
+            __instance = instance;
+        }
+	}
+
 	public class Patch_PoolManagerClass_CreateItemAsync : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
@@ -57,6 +73,20 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 		}
 	}
 
+	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(AssetPoolObject), nameof(AssetPoolObject.ReturnToPool));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(AssetPoolObject __instance)
+		{
+			Plugin.Instance.OnItemDestroyed(__instance);
+		}
+	}
+
 	public class Patch_AssetPoolObject_OnDestroy : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
@@ -67,8 +97,119 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         [PatchPrefix]
         public static void Prefix(AssetPoolObject __instance)
 		{
-			// TODO
-			Logger.LogWarning($"Patch_AssetPoolObject_OnDestroy: {__instance.gameObject.GetInstanceID()}");
+			Plugin.Instance.OnItemDestroyed(__instance);
+		}
+	}
+
+	public class Patch_ContextInteractionsAbstractClass_ExecuteInteractionInternal : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ContextInteractionsAbstractClass), nameof(ContextInteractionsAbstractClass.ExecuteInteractionInternal));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(ContextInteractionsAbstractClass __instance, EItemInfoButton interaction)
+		{
+			Logger.LogWarning($"ContextInteractionsAbstractClass: {interaction}");
+			if (interaction == EItemInfoButton.Inspect)
+			{
+				__instance.method_28();
+				return false;
+			}
+
+			return true;
+		}
+	}
+
+	// this method tries to initialize gui for all slots in weapon,
+	// if item is not compound item there are no slots, so safeguard it
+	public class Patch_WeaponModdingScreen_method_6 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.method_6));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(WeaponModdingScreen __instance, CompoundItem weapon)
+		{
+			return weapon is Weapon;
+		}
+	}
+
+	public class Patch_WeaponPreview_Class3271_method_1 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPreview.Class3271), nameof(WeaponPreview.Class3271.method_1));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(WeaponPreview.Class3271 __instance)
+        {
+			// this called when WeaponPreview is opened and fully initialized,
+			// WeaponPreview is used both by weapon modding screen and item overview
+   			var weaponPreview = __instance.weaponPreview_0;
+			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
+			var item = _weaponPreview.item_0;
+			if (item == null)
+			{
+				return;
+			}
+			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject))
+			{
+				Plugin.Instance.OnWeaponPreviewOpened(item, assetPoolObject);
+			}
+		}
+
+		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject)
+		{
+			// it takes time to load gameObjects so if you ask too early they will be null
+			var itemGO = weaponPreview.gameObject_0;
+
+			if (itemGO && itemGO.TryGetComponent<AssetPoolObject>(out assetPoolObject))
+			{
+				return true;
+			}
+
+			assetPoolObject = default;
+			return false;
+		}
+	}
+
+	public class Patch_WeaponModdingScreen_Show : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Show), [typeof(Item), typeof(InventoryController), typeof(CompoundItem[])]);
+        }
+
+        [PatchPostfix]
+        public static void Postfix(WeaponModdingScreen __instance, Item item, InventoryController inventoryController, CompoundItem[] collections)
+		{
+			// this is called when user presses modify on weapon context menu
+			// we use modding screen because user can only modify weapons that he actually has access to,
+			// unlike trader guns, or guns in builds window
+			//
+			// if this method is called then next WeaponPreview.Class3271.method_1
+			// is guaranteed to be weapon preview for this WeaponModdingScreen
+
+			Plugin.Instance.WaitForWeaponPreview();
+		}
+	}
+
+	public class Patch_WeaponModdingScreen_Close : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Close));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(WeaponModdingScreen __instance)
+		{
+			Plugin.Instance.CloseCamoEditor();
 		}
 	}
 
@@ -103,10 +244,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         [PatchPostfix]
         public static void Postfix(Item item, ref int __result)
 		{
-			if (Plugin.Instance.GetDecalInfo(item.Id).Some(out var decalInfo))
+			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
 			{
 				// all this shit to fit SaveTime inside int
-				var saveTime = decalInfo.SaveTime;
+				var saveTime = materialsInfo.SaveTime;
 				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
 				var saveTimeOffset = saveTime - newStartPointOffset;

@@ -32,27 +32,38 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         // for example when you open item preview of weapon you already hold in hands,
         // or when hideout shooting range clones weapon (we pretend that they have the same Id)
         public Dictionary<int, ItemWithDecals> Items; // TODO iterating dict is probably not the best idea, but list in annoying
-        public DecalInfo DecalInfo;
+        public MaterialsInfo MaterialsInfo;
     }
 
     public class ItemWithDecals
     {
         public AssetPoolObject Item;
-        public Material[][] Materials;
+        public Dictionary<string, MaterialOveride> Overrides;
     }
 
-    public class DecalInfo
+    public class MaterialOveride
+    {
+        public MaterialPropertyBlock PropertyBlock;
+        public List<(Renderer, int)> Renderers;
+    }
+
+    public class MaterialsInfo
     {
         public const int CurrentSchemaVersion = 0;
 
         public int SchemaVersion;
         public long SaveTime;
+        public Dictionary<string, MaterialInfo> Materials;
+    }
+
+    public class MaterialInfo
+    {
         public Vector3 ColorHSV;
 
-        public DecalInfo GetCopy()
+        public MaterialInfo GetCopy()
         {
             // this is enough for now
-            return (DecalInfo)MemberwiseClone();
+            return (MaterialInfo)MemberwiseClone();
         }
     }
 
@@ -64,14 +75,22 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public static Plugin Instance;
 
+        public static ConfigEntry<float> UIScale;
+
 		public ManualLogSource LoggerInstance;
 
         private string PresetsPath;
         private string ItemsPath;
+        private CamoEditorResources CamoEditorResources;
 
-        private Dictionary<string, DecalInfo> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
+        private Dictionary<ResourceKey, string> ResourceKeyToItem;
+        private Dictionary<int, string> InstanceIdToItemId;
+
+        private Option<CamoEditor> CamoEditor;
+        private bool IsCamoEditorWaitingForWeaponPreview;
+
         private Option<double> LastPresetsSaveTime;
         private Option<double> LastItemsSaveTime;
 
@@ -83,19 +102,28 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             Instance = this;
 			LoggerInstance = Logger;
 
+            UIScale = Config.Bind<float>("Main", "Camo Editor | UI Scale", 1f, new ConfigDescription("", new AcceptableValueRange<float>(0.5f, 2f)));
+
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            PresetsPath = Path.Combine(assemblyDir, "items.json");
-            ItemsPath = Path.Combine(assemblyDir, "presets.json");
+            ItemsPath = Path.Combine(assemblyDir, "items.json");
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "change-equipment-color");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
+            CamoEditorResources = new(bundle);
 
-            DecalPresets = LoadDecalPresets(PresetsPath);
             ItemsWithDecals = LoadItemsWithDecals(ItemsPath);
             Clones = new();
+            ResourceKeyToItem = new();
+            InstanceIdToItemId = new();
 
             new Patch_PoolManagerClass_CreateItemAsync().Enable();
             new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
+            new Patch_ContextInteractionsAbstractClass_ExecuteInteractionInternal().Enable();
+            new Patch_WeaponModdingScreen_method_6().Enable();
+            new Patch_WeaponPreview_Class3271_method_1().Enable();
+            new Patch_WeaponModdingScreen_Show().Enable();
+            new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
 
@@ -133,39 +161,49 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
-        public Dictionary<string, DecalInfo> LoadDecalPresets(string filePath)
-        {
-            var result = new Dictionary<string, DecalInfo>();
-            return result;
-        }
-
         public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string filePath)
         {
             var result = new Dictionary<string, ItemsWithDecals>();
             result.Add("69fab20bb0a16a41ccb3d0d7", new ()
             {
                 Items = new(),
-                DecalInfo = new()
+                MaterialsInfo = new()
                 {
                     SchemaVersion = 0,
                     SaveTime = 0,
-                    ColorHSV = new(0.3f, 1, 1),
+                    Materials = new()
+                    {
+                        {
+                            "scope_all_trijicon_srs_02_LOD0",
+                            new MaterialInfo()
+                            {
+                                ColorHSV = new(0.3f, 1, 1),
+                            }
+                        }
+                    }
                 }
             });
             result.Add("69feb8e15156f7524cd6087e", new ()
             {
                 Items = new(),
-                DecalInfo = new()
+                MaterialsInfo = new()
                 {
                     SchemaVersion = 0,
                     SaveTime = 0,
-                    ColorHSV = new(0, 1, 1),
+                    Materials = new()
+                    {
+                        {
+                            "Backpack_MaxFuchs_diffuse",
+                            new MaterialInfo()
+                            {
+                                ColorHSV = new(0, 1, 1),
+                            }
+                        }
+                    }
                 }
             });
             return result;
         }
-
-        private Dictionary<ResourceKey, string> ResourceKeyToItem = new();
 
         public void OnCreateItemAsync(Item item)
         {
@@ -188,13 +226,20 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
             {
-                var instanceID = itemGameObject.GetInstanceID();
                 if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
                 {
+                    var instanceID = itemGameObject.GetInstanceID();
+                    if (itemsWithDecals.Items.ContainsKey(instanceID))
+                    {
+            			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, already added?");
+                        return;
+                    }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                     {
-                        var patchedItem = PatchItem(assetPoolObject, itemsWithDecals.DecalInfo);
+                        var patchedItem = BuildItemOverrides(assetPoolObject);
+                        PatchItem(patchedItem, itemsWithDecals.MaterialsInfo);
                         itemsWithDecals.Items.Add(instanceID, patchedItem);
+                        InstanceIdToItemId.Add(instanceID, itemId);
             			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
                     }
                     else
@@ -205,46 +250,162 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public ItemWithDecals PatchItem(AssetPoolObject assetPoolObject, DecalInfo decalInfo)
+        public ItemWithDecals BuildItemOverrides(AssetPoolObject assetPoolObject)
         {
-            var materials = new Material[assetPoolObject.Renderers.Count][];
+            var overrides = new Dictionary<string, MaterialOveride>();
 
-            for (var i = 0; i < assetPoolObject.Renderers.Count; i++)
+            foreach (var renderer in assetPoolObject.Renderers)
             {
-                var renderer = assetPoolObject.Renderers[i];
-                var rendererMaterials = PatchRenderer(renderer, decalInfo);
-                materials[i] = rendererMaterials;
+                BuildRendererOverrides(renderer, overrides);
             }
+
+#if DEBUG
+            foreach (var (materialName, materialOverrides) in overrides)
+            {
+                Logger.LogWarning($"BuildItemOverrides: {materialName} | {materialOverrides.Renderers.Count}");
+            }
+#endif
 
             return new()
             {
                 Item = assetPoolObject,
-                Materials = materials,
+                Overrides = overrides,
             };
         }
 
-        public Material[] PatchRenderer(Renderer renderer, DecalInfo decalInfo)
+        public void BuildRendererOverrides(Renderer renderer, Dictionary<string, MaterialOveride> totalOverrides)
         {
-            var materials = renderer.materials;
-
-            foreach (var material in materials)
+            var materials = renderer.sharedMaterials;
+            for (var i = 0; i < materials.Length; i++)
             {
-                PatchMaterial(material, decalInfo);
+                var material = materials[i];
+                var materialShaderName = material.shader.name;
+    			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
+                    materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+                {
+                    var materialName = material.name;
+                    var pair = (renderer, i);
+
+                    if (totalOverrides.TryGetValue(materialName, out var existingOverrides))
+                    {
+                        existingOverrides.Renderers.Add(pair);
+                    }
+                    else
+                    {
+                        totalOverrides.Add(materialName, new MaterialOveride()
+                        {
+                            PropertyBlock = new MaterialPropertyBlock(),
+                            Renderers = new() { pair },
+                        });
+                    }
+                }
             }
-
-            renderer.materials = materials;
-
-            return materials;
         }
 
-        public void PatchMaterial(Material material, DecalInfo decalInfo)
+        public void PatchItem(ItemWithDecals item, MaterialsInfo materialsInfo)
         {
-			if (material.shader.name == "p0/Reflective/Bumped Specular SMap" ||
-                material.shader.name == "p0/Reflective/Bumped Specular SMap_Decal")
+            foreach (var (materialName, materialInfo) in materialsInfo.Materials)
             {
-                var hsv = decalInfo.ColorHSV;
-                material.color = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
+                if (item.Overrides.TryGetValue(materialName, out var materialOverride))
+                {
+                    var color = materialInfo.ColorHSV.HSVtoRGBA();
+                    var propertyBlock = materialOverride.PropertyBlock;
+                    propertyBlock.SetColor("_Color", color);
+
+                    foreach (var (renderer, index) in materialOverride.Renderers)
+                    {
+                        renderer.SetPropertyBlock(propertyBlock, index);
+                    }
+
+                    Logger.LogWarning($"Patch: {materialName} | {materialOverride.Renderers.Count}");
+                }
+                else
+                {
+                    Logger.LogError($"Patch: {materialName}, failure");
+                }
             }
+        }
+
+        public void OnItemDestroyed(AssetPoolObject assetPoolObject)
+        {
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            if (!InstanceIdToItemId.Remove(instanceID, out var itemId))
+            {
+                return;
+            }
+
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
+                return;
+            }
+
+            if (!itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
+            {
+    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered clone?");
+                return;
+            }
+
+            foreach (var renderer in assetPoolObject.Renderers)
+            {
+                var materialsCount = renderer.sharedMaterials.Length;
+                for (var i = 0; i < materialsCount; i++)
+                {
+                    renderer.SetPropertyBlock(null, i);
+                }
+            }
+
+			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}");
+        }
+
+        public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject)
+        {
+            // TODO limit to only some types of items
+            var itemId = GetOriginalItemId(item.Id);
+			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
+			if (IsCamoEditorWaitingForWeaponPreview)
+			{
+				SetupCamoEditor(itemId, assetPoolObject);
+			}
+        }
+
+        public void SetupCamoEditor(string itemId, AssetPoolObject assetPoolObject)
+        {
+            itemId = GetOriginalItemId(itemId);
+            Logger.LogInfo($"SetupCamoEditor: {itemId}");
+            CamoEditor = new(new CamoEditor()
+            {
+                Plugin = this,
+                CamoEditorResources = CamoEditorResources,
+                IsOpened = false,
+                WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
+            });
+        }
+
+        public void WaitForWeaponPreview()
+        {
+			IsCamoEditorWaitingForWeaponPreview = true;
+        }
+
+        public void CloseCamoEditor()
+        {
+            IsCamoEditorWaitingForWeaponPreview = false;
+
+			// CloseCamoEditor method can be called
+			// even when editor is not intialized, this happens in cases:
+			// 1) user can quickly tap Modify and hit Escape,
+			// which means weapon preview won't be fully loaded,
+			// 2) WeaponModdingScreen.Close is called even if user
+			// entered customization window on trader guns
+
+            if (!CamoEditor.Some(out var camoEditor))
+            {
+                Logger.LogWarning($"CloseCamoEditor: tried to close uninitialized decal editor");
+                return;
+            }
+
+            camoEditor.Destroy();
+            CamoEditor = default;
         }
 
         public void Update()
@@ -270,11 +431,19 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public Option<DecalInfo> GetDecalInfo(string itemId)
+        public void OnGUI()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                camoEditor.DrawWindow();
+            }
+        }
+
+        public Option<MaterialsInfo> GetMaterialsInfo(string itemId)
         {
             if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                return new(itemsWithDecals.DecalInfo);
+                return new(itemsWithDecals.MaterialsInfo);
             }
 
             return default;
@@ -309,30 +478,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return itemId;
         }
 
-        public Dictionary<string, DecalInfo> SnapshotLocalDecals()
+        public Dictionary<string, MaterialsInfo> SnapshotLocalDecals()
         {
-            var snapshot = new Dictionary<string, DecalInfo>();
-    		if (!TarkovApplication.Exist(out var tarkovApplication))
-            {
-                return snapshot;
-            }
-
-            // copies all guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
-            var profile = tarkovApplication.Session.Profile;
-            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
-
-            foreach (var item in equipmentItems)
-            {
-                if (ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
-                {
-                    snapshot[item.Id] = itemsWithDecals.DecalInfo.GetCopy();
-                }
-            }
-
+            var snapshot = new Dictionary<string, MaterialsInfo>();
             return snapshot;
         }
 
-        public void IngestRemoteDecals(Dictionary<string, DecalInfo> remoteDecals)
+        public void IngestRemoteDecals(Dictionary<string, MaterialsInfo> remoteDecals)
         {
             foreach (var (itemId, decalInfo) in remoteDecals)
             {
@@ -340,36 +492,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public void IngestRemoteDecals(string itemId, DecalInfo remoteDecalInfo)
+        public void IngestRemoteDecals(string itemId, MaterialsInfo remoteDecalInfo)
         {
-            // TODO not sure if copying remoteDecalsInfo is necessary
-            if (ItemsWithDecals.ContainsKey(itemId))
-            {
-                // pick newer version
-                var itemsWithDecals = ItemsWithDecals[itemId];
-                if (itemsWithDecals.DecalInfo.SaveTime >= remoteDecalInfo.SaveTime)
-                {
-                    Logger.LogInfo($"IngestRemoteDecals: {itemId}, mine is newer");
-                    return;
-                }
 
-                itemsWithDecals.DecalInfo = remoteDecalInfo.GetCopy();
-                WriteDecalsToFile();
-                Logger.LogInfo($"IngestRemoteDecals: {itemId}, his is newer, already spawned count: {itemsWithDecals.Items.Count}");
-            }
-            else
-            {
-                Logger.LogInfo($"IngestRemoteDecals: {itemId}, new");
-                var decalInfo = remoteDecalInfo.GetCopy();
-                var itemsWithDecals = new ItemsWithDecals()
-                {
-                    Items = new(),
-                    DecalInfo = decalInfo,
-                };
-
-                ItemsWithDecals.Add(itemId, itemsWithDecals);
-                WriteDecalsToFile();
-            }
         }
 
         public void WriteDecalsToFile()

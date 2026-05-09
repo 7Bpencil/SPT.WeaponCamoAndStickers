@@ -14,47 +14,79 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
     public class DecalSnapshotPacket : INetSerializable
     {
         public string ProfileId;
-        public Dictionary<string, DecalInfo> ItemDecals;
+        public Dictionary<string, MaterialsInfo> ItemDecals;
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(ProfileId);
             writer.Put(ItemDecals.Count);
-            foreach (var kvp in ItemDecals)
+            foreach (var (itemId, materialsInfo) in ItemDecals)
             {
-                writer.Put(kvp.Key);
-                SerializeDecalInfo(writer, kvp.Value);
+                writer.Put(itemId);
+                SerializeMaterialsInfo(writer, materialsInfo);
             }
+        }
+
+        private static void SerializeMaterialsInfo(NetDataWriter writer, MaterialsInfo d)
+        {
+            writer.Put(d.SchemaVersion);
+            writer.Put(d.SaveTime);
+            writer.Put(d.Materials.Count);
+            foreach (var (materialName, materialInfo) in d.Materials)
+            {
+                writer.Put(materialName);
+                SerializeMaterialInfo(writer, materialInfo);
+            }
+        }
+
+        private static void SerializeMaterialInfo(NetDataWriter writer, MaterialInfo d)
+        {
+            writer.PutUnmanaged<Vector3>(d.ColorHSV);
         }
 
         public void Deserialize(NetDataReader reader)
         {
             ProfileId = reader.GetString();
             var itemCount = reader.GetInt();
-            ItemDecals = new Dictionary<string, DecalInfo>(itemCount);
+            ItemDecals = new Dictionary<string, MaterialsInfo>(itemCount);
+
             for (var i = 0; i < itemCount; i++)
             {
                 var itemId = reader.GetString();
-                var decalInfo = DeserializeDecalInfo(reader);
-                ItemDecals[itemId] = decalInfo;
+                var materialsInfo = DeserializeDecalInfo(reader);
+                ItemDecals.Add(itemId, materialsInfo);
             }
         }
 
-        private static void SerializeDecalInfo(NetDataWriter writer, DecalInfo d)
+        private static MaterialsInfo DeserializeDecalInfo(NetDataReader reader)
         {
-            writer.Put(d.SchemaVersion);
-            writer.Put(d.SaveTime);
-            writer.PutUnmanaged<Vector3>(d.ColorHSV);
+            var schemaVersion = reader.GetInt();
+            var saveTime = reader.GetLong();
+            var materialsCount = reader.GetInt();
+            var materials = new Dictionary<string, MaterialInfo>(materialsCount);
+
+            for (var i = 0; i < materialsCount; i++)
+            {
+                var materialName = reader.GetString();
+                var material = DeserializeMaterialInfo(reader);
+                materials.Add(materialName, material);
+            }
+
+            return new()
+            {
+                SchemaVersion = schemaVersion,
+                SaveTime = saveTime,
+                Materials = materials,
+            };
         }
 
-        private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
+        private static MaterialInfo DeserializeMaterialInfo(NetDataReader reader)
         {
-            return new DecalInfo()
+            return new()
             {
-                SchemaVersion = reader.GetInt(),
-                SaveTime = reader.GetLong(),
                 ColorHSV = reader.GetUnmanaged<Vector3>(),
             };
         }
+
     }
 }

@@ -20,5 +20,10 @@ namespace SevenBoldPencil.Common
 		{
             return Color.HSVToRGB(hsva.x, hsva.y, hsva.z).WithAlpha(hsva.w);
 		}
+
+		public static Color HSVtoRGBA(this Vector3 hsv)
+		{
+            return Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
+		}
     }
 }
