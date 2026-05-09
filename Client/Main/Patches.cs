@@ -11,6 +11,7 @@ using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.Visual;
+using EFT.CameraControl;
 using EFT.UI;
 using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
@@ -21,11 +22,56 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
+using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
+	public class Patch_PoolManagerClass_CreateItemAsync : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(GDelegate62), typeof(CancellationToken)];
+            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.CreateItemAsync), parameters);
+        }
+
+        [PatchPrefix]
+        public static void Prefix(PoolManagerClass __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, GDelegate62 yield, CancellationToken ct = default(CancellationToken))
+		{
+			Plugin.Instance.OnCreateItemAsync(item);
+		}
+	}
+
+	public class Patch_PoolManagerClass_method_2 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.method_2));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PoolManagerClass __instance, GameObject __result, ResourceKey resourceKey, PoolManagerClass.PoolsCategory poolCategory)
+		{
+			Plugin.Instance.OnCreatedItemGameObject(resourceKey, __result);
+		}
+	}
+
+	public class Patch_AssetPoolObject_OnDestroy : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(AssetPoolObject), nameof(AssetPoolObject.OnDestroy));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(AssetPoolObject __instance)
+		{
+			// TODO
+			Logger.LogWarning($"Patch_AssetPoolObject_OnDestroy: {__instance.gameObject.GetInstanceID()}");
+		}
+	}
+
 	// this method is used everywhere to clone items:
 	// - hideout shooting range
 	// - raid loading screen

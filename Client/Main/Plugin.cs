@@ -10,6 +10,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
+using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
@@ -30,8 +31,14 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         // yes, there can be multiple items with same Id,
         // for example when you open item preview of weapon you already hold in hands,
         // or when hideout shooting range clones weapon (we pretend that they have the same Id)
-        public Dictionary<int, LODGroup> Items; // TODO iterating dict is probably not the best idea, but list in annoying
+        public Dictionary<int, ItemWithDecals> Items; // TODO iterating dict is probably not the best idea, but list in annoying
         public DecalInfo DecalInfo;
+    }
+
+    public class ItemWithDecals
+    {
+        public AssetPoolObject Item;
+        public Material[][] Materials;
     }
 
     public class DecalInfo
@@ -40,7 +47,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public int SchemaVersion;
         public long SaveTime;
-        public Vector4 ColorHSVA;
+        public Vector3 ColorHSV;
 
         public DecalInfo GetCopy()
         {
@@ -86,6 +93,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ItemsWithDecals = LoadItemsWithDecals(ItemsPath);
             Clones = new();
 
+            new Patch_PoolManagerClass_CreateItemAsync().Enable();
+            new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
 
@@ -99,6 +109,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             // Also since data per item is small, keep all of it in giant json (or maybe binary with some compression?),
             // save that json after 1 min since last modification similar to transparent scopes,
             // same with presets
+
+            // TODO limit scope of items to weapons, mods, equipment
         }
 
         public void TryEnableFikaSupport(string mainAssemblyDir)
@@ -130,7 +142,109 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string filePath)
         {
             var result = new Dictionary<string, ItemsWithDecals>();
+            result.Add("69fab20bb0a16a41ccb3d0d7", new ()
+            {
+                Items = new(),
+                DecalInfo = new()
+                {
+                    SchemaVersion = 0,
+                    SaveTime = 0,
+                    ColorHSV = new(0.3f, 1, 1),
+                }
+            });
+            result.Add("69feb8e15156f7524cd6087e", new ()
+            {
+                Items = new(),
+                DecalInfo = new()
+                {
+                    SchemaVersion = 0,
+                    SaveTime = 0,
+                    ColorHSV = new(0, 1, 1),
+                }
+            });
             return result;
+        }
+
+        private Dictionary<ResourceKey, string> ResourceKeyToItem = new();
+
+        public void OnCreateItemAsync(Item item)
+        {
+            var itemId = GetOriginalItemId(item.Id);
+            if (!ItemsWithDecals.ContainsKey(itemId))
+            {
+                return;
+            }
+            if (ResourceKeyToItem.TryAdd(item.Prefab, itemId))
+            {
+                Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
+            }
+            else
+            {
+                Logger.LogError($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, collision!");
+            }
+        }
+
+        public void OnCreatedItemGameObject(ResourceKey itemPrefab, GameObject itemGameObject)
+        {
+            if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
+            {
+                var instanceID = itemGameObject.GetInstanceID();
+                if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+                {
+                    if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
+                    {
+                        var patchedItem = PatchItem(assetPoolObject, itemsWithDecals.DecalInfo);
+                        itemsWithDecals.Items.Add(instanceID, patchedItem);
+            			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
+                    }
+                    else
+                    {
+            			Logger.LogError($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, no AssetPoolObject?");
+                    }
+                }
+            }
+        }
+
+        public ItemWithDecals PatchItem(AssetPoolObject assetPoolObject, DecalInfo decalInfo)
+        {
+            var materials = new Material[assetPoolObject.Renderers.Count][];
+
+            for (var i = 0; i < assetPoolObject.Renderers.Count; i++)
+            {
+                var renderer = assetPoolObject.Renderers[i];
+                var rendererMaterials = PatchRenderer(renderer, decalInfo);
+                materials[i] = rendererMaterials;
+            }
+
+            return new()
+            {
+                Item = assetPoolObject,
+                Materials = materials,
+            };
+        }
+
+        public Material[] PatchRenderer(Renderer renderer, DecalInfo decalInfo)
+        {
+            var materials = renderer.materials;
+
+            foreach (var material in materials)
+            {
+                PatchMaterial(material, decalInfo);
+            }
+
+            renderer.materials = materials;
+
+            return materials;
+        }
+
+        public void PatchMaterial(Material material, DecalInfo decalInfo)
+        {
+			if (material.shader.name == "p0/Reflective/Bumped Specular SMap" ||
+                material.shader.name == "p0/Reflective/Bumped Specular SMap_Decal")
+            {
+                var hsv = decalInfo.ColorHSV;
+                material.color = Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
+            }
         }
 
         public void Update()

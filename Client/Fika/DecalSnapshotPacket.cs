@@ -44,7 +44,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
         {
             writer.Put(d.SchemaVersion);
             writer.Put(d.SaveTime);
-            writer.PutUnmanaged<Vector4>(d.ColorHSVA);
+            writer.PutUnmanaged<Vector3>(d.ColorHSV);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -53,7 +53,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
             {
                 SchemaVersion = reader.GetInt(),
                 SaveTime = reader.GetLong(),
-                ColorHSVA = reader.GetUnmanaged<Vector4>(),
+                ColorHSV = reader.GetUnmanaged<Vector3>(),
             };
         }
     }
