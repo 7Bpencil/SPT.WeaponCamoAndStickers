@@ -24,7 +24,7 @@ using SPT.Reflection.Patching;
 using HarmonyLib;
 using UnityEngine;
 
-namespace SevenBoldPencil.WeaponCamoAndStickers
+namespace SevenBoldPencil.ChangeEquipmentColor
 {
 	public struct WeaponPreview_Proxy
 	{

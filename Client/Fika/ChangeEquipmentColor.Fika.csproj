@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>SevenBoldPencil.WeaponCamoAndStickers.Fika</RootNamespace>
+    <RootNamespace>SevenBoldPencil.ChangeEquipmentColor.Fika</RootNamespace>
     <Nullable>disable</Nullable>
     <Authors>7Bpencil</Authors>
     <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
-    <AssemblyName>7Bpencil.WeaponCamoAndStickers.Fika</AssemblyName>
-    <AssemblyVersion>1.3.0</AssemblyVersion>
+    <AssemblyName>7Bpencil.ChangeEquipmentColor.Fika</AssemblyName>
+    <AssemblyVersion>1.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <LangVersion>latest</LangVersion>
@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Main\WeaponCamoAndStickers.csproj" />
+    <ProjectReference Include="..\Main\ChangeEquipmentColor.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,7 +41,7 @@
 
   <Target Name="CopyToSPT" AfterTargets="AfterBuild">
     <PropertyGroup>
-      <OutDir>$(ProjectDir)..\..\..\..\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</OutDir>
+      <OutDir>$(ProjectDir)..\..\..\..\BepInEx\plugins\7Bpencil.ChangeEquipmentColor</OutDir>
     </PropertyGroup>
     <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />

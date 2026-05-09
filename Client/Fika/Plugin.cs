@@ -13,9 +13,9 @@ using Fika.Core.Networking;
 using Fika.Core.Networking.LiteNetLib;
 using System.Collections.Generic;
 
-using MainPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
+using MainPlugin = SevenBoldPencil.ChangeEquipmentColor.Plugin;
 
-namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
+namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 {
     public class Plugin
 	{

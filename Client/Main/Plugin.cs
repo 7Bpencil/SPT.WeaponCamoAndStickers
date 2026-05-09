@@ -24,7 +24,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
 
-namespace SevenBoldPencil.WeaponCamoAndStickers
+namespace SevenBoldPencil.ChangeEquipmentColor
 {
     public class ItemsWithDecals
     {
@@ -153,7 +153,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public HashSet<string> MasksDirectory;
     }
 
-    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.8.0")]
+    [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.8.0")]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
@@ -235,10 +235,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ItemsDir = Path.Combine(assemblyDir, "items");
             PresetsDir = Path.Combine(assemblyDir, "presets");
             ClosedDirectoriesPath = Path.Combine(assemblyDir, "temp", "closed-directories.json");
-			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
+			var bundlePath = Path.Combine(assemblyDir, "bundles", "change-equipment-color");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
-            ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
+            DecalShader = bundle.LoadAsset<Shader>("Assets/ChangeEquipmentColor/Shaders/DecalDynamic.shader");
+            ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Textures/missing.png");
             ErrorTextureData = new()
             {
                 Preview = ErrorTexture,
@@ -321,14 +321,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
-            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.WeaponCamoAndStickers.Fika.dll");
+            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.ChangeEquipmentColor.Fika.dll");
             if (!File.Exists(fikaAssemblyPath))
             {
                 return;
             }
 
             var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
-            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.WeaponCamoAndStickers.Fika.Plugin");
+            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.ChangeEquipmentColor.Fika.Plugin");
             var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
             var fikaPlugin = Activator.CreateInstance(fikaPluginType);
             fikaPluginAwake.Invoke(fikaPlugin, null);
