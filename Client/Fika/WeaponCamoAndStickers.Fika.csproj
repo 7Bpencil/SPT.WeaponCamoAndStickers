@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <RootNamespace>SevenBoldPencil.WeaponCamoAndStickers.Fika</RootNamespace>
+    <Nullable>disable</Nullable>
+    <Authors>7Bpencil</Authors>
+    <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
+    <AssemblyName>7Bpencil.WeaponCamoAndStickers.Fika</AssemblyName>
+    <AssemblyVersion>1.3.0</AssemblyVersion>
+    <FileVersion>$(AssemblyVersion)</FileVersion>
+    <Version>$(AssemblyVersion)</Version>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Main\WeaponCamoAndStickers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\..\..\BepInEx\core\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="Comfort">
+      <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\Comfort.dll</HintPath>
+    </Reference>
+    <Reference Include="Fika.Core">
+      <HintPath>..\..\..\..\BepInEx\plugins\Fika\Fika.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="CopyToSPT" AfterTargets="AfterBuild">
+    <PropertyGroup>
+      <OutDir>$(ProjectDir)..\..\..\..\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</OutDir>
+    </PropertyGroup>
+    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
+  </Target>
+
+</Project>
