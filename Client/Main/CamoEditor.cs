@@ -78,7 +78,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         }
     }
 
-    public class CamoStyle
+    public class CamoEditorStyle
     {
         public GUIStyle LabelStyleName;
         public GUIStyle TextureNameStyle;
@@ -86,8 +86,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public GUIStyle TextFieldStyle;
 		public GUIStyle ColorPickerButtonStyle;
         public GUIStyle DirectoryButtonStyle;
+        public GUIStyle MaterialNameStyle;
 
-        public CamoStyle(GUISkin currentSkin)
+        public CamoEditorStyle(GUISkin currentSkin)
         {
             LabelStyleName = new()
             {
@@ -133,6 +134,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 alignment = TextAnchor.MiddleLeft
             };
+
+            MaterialNameStyle = new(currentSkin.label)
+            {
+                alignment = TextAnchor.MiddleCenter,
+            };
         }
     }
 
@@ -140,8 +146,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     {
         public Plugin Plugin;
         public CamoEditorResources CamoEditorResources;
-        public CamoStyle CamoStyle;
+        public CamoEditorStyle CamoEditorStyle;
+        public string ItemId;
+        public int InstanceID;
+        public ItemWithDecals ItemWithDecals;
         public bool IsOpened;
+        public Vector2 MaterialsScrollPosition;
+        public Option<string> CurrentlyEditedOverride;
 		public Rect WindowRect;
 
         // brace for imGUI shitshow
@@ -152,6 +163,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public const int maxPresetsVisible = 9;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
+        public const int maxMaterialsCount = 10;
 
         public const int smallMargin = 4;
         public const int mediumMargin = 8;
@@ -197,9 +209,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public void DrawWindow()
         {
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
-            if (CamoStyle == null)
+            if (CamoEditorStyle == null)
             {
-                CamoStyle = new(GUI.skin);
+                CamoEditorStyle = new(GUI.skin);
             }
 
             var originalMatrix = GUI.matrix;
@@ -209,11 +221,22 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             if (IsOpened)
             {
-                WindowRect.height = 500;
-                WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+                if (CurrentlyEditedOverride.HasValue)
+                {
+                    WindowRect.height = CalculateMaterialEditWindowHeight();
+                    WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI, GUIContent.none);
 
-                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                }
+                else
+                {
+                    WindowRect.height = CalculateMaterialsWindowHeight();
+                    WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+
+                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                }
             }
             else
             {
@@ -226,9 +249,134 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             GUI.matrix = originalMatrix;
         }
 
+        private int CalculateMaterialsWindowHeight()
+        {
+            var totalMaterialsCount = ItemWithDecals.Overrides.Count;
+            var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
+            return
+                bigMargin +
+                visibleHeight + bigMargin; // materials
+        }
+
+        private int CalculateMaterialEditWindowHeight()
+        {
+            return
+                bigMargin +
+                buttonHeight + mediumMargin + // back button
+                buttonHeight + mediumMargin + // material name
+                hsCircleDiameter + bigMargin + // color swatches + picker
+                buttonHeight + smallMargin + // hue
+                buttonHeight + smallMargin + // saturation
+                buttonHeight + bigMargin - 7; // value
+        }
+
         private void DrawOpenedWindow(int windowID)
 		{
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+            {
+                var materialsY = y;
+
+                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Overrides.Count, maxMaterialsCount, buttonHeight, smallMargin);
+                var totalRect = new Rect(x, materialsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, materialsY, boxWidth + 16, visibleHeight);
+
+                DrawScrollBar(x + boxWidth + 5, materialsY, totalHeight, visibleHeight, MaterialsScrollPosition);
+                MaterialsScrollPosition = GUI.BeginScrollView(visibleRect, MaterialsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+                foreach (var materialName in ItemWithDecals.Overrides.Keys)
+                {
+                    if (GUI.Button(new Rect(x, materialsY, boxWidth, buttonHeight), materialName))
+                    {
+                        CurrentlyEditedOverride = new(materialName);
+                    }
+                    materialsY += buttonHeight + smallMargin;
+                }
+
+                GUI.EndScrollView();
+
+                y += visibleHeight;
+                y += bigMargin;
+            }
+
+			GUI.DragWindow();
+        }
+
+        private void DrawMaterialEditUI(int windowID)
+        {
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var materialName = CurrentlyEditedOverride.Value;
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
+            {
+                CurrentlyEditedOverride = default;
+            }
+            y += buttonHeight + mediumMargin;
+
+            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), materialName, CamoEditorStyle.MaterialNameStyle);
+            y += buttonHeight + mediumMargin;
+
+            {
+                var colorPickerX = x + boxWidth - hsCircleDiameter;
+                var hsCircleRect = new Rect(colorPickerX, y, hsCircleDiameter, hsCircleDiameter);
+    			if (GUI.RepeatButton(hsCircleRect, CamoEditorResources.ColorWheelHSV, CamoEditorStyle.ColorPickerButtonStyle))
+                {
+
+                }
+                y += hsCircleDiameter + bigMargin;
+            }
+
+            {
+                var sliderWidth = 224;
+
+                var labelX = x;
+                var sliderX = labelX + nameWidth + smallMargin - 42;
+                var valueX = sliderX + sliderWidth + smallMargin;
+
+                var hueY = y;
+                var saturationY = hueY + buttonHeight + smallMargin;
+                var valueY = saturationY + buttonHeight + smallMargin;
+
+                var hue = 0;
+                var saturation = 0;
+                var value = 0;
+
+
+                GUI.Label(new Rect(labelX, hueY, nameWidth, buttonHeight), "Hue:", CamoEditorStyle.LabelStyleName);
+                var newHue = GUI.HorizontalSlider(new Rect(sliderX, hueY + 11, sliderWidth, buttonHeight), hue, 0f, 1f);
+                if (newHue != hue)
+                {
+                    // TODO
+                }
+                GUI.Label(new Rect(valueX, hueY, longFieldWidth, buttonHeight), $"{hue:F3}", CamoEditorStyle.LabelStyleValue);
+
+
+                GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "Saturation:", CamoEditorStyle.LabelStyleName);
+                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, saturationY + 11, sliderWidth, buttonHeight), saturation, 0f, 1f);
+                if (newSaturation != saturation)
+                {
+                    // TODO
+                }
+                GUI.Label(new Rect(valueX, saturationY, longFieldWidth, buttonHeight), $"{saturation:F3}", CamoEditorStyle.LabelStyleValue);
+
+
+                GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "Value:", CamoEditorStyle.LabelStyleName);
+                var newValue = GUI.HorizontalSlider(new Rect(sliderX, valueY + 11, sliderWidth, buttonHeight), value, 0f, 1f);
+                if (newValue != value)
+                {
+                    // TODO
+                }
+                GUI.Label(new Rect(valueX, valueY, longFieldWidth, buttonHeight), $"{value:F3}", CamoEditorStyle.LabelStyleValue);
+
+
+            }
 
 			GUI.DragWindow();
         }
@@ -261,6 +409,33 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 IsOpened = true;
 				WindowRect.width = windowWidth;
+            }
+        }
+
+        private static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)
+        {
+            var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
+            if (totalCount > maxCount)
+            {
+                var visibleHeight = maxCount * (itemHeight + separatorHeight) - separatorHeight;
+                return (totalHeight, visibleHeight);
+            }
+            else
+            {
+                return (totalHeight, totalHeight);
+            }
+        }
+
+        // render my own vertical scroll bar because unity's one cannot be set slimmer than 15 px...
+        public static void DrawScrollBar(int x, int y, int totalHeight, int visibleHeight, Vector2 scrollPosition)
+        {
+            if (totalHeight > visibleHeight)
+            {
+                var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
+                var handlePositionT = scrollPosition.y / (float)totalHeight;
+                var handlePosition = handlePositionT * visibleHeight;
+                DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
+                DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
         }
 

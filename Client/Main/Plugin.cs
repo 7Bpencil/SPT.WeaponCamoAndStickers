@@ -236,9 +236,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                     {
-                        var patchedItem = BuildItemOverrides(assetPoolObject);
-                        PatchItem(patchedItem, itemsWithDecals.MaterialsInfo);
-                        itemsWithDecals.Items.Add(instanceID, patchedItem);
+                        var itemWithDecals = BuildItemOverrides(assetPoolObject);
+                        PatchItem(itemWithDecals, itemsWithDecals.MaterialsInfo);
+                        itemsWithDecals.Items.Add(instanceID, itemWithDecals);
                         InstanceIdToItemId.Add(instanceID, itemId);
             			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
                     }
@@ -258,14 +258,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 BuildRendererOverrides(renderer, overrides);
             }
-
 #if DEBUG
             foreach (var (materialName, materialOverrides) in overrides)
             {
                 Logger.LogWarning($"BuildItemOverrides: {materialName} | {materialOverrides.Renderers.Count}");
             }
 #endif
-
             return new()
             {
                 Item = assetPoolObject,
@@ -280,6 +278,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var material = materials[i];
                 var materialShaderName = material.shader.name;
+                // TODO I noticed LOD1 have p0/Reflective/Specular shader
     			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
                     materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
                 {
@@ -373,10 +372,28 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             itemId = GetOriginalItemId(itemId);
             Logger.LogInfo($"SetupCamoEditor: {itemId}");
+
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+
+            ItemWithDecals getItemWithDecals()
+            {
+                if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals) &&
+                    itemsWithDecals.Items.TryGetValue(instanceID, out var itemWithDecals))
+                {
+                    return itemWithDecals;
+                }
+
+                return BuildItemOverrides(assetPoolObject);
+            }
+
+            var itemWithDecals = getItemWithDecals();
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
                 CamoEditorResources = CamoEditorResources,
+                ItemId = itemId,
+                InstanceID = instanceID,
+                ItemWithDecals = itemWithDecals,
                 IsOpened = false,
                 WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
             });
