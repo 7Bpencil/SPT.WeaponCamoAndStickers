@@ -24,6 +24,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
 
+// TODO fde is 0.09 hue and 6.7 glossness
+
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
     public class ItemsWithDecals
@@ -59,6 +61,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     public class MaterialInfo
     {
         public Vector3 ColorHSV;
+		public float Glossness;
+		public float Specularness;
 
         public MaterialInfo GetCopy()
         {
@@ -164,44 +168,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string filePath)
         {
             var result = new Dictionary<string, ItemsWithDecals>();
-            result.Add("69fab20bb0a16a41ccb3d0d7", new ()
-            {
-                Items = new(),
-                MaterialsInfo = new()
-                {
-                    SchemaVersion = 0,
-                    SaveTime = 0,
-                    Materials = new()
-                    {
-                        {
-                            "scope_all_trijicon_srs_02_LOD0",
-                            new MaterialInfo()
-                            {
-                                ColorHSV = new(0.3f, 1, 1),
-                            }
-                        }
-                    }
-                }
-            });
-            result.Add("69feb8e15156f7524cd6087e", new ()
-            {
-                Items = new(),
-                MaterialsInfo = new()
-                {
-                    SchemaVersion = 0,
-                    SaveTime = 0,
-                    Materials = new()
-                    {
-                        {
-                            "Backpack_MaxFuchs_diffuse",
-                            new MaterialInfo()
-                            {
-                                ColorHSV = new(0, 1, 1),
-                            }
-                        }
-                    }
-                }
-            });
             return result;
         }
 
@@ -278,7 +244,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var material = materials[i];
                 var materialShaderName = material.shader.name;
-                // TODO I noticed LOD1 have p0/Reflective/Specular shader
+                // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good
     			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
                     materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
                 {
@@ -307,15 +273,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 if (item.Overrides.TryGetValue(materialName, out var materialOverride))
                 {
-                    var color = materialInfo.ColorHSV.HSVtoRGBA();
-                    var propertyBlock = materialOverride.PropertyBlock;
-                    propertyBlock.SetColor("_Color", color);
-
-                    foreach (var (renderer, index) in materialOverride.Renderers)
-                    {
-                        renderer.SetPropertyBlock(propertyBlock, index);
-                    }
-
+                    ApplyOverride(materialOverride, materialInfo);
                     Logger.LogWarning($"Patch: {materialName} | {materialOverride.Renderers.Count}");
                 }
                 else
@@ -421,6 +379,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
+            // TODO clear item from db if no overrides
+            // save otherwise
+
             camoEditor.Destroy();
             CamoEditor = default;
         }
@@ -472,23 +433,98 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return itemsWithDecals.MaterialsInfo.Materials[materialName];
         }
 
-        public void ApplyColor(string itemId, string materialName)
+        public void OverrideMaterial(ItemWithDecals itemWithDecals, string itemId, int instanceID, string materialName)
         {
-            ModfiyMaterialOnItems(itemId, materialName, (materialOverride, materialInfo) =>
+            if (ItemsWithDecals.ContainsKey(itemId))
             {
-                var color = materialInfo.ColorHSV.HSVtoRGBA();
-                var propertyBlock = materialOverride.PropertyBlock;
-                propertyBlock.SetColor("_Color", color);
-
-                foreach (var (renderer, index) in materialOverride.Renderers)
+                var itemsWithDecals = ItemsWithDecals[itemId];
+                var materials = itemsWithDecals.MaterialsInfo.Materials;
+                if (materials.ContainsKey(materialName))
                 {
-                    renderer.SetPropertyBlock(propertyBlock, index);
+                    Logger.LogWarning($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
+                    return;
                 }
-            });
+
+                // TODO copy original material properties to override
+                materials.Add(materialName, new MaterialInfo()
+                {
+                    ColorHSV = new Vector3(0, 1, 1),
+            		Glossness = 1f,
+            		Specularness = 0.078125f,
+                });
+            }
+            else
+            {
+                // TODO save
+                var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var itemsWithDecals = new ItemsWithDecals()
+                {
+                    Items = new() { { instanceID, itemWithDecals } },
+                    MaterialsInfo = new()
+                    {
+                        SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
+                        SaveTime = time,
+                        Materials = new()
+                        {
+                            {
+                                materialName,
+                                // TODO copy original material properties to override
+                                new MaterialInfo()
+                                {
+                                    ColorHSV = new Vector3(0, 1, 1),
+                            		Glossness = 1f,
+                            		Specularness = 0.078125f,
+                                }
+                            }
+                        }
+                    }
+                };
+
+                ItemsWithDecals.Add(itemId, itemsWithDecals);
+                InstanceIdToItemId.Add(instanceID, itemId);
+            }
+        }
+
+        public void ResetMaterial(string itemId, string materialName)
+        {
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals) &&
+                itemsWithDecals.MaterialsInfo.Materials.Remove(materialName))
+            {
+                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+                {
+                    if (itemWithDecals.Overrides.TryGetValue(materialName, out var materialOverride))
+                    {
+                        materialOverride.PropertyBlock.Clear();
+                        foreach (var (renderer, index) in materialOverride.Renderers)
+                        {
+                            renderer.SetPropertyBlock(null, index);
+                        }
+                    }
+                }
+            }
+        }
+
+        public void ApplyOverrides(string itemId, string materialName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, ApplyOverride);
+        }
+
+        public void ApplyOverride(MaterialOveride materialOverride, MaterialInfo materialInfo)
+        {
+            var color = materialInfo.ColorHSV.HSVtoRGBA();
+            var propertyBlock = materialOverride.PropertyBlock;
+            propertyBlock.SetColor("_Color", color);
+            propertyBlock.SetFloat("_Glossness", materialInfo.Glossness); // TODO should glossness and specularness be switched?
+            propertyBlock.SetFloat("_Specularness", materialInfo.Specularness);
+
+            foreach (var (renderer, index) in materialOverride.Renderers)
+            {
+                renderer.SetPropertyBlock(propertyBlock, index);
+            }
         }
 
         // notice that we modify material on all items
-        public void ModfiyMaterialOnItems(string itemId, string materialName, Action<MaterialOveride, MaterialInfo> changeMaterial)
+        public void ModifyMaterialOnItems(string itemId, string materialName, Action<MaterialOveride, MaterialInfo> changeMaterial)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
             var materialInfo = itemsWithDecals.MaterialsInfo.Materials[materialName];

@@ -42,6 +42,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
         private static void SerializeMaterialInfo(NetDataWriter writer, MaterialInfo d)
         {
             writer.PutUnmanaged<Vector3>(d.ColorHSV);
+            writer.Put(d.Glossness);
+            writer.Put(d.Specularness);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -85,6 +87,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
             return new()
             {
                 ColorHSV = reader.GetUnmanaged<Vector3>(),
+        		Glossness = reader.GetFloat(),
+        		Specularness = reader.GetFloat(),
             };
         }
 

@@ -9,10 +9,7 @@ using SevenBoldPencil.Common;
 using System;
 using UnityEngine;
 
-// TODO we need ability to change each material from all renderers separately (to not override mags on rig for example)
-// TODO group them by their name
 // TODO we need presets both for item template and different color swatches
-// TODO there has to be reset button
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
@@ -269,7 +266,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 hsCircleDiameter + bigMargin + // color swatches + picker
                 buttonHeight + smallMargin + // hue
                 buttonHeight + smallMargin + // saturation
-                buttonHeight + bigMargin - 7; // value
+                buttonHeight + smallMargin + // value
+                buttonHeight + smallMargin + // glossness
+                buttonHeight + bigMargin - 7; // specularness
         }
 
         private void DrawOpenedWindow(int windowID)
@@ -300,19 +299,18 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                         if (GUI.Button(new Rect(x, materialsY, overrideButtonWidth, buttonHeight), materialName))
                         {
                             CurrentlyEditedOverride = new(materialName);
-                            // TODO existing override
                         }
                         if (GUI.Button(new Rect(resetX, materialsY, buttonHeight, buttonHeight), CamoEditorResources.Reset))
                         {
-                            // TODO reset
+                            Plugin.ResetMaterial(ItemId, materialName);
                         }
                     }
                     else
                     {
                         if (GUI.Button(new Rect(x, materialsY, boxWidth, buttonHeight), materialName))
                         {
-                            // CurrentlyEditedOverride = new(materialName);
-                            // TODO new override
+                            Plugin.OverrideMaterial(ItemWithDecals, ItemId, InstanceID, materialName);
+                            CurrentlyEditedOverride = new(materialName);
                         }
                     }
                     materialsY += buttonHeight + smallMargin;
@@ -366,7 +364,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                     materialInfo.ColorHSV.x = hue;
                     materialInfo.ColorHSV.y = saturation;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyOverrides(ItemId, materialName);
                 }
                 y += hsCircleDiameter + bigMargin;
             }
@@ -378,40 +376,59 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 var sliderX = labelX + nameWidth + smallMargin - 42;
                 var valueX = sliderX + sliderWidth + smallMargin;
 
-                var hueY = y;
-                var saturationY = hueY + buttonHeight + smallMargin;
-                var valueY = saturationY + buttonHeight + smallMargin;
-
-                GUI.Label(new Rect(labelX, hueY, nameWidth, buttonHeight), "Hue:", CamoEditorStyle.LabelStyleName);
-                var newHue = GUI.HorizontalSlider(new Rect(sliderX, hueY + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.x, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Hue:", CamoEditorStyle.LabelStyleName);
+                var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.x, 0f, 1f);
                 if (newHue != materialInfo.ColorHSV.x)
                 {
                     materialInfo.ColorHSV.x = newHue;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyOverrides(ItemId, materialName);
                 }
-                GUI.Label(new Rect(valueX, hueY, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
 
 
-                GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "Saturation:", CamoEditorStyle.LabelStyleName);
-                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, saturationY + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.y, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Saturation:", CamoEditorStyle.LabelStyleName);
+                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.y, 0f, 1f);
                 if (newSaturation != materialInfo.ColorHSV.y)
                 {
                     materialInfo.ColorHSV.y = newSaturation;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyOverrides(ItemId, materialName);
                 }
-                GUI.Label(new Rect(valueX, saturationY, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
 
 
-                GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "Value:", CamoEditorStyle.LabelStyleName);
-                var newValue = GUI.HorizontalSlider(new Rect(sliderX, valueY + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.z, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Value:", CamoEditorStyle.LabelStyleName);
+                var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.z, 0f, 1f);
                 if (newValue != materialInfo.ColorHSV.z)
                 {
                     materialInfo.ColorHSV.z = newValue;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyOverrides(ItemId, materialName);
                 }
-                GUI.Label(new Rect(valueX, valueY, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
 
 
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Glossness:", CamoEditorStyle.LabelStyleName);
+                var newGlossness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Glossness, 0.01f, 10f);
+                if (newGlossness != materialInfo.Glossness)
+                {
+                    materialInfo.Glossness = newGlossness;
+                    Plugin.ApplyOverrides(ItemId, materialName);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Glossness:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Specularness:", CamoEditorStyle.LabelStyleName);
+                var newSpecularness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Specularness, 0.01f, 10f);
+                if (newSpecularness != materialInfo.Specularness)
+                {
+                    materialInfo.Specularness = newSpecularness;
+                    Plugin.ApplyOverrides(ItemId, materialName);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Specularness:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
             }
 
 			GUI.DragWindow();
