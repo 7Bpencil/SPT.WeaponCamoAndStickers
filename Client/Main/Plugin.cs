@@ -77,8 +77,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     public class Plugin : BaseUnityPlugin
     {
         public static readonly int _Color = Shader.PropertyToID("_Color");
-        public static readonly int _Glossness = Shader.PropertyToID("_Glossness");
-        public static readonly int _Specularness = Shader.PropertyToID("_Specularness");
+        public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the shader
+        public static readonly int _Specularness = Shader.PropertyToID("_Glossness");
 
         private const double SaveLagTime = 60;
 
