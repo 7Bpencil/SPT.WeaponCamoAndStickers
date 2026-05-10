@@ -88,8 +88,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
 		public ManualLogSource LoggerInstance;
 
-        private string PresetsPath;
-        private string ItemsPath;
+        private string PresetsDir;
+        private string ItemsDir;
         private CamoEditorResources CamoEditorResources;
 
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -99,9 +99,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         private Option<CamoEditor> CamoEditor;
         private bool IsCamoEditorWaitingForWeaponPreview;
-
-        private Option<double> LastPresetsSaveTime;
-        private Option<double> LastItemsSaveTime;
 
         public bool IsFikaSupportEnabled;
         public bool IsFikaHeadless;
@@ -114,12 +111,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             UIScale = Config.Bind<float>("Main", "Camo Editor | UI Scale", 1f, new ConfigDescription("", new AcceptableValueRange<float>(0.5f, 2f)));
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            ItemsPath = Path.Combine(assemblyDir, "items.json");
+            PresetsDir = Path.Combine(assemblyDir, "presets");
+            ItemsDir = Path.Combine(assemblyDir, "items");
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "change-equipment-color");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             CamoEditorResources = new(bundle);
 
-            ItemsWithDecals = LoadItemsWithDecals(ItemsPath);
+            ItemsWithDecals = LoadItemsWithMaterials(ItemsDir);
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
@@ -170,10 +168,38 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
-        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string filePath)
+        public Dictionary<string, ItemsWithDecals> LoadItemsWithMaterials(string directoryPath)
         {
+            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
             var result = new Dictionary<string, ItemsWithDecals>();
+
+            foreach (var filePath in filePaths)
+            {
+                var itemId = Path.GetFileNameWithoutExtension(filePath);
+                if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+                {
+                    var materialsInfo = JsonConvert.DeserializeObject<MaterialsInfo>(json);
+                    UpgradeOldVersionsOfDecalsInfo(materialsInfo);
+                    var itemsWithDecals = new ItemsWithDecals()
+                    {
+                        Items = new(),
+                        MaterialsInfo = materialsInfo,
+                    };
+
+                    result.Add(itemId, itemsWithDecals);
+                }
+                else
+                {
+                    Logger.LogError($"Failed to load item: {itemId}, error: {e}");
+                }
+            }
+
             return result;
+        }
+
+        public static void UpgradeOldVersionsOfDecalsInfo(MaterialsInfo materialsInfo)
+        {
+
         }
 
         public void OnCreateItemAsync(Item item)
@@ -335,7 +361,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
+    			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
                 return;
             }
 
@@ -423,34 +449,46 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
-            // TODO clear item from db if no overrides
-            // save otherwise
+            var itemId = camoEditor.ItemId;
+            if (GetMaterialsInfo(itemId).Some(out var materialsInfo))
+            {
+                if (materialsInfo.Materials.Count == 0)
+                {
+                    ItemsWithDecals.Remove(itemId);
+                    RemoveMaterialsFile(itemId);
+                    Logger.LogInfo($"CloseCamoEditor: {itemId} remove materials");
+                }
+                else
+                {
+                    var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                    materialsInfo.SaveTime = time;
+                    WriteMaterialsToFile(itemId, materialsInfo);
+                    Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite materials");
+                }
+            }
 
             camoEditor.Destroy();
             CamoEditor = default;
         }
 
-        public void Update()
+        public void WriteMaterialsToFile(string itemId, MaterialsInfo materialsInfo)
         {
-            // SaveLagTime and LastSaveTime are needed to not write to file
-            // every time user changes scope transparency mode
+            var json = JsonConvert.SerializeObject(materialsInfo, Formatting.Indented);
+            var filePath = GetItemFilePath(itemId);
+            SafeIO.WriteAllTextAsync(filePath, json);
+        }
 
-            if (LastItemsSaveTime.Some(out var lastItemsSaveTime))
-            {
-                if (Time.realtimeSinceStartupAsDouble - lastItemsSaveTime >= SaveLagTime)
-                {
-                    // SaveTransparentScopesToFile(ConfigPath, TransparentScopes);
-                    LastItemsSaveTime = default;
-                }
-            }
-            if (LastPresetsSaveTime.Some(out var lastPresetsSaveTime))
-            {
-                if (Time.realtimeSinceStartupAsDouble - lastPresetsSaveTime >= SaveLagTime)
-                {
-                    // SaveTransparentScopesToFile(ConfigPath, TransparentScopes);
-                    LastPresetsSaveTime = default;
-                }
-            }
+        public void RemoveMaterialsFile(string itemId)
+        {
+            var filePath = GetItemFilePath(itemId);
+            SafeIO.DeleteFile(filePath);
+        }
+
+        public string GetItemFilePath(string itemId)
+        {
+            var fileName = $"{itemId}.json";
+            var filePath = Path.Combine(ItemsDir, fileName);
+            return filePath;
         }
 
         public void OnGUI()
@@ -612,11 +650,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public void IngestRemoteDecals(string itemId, MaterialsInfo remoteDecalInfo)
         {
 
-        }
-
-        public void WriteDecalsToFile()
-        {
-            LastItemsSaveTime = new(Time.realtimeSinceStartupAsDouble);
         }
 
     }
