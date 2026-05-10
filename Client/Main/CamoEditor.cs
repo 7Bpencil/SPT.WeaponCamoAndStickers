@@ -7,6 +7,7 @@
 
 using SevenBoldPencil.Common;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // TODO we need presets both for item template and different color swatches
@@ -149,6 +150,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public string ItemId;
         public int InstanceID;
         public ItemWithDecals ItemWithDecals;
+        public Dictionary<string, MaterialInfo> OriginalMaterials;
         public bool IsOpened;
         public Vector2 MaterialsScrollPosition;
         public Option<string> CurrentlyEditedOverride;
@@ -309,7 +311,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     {
                         if (GUI.Button(new Rect(x, materialsY, boxWidth, buttonHeight), materialName))
                         {
-                            Plugin.OverrideMaterial(ItemWithDecals, ItemId, InstanceID, materialName);
+                            Plugin.OverrideMaterial(ItemWithDecals, OriginalMaterials, ItemId, InstanceID, materialName);
                             CurrentlyEditedOverride = new(materialName);
                         }
                     }
