@@ -466,6 +466,39 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return default;
         }
 
+        public MaterialInfo GetMaterialInfo(string itemId, string materialName)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            return itemsWithDecals.MaterialsInfo.Materials[materialName];
+        }
+
+        public void ApplyColor(string itemId, string materialName)
+        {
+            ModfiyMaterialOnItems(itemId, materialName, (materialOverride, materialInfo) =>
+            {
+                var color = materialInfo.ColorHSV.HSVtoRGBA();
+                var propertyBlock = materialOverride.PropertyBlock;
+                propertyBlock.SetColor("_Color", color);
+
+                foreach (var (renderer, index) in materialOverride.Renderers)
+                {
+                    renderer.SetPropertyBlock(propertyBlock, index);
+                }
+            });
+        }
+
+        // notice that we modify material on all items
+        public void ModfiyMaterialOnItems(string itemId, string materialName, Action<MaterialOveride, MaterialInfo> changeMaterial)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            var materialInfo = itemsWithDecals.MaterialsInfo.Materials[materialName];
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+            {
+                var materialOverride = itemWithDecals.Overrides[materialName];
+                changeMaterial(materialOverride, materialInfo);
+            }
+        }
+
         public void OnCloneItem(string originalId, string cloneId)
         {
             // when user tries weapon in hideout shooting range,
