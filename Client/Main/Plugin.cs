@@ -676,10 +676,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var propertyBlock = materialOverride.PropertyBlock;
                 propertyBlock.SetTexture(_MainTex, texture);
-                foreach (var (renderer, index) in materialOverride.Renderers)
-                {
-                    renderer.SetPropertyBlock(propertyBlock, index);
-                }
+                ApplyPropertyBlock(materialOverride, propertyBlock);
             }
         }
 
