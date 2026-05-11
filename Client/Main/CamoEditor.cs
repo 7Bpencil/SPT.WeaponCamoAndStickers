@@ -363,7 +363,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             if (decalInfo.PaintMode == DecalPaintMode.Erase)
             {
-                var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
+                var (_, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
                 return
                     bigMargin +
                     buttonHeight + bigMargin + // back button
@@ -387,7 +387,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
         }
 
-        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory, int maxIconsVisibleHeight)
+        public static (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory, int maxIconsVisibleHeight)
         {
             var totalHeight = 0;
             CalculateTexturesDirectoryHeight(ref totalHeight, texturesDirectory, false);
@@ -396,7 +396,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return (totalHeight, visibleHeight);
         }
 
-        private void CalculateTexturesDirectoryHeight(ref int y, TexturesDirectory texturesDirectory, bool drawName = true)
+        public static void CalculateTexturesDirectoryHeight(ref int y, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -1587,17 +1587,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DestroyTransformHandle();
         }
 
-        private static int DivideIntCeil(int left, int right)
+        public static int DivideIntCeil(int left, int right)
         {
             return (left + right - 1) / right;
         }
 
-        private static int DivideIntRound(int left, int right)
+        public static int DivideIntRound(int left, int right)
         {
             return (left + right / 2) / right;
         }
 
-        private static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)
+        public static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)
         {
             var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
             if (totalCount > maxCount)
