@@ -429,6 +429,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 ItemWithDecals = itemWithDecals,
                 OriginalMaterials = originalMaterials,
                 IsOpened = false,
+                IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
             });

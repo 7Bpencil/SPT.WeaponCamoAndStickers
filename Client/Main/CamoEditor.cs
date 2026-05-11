@@ -94,6 +94,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public bool IsOpened;
         public Vector2 MaterialsScrollPosition;
         public Option<string> CurrentlyEditedOverride;
+        public bool IsColorPickerOpened;
         public DecalTextureType DecalTypeMenu;
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
@@ -132,7 +133,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly Rect colorPickerRect = new(0, 258, 230, 304);
+        public static readonly Rect colorPickerRect = new(0, 80, hsCircleDiameter + bigMargin * 2, hsCircleDiameter + bigMargin * 2);
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
         public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
@@ -172,6 +173,21 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                     GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+
+                    if (IsColorPickerOpened)
+                    {
+                        var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
+                        GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+
+                        var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                        GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                    }
+                    else
+                    {
+                        var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                        GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                    }
+
                 }
                 else
                 {
@@ -208,9 +224,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
             return
                 bigMargin +
-                buttonHeight + mediumMargin + // back button
-                buttonHeight + mediumMargin + // material name
-                hsCircleDiameter + bigMargin + // color swatches + picker
+                buttonHeight + bigMargin + // back button
                 buttonHeight + smallMargin + // hue
                 buttonHeight + smallMargin + // saturation
                 buttonHeight + smallMargin + // value
@@ -293,35 +307,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 CurrentlyEditedOverride = default;
             }
-            y += buttonHeight + mediumMargin;
-
-            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), materialName, CamoEditorStyle.MaterialNameStyle);
-            y += buttonHeight + mediumMargin;
-
-            {
-                var colorPickerX = x + boxWidth - hsCircleDiameter;
-                var hsCircleRect = new Rect(colorPickerX, y, hsCircleDiameter, hsCircleDiameter);
-    			if (GUI.RepeatButton(hsCircleRect, CamoEditorResources.ColorWheelHSV, CamoEditorStyle.ColorPickerButtonStyle))
-                {
-    				var direction = Event.current.mousePosition - hsCircleRect.center;
-    				var directionScaled = direction / (hsCircleDiameter * 0.5f);
-    				var directionClamped = Vector2.ClampMagnitude(directionScaled, 1f);
-    				var directionFinal = new Vector2(directionClamped.x, -directionClamped.y);
-    				var angle = Mathf.Atan2(directionFinal.y, directionFinal.x) / (Mathf.PI * 2);
-    				if (angle < 0)
-    				{
-    					angle += 1;
-    				}
-
-    				var hue = angle;
-    				var saturation = directionClamped.magnitude;
-
-                    materialInfo.ColorHSV.x = hue;
-                    materialInfo.ColorHSV.y = saturation;
-                    Plugin.ApplyColor(ItemId, materialName);
-                }
-                y += hsCircleDiameter + bigMargin;
-            }
+            y += buttonHeight + bigMargin;
 
             {
                 var sliderWidth = 224;
@@ -558,6 +544,59 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 IsOpened = true;
 				WindowRect.width = windowWidth;
             }
+        }
+
+        private void DrawColorPickerWindowCloseButton(int windowID)
+        {
+            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIconColorWheel, ScaleMode.StretchToFill);
+            if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
+            {
+                IsColorPickerOpened = false;
+            }
+        }
+
+        private void DrawColorPickerWindowOpenButton(int windowID)
+        {
+            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.ClosedIconColorWheel, ScaleMode.StretchToFill);
+            if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
+            {
+                IsColorPickerOpened = true;
+            }
+        }
+
+        private void DrawColorPickerWindow(int windowID)
+        {
+            var materialName = CurrentlyEditedOverride.Value;
+            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName);
+
+            DrawColor(new Rect(0, 0, colorPickerRect.width, colorPickerRect.height), backgroundColor);
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+            var hsCircleRect = new Rect(x, y, hsCircleDiameter, hsCircleDiameter);
+			if (GUI.RepeatButton(hsCircleRect, CamoEditorResources.ColorWheelHSV, CamoEditorStyle.ColorPickerButtonStyle))
+            {
+				var direction = Event.current.mousePosition - hsCircleRect.center;
+				var directionScaled = direction / (hsCircleDiameter * 0.5f);
+				var directionClamped = Vector2.ClampMagnitude(directionScaled, 1f);
+				var directionFinal = new Vector2(directionClamped.x, -directionClamped.y);
+				var angle = Mathf.Atan2(directionFinal.y, directionFinal.x) / (Mathf.PI * 2);
+				if (angle < 0)
+				{
+					angle += 1;
+				}
+
+				var hue = angle;
+				var saturation = directionClamped.magnitude;
+
+                materialInfo.ColorHSV.x = hue;
+                materialInfo.ColorHSV.y = saturation;
+                Plugin.ApplyColor(ItemId, materialName);
+            }
+            y += hsCircleDiameter + bigMargin;
         }
 
         public void Destroy()
