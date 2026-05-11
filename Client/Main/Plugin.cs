@@ -236,6 +236,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ItemsDir = Path.Combine(assemblyDir, "items");
             PresetsDir = Path.Combine(assemblyDir, "presets");
             ClosedDirectoriesPath = Path.Combine(assemblyDir, "temp", "closed-directories.json");
+
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
@@ -250,6 +251,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Error = true,
             };
             CamoEditorResources = new(bundle);
+            bundle.UnloadAsync(false);
+
             DecalTextures = new();
             DecalTextureAssets = new();
 
