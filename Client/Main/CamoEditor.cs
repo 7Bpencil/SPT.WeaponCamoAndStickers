@@ -759,7 +759,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
-                Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyColor(ItemId, decalIndex);
             }
 
             {
@@ -777,7 +777,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
-                    Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyColor(ItemId, decalIndex);
                 }
 
                 GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "Saturation:", CamoStyle.LabelStyleName);
@@ -785,7 +785,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
-                    Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyColor(ItemId, decalIndex);
                 }
 
                 GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "Value:", CamoStyle.LabelStyleName);
@@ -793,7 +793,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
-                    Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyColor(ItemId, decalIndex);
                 }
             }
         }
@@ -1128,7 +1128,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newAlpha != decalInfo.ColorHSVA.w)
                 {
                     decalInfo.ColorHSVA.w = newAlpha;
-                    Plugin.ApplyColor(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoStyle.LabelStyleValue);
 
@@ -1138,7 +1138,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;
-                    Plugin.ApplyMaxAngle(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyMaxAngle(ItemId, decalIndex);
                 }
                 GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoStyle.LabelStyleValue);
 
@@ -1313,7 +1313,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;
-                    Plugin.ApplyMaxAngle(ItemId, decalIndex, decalInfo);
+                    Plugin.ApplyMaxAngle(ItemId, decalIndex);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoStyle.LabelStyleValue);
 
@@ -1419,41 +1419,41 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (handleType == HandleType.Position)
             {
                 decalInfo.LocalPosition = decal.DecalTransform.localPosition;
-                Plugin.ApplyLocalPosition(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyLocalPosition(ItemId, decalIndex);
             }
             if (handleType == HandleType.Rotation)
             {
                 decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
-                Plugin.ApplyLocalEulerAngles(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyLocalEulerAngles(ItemId, decalIndex);
             }
             if (handleType == HandleType.Scale)
             {
                 decalInfo.LocalScale = decal.DecalTransform.localScale;
-                Plugin.ApplyLocalScale(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyLocalScale(ItemId, decalIndex);
             }
             if (handleType == HandleType.TextureOffset)
             {
-                Plugin.ApplyTextureUV(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyTextureUV(ItemId, decalIndex);
             }
             if (handleType == HandleType.TextureAngle)
             {
-                Plugin.ApplyTextureAngle(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyTextureAngle(ItemId, decalIndex);
             }
             if (handleType == HandleType.TextureTiling)
             {
-                Plugin.ApplyTextureUV(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyTextureUV(ItemId, decalIndex);
             }
             if (handleType == HandleType.MaskOffset)
             {
-                Plugin.ApplyMaskUV(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyMaskUV(ItemId, decalIndex);
             }
             if (handleType == HandleType.MaskAngle)
             {
-                Plugin.ApplyMaskAngle(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyMaskAngle(ItemId, decalIndex);
             }
             if (handleType == HandleType.MaskTiling)
             {
-                Plugin.ApplyMaskUV(ItemId, decalIndex, decalInfo);
+                Plugin.ApplyMaskUV(ItemId, decalIndex);
             }
         }
 
