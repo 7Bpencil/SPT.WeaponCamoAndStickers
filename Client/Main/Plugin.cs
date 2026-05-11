@@ -79,7 +79,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         }
     }
 
-    [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.8.0")]
+    [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.0.0")]
+    [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
@@ -118,9 +119,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             PresetsDir = Path.Combine(assemblyDir, "presets-materials");
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
-			var bundlePath = Path.Combine(assemblyDir, "bundles", "change-equipment-color");
-            var bundle = AssetBundle.LoadFromFile(bundlePath);
-            CamoEditorResources = new(bundle);
+            CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
             ItemsWithDecals = LoadItemsWithMaterials(ItemsDir);
             Clones = new();

@@ -18,74 +18,6 @@ using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
-    public class CamoEditorResources
-    {
-        public Texture2D MainIcon;
-        public Texture2D ClosedIcon;
-        public Texture2D OpenedIcon;
-        public Texture2D MoveUpIcon;
-        public Texture2D MoveDownIcon;
-        public Texture2D EditPositionIcon;
-        public Texture2D EditRotationIcon;
-        public Texture2D EditScaleIcon;
-        public Texture2D EditTextureUVOffsetIcon;
-        public Texture2D EditTextureUVAngleIcon;
-        public Texture2D EditTextureUVTilingIcon;
-        public Texture2D EditMaskUVOffsetIcon;
-        public Texture2D EditMaskUVAngleIcon;
-        public Texture2D EditMaskUVTilingIcon;
-        public Texture2D DuplicateIcon;
-        public Texture2D CopyIcon;
-        public Texture2D PasteIcon;
-        public Texture2D DeleteIcon;
-        public Texture2D SaveIcon;
-        public Texture2D SaveErrorIcon;
-        public Texture2D ColorWheelHSV;
-        public Texture2D PlayIcon;
-        public Texture2D HiddenIcon;
-        public Texture2D VisibleIcon;
-        public Texture2D MirrorDisabled;
-        public Texture2D MirrorEnabled;
-        public Texture2D MirrorEnabledNoFilp;
-        public Texture2D Reset;
-
-        public string[] DecalTypesToolbar;
-
-        public CamoEditorResources(AssetBundle bundle)
-        {
-            MainIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/hsv-circle-icon.png");
-            ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/closed-arrow.png");
-            OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/opened-arrow.png");
-            MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/up-arrow.png");
-            MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/down-arrow.png");
-            EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/Move-Icon.png");
-            EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/Rotate-Icon.png");
-            EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/Scale-Icon.png");
-            EditTextureUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Texture-Move-Icon.png");
-            EditTextureUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Texture-Rotate-Icon.png");
-            EditTextureUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Texture-Scale-Icon.png");
-            EditMaskUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Mask-Move-Icon.png");
-            EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Mask-Rotate-Icon.png");
-            EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/UV-Mask-Scale-Icon.png");
-            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/duplicate.png");
-            CopyIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/copy.png");
-            PasteIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/paste.png");
-            DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/bin.png");
-            SaveIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/diskette.png");
-            SaveErrorIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/diskette-error.png");
-            ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/hsv-circle.png");
-            PlayIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/play-icon.png");
-            HiddenIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/hidden.png");
-            VisibleIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/visible.png");
-            MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/mirror-off.png");
-            MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/mirror-on.png");
-            MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/mirror-on-no-flip.png");
-            Reset = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/undo.png");
-
-            DecalTypesToolbar = ["Camos", "Stickers"];
-        }
-    }
-
     public class CamoEditorStyle
     {
         public GUIStyle LabelStyleName;
@@ -612,7 +544,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         private void DrawClosedWindow(int windowID)
         {
             DrawColor(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), backgroundColor);
-            GUI.DrawTexture(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), CamoEditorResources.MainIcon, ScaleMode.StretchToFill);
+            GUI.DrawTexture(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), CamoEditorResources.MainIconMaterial, ScaleMode.StretchToFill);
 
 			GUI.DragWindow();
         }
