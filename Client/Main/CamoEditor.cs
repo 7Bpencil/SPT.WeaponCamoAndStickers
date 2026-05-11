@@ -19,6 +19,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Shader ScaleHandleShader;
 
         public Texture2D MainIcon;
+        public Texture2D MainIconMaterial;
         public Texture2D ClosedIcon;
         public Texture2D OpenedIcon;
         public Texture2D ClosedIconColorWheel;
@@ -47,6 +48,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorDisabled;
         public Texture2D MirrorEnabled;
         public Texture2D MirrorEnabledNoFilp;
+        public Texture2D Reset;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -58,6 +60,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
 
             MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/color-palette.png");
+            MainIconMaterial = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle-icon.png");
             ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow.png");
             OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
             ClosedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow-color-wheel.png");
@@ -86,6 +89,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
+            Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
