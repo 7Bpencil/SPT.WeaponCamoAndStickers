@@ -116,8 +116,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 			LoggerInstance = Logger;
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            PresetsDir = Path.Combine(assemblyDir, "presets");
-            ItemsDir = Path.Combine(assemblyDir, "items");
+            PresetsDir = Path.Combine(assemblyDir, "presets-materials");
+            ItemsDir = Path.Combine(assemblyDir, "items-materials");
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "change-equipment-color");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             CamoEditorResources = new(bundle);
