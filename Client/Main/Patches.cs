@@ -195,6 +195,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 			// if this method is called then next WeaponPreview.Class3271.method_1
 			// is guaranteed to be weapon preview for this WeaponModdingScreen
 
+			if (item is Weapon)
+			{
+				return;
+			}
+
 			Plugin.Instance.WaitForWeaponPreview();
 		}
 	}

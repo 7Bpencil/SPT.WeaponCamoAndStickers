@@ -15,6 +15,7 @@ using EFT.InventoryLogic;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using System;
 using System.IO;
 using System.Reflection;
@@ -25,6 +26,11 @@ using UnityEngine.Networking;
 using UnityEngine.Video;
 
 // TODO fde is 0.09 hue and 6.7 glossness
+// TODO add separate CHANGE COLOR button in interaction menu
+// TODO its unrealiable, make it realiable lol
+
+using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
+using SystemObject = System.Object;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
@@ -40,12 +46,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     public class ItemWithDecals
     {
         public AssetPoolObject Item;
-        public Dictionary<string, MaterialOveride> Overrides;
+        public Dictionary<string, MaterialOverride> Overrides;
     }
 
-    public class MaterialOveride
+    public class MaterialOverride
     {
-        public MaterialPropertyBlock PropertyBlock;
+        public MaterialPropertyBlock PropertyBlock; // TODO store property block per ItemsWithDecals not ItemWithDecals
         public List<(Renderer, int)> Renderers;
     }
 
@@ -60,7 +66,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
     public class MaterialInfo
     {
-        // TODO should glossness and specularness be switched?
+        public string Texture;
+        public Vector4 TextureUV;
         public Vector3 ColorHSV;
 		public float Glossness;
 		public float Specularness;
@@ -76,8 +83,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
+        public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
+        public static readonly int _MainTex_ST = Shader.PropertyToID("_MainTex_ST");
         public static readonly int _Color = Shader.PropertyToID("_Color");
-        public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the shader
+        public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
         public static readonly int _Specularness = Shader.PropertyToID("_Glossness");
 
         private const double SaveLagTime = 60;
@@ -249,7 +258,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public ItemWithDecals BuildItemOverrides(AssetPoolObject assetPoolObject)
         {
-            var overrides = new Dictionary<string, MaterialOveride>();
+            var overrides = new Dictionary<string, MaterialOverride>();
 
             foreach (var renderer in assetPoolObject.Renderers)
             {
@@ -268,7 +277,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             };
         }
 
-        public void BuildRendererOverrides(Renderer renderer, Dictionary<string, MaterialOveride> totalOverrides)
+        public void BuildRendererOverrides(Renderer renderer, Dictionary<string, MaterialOverride> totalOverrides)
         {
             var materials = renderer.sharedMaterials;
             for (var i = 0; i < materials.Length; i++)
@@ -288,7 +297,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     }
                     else
                     {
-                        totalOverrides.Add(materialName, new MaterialOveride()
+                        totalOverrides.Add(materialName, new MaterialOverride()
                         {
                             PropertyBlock = new MaterialPropertyBlock(),
                             Renderers = new() { pair },
@@ -326,6 +335,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     {
                         originalMaterials.Add(materialName, new MaterialInfo()
                         {
+                            Texture = "",
+                            TextureUV = material.GetVector(_MainTex_ST),
                             ColorHSV = material.GetColor(_Color).RGBAtoHSV(),
                             Glossness = material.GetFloat(_Glossness),
                             Specularness = material.GetFloat(_Specularness),
@@ -341,7 +352,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 if (item.Overrides.TryGetValue(materialName, out var materialOverride))
                 {
-                    ApplyOverride(materialOverride, materialInfo);
+                    ApplyAllOverrides(materialOverride, materialInfo);
                     Logger.LogWarning($"Patch: {materialName} | {materialOverride.Renderers.Count}");
                 }
                 else
@@ -423,6 +434,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 ItemWithDecals = itemWithDecals,
                 OriginalMaterials = originalMaterials,
                 IsOpened = false,
+                DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
             });
         }
@@ -573,27 +585,110 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public void ApplyOverrides(string itemId, string materialName)
+        public void ApplyAllOverrides(MaterialOverride materialOverride, MaterialInfo materialInfo)
         {
-            ModifyMaterialOnItems(itemId, materialName, ApplyOverride);
-        }
-
-        public void ApplyOverride(MaterialOveride materialOverride, MaterialInfo materialInfo)
-        {
-            var color = materialInfo.ColorHSV.HSVtoRGBA();
             var propertyBlock = materialOverride.PropertyBlock;
+
+            var color = materialInfo.ColorHSV.HSVtoRGBA();
             propertyBlock.SetColor(_Color, color);
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
+            propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+            ApplyPropertyBlock(materialOverride, propertyBlock);
 
+            if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
+            {
+                BigPlugin.Instance.AcquireDecalTextureAsset(materialOverride, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+            }
+        }
+
+        public void ApplyPropertyBlock(MaterialOverride materialOverride, MaterialPropertyBlock propertyBlock)
+        {
             foreach (var (renderer, index) in materialOverride.Renderers)
             {
                 renderer.SetPropertyBlock(propertyBlock, index);
             }
         }
 
+        public void ApplyColor(string itemId, string materialName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, ApplyColor);
+        }
+
+        public void ApplyColor(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        {
+            var propertyBlock = materialOverride.PropertyBlock;
+            var color = materialInfo.ColorHSV.HSVtoRGBA();
+            propertyBlock.SetColor(_Color, color);
+            ApplyPropertyBlock(materialOverride, propertyBlock);
+        }
+
+        public void ApplyGlossness(string itemId, string materialName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, ApplyGlossness);
+        }
+
+        public void ApplyGlossness(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        {
+            var propertyBlock = materialOverride.PropertyBlock;
+            propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
+            ApplyPropertyBlock(materialOverride, propertyBlock);
+        }
+
+        public void ApplySpecularness(string itemId, string materialName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, ApplySpecularness);
+        }
+
+        public void ApplySpecularness(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        {
+            var propertyBlock = materialOverride.PropertyBlock;
+            propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
+            ApplyPropertyBlock(materialOverride, propertyBlock);
+        }
+
+        public void ApplyTextureUV(string itemId, string materialName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, ApplyTextureUV);
+        }
+
+        public void ApplyTextureUV(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        {
+            var propertyBlock = materialOverride.PropertyBlock;
+            propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+            ApplyPropertyBlock(materialOverride, propertyBlock);
+        }
+
+        public void ChangeTexture(string itemId, string materialName, string textureName)
+        {
+            ModifyMaterialOnItems(itemId, materialName, (materialOverride, materialInfo) =>
+            {
+                var oldTextureName = materialInfo.Texture;
+                materialInfo.Texture = textureName;
+
+                if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
+                {
+                    BigPlugin.Instance.ReleaseDecalTextureAsset(materialOverride, oldTextureName);
+                }
+                BigPlugin.Instance.AcquireDecalTextureAsset(materialOverride, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+            });
+        }
+
+        public void MaterialChangeTexture(SystemObject key, Texture texture)
+        {
+            if (key is MaterialOverride materialOverride)
+            {
+                var propertyBlock = materialOverride.PropertyBlock;
+                propertyBlock.SetTexture(_MainTex, texture);
+                foreach (var (renderer, index) in materialOverride.Renderers)
+                {
+                    renderer.SetPropertyBlock(propertyBlock, index);
+                }
+            }
+        }
+
         // notice that we modify material on all items
-        public void ModifyMaterialOnItems(string itemId, string materialName, Action<MaterialOveride, MaterialInfo> changeMaterial)
+        public void ModifyMaterialOnItems(string itemId, string materialName, Action<MaterialOverride, MaterialInfo> changeMaterial)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
             var materialInfo = itemsWithDecals.MaterialsInfo.Materials[materialName];

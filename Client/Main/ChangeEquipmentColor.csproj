@@ -87,6 +87,9 @@
     <Reference Include="UnityEngine.VideoModule">
       <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.VideoModule.dll</HintPath>
     </Reference>
+    <Reference Include="7Bpencil.WeaponCamoAndStickers">
+      <HintPath>..\..\..\..\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers\7Bpencil.WeaponCamoAndStickers.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <Target Name="CopyToSPT" AfterTargets="AfterBuild">

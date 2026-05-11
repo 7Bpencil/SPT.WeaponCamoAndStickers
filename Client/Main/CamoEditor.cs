@@ -6,11 +6,15 @@
 //
 
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 // TODO we need presets both for item template and different color swatches
+
+using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
+using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
@@ -45,6 +49,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public Texture2D MirrorEnabledNoFilp;
         public Texture2D Reset;
 
+        public string[] DecalTypesToolbar;
+
         public CamoEditorResources(AssetBundle bundle)
         {
             MainIcon = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/hsv-circle-icon.png");
@@ -75,6 +81,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/mirror-on-no-flip.png");
             Reset = bundle.LoadAsset<Texture2D>("Assets/ChangeEquipmentColor/Icons/undo.png");
+
+            DecalTypesToolbar = ["Camos", "Stickers"];
         }
     }
 
@@ -154,6 +162,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public bool IsOpened;
         public Vector2 MaterialsScrollPosition;
         public Option<string> CurrentlyEditedOverride;
+        public DecalTextureType DecalTypeMenu;
+        public Vector2 CamosScrollPosition;
+        public Vector2 StickersScrollPosition;
 		public Rect WindowRect;
 
         // brace for imGUI shitshow
@@ -253,7 +264,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         private int CalculateMaterialsWindowHeight()
         {
             var totalMaterialsCount = ItemWithDecals.Overrides.Count;
-            var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
+            var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
             return
                 bigMargin +
                 visibleHeight + bigMargin; // materials
@@ -261,6 +272,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         private int CalculateMaterialEditWindowHeight()
         {
+            var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(DecalTypeMenu);
+            var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
             return
                 bigMargin +
                 buttonHeight + mediumMargin + // back button
@@ -270,7 +283,14 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 buttonHeight + smallMargin + // saturation
                 buttonHeight + smallMargin + // value
                 buttonHeight + smallMargin + // glossness
-                buttonHeight + bigMargin - 7; // specularness
+                buttonHeight + smallMargin + // specularness
+                buttonHeight + smallMargin + // texture uv x
+                buttonHeight + smallMargin + // texture uv y
+                buttonHeight + bigMargin + // texture uv scale
+                iconSize + bigMargin + // icon
+                smallMargin + bigMargin + // separator
+                buttonHeight + smallMargin + // toolbar camos/stickers
+                visibleHeight + bigMargin; // icons grid
         }
 
         private void DrawOpenedWindow(int windowID)
@@ -285,11 +305,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var materialsY = y;
 
-                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Overrides.Count, maxMaterialsCount, buttonHeight, smallMargin);
+                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Overrides.Count, maxMaterialsCount, buttonHeight, smallMargin);
                 var totalRect = new Rect(x, materialsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, materialsY, boxWidth + 16, visibleHeight);
 
-                DrawScrollBar(x + boxWidth + 5, materialsY, totalHeight, visibleHeight, MaterialsScrollPosition);
+                BigCamoEditor.DrawScrollBar(x + boxWidth + 5, materialsY, totalHeight, visibleHeight, MaterialsScrollPosition);
                 MaterialsScrollPosition = GUI.BeginScrollView(visibleRect, MaterialsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
                 var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
@@ -366,7 +386,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                     materialInfo.ColorHSV.x = hue;
                     materialInfo.ColorHSV.y = saturation;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplyColor(ItemId, materialName);
                 }
                 y += hsCircleDiameter + bigMargin;
             }
@@ -383,7 +403,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 if (newHue != materialInfo.ColorHSV.x)
                 {
                     materialInfo.ColorHSV.x = newHue;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplyColor(ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -394,7 +414,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 if (newSaturation != materialInfo.ColorHSV.y)
                 {
                     materialInfo.ColorHSV.y = newSaturation;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplyColor(ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -405,35 +425,176 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 if (newValue != materialInfo.ColorHSV.z)
                 {
                     materialInfo.ColorHSV.z = newValue;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplyColor(ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Glossness:", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Gloss:", CamoEditorStyle.LabelStyleName);
                 var newGlossness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Glossness, 0.01f, 10f);
                 if (newGlossness != materialInfo.Glossness)
                 {
                     materialInfo.Glossness = newGlossness;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplyGlossness(ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Glossness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Specularness:", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Specular:", CamoEditorStyle.LabelStyleName);
                 var newSpecularness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Specularness, 0.01f, 10f);
                 if (newSpecularness != materialInfo.Specularness)
                 {
                     materialInfo.Specularness = newSpecularness;
-                    Plugin.ApplyOverrides(ItemId, materialName);
+                    Plugin.ApplySpecularness(ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Specularness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
+                var newUVz = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.z, -1f, 1f);
+                if (newUVz != materialInfo.TextureUV.z)
+                {
+                    materialInfo.TextureUV.z = newUVz;
+                    Plugin.ApplyTextureUV(ItemId, materialName);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV y:", CamoEditorStyle.LabelStyleName);
+                var newUVw = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.w, -1f, 1f);
+                if (newUVw != materialInfo.TextureUV.w)
+                {
+                    materialInfo.TextureUV.w = newUVw;
+                    Plugin.ApplyTextureUV(ItemId, materialName);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.w:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
+                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.x, 0.5f, 2f);
+                if (newUVx != materialInfo.TextureUV.x)
+                {
+                    materialInfo.TextureUV.x = newUVx;
+                    materialInfo.TextureUV.y = newUVx;
+                    Plugin.ApplyTextureUV(ItemId, materialName);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + bigMargin;
             }
 
+            if (string.IsNullOrWhiteSpace(materialInfo.Texture))
+            {
+                GUI.Button(new Rect(x, y, iconSize, iconSize), "default");
+            }
+            else
+            {
+                var textureData = BigPlugin.Instance.GetTextureData(materialInfo.Texture);
+                GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
+
+                var labelX = x + iconSize + smallMargin + 12;
+                GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), materialInfo.Texture, CamoEditorStyle.TextureNameStyle);
+            }
+            y += iconSize + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
+            y += buttonHeight + smallMargin;
+
+            DrawAllTextures(x, y, materialName, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
+
 			GUI.DragWindow();
+        }
+
+        private void DrawAllTextures(int x, int y, string materialName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
+        {
+            var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(decalTextureType);
+
+            var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
+            var totalRect = new Rect(x, y, boxWidth, totalHeight);
+            var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
+
+            BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, CamosScrollPosition);
+            CamosScrollPosition = GUI.BeginScrollView(visibleRect, CamosScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+            DrawAllTextures(ref x, ref y, materialName, texturesDirectory, drawName: false);
+
+            GUI.EndScrollView();
+        }
+
+        public void DrawAllTextures(ref int x, ref int y, string materialName, TexturesDirectory texturesDirectory, bool drawName = true)
+        {
+            if (drawName)
+            {
+                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
+                {
+                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
+                }
+
+                var iconSize = 20;
+                var iconMargin = (buttonHeight - iconSize) / 2;
+                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
+                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+
+                y += buttonHeight + smallMargin;
+            }
+
+            if (texturesDirectory.IsClosed)
+            {
+                return;
+            }
+
+            foreach (var subDirectory in texturesDirectory.Directories)
+            {
+                DrawAllTextures(ref x, ref y, materialName, subDirectory);
+            }
+
+            var textures = texturesDirectory.Textures;
+            for (var i = 0; i < textures.Length; i++)
+            {
+                var textureName = textures[i];
+                var textureData = BigPlugin.Instance.GetTextureData(textureName);
+
+                var ix = i % iconColumns;
+                var iy = i / iconColumns;
+
+                var xi = x + ix * (iconSize + smallMargin);
+                var yi = y + iy * (iconSize + smallMargin);
+
+                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
+                {
+                    Plugin.ChangeTexture(ItemId, materialName, textureName);
+                    // if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
+                    // {
+                    //     Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                    //     Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
+                    //     SyncTransformHandle(decalInfo, decal);
+                    // }
+                    // if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
+                    // {
+                    //     Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                    //     Plugin.FixScale(ItemId, decalIndex, decalInfo);
+                    //     SyncTransformHandle(decalInfo, decal);
+                    // }
+                    // if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
+                    // {
+                    //     Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
+                    // }
+                }
+                if (textureData.Format == DecalTextureFormat.Video)
+                {
+                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
+                }
+            }
+
+            var totalRows = BigCamoEditor.DivideIntCeil(textures.Length, iconColumns);
+            y += (iconSize + smallMargin) * totalRows;
         }
 
         private void DrawOpenedWindowCloseButton(int windowID)
@@ -464,33 +625,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 IsOpened = true;
 				WindowRect.width = windowWidth;
-            }
-        }
-
-        private static (int totalHeight, int visibleHeight) CalculateScrollViewTotalAndVisibleHeight(int totalCount, int maxCount, int itemHeight, int separatorHeight)
-        {
-            var totalHeight = totalCount * (itemHeight + separatorHeight) - separatorHeight;
-            if (totalCount > maxCount)
-            {
-                var visibleHeight = maxCount * (itemHeight + separatorHeight) - separatorHeight;
-                return (totalHeight, visibleHeight);
-            }
-            else
-            {
-                return (totalHeight, totalHeight);
-            }
-        }
-
-        // render my own vertical scroll bar because unity's one cannot be set slimmer than 15 px...
-        public static void DrawScrollBar(int x, int y, int totalHeight, int visibleHeight, Vector2 scrollPosition)
-        {
-            if (totalHeight > visibleHeight)
-            {
-                var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
-                var handlePositionT = scrollPosition.y / (float)totalHeight;
-                var handlePosition = handlePositionT * visibleHeight;
-                DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
-                DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
         }
 
