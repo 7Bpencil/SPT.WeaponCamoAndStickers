@@ -23,6 +23,7 @@ using RuntimeHandle;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
+using SystemObject = System.Object;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -112,7 +113,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public bool IsLoaded;
         public int InstancesCount;
-        public Dictionary<Decal, Action<Decal, Texture>> WaitingAfterLoad;
+        public Dictionary<SystemObject, Action<SystemObject, Texture>> WaitingAfterLoad;
         public Texture Texture;
 
         public abstract void Release();
@@ -994,16 +995,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return ErrorTextureData;
         }
 
-        public void AcquireDecalTextureAsset(Decal decal, string textureName, Action<Decal, DecalTextureData> beforeLoad, Action<Decal, Texture> afterLoad)
+        public void AcquireDecalTextureAsset(SystemObject key, string textureName, Action<SystemObject, Texture> beforeLoad, Action<SystemObject, Texture> afterLoad)
         {
             LogTexture(LogLevel.Info, "Increment", textureName);
 
             var textureData = GetTextureData(textureName);
-            beforeLoad(decal, textureData);
+
+            // set low res version immediately, otherwise texture will flash white which is disturbing
+            beforeLoad(key, textureData.Preview);
 
             if (textureData.Error)
             {
-                AcquireDecalTextureError(decal, afterLoad);
+                AcquireDecalTextureError(key, afterLoad);
                 return;
             }
 
@@ -1012,12 +1015,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 asset.InstancesCount++;
                 if (asset.IsLoaded)
                 {
-                    afterLoad(decal, asset.Texture);
+                    afterLoad(key, asset.Texture);
                     LogTexture(LogLevel.Info, "Load from cache", textureName);
                 }
                 else
                 {
-                    asset.WaitingAfterLoad.Add(decal, afterLoad);
+                    asset.WaitingAfterLoad.Add(key, afterLoad);
                     LogTexture(LogLevel.Info, "Already loading", textureName);
                 }
             }
@@ -1026,21 +1029,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 LogTexture(LogLevel.Info, "Start loading from disk", textureName);
                 if (textureData.Format == DecalTextureFormat.PNG)
                 {
-                    StartCoroutine(LoadPNG(decal, textureName, textureData, afterLoad));
+                    StartCoroutine(LoadPNG(key, textureName, textureData, afterLoad));
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
-                    StartCoroutine(LoadVideo(decal, textureName, textureData, afterLoad));
+                    StartCoroutine(LoadVideo(key, textureName, textureData, afterLoad));
                 }
             }
         }
 
-        public IEnumerator LoadPNG(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
+        public IEnumerator LoadPNG(SystemObject key, string textureName, DecalTextureData textureData, Action<SystemObject, Texture> afterLoad)
         {
             if (!File.Exists(textureData.FilePath))
             {
                 textureData.Error = true;
-                AcquireDecalTextureError(decal, afterLoad);
+                AcquireDecalTextureError(key, afterLoad);
                 LogTexture(LogLevel.Error, "Failed to load from disk", textureName);
                 yield break;
             }
@@ -1049,7 +1052,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 IsLoaded = false,
                 InstancesCount = 1,
-                WaitingAfterLoad = new() { { decal, afterLoad } },
+                WaitingAfterLoad = new() { { key, afterLoad } },
                 Texture = null,
             };
             DecalTextureAssets.Add(textureData.FilePath, asset);
@@ -1089,9 +1092,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ClearWaitingAfterLoadSuccess(DecalTextureAsset asset)
         {
-            foreach (var (waitingDecal, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
+            foreach (var (waitingKey, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
             {
-                waitingDecalAfterLoad(waitingDecal, asset.Texture);
+                waitingDecalAfterLoad(waitingKey, asset.Texture);
             }
             asset.WaitingAfterLoad.Clear();
             asset.WaitingAfterLoad = null;
@@ -1099,20 +1102,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ClearWaitingAfterLoadError(DecalTextureAsset asset)
         {
-            foreach (var (waitingDecal, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
+            foreach (var (waitingKey, waitingDecalAfterLoad) in asset.WaitingAfterLoad)
             {
-                AcquireDecalTextureError(waitingDecal, waitingDecalAfterLoad);
+                AcquireDecalTextureError(waitingKey, waitingDecalAfterLoad);
             }
             asset.WaitingAfterLoad.Clear();
             asset.WaitingAfterLoad = null;
         }
 
-        public IEnumerator LoadVideo(Decal decal, string textureName, DecalTextureData textureData, Action<Decal, Texture> afterLoad)
+        public IEnumerator LoadVideo(SystemObject key, string textureName, DecalTextureData textureData, Action<SystemObject, Texture> afterLoad)
         {
             if (!File.Exists(textureData.FilePath))
             {
                 textureData.Error = true;
-                AcquireDecalTextureError(decal, afterLoad);
+                AcquireDecalTextureError(key, afterLoad);
                 LogTexture(LogLevel.Error, "Failed to load from disk", textureName);
                 yield break;
             }
@@ -1121,7 +1124,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 IsLoaded = false,
                 InstancesCount = 1,
-                WaitingAfterLoad = new() { { decal, afterLoad } },
+                WaitingAfterLoad = new() { { key, afterLoad } },
                 Texture = null,
                 VideoPlayer = null,
             };
@@ -1207,12 +1210,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return isEnabled ? VideoAudioOutputMode.Direct : VideoAudioOutputMode.None;
         }
 
-        public void AcquireDecalTextureError(Decal decal, Action<Decal, Texture> afterLoad)
+        public void AcquireDecalTextureError(SystemObject key, Action<SystemObject, Texture> afterLoad)
         {
-            afterLoad(decal, ErrorTexture);
+            afterLoad(key, ErrorTexture);
         }
 
-        public void ReleaseDecalTextureAsset(Decal decal, string textureName)
+        public void ReleaseDecalTextureAsset(SystemObject key, string textureName)
         {
             LogTexture(LogLevel.Info, "Decrement", textureName);
             var textureData = GetTextureData(textureName);
@@ -1236,7 +1239,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
-                    asset.WaitingAfterLoad.Remove(decal);
+                    asset.WaitingAfterLoad.Remove(key);
                     LogTexture(LogLevel.Info, "Release still loading", textureName);
                 }
             }
@@ -1277,7 +1280,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 ReleaseDecalTextureAsset(decal, oldTextureName);
-                AcquireDecalTextureAsset(decal, decalInfo.Texture, BeforeLoad_ChangeTexture, AfterLoad_ChangeTexture);
+                AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
             });
         }
 
@@ -1289,7 +1292,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ModfiyDecalOnItems(itemId, decalIndex, decal =>
             {
                 ReleaseDecalTextureAsset(decal, oldMaskName);
-                AcquireDecalTextureAsset(decal, decalInfo.Mask, BeforeLoad_ChangeMask, AfterLoad_ChangeMask);
+                AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
             });
         }
 
@@ -1783,31 +1786,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
             var root = GetWeaponRoot(weaponPrefab);
 			decal.Init(DecalShader, root, decalInfo);
-            AcquireDecalTextureAsset(decal, decalInfo.Texture, BeforeLoad_ChangeTexture, AfterLoad_ChangeTexture);
-            AcquireDecalTextureAsset(decal, decalInfo.Mask, BeforeLoad_ChangeMask, AfterLoad_ChangeMask);
+            AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
+            AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
 			return decal;
 		}
 
-        public void BeforeLoad_ChangeTexture(Decal decal, DecalTextureData textureData)
+        public void DecalChangeTexture(SystemObject key, Texture texture)
         {
-            // set low res version immediately, otherwise texture will flash white which is disturbing
-            decal.ChangeTexture(textureData.Preview);
+            if (key is Decal decal)
+            {
+                decal.ChangeTexture(texture);
+            }
         }
 
-        public void AfterLoad_ChangeTexture(Decal decal, Texture texture)
+        public void DecalChangeMask(SystemObject key, Texture mask)
         {
-            decal.ChangeTexture(texture);
-        }
-
-        public void BeforeLoad_ChangeMask(Decal decal, DecalTextureData textureData)
-        {
-            // set low res version immediately, otherwise texture will flash white which is disturbing
-            decal.ChangeMask(textureData.Preview);
-        }
-
-        public void AfterLoad_ChangeMask(Decal decal, Texture mask)
-        {
-            decal.ChangeMask(mask);
+            if (key is Decal decal)
+            {
+                decal.ChangeMask(mask);
+            }
         }
 
 		public static Transform GetWeaponRoot(WeaponPrefab weaponPrefab)
