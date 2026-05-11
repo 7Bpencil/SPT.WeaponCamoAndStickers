@@ -21,6 +21,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MainIcon;
         public Texture2D ClosedIcon;
         public Texture2D OpenedIcon;
+        public Texture2D ClosedIconColorWheel;
+        public Texture2D OpenedIconColorWheel;
         public Texture2D MoveUpIcon;
         public Texture2D MoveDownIcon;
         public Texture2D EditPositionIcon;
@@ -58,6 +60,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/color-palette.png");
             ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow.png");
             OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
+            ClosedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow-color-wheel.png");
+            OpenedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow-color-wheel.png");
             MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/up-arrow.png");
             MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/down-arrow.png");
             EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
@@ -801,7 +805,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void DrawColorPickerWindowCloseButton(int windowID)
         {
             DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
-            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIcon, ScaleMode.StretchToFill);
+            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIconColorWheel, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
                 IsColorPickerOpened = false;
@@ -811,7 +815,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void DrawColorPickerWindowOpenButton(int windowID)
         {
             DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
-            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.ClosedIcon, ScaleMode.StretchToFill);
+            GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.ClosedIconColorWheel, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
                 IsColorPickerOpened = true;
