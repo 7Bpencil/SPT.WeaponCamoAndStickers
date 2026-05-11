@@ -655,13 +655,17 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ApplyPropertyBlock(materialOverride, propertyBlock);
         }
 
-        public void ChangeTexture(string itemId, string materialName, string textureName)
+        public void ChangeTexture(string itemId, string materialName, MaterialInfo materialInfo, string textureName)
+        {
+            var oldTextureName = materialInfo.Texture;
+            materialInfo.Texture = textureName;
+            ApplyTexture(itemId, materialName, oldTextureName);
+        }
+
+        public void ApplyTexture(string itemId, string materialName, string oldTextureName)
         {
             ModifyMaterialOnItems(itemId, materialName, (materialOverride, materialInfo) =>
             {
-                var oldTextureName = materialInfo.Texture;
-                materialInfo.Texture = textureName;
-
                 if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
                 {
                     BigPlugin.Instance.ReleaseDecalTextureAsset(materialOverride, oldTextureName);

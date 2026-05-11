@@ -425,12 +425,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            DrawAllTextures(x, y, materialName, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
+            DrawAllTextures(x, y, materialName, materialInfo, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
 
 			GUI.DragWindow();
         }
 
-        private void DrawAllTextures(int x, int y, string materialName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
+        private void DrawAllTextures(int x, int y, string materialName, MaterialInfo materialInfo, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(decalTextureType);
 
@@ -441,12 +441,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, CamosScrollPosition);
             CamosScrollPosition = GUI.BeginScrollView(visibleRect, CamosScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            DrawAllTextures(ref x, ref y, materialName, texturesDirectory, drawName: false);
+            DrawAllTextures(ref x, ref y, materialName, materialInfo, texturesDirectory, drawName: false);
 
             GUI.EndScrollView();
         }
 
-        public void DrawAllTextures(ref int x, ref int y, string materialName, TexturesDirectory texturesDirectory, bool drawName = true)
+        public void DrawAllTextures(ref int x, ref int y, string materialName, MaterialInfo materialInfo, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -470,7 +470,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             foreach (var subDirectory in texturesDirectory.Directories)
             {
-                DrawAllTextures(ref x, ref y, materialName, subDirectory);
+                DrawAllTextures(ref x, ref y, materialName, materialInfo, subDirectory);
             }
 
             var textures = texturesDirectory.Textures;
@@ -487,7 +487,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                 if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
                 {
-                    Plugin.ChangeTexture(ItemId, materialName, textureName);
+                    Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
                     // if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
                     // {
                     //     Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
