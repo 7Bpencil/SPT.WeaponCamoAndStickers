@@ -228,7 +228,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             var originalMatrix = GUI.matrix;
             var baseUIScale = Math.Max(Screen.height / 1080, 1);
-            var uiScale = baseUIScale * Plugin.UIScale.Value;
+            var uiScale = baseUIScale * BigPlugin.UIScale.Value;
             GUI.matrix = Matrix4x4.Scale(new(uiScale, uiScale, 1f));
 
             if (IsOpened)

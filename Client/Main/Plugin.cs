@@ -51,7 +51,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
     public class MaterialOverride
     {
-        public MaterialPropertyBlock PropertyBlock; // TODO store property block per ItemsWithDecals not ItemWithDecals
+        public MaterialPropertyBlock PropertyBlock;
         public List<(Renderer, int)> Renderers;
     }
 
@@ -93,8 +93,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public static Plugin Instance;
 
-        public static ConfigEntry<float> UIScale;
-
 		public ManualLogSource LoggerInstance;
 
         private string PresetsDir;
@@ -116,8 +114,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             Instance = this;
 			LoggerInstance = Logger;
-
-            UIScale = Config.Bind<float>("Main", "Camo Editor | UI Scale", 1f, new ConfigDescription("", new AcceptableValueRange<float>(0.5f, 2f)));
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             PresetsDir = Path.Combine(assemblyDir, "presets");
