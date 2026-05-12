@@ -27,6 +27,7 @@ using UnityEngine.Video;
 // TODO fde is 0.09 hue and 6.7 glossness
 // TODO add separate CHANGE COLOR button in interaction menu
 // TODO its unrealiable, make it realiable lol
+// TODO I guess we track when item gets created first time, but not it comes from pool
 // TODO how to support other shaders? just a switch lol with predetermined list in enum
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
@@ -132,8 +133,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             new Patch_PoolManagerClass_method_2().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
-            new ItemUiContextPatch().Enable();
-            new InteractionButtonsContainerPatch().Enable();
+            new Patch_ItemUiContext_GetItemContextInteractions().Enable();
             new Patch_WeaponModdingScreen_method_6().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
@@ -440,6 +440,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public void WaitForWeaponPreview()
         {
 			IsCamoEditorWaitingForWeaponPreview = true;
+        }
+
+        public bool IsWaitingForWeaponPreview()
+        {
+            return IsCamoEditorWaitingForWeaponPreview;
         }
 
         public void CloseCamoEditor()

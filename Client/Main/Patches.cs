@@ -102,42 +102,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 		}
 	}
 
-	public struct ItemInfoInteractionsAbstractClass_Proxy<T> where T : struct, Enum
-	{
-		private static TypedFieldInfo<ItemInfoInteractionsAbstractClass<T>, Dictionary<string, DynamicInteractionClass>> __Dictionary_0 = new("Dictionary_0");
-
-		public Dictionary<string, DynamicInteractionClass> Dictionary_0 { get { return __Dictionary_0.Get(__instance); } set { __Dictionary_0.Set(__instance, value); } }
-
-        private ItemInfoInteractionsAbstractClass<T> __instance;
-
-        public ItemInfoInteractionsAbstractClass_Proxy(ItemInfoInteractionsAbstractClass<T> instance)
-        {
-            __instance = instance;
-        }
-	}
-
-	public struct InteractionButtonsContainer_Proxy
-	{
-		private static TypedFieldInfo<InteractionButtonsContainer, SimpleContextMenuButton> __buttonTemplate = new("_buttonTemplate");
-		private static TypedFieldInfo<InteractionButtonsContainer, RectTransform> __buttonsContainer = new("_buttonsContainer");
-
-		public SimpleContextMenuButton _buttonTemplate { get { return __buttonTemplate.Get(__instance); } set { __buttonTemplate.Set(__instance, value); } }
-		public RectTransform _buttonsContainer { get { return __buttonsContainer.Get(__instance); } set { __buttonsContainer.Set(__instance, value); } }
-
-        private InteractionButtonsContainer __instance;
-
-        public InteractionButtonsContainer_Proxy(InteractionButtonsContainer instance)
-        {
-            __instance = instance;
-        }
-	}
-
-	public class Custom_DynamicInteractionClass(string id, string key, Action callback, Sprite icon) : DynamicInteractionClass(id, key, callback, icon)
-	{
-		public Option<FailedResult> NonInteractiveTooltip;
-	}
-
-	public class ItemUiContextPatch : ModulePatch
+	public class Patch_ItemUiContext_GetItemContextInteractions : ModulePatch
 	{
 	    protected override MethodBase GetTargetMethod()
 	    {
@@ -145,60 +110,28 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 	    }
 
 	    [PatchPostfix]
-	    private static void Postfix(ref ItemInfoInteractionsAbstractClass<EItemInfoButton> __result, ref ItemUiContext __instance, ItemContextClass itemContext)
+	    private static void Postfix(ItemInfoInteractionsAbstractClass<EItemInfoButton> __result, ItemUiContext __instance, ItemContextClass itemContext)
 	    {
 			if (itemContext.ViewType != EItemViewType.Inventory)
 			{
 				return;
 			}
-			if (InRaid())
+			if (SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
 			{
 				return;
 			}
 
-			var __result__ = new ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
+			var __result__ = new SevenBoldPencil.WeaponCamoAndStickers.ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
 			var interactions = __result__.Dictionary_0;
 			var item = itemContext.Item;
+
+			var key = "CHANGE MATERIAL";
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
-
+	        interactions[key] = new SevenBoldPencil.WeaponCamoAndStickers.Custom_DynamicInteractionClass(item.Id, key, () => OpenChangeMaterialWindow(__result), icon)
 			{
-				var key = "APPLY PAINT";
-		        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, OpenApplyPaintWindow, icon)
-				{
-					NonInteractiveTooltip = item is Weapon ? GetRequiresBenchTooltip() : new(new FailedResult("Only weapons can be painted")),
-				};
-			}
-			{
-				var key = "CHANGE MATERIAL";
-				var result = __result;
-		        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, () => OpenChangeMaterialWindow(result), icon)
-				{
-					NonInteractiveTooltip = GetRequiresBenchTooltip(),
-				};
-			}
+				NonInteractiveTooltip = SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.GetRequiresBenchTooltip(),
+			};
 	    }
-
-		public static Option<FailedResult> GetRequiresBenchTooltip()
-		{
-			if (Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
-			{
-				return default;
-			}
-
-			// Razolak liked that paint shop requires bench 1, I think it makes sense too
-			return new(new FailedResult("bonus/UnlockWeaponModification_required"));
-		}
-
-	    public static bool InRaid()
-	    {
-	        var instance = Singleton<AbstractGame>.Instance;
-	        return instance != null && instance.InRaid;
-	    }
-
-		public static void OpenApplyPaintWindow()
-		{
-
-		}
 
 		public static void OpenChangeMaterialWindow(ItemInfoInteractionsAbstractClass<EItemInfoButton> result)
 		{
@@ -207,42 +140,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 				Plugin.Instance.WaitForWeaponPreview();
 				gclass.method_28();
 			}
-		}
-	}
-
-	public class InteractionButtonsContainerPatch : ModulePatch
-	{
-	    protected override MethodBase GetTargetMethod()
-	    {
-	        return AccessTools.Method(typeof(InteractionButtonsContainer), nameof(InteractionButtonsContainer.method_3));
-	    }
-
-	    [PatchPrefix]
-	    private static bool Prefix(ref InteractionButtonsContainer __instance, DynamicInteractionClass interaction)
-	    {
-	        if (interaction is Custom_DynamicInteractionClass customInteraction)
-	        {
-				AddButton(__instance, customInteraction);
-	            return false;
-	        }
-	        return true;
-	    }
-
-		private static void AddButton(InteractionButtonsContainer instance, Custom_DynamicInteractionClass interaction)
-		{
-			var __instance = new InteractionButtonsContainer_Proxy(instance);
-	        var button = instance.method_1
-			(
-	            interaction.Key,
-	            interaction.Key,
-	            __instance._buttonTemplate,
-	            __instance._buttonsContainer,
-	            interaction.Icon,
-	            () => { if (!interaction.NonInteractiveTooltip.HasValue) { interaction.Execute(); } },
-	            () => { }
-	        );
-	        button.SetButtonInteraction(interaction.NonInteractiveTooltip.HasValue ? interaction.NonInteractiveTooltip.Value : SuccessfulResult.New);
-	        instance.method_5(button);
 		}
 	}
 
@@ -258,6 +155,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         [PatchPrefix]
         public static bool Prefix(WeaponModdingScreen __instance, CompoundItem weapon)
 		{
+			if (Plugin.Instance.IsWaitingForWeaponPreview())
+			{
+				return false;
+			}
+
 			return weapon is CompoundItem;
 		}
 	}
