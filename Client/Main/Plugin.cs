@@ -26,9 +26,7 @@ using UnityEngine.Video;
 
 // TODO fde is 0.09 hue and 6.7 glossness
 // TODO add separate CHANGE COLOR button in interaction menu
-// TODO its unrealiable, make it realiable lol
 // TODO I guess we track when item gets created first time, but not it comes from pool
-// TODO how to support other shaders? just a switch lol with predetermined list in enum
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -280,12 +278,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             for (var i = 0; i < materials.Length; i++)
             {
                 var material = materials[i];
-                var materialShaderName = material.shader.name;
-                // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good
-    			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
-                    materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+    			if (IsSupportedShader(material))
                 {
-                    var materialName = material.name;
+                    var materialName = GetMaterialName(material);
                     var pair = (renderer, i);
 
                     if (totalOverrides.TryGetValue(materialName, out var existingOverrides))
@@ -302,6 +297,26 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     }
                 }
             }
+        }
+
+        public string GetMaterialName(Material material)
+        {
+            return material.name
+                .Replace(" (Instance)", ""); // in some cases BSG fucks it up and items get unique materials...
+        }
+
+        public bool IsSupportedShader(Material material)
+        {
+            // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good
+            // TODO how to support other shaders? just a switch lol with predetermined list in enum
+            var materialShaderName = material.shader.name;
+			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
+                materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public Dictionary<string, MaterialInfo> GetOriginalMaterials(AssetPoolObject assetPoolObject)
@@ -322,12 +337,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             for (var i = 0; i < materials.Length; i++)
             {
                 var material = materials[i];
-                var materialShaderName = material.shader.name;
-                // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good
-    			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
-                    materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+    			if (IsSupportedShader(material))
                 {
-                    var materialName = material.name;
+                    var materialName = GetMaterialName(material);
                     if (!originalMaterials.ContainsKey(materialName))
                     {
                         originalMaterials.Add(materialName, new MaterialInfo()
