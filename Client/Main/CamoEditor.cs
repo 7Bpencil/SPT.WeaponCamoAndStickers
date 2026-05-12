@@ -6,7 +6,6 @@
 //
 
 using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -15,6 +14,10 @@ using UnityEngine;
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
+using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
+using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
+using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
+using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
