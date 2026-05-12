@@ -5,6 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using Comfort.Common;
 using Diz.Skinning;
 using Diz.Jobs;
 using EFT;
@@ -26,6 +27,9 @@ using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
+	// I know that harmony can pass instance fields with three underscores,
+	// but these proxies are more general solution and can be used everywhere
+
 	public struct WeaponPreview_Proxy
 	{
 		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
@@ -68,6 +72,52 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             __instance = instance;
         }
+	}
+
+	public struct ItemInfoInteractionsAbstractClass_Proxy<T> where T : struct, Enum
+	{
+		private static TypedFieldInfo<ItemInfoInteractionsAbstractClass<T>, Dictionary<string, DynamicInteractionClass>> __Dictionary_0 = new("Dictionary_0");
+
+		public Dictionary<string, DynamicInteractionClass> Dictionary_0 { get { return __Dictionary_0.Get(__instance); } set { __Dictionary_0.Set(__instance, value); } }
+
+        private ItemInfoInteractionsAbstractClass<T> __instance;
+
+        public ItemInfoInteractionsAbstractClass_Proxy(ItemInfoInteractionsAbstractClass<T> instance)
+        {
+            __instance = instance;
+        }
+	}
+
+	public struct InteractionButtonsContainer_Proxy
+	{
+		private static TypedFieldInfo<InteractionButtonsContainer, SimpleContextMenuButton> __buttonTemplate = new("_buttonTemplate");
+		private static TypedFieldInfo<InteractionButtonsContainer, RectTransform> __buttonsContainer = new("_buttonsContainer");
+
+		public SimpleContextMenuButton _buttonTemplate { get { return __buttonTemplate.Get(__instance); } set { __buttonTemplate.Set(__instance, value); } }
+		public RectTransform _buttonsContainer { get { return __buttonsContainer.Get(__instance); } set { __buttonsContainer.Set(__instance, value); } }
+
+        private InteractionButtonsContainer __instance;
+
+        public InteractionButtonsContainer_Proxy(InteractionButtonsContainer instance)
+        {
+            __instance = instance;
+        }
+	}
+
+	// this method tries to initialize gui for all slots in weapon,
+	// pretend that there are no slots when applying paint to not obscure view
+	public class Patch_WeaponModdingScreen_method_6 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.method_6));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(WeaponModdingScreen __instance, CompoundItem weapon)
+		{
+			return !Plugin.Instance.IsWaitingForWeaponPreview();
+		}
 	}
 
 	public class Patch_WeaponPreview_Class3271_method_1 : ModulePatch
@@ -165,24 +215,105 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_WeaponModdingScreen_Show : ModulePatch
+	// adds APPLY PAINT button to interaction menu
+	public class Patch_ItemUiContext_GetItemContextInteractions : ModulePatch
 	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Show), [typeof(Item), typeof(InventoryController), typeof(CompoundItem[])]);
-        }
+	    protected override MethodBase GetTargetMethod()
+	    {
+	        return AccessTools.Method(typeof(ItemUiContext), nameof(ItemUiContext.GetItemContextInteractions));
+	    }
 
-        [PatchPostfix]
-        public static void Postfix(WeaponModdingScreen __instance, Item item, InventoryController inventoryController, CompoundItem[] collections)
+	    [PatchPostfix]
+	    private static void Postfix(ItemInfoInteractionsAbstractClass<EItemInfoButton> __result, ItemUiContext __instance, ItemContextClass itemContext)
+	    {
+			if (itemContext.ViewType != EItemViewType.Inventory)
+			{
+				return;
+			}
+			if (InRaid())
+			{
+				return;
+			}
+
+			var __result__ = new ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
+			var interactions = __result__.Dictionary_0;
+			var item = itemContext.Item;
+
+			var key = "APPLY PAINT";
+			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
+	        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
+			{
+				NonInteractiveTooltip = item is Weapon ? GetRequiresBenchTooltip() : new(new FailedResult("Only weapons can be painted")),
+			};
+	    }
+
+		public static Option<FailedResult> GetRequiresBenchTooltip()
 		{
-			// this is called when user presses modify on weapon context menu
-			// we use modding screen because user can only modify weapons that he actually has access to,
-			// unlike trader guns, or guns in builds window
-			//
-			// if this method is called then next WeaponPreview.Class3271.method_1
-			// is guaranteed to be weapon preview for this WeaponModdingScreen
+			if (Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
+			{
+				return default;
+			}
 
-			Plugin.Instance.WaitForWeaponPreview();
+			// Razolak liked that paint shop requires bench 1, I think it makes sense too
+			return new(new FailedResult("bonus/UnlockWeaponModification_required"));
+		}
+
+	    public static bool InRaid()
+	    {
+	        var instance = Singleton<AbstractGame>.Instance;
+	        return instance != null && instance.InRaid;
+	    }
+
+		public static void OpenApplyPaintWindow(ItemInfoInteractionsAbstractClass<EItemInfoButton> result)
+		{
+			if (result is GClass3758 gclass)
+			{
+				Plugin.Instance.WaitForWeaponPreview();
+				gclass.method_28();
+			}
+		}
+	}
+
+	public class Custom_DynamicInteractionClass : DynamicInteractionClass
+	{
+		public Option<FailedResult> NonInteractiveTooltip;
+		public Custom_DynamicInteractionClass(string id, string key, Action callback, Sprite icon) : base(id, key, callback, icon) {}
+	}
+
+	// here custom buttons are actually constructed
+	public class Patch_InteractionButtonsContainer_method_3 : ModulePatch
+	{
+	    protected override MethodBase GetTargetMethod()
+	    {
+	        return AccessTools.Method(typeof(InteractionButtonsContainer), nameof(InteractionButtonsContainer.method_3));
+	    }
+
+	    [PatchPrefix]
+	    private static bool Prefix(InteractionButtonsContainer __instance, DynamicInteractionClass interaction)
+	    {
+	        if (interaction is Custom_DynamicInteractionClass customInteraction)
+	        {
+				var __instance__ = new InteractionButtonsContainer_Proxy(__instance);
+				AddButton(__instance, __instance__._buttonTemplate, __instance__._buttonsContainer, customInteraction);
+	            return false;
+	        }
+	        return true;
+	    }
+
+		private static void AddButton(InteractionButtonsContainer instance, SimpleContextMenuButton buttonTemplate, RectTransform buttonsContainer, Custom_DynamicInteractionClass interaction)
+		{
+	        var button = instance.method_1
+			(
+	            interaction.Key,
+	            interaction.Key,
+	            buttonTemplate,
+	            buttonsContainer,
+	            interaction.Icon,
+	            () => { if (!interaction.NonInteractiveTooltip.HasValue) { interaction.Execute(); } },
+	            () => { }
+	        );
+	        button.SetButtonInteraction(interaction.NonInteractiveTooltip.HasValue ? interaction.NonInteractiveTooltip.Value : SuccessfulResult.New);
+	        instance.method_5(button);
 		}
 	}
 

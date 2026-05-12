@@ -273,10 +273,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             WeaponsWaitingForRemoteCamo = new();
 
+            new Patch_WeaponModdingScreen_method_6().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
             new Patch_WeaponPreview_Hide().Enable();
-            new Patch_WeaponModdingScreen_Show().Enable();
+            new Patch_ItemUiContext_GetItemContextInteractions().Enable();
+            new Patch_InteractionButtonsContainer_method_3().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
             new Patch_WeaponPrefab_ReturnToPool().Enable();
@@ -1900,6 +1902,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void WaitForWeaponPreview()
         {
 			IsCamoEditorWaitingForWeaponPreview = true;
+        }
+
+        public bool IsWaitingForWeaponPreview()
+        {
+            return IsCamoEditorWaitingForWeaponPreview;
         }
 
         public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
