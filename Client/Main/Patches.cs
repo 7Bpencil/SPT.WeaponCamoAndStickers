@@ -280,7 +280,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
 
         [PatchPostfix]
-        public static void Postfix(GClass3380 __instance, ref Item __result, Item originalItem, IIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
+        public static void Postfix(GClass3380 __instance, Item __result, Item originalItem, IIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
 		{
 			// only weapons support for now
 			if (originalItem is Weapon weapon)
