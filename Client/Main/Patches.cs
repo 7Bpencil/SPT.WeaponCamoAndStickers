@@ -89,6 +89,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
+			if (item is not Weapon)
+			{
+				return;
+			}
 			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab, out var previewPivot))
 			{
 				var itemId = item.Id;
