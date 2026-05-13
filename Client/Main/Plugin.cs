@@ -217,13 +217,22 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 return;
             }
-            if (ResourceKeyToItem.TryAdd(item.Prefab, itemId))
+            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItemId))
             {
-                Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
+                if (existingItemId == itemId)
+                {
+                    // yes, this does happen, for instance when player reloads his weapon (why?)
+                    Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, already loading?");
+                }
+                else
+                {
+                    Logger.LogError($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, collision with {existingItemId}!");
+                }
             }
             else
             {
-                Logger.LogError($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, collision!");
+                ResourceKeyToItem.Add(item.Prefab, itemId);
+                Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
             }
         }
 
