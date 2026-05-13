@@ -1870,6 +1870,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        // TODO I forget to clean clone dict in OnItemDestroy...
         public void OnCloneItem(string originalId, string cloneId)
         {
             // when user tries weapon in hideout shooting range,
@@ -1878,9 +1879,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // so we have to clone decals ourselves
             if (ItemsWithDecals.ContainsKey(originalId))
             {
+                if (originalId == cloneId)
+                {
+                    // yes, it does happen a lot, no idea why
+                    Logger.LogWarning($"OneCloneItem: {originalId} same id");
+                    return;
+                }
                 if (Clones.TryAdd(cloneId, originalId))
                 {
-                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
+                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}, clones recorded: {Clones.Count}");
                 }
                 else
                 {
