@@ -245,7 +245,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     var instanceID = itemGameObject.GetInstanceID();
                     if (itemsWithMaterials.Items.ContainsKey(instanceID))
                     {
-            			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, already added?");
+            			Logger.LogError($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, already added?");
                         return;
                     }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
@@ -272,12 +272,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 BuildRendererOverrides(renderer, targetMaterials);
             }
-#if DEBUG
-            foreach (var (materialName, targetMaterial) in targetMaterials)
-            {
-                Logger.LogWarning($"BuildItemOverrides: {materialName} | {targetMaterial.Renderers.Count}");
-            }
-#endif
+
             return new()
             {
                 Item = assetPoolObject,
@@ -401,7 +396,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
-    			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
+    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
                 return;
             }
 
@@ -582,7 +577,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 var materials = itemsWithMaterials.MaterialsInfo.Materials;
                 if (materials.ContainsKey(materialName))
                 {
-                    Logger.LogWarning($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
+                    Logger.LogError($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
                     return;
                 }
 
@@ -764,7 +759,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 }
                 else
                 {
-                    Logger.LogWarning($"OnCloneItem: original: {originalId}, clone: {cloneId}, already added???");
+                    Logger.LogError($"OnCloneItem: original: {originalId}, clone: {cloneId}, already added???");
                 }
             }
         }
