@@ -92,7 +92,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public CamoEditorStyle CamoEditorStyle;
         public string ItemId;
         public int InstanceID;
-        public ItemWithDecals ItemWithDecals;
+        public ItemWithMaterials ItemWithMaterials;
         public Dictionary<string, MaterialInfo> OriginalMaterials;
         public bool IsOpened;
         public Vector2 MaterialsScrollPosition;
@@ -214,7 +214,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         private int CalculateMaterialsWindowHeight()
         {
-            var totalMaterialsCount = ItemWithDecals.Materials.Count;
+            var totalMaterialsCount = ItemWithMaterials.Materials.Count;
             var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
             return
                 bigMargin +
@@ -254,7 +254,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var materialsY = y;
 
-                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Materials.Count, maxMaterialsCount, buttonHeight, smallMargin);
+                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithMaterials.Materials.Count, maxMaterialsCount, buttonHeight, smallMargin);
                 var totalRect = new Rect(x, materialsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, materialsY, boxWidth + 16, visibleHeight);
 
@@ -263,7 +263,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                 var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
                 var resetX = x + overrideButtonWidth + smallMargin;
-                foreach (var materialName in ItemWithDecals.Materials.Keys)
+                foreach (var materialName in ItemWithMaterials.Materials.Keys)
                 {
                     if (materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName))
                     {
@@ -280,7 +280,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     {
                         if (GUI.Button(new Rect(x, materialsY, boxWidth, buttonHeight), materialName))
                         {
-                            Plugin.OverrideMaterial(ItemWithDecals, OriginalMaterials, ItemId, InstanceID, materialName);
+                            Plugin.OverrideMaterial(ItemWithMaterials, OriginalMaterials, ItemId, InstanceID, materialName);
                             CurrentlyEditedOverride = new(materialName);
                         }
                     }

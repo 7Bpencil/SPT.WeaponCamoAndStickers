@@ -36,16 +36,16 @@ using SystemObject = System.Object;
 
 namespace SevenBoldPencil.ChangeEquipmentColor
 {
-    public class ItemsWithDecals
+    public class ItemsWithMaterials
     {
         // yes, there can be multiple items with same Id,
         // for example when you open item preview of weapon you already hold in hands,
         // or when hideout shooting range clones weapon (we pretend that they have the same Id)
-        public Dictionary<int, ItemWithDecals> Items; // TODO iterating dict is probably not the best idea, but list in annoying
+        public Dictionary<int, ItemWithMaterials> Items; // TODO iterating dict is probably not the best idea, but list in annoying
         public MaterialsInfo MaterialsInfo;
     }
 
-    public class ItemWithDecals
+    public class ItemWithMaterials
     {
         public AssetPoolObject Item;
         public Dictionary<string, TargetMaterial> Materials;
@@ -102,7 +102,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         private string ItemsDir;
         private CamoEditorResources CamoEditorResources;
 
-        private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        private Dictionary<string, ItemsWithMaterials> ItemsWithMaterials;
         private HashSet<Renderer> PatchedRenderers;
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, string> ResourceKeyToItem;
@@ -124,7 +124,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
-            ItemsWithDecals = LoadItemsWithMaterials(ItemsDir);
+            ItemsWithMaterials = LoadItemsWithMaterials(ItemsDir);
             PatchedRenderers = new();
             Clones = new();
             ResourceKeyToItem = new();
@@ -176,10 +176,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
-        public Dictionary<string, ItemsWithDecals> LoadItemsWithMaterials(string directoryPath)
+        public Dictionary<string, ItemsWithMaterials> LoadItemsWithMaterials(string directoryPath)
         {
             var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
-            var result = new Dictionary<string, ItemsWithDecals>();
+            var result = new Dictionary<string, ItemsWithMaterials>();
 
             foreach (var filePath in filePaths)
             {
@@ -187,14 +187,14 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
                     var materialsInfo = JsonConvert.DeserializeObject<MaterialsInfo>(json);
-                    UpgradeOldVersionsOfDecalsInfo(materialsInfo);
-                    var itemsWithDecals = new ItemsWithDecals()
+                    UpgradeOldVersionsOfMaterialsInfo(materialsInfo);
+                    var itemsWithMaterials = new ItemsWithMaterials()
                     {
                         Items = new(),
                         MaterialsInfo = materialsInfo,
                     };
 
-                    result.Add(itemId, itemsWithDecals);
+                    result.Add(itemId, itemsWithMaterials);
                 }
                 else
                 {
@@ -205,7 +205,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return result;
         }
 
-        public static void UpgradeOldVersionsOfDecalsInfo(MaterialsInfo materialsInfo)
+        public static void UpgradeOldVersionsOfMaterialsInfo(MaterialsInfo materialsInfo)
         {
 
         }
@@ -213,7 +213,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public void OnCreateItemAsync(Item item)
         {
             var itemId = GetOriginalItemId(item.Id);
-            if (!ItemsWithDecals.ContainsKey(itemId))
+            if (!ItemsWithMaterials.ContainsKey(itemId))
             {
                 return;
             }
@@ -231,19 +231,19 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
             {
-                if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+                if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
                 {
                     var instanceID = itemGameObject.GetInstanceID();
-                    if (itemsWithDecals.Items.ContainsKey(instanceID))
+                    if (itemsWithMaterials.Items.ContainsKey(instanceID))
                     {
             			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, already added?");
                         return;
                     }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                     {
-                        var itemWithDecals = BuildItemOverrides(assetPoolObject);
-                        PatchItem(itemWithDecals, itemsWithDecals.MaterialsInfo);
-                        itemsWithDecals.Items.Add(instanceID, itemWithDecals);
+                        var itemWithMaterials = BuildItemOverrides(assetPoolObject);
+                        PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
+                        itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
                         InstanceIdToItemId.Add(instanceID, itemId);
             			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
                     }
@@ -255,7 +255,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public ItemWithDecals BuildItemOverrides(AssetPoolObject assetPoolObject)
+        public ItemWithMaterials BuildItemOverrides(AssetPoolObject assetPoolObject)
         {
             var targetMaterials = new Dictionary<string, TargetMaterial>();
 
@@ -366,7 +366,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             };
         }
 
-        public void PatchItem(ItemWithDecals item, MaterialsInfo materialsInfo)
+        public void PatchItem(ItemWithMaterials item, MaterialsInfo materialsInfo)
         {
             foreach (var (materialName, materialInfo) in materialsInfo.Materials)
             {
@@ -390,13 +390,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
-            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
     			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
                 return;
             }
 
-            if (!itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
+            if (!itemsWithMaterials.Items.Remove(instanceID, out var itemWithMaterials))
             {
     			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered clone?");
                 return;
@@ -438,18 +438,18 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
             var instanceID = assetPoolObject.gameObject.GetInstanceID();
 
-            ItemWithDecals getItemWithDecals()
+            ItemWithMaterials getItemWithMaterials()
             {
-                if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals) &&
-                    itemsWithDecals.Items.TryGetValue(instanceID, out var itemWithDecals))
+                if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
+                    itemsWithMaterials.Items.TryGetValue(instanceID, out var itemWithMaterials))
                 {
-                    return itemWithDecals;
+                    return itemWithMaterials;
                 }
 
                 return BuildItemOverrides(assetPoolObject);
             }
 
-            var itemWithDecals = getItemWithDecals();
+            var itemWithMaterials = getItemWithMaterials();
             var originalMaterials = GetOriginalMaterials(assetPoolObject);
             CamoEditor = new(new CamoEditor()
             {
@@ -457,7 +457,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 CamoEditorResources = CamoEditorResources,
                 ItemId = itemId,
                 InstanceID = instanceID,
-                ItemWithDecals = itemWithDecals,
+                ItemWithMaterials = itemWithMaterials,
                 OriginalMaterials = originalMaterials,
                 IsOpened = false,
                 IsColorPickerOpened = false,
@@ -498,7 +498,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 if (materialsInfo.Materials.Count == 0)
                 {
-                    ItemsWithDecals.Remove(itemId);
+                    ItemsWithMaterials.Remove(itemId);
                     RemoveMaterialsFile(itemId);
                     Logger.LogInfo($"CloseCamoEditor: {itemId} remove materials");
                 }
@@ -545,9 +545,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public Option<MaterialsInfo> GetMaterialsInfo(string itemId)
         {
-            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
-                return new(itemsWithDecals.MaterialsInfo);
+                return new(itemsWithMaterials.MaterialsInfo);
             }
 
             return default;
@@ -555,11 +555,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public MaterialInfo GetMaterialInfo(string itemId, string materialName)
         {
-            var itemsWithDecals = ItemsWithDecals[itemId];
-            return itemsWithDecals.MaterialsInfo.Materials[materialName];
+            var itemsWithMaterials = ItemsWithMaterials[itemId];
+            return itemsWithMaterials.MaterialsInfo.Materials[materialName];
         }
 
-        public void OverrideMaterial(ItemWithDecals itemWithDecals, Dictionary<string, MaterialInfo> originalMaterials, string itemId, int instanceID, string materialName)
+        public void OverrideMaterial(ItemWithMaterials itemWithMaterials, Dictionary<string, MaterialInfo> originalMaterials, string itemId, int instanceID, string materialName)
         {
             if (!originalMaterials.TryGetValue(materialName, out var originalMaterial))
             {
@@ -567,10 +567,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
-            if (ItemsWithDecals.ContainsKey(itemId))
+            if (ItemsWithMaterials.ContainsKey(itemId))
             {
-                var itemsWithDecals = ItemsWithDecals[itemId];
-                var materials = itemsWithDecals.MaterialsInfo.Materials;
+                var itemsWithMaterials = ItemsWithMaterials[itemId];
+                var materials = itemsWithMaterials.MaterialsInfo.Materials;
                 if (materials.ContainsKey(materialName))
                 {
                     Logger.LogWarning($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
@@ -582,9 +582,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             else
             {
                 var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var itemsWithDecals = new ItemsWithDecals()
+                var itemsWithMaterials = new ItemsWithMaterials()
                 {
-                    Items = new() { { instanceID, itemWithDecals } },
+                    Items = new() { { instanceID, itemWithMaterials } },
                     MaterialsInfo = new()
                     {
                         SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
@@ -593,19 +593,19 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     }
                 };
 
-                ItemsWithDecals.Add(itemId, itemsWithDecals);
+                ItemsWithMaterials.Add(itemId, itemsWithMaterials);
                 InstanceIdToItemId.Add(instanceID, itemId);
             }
         }
 
         public void ResetMaterial(string itemId, string materialName)
         {
-            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals) &&
-                itemsWithDecals.MaterialsInfo.Materials.Remove(materialName))
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
+                itemsWithMaterials.MaterialsInfo.Materials.Remove(materialName))
             {
-                foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+                foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
                 {
-                    if (itemWithDecals.Materials.TryGetValue(materialName, out var targetMaterial))
+                    if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
                     {
                         targetMaterial.PropertyBlock.Clear();
                         foreach (var (renderer, index) in targetMaterial.Renderers)
@@ -725,11 +725,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         // notice that we modify material on all items
         public void ModifyMaterialOnItems(string itemId, string materialName, Action<TargetMaterial, MaterialInfo> changeMaterial)
         {
-            var itemsWithDecals = ItemsWithDecals[itemId];
-            var materialInfo = itemsWithDecals.MaterialsInfo.Materials[materialName];
-            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+            var itemsWithMaterials = ItemsWithMaterials[itemId];
+            var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
+            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
-                var targetMaterial = itemWithDecals.Materials[materialName];
+                var targetMaterial = itemWithMaterials.Materials[materialName];
                 changeMaterial(targetMaterial, materialInfo);
             }
         }
@@ -741,7 +741,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             // all his gear gets copied to new items to preserve
             // original durability/ammo count/etc,
             // so we have to clone decals ourselves
-            if (ItemsWithDecals.ContainsKey(originalId))
+            if (ItemsWithMaterials.ContainsKey(originalId))
             {
                 if (originalId == cloneId)
                 {
