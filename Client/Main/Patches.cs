@@ -261,4 +261,23 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 			}
 		}
 	}
+
+	public class Patch_HotObject_SetTemperatureToRenderer : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+			Type[] parameters = [typeof(float), typeof(bool)];
+            return AccessTools.Method(typeof(HotObject), nameof(HotObject.SetTemperatureToRenderer), parameters);
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(Renderer ___renderer_0, float temperatureCelsio, bool force = false)
+		{
+			// HotObjects (barrels, silencers, etc) override renderer materials parameters (_HeatSize, _HeatTemp, etc)
+			// the same as way we do via MaterialPropertyBlock, which results in them overriding our changes,
+			// so stop them from doing that! (maybe we could combine their changes, but its already complicated enough)
+			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
+		}
+	}
+
 }

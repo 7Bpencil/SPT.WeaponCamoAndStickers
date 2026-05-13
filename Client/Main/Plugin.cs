@@ -103,6 +103,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         private CamoEditorResources CamoEditorResources;
 
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        private HashSet<Renderer> PatchedRenderers;
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, string> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
@@ -124,6 +125,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
             ItemsWithDecals = LoadItemsWithMaterials(ItemsDir);
+            PatchedRenderers = new();
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
@@ -138,6 +140,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
+            new Patch_HotObject_SetTemperatureToRenderer().Enable();
 
             TryEnableFikaSupport(assemblyDir);
 
@@ -406,9 +409,15 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 {
                     renderer.SetPropertyBlock(null, i);
                 }
+                PatchedRenderers.Remove(renderer);
             }
 
 			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}");
+        }
+
+        public bool IsPatchedRenderer(Renderer renderer)
+        {
+            return PatchedRenderers.Contains(renderer);
         }
 
         public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject)
@@ -602,6 +611,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                         foreach (var (renderer, index) in materialOverride.Renderers)
                         {
                             renderer.SetPropertyBlock(null, index);
+                            PatchedRenderers.Remove(renderer);
                         }
                     }
                 }
@@ -630,6 +640,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             foreach (var (renderer, index) in materialOverride.Renderers)
             {
                 renderer.SetPropertyBlock(propertyBlock, index);
+                PatchedRenderers.Add(renderer);
             }
         }
 
