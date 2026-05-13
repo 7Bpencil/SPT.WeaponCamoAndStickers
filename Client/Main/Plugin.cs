@@ -27,6 +27,7 @@ using UnityEngine.Video;
 // TODO fde is 0.09 hue and 6.7 glossness
 // TODO add separate CHANGE COLOR button in interaction menu
 // TODO I guess we track when item gets created first time, but not it comes from pool
+// TODO add change material to modding screen (so people can change material of their attachments faster)?
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -344,17 +345,22 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     var materialName = GetMaterialName(material);
                     if (!originalMaterials.ContainsKey(materialName))
                     {
-                        originalMaterials.Add(materialName, new MaterialInfo()
-                        {
-                            Texture = "",
-                            TextureUV = material.GetVector(_MainTex_ST),
-                            ColorHSV = material.GetColor(_Color).RGBAtoHSV(),
-                            Glossness = material.GetFloat(_Glossness),
-                            Specularness = material.GetFloat(_Specularness),
-                        });
+                        originalMaterials.Add(materialName, GetMaterialInfo(material));
                     }
                 }
             }
+        }
+
+        public MaterialInfo GetMaterialInfo(Material material)
+        {
+            return new MaterialInfo()
+            {
+                Texture = "",
+                TextureUV = material.GetVector(_MainTex_ST),
+                ColorHSV = material.GetColor(_Color).RGBAtoHSV(),
+                Glossness = material.GetFloat(_Glossness),
+                Specularness = material.GetFloat(_Specularness),
+            };
         }
 
         public void PatchItem(ItemWithDecals item, MaterialsInfo materialsInfo)
@@ -717,6 +723,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
+        // TODO I forget to clean clone dict in OnItemDestroy...
         public void OnCloneItem(string originalId, string cloneId)
         {
             // when user tries weapon in hideout shooting range,
@@ -725,9 +732,15 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             // so we have to clone decals ourselves
             if (ItemsWithDecals.ContainsKey(originalId))
             {
+                if (originalId == cloneId)
+                {
+                    // yes, it does happen a lot, no idea why
+                    Logger.LogWarning($"OneCloneItem: {originalId} same id");
+                    return;
+                }
                 if (Clones.TryAdd(cloneId, originalId))
                 {
-                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}");
+                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}, clones recorded: {Clones.Count}");
                 }
                 else
                 {
