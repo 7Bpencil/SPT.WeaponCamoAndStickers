@@ -214,7 +214,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         private int CalculateMaterialsWindowHeight()
         {
-            var totalMaterialsCount = ItemWithDecals.Overrides.Count;
+            var totalMaterialsCount = ItemWithDecals.Materials.Count;
             var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
             return
                 bigMargin +
@@ -254,7 +254,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 var materialsY = y;
 
-                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Overrides.Count, maxMaterialsCount, buttonHeight, smallMargin);
+                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithDecals.Materials.Count, maxMaterialsCount, buttonHeight, smallMargin);
                 var totalRect = new Rect(x, materialsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, materialsY, boxWidth + 16, visibleHeight);
 
@@ -263,7 +263,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
                 var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
                 var resetX = x + overrideButtonWidth + smallMargin;
-                foreach (var materialName in ItemWithDecals.Overrides.Keys)
+                foreach (var materialName in ItemWithDecals.Materials.Keys)
                 {
                     if (materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName))
                     {

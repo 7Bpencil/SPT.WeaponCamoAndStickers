@@ -48,10 +48,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
     public class ItemWithDecals
     {
         public AssetPoolObject Item;
-        public Dictionary<string, MaterialOverride> Overrides;
+        public Dictionary<string, TargetMaterial> Materials;
     }
 
-    public class MaterialOverride
+    public class TargetMaterial
     {
         public MaterialPropertyBlock PropertyBlock;
         public List<(Renderer, int)> Renderers;
@@ -257,26 +257,26 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public ItemWithDecals BuildItemOverrides(AssetPoolObject assetPoolObject)
         {
-            var overrides = new Dictionary<string, MaterialOverride>();
+            var targetMaterials = new Dictionary<string, TargetMaterial>();
 
             foreach (var renderer in assetPoolObject.Renderers)
             {
-                BuildRendererOverrides(renderer, overrides);
+                BuildRendererOverrides(renderer, targetMaterials);
             }
 #if DEBUG
-            foreach (var (materialName, materialOverrides) in overrides)
+            foreach (var (materialName, targetMaterial) in targetMaterials)
             {
-                Logger.LogWarning($"BuildItemOverrides: {materialName} | {materialOverrides.Renderers.Count}");
+                Logger.LogWarning($"BuildItemOverrides: {materialName} | {targetMaterial.Renderers.Count}");
             }
 #endif
             return new()
             {
                 Item = assetPoolObject,
-                Overrides = overrides,
+                Materials = targetMaterials,
             };
         }
 
-        public void BuildRendererOverrides(Renderer renderer, Dictionary<string, MaterialOverride> totalOverrides)
+        public void BuildRendererOverrides(Renderer renderer, Dictionary<string, TargetMaterial> targetMaterials)
         {
             var materials = renderer.sharedMaterials;
             for (var i = 0; i < materials.Length; i++)
@@ -287,13 +287,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                     var materialName = GetMaterialName(material);
                     var pair = (renderer, i);
 
-                    if (totalOverrides.TryGetValue(materialName, out var existingOverrides))
+                    if (targetMaterials.TryGetValue(materialName, out var targetMaterial))
                     {
-                        existingOverrides.Renderers.Add(pair);
+                        targetMaterial.Renderers.Add(pair);
                     }
                     else
                     {
-                        totalOverrides.Add(materialName, new MaterialOverride()
+                        targetMaterials.Add(materialName, new TargetMaterial()
                         {
                             PropertyBlock = new MaterialPropertyBlock(),
                             Renderers = new() { pair },
@@ -370,10 +370,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             foreach (var (materialName, materialInfo) in materialsInfo.Materials)
             {
-                if (item.Overrides.TryGetValue(materialName, out var materialOverride))
+                if (item.Materials.TryGetValue(materialName, out var targetMaterial))
                 {
-                    ApplyAllOverrides(materialOverride, materialInfo);
-                    Logger.LogWarning($"Patch: {materialName} | {materialOverride.Renderers.Count}");
+                    ApplyAllOverrides(targetMaterial, materialInfo);
+                    Logger.LogWarning($"Patch: {materialName} | {targetMaterial.Renderers.Count}");
                 }
                 else
                 {
@@ -605,10 +605,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 foreach (var itemWithDecals in itemsWithDecals.Items.Values)
                 {
-                    if (itemWithDecals.Overrides.TryGetValue(materialName, out var materialOverride))
+                    if (itemWithDecals.Materials.TryGetValue(materialName, out var targetMaterial))
                     {
-                        materialOverride.PropertyBlock.Clear();
-                        foreach (var (renderer, index) in materialOverride.Renderers)
+                        targetMaterial.PropertyBlock.Clear();
+                        foreach (var (renderer, index) in targetMaterial.Renderers)
                         {
                             renderer.SetPropertyBlock(null, index);
                             PatchedRenderers.Remove(renderer);
@@ -618,26 +618,26 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public void ApplyAllOverrides(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        public void ApplyAllOverrides(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            var propertyBlock = materialOverride.PropertyBlock;
+            var propertyBlock = targetMaterial.PropertyBlock;
 
             var color = materialInfo.ColorHSV.HSVtoRGBA();
             propertyBlock.SetColor(_Color, color);
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            ApplyPropertyBlock(materialOverride, propertyBlock);
+            ApplyPropertyBlock(targetMaterial, propertyBlock);
 
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
             {
-                BigPlugin.Instance.AcquireDecalTextureAsset(materialOverride, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
             }
         }
 
-        public void ApplyPropertyBlock(MaterialOverride materialOverride, MaterialPropertyBlock propertyBlock)
+        public void ApplyPropertyBlock(TargetMaterial targetMaterial, MaterialPropertyBlock propertyBlock)
         {
-            foreach (var (renderer, index) in materialOverride.Renderers)
+            foreach (var (renderer, index) in targetMaterial.Renderers)
             {
                 renderer.SetPropertyBlock(propertyBlock, index);
                 PatchedRenderers.Add(renderer);
@@ -649,12 +649,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ModifyMaterialOnItems(itemId, materialName, ApplyColor);
         }
 
-        public void ApplyColor(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        public void ApplyColor(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            var propertyBlock = materialOverride.PropertyBlock;
+            var propertyBlock = targetMaterial.PropertyBlock;
             var color = materialInfo.ColorHSV.HSVtoRGBA();
             propertyBlock.SetColor(_Color, color);
-            ApplyPropertyBlock(materialOverride, propertyBlock);
+            ApplyPropertyBlock(targetMaterial, propertyBlock);
         }
 
         public void ApplyGlossness(string itemId, string materialName)
@@ -662,11 +662,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ModifyMaterialOnItems(itemId, materialName, ApplyGlossness);
         }
 
-        public void ApplyGlossness(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        public void ApplyGlossness(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            var propertyBlock = materialOverride.PropertyBlock;
+            var propertyBlock = targetMaterial.PropertyBlock;
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
-            ApplyPropertyBlock(materialOverride, propertyBlock);
+            ApplyPropertyBlock(targetMaterial, propertyBlock);
         }
 
         public void ApplySpecularness(string itemId, string materialName)
@@ -674,11 +674,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ModifyMaterialOnItems(itemId, materialName, ApplySpecularness);
         }
 
-        public void ApplySpecularness(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        public void ApplySpecularness(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            var propertyBlock = materialOverride.PropertyBlock;
+            var propertyBlock = targetMaterial.PropertyBlock;
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
-            ApplyPropertyBlock(materialOverride, propertyBlock);
+            ApplyPropertyBlock(targetMaterial, propertyBlock);
         }
 
         public void ApplyTextureUV(string itemId, string materialName)
@@ -686,11 +686,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ModifyMaterialOnItems(itemId, materialName, ApplyTextureUV);
         }
 
-        public void ApplyTextureUV(MaterialOverride materialOverride, MaterialInfo materialInfo)
+        public void ApplyTextureUV(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            var propertyBlock = materialOverride.PropertyBlock;
+            var propertyBlock = targetMaterial.PropertyBlock;
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            ApplyPropertyBlock(materialOverride, propertyBlock);
+            ApplyPropertyBlock(targetMaterial, propertyBlock);
         }
 
         public void ChangeTexture(string itemId, string materialName, MaterialInfo materialInfo, string textureName)
@@ -702,35 +702,35 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public void ApplyTexture(string itemId, string materialName, string oldTextureName)
         {
-            ModifyMaterialOnItems(itemId, materialName, (materialOverride, materialInfo) =>
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
             {
                 if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
                 {
-                    BigPlugin.Instance.ReleaseDecalTextureAsset(materialOverride, oldTextureName);
+                    BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
                 }
-                BigPlugin.Instance.AcquireDecalTextureAsset(materialOverride, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
             });
         }
 
         public void MaterialChangeTexture(SystemObject key, Texture texture)
         {
-            if (key is MaterialOverride materialOverride)
+            if (key is TargetMaterial targetMaterial)
             {
-                var propertyBlock = materialOverride.PropertyBlock;
+                var propertyBlock = targetMaterial.PropertyBlock;
                 propertyBlock.SetTexture(_MainTex, texture);
-                ApplyPropertyBlock(materialOverride, propertyBlock);
+                ApplyPropertyBlock(targetMaterial, propertyBlock);
             }
         }
 
         // notice that we modify material on all items
-        public void ModifyMaterialOnItems(string itemId, string materialName, Action<MaterialOverride, MaterialInfo> changeMaterial)
+        public void ModifyMaterialOnItems(string itemId, string materialName, Action<TargetMaterial, MaterialInfo> changeMaterial)
         {
             var itemsWithDecals = ItemsWithDecals[itemId];
             var materialInfo = itemsWithDecals.MaterialsInfo.Materials[materialName];
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
-                var materialOverride = itemWithDecals.Overrides[materialName];
-                changeMaterial(materialOverride, materialInfo);
+                var targetMaterial = itemWithDecals.Materials[materialName];
+                changeMaterial(targetMaterial, materialInfo);
             }
         }
 
