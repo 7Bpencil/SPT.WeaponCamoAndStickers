@@ -302,6 +302,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public string GetMaterialName(Material material)
         {
             return material.name
+                .Replace("_LOD0", "")
+                .Replace("_LOD1", "")
                 .Replace(" (Instance)", ""); // in some cases BSG fucks it up and items get unique materials...
         }
 
