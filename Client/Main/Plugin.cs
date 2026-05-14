@@ -630,7 +630,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            ApplyPropertyBlock(targetMaterial, propertyBlock);
+            ApplyPropertyBlock(targetMaterial);
 
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
             {
@@ -638,8 +638,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
         }
 
-        public void ApplyPropertyBlock(TargetMaterial targetMaterial, MaterialPropertyBlock propertyBlock)
+        public void ApplyPropertyBlock(TargetMaterial targetMaterial)
         {
+            var propertyBlock = targetMaterial.PropertyBlock;
             foreach (var (renderer, index) in targetMaterial.Renderers)
             {
                 renderer.SetPropertyBlock(propertyBlock, index);
@@ -649,50 +650,38 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public void ApplyColor(string itemId, string materialName)
         {
-            ModifyMaterialOnItems(itemId, materialName, ApplyColor);
-        }
-
-        public void ApplyColor(TargetMaterial targetMaterial, MaterialInfo materialInfo)
-        {
-            var propertyBlock = targetMaterial.PropertyBlock;
-            propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
-            ApplyPropertyBlock(targetMaterial, propertyBlock);
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                targetMaterial.PropertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
+                ApplyPropertyBlock(targetMaterial);
+            });
         }
 
         public void ApplyGlossness(string itemId, string materialName)
         {
-            ModifyMaterialOnItems(itemId, materialName, ApplyGlossness);
-        }
-
-        public void ApplyGlossness(TargetMaterial targetMaterial, MaterialInfo materialInfo)
-        {
-            var propertyBlock = targetMaterial.PropertyBlock;
-            propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
-            ApplyPropertyBlock(targetMaterial, propertyBlock);
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                targetMaterial.PropertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
+                ApplyPropertyBlock(targetMaterial);
+            });
         }
 
         public void ApplySpecularness(string itemId, string materialName)
         {
-            ModifyMaterialOnItems(itemId, materialName, ApplySpecularness);
-        }
-
-        public void ApplySpecularness(TargetMaterial targetMaterial, MaterialInfo materialInfo)
-        {
-            var propertyBlock = targetMaterial.PropertyBlock;
-            propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
-            ApplyPropertyBlock(targetMaterial, propertyBlock);
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                targetMaterial.PropertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
+                ApplyPropertyBlock(targetMaterial);
+            });
         }
 
         public void ApplyTextureUV(string itemId, string materialName)
         {
-            ModifyMaterialOnItems(itemId, materialName, ApplyTextureUV);
-        }
-
-        public void ApplyTextureUV(TargetMaterial targetMaterial, MaterialInfo materialInfo)
-        {
-            var propertyBlock = targetMaterial.PropertyBlock;
-            propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            ApplyPropertyBlock(targetMaterial, propertyBlock);
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                targetMaterial.PropertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+                ApplyPropertyBlock(targetMaterial);
+            });
         }
 
         public void ChangeTexture(string itemId, string materialName, MaterialInfo materialInfo, string textureName)
@@ -718,9 +707,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             if (key is TargetMaterial targetMaterial)
             {
-                var propertyBlock = targetMaterial.PropertyBlock;
-                propertyBlock.SetTexture(_MainTex, texture);
-                ApplyPropertyBlock(targetMaterial, propertyBlock);
+                targetMaterial.PropertyBlock.SetTexture(_MainTex, texture);
+                ApplyPropertyBlock(targetMaterial);
             }
         }
 
