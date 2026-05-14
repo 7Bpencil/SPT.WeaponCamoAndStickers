@@ -19,11 +19,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 {
     public class Plugin
 	{
-		public Dictionary<string, DecalSnapshotPacket> PlayersDecals;
+		public Dictionary<string, DecalSnapshotPacket> PlayersMaterials;
 
         public void Awake()
 		{
-			PlayersDecals = new();
+			PlayersMaterials = new();
 
 			FikaEventDispatcher.SubscribeEvent<FikaNetworkManagerCreatedEvent>(OnFikaNetworkManagerCreated);
 			FikaEventDispatcher.SubscribeEvent<FikaGameCreatedEvent>(OnFikaGameCreatedEvent);
@@ -47,35 +47,35 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
             }
 			if (FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
-				var decals = GetLocalDecals();
-				if (decals.ItemDecals.Count > 0)
+				var materials = GetLocalMaterials();
+				if (materials.Items.Count > 0)
 				{
-					PlayersDecals.Add(decals.ProfileId, decals);
+					PlayersMaterials.Add(materials.ProfileId, materials);
 				}
 			}
 		}
 
-		private DecalSnapshotPacket GetLocalDecals()
+		private DecalSnapshotPacket GetLocalMaterials()
 		{
 			var localProfileId = FikaBackendUtils.Profile.ProfileId;
-			var decalsRepository = MainPlugin.Instance.SnapshotLocalMaterials();
-			var decals = new DecalSnapshotPacket()
+			var materialsRepository = MainPlugin.Instance.SnapshotLocalMaterials();
+			var materials = new DecalSnapshotPacket()
 			{
 		        ProfileId = localProfileId,
-		        ItemDecals = decalsRepository,
+		        Items = materialsRepository,
 			};
 
-			return decals;
+			return materials;
 		}
 
 		private void OnFikaGameCreatedEvent(FikaGameCreatedEvent e)
 		{
 			if (!FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
-				var decals = GetLocalDecals();
-				if (decals.ItemDecals.Count > 0)
+				var materials = GetLocalMaterials();
+				if (materials.Items.Count > 0)
 				{
-					Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
+					Singleton<IFikaNetworkManager>.Instance.SendData(ref materials, DeliveryMethod.ReliableUnordered);
 				}
 			}
 		}
@@ -84,7 +84,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 		{
 			if (FikaBackendUtils.IsServer)
 			{
-	            foreach (var cached in PlayersDecals.Values)
+	            foreach (var cached in PlayersMaterials.Values)
 	            {
 	                var packet = cached;
 	                e.NetworkManager.SendDataToPeer(ref packet, DeliveryMethod.ReliableUnordered, e.Peer);
@@ -99,10 +99,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
             {
                 return;
             }
-			if (PlayersDecals.TryAdd(packet.ProfileId, packet))
+			if (PlayersMaterials.TryAdd(packet.ProfileId, packet))
 			{
 				Singleton<IFikaNetworkManager>.Instance.SendData(ref packet, DeliveryMethod.ReliableUnordered);
-				ApplyDecals(packet);
+				ApplyMaterials(packet);
 			}
 		}
 
@@ -113,20 +113,20 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
                 return;
             }
 
-			ApplyDecals(packet);
+			ApplyMaterials(packet);
 		}
 
-		private void ApplyDecals(DecalSnapshotPacket packet)
+		private void ApplyMaterials(DecalSnapshotPacket packet)
 		{
 			if (!FikaBackendUtils.IsHeadless)
 			{
-                MainPlugin.Instance.IngestRemoteMaterials(packet.ItemDecals);
+                MainPlugin.Instance.IngestRemoteMaterials(packet.Items);
 			}
 		}
 
 		private void OnFikaNetworkManagerDestroyedEvent(FikaNetworkManagerDestroyedEvent e)
 		{
-			PlayersDecals.Clear();
+			PlayersMaterials.Clear();
 
 			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
 		}

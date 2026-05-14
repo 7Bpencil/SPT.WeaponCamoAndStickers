@@ -14,13 +14,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
     public class DecalSnapshotPacket : INetSerializable
     {
         public string ProfileId;
-        public Dictionary<string, MaterialsInfo> ItemDecals;
+        public Dictionary<string, MaterialsInfo> Items;
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(ProfileId);
-            writer.Put(ItemDecals.Count);
-            foreach (var (itemId, materialsInfo) in ItemDecals)
+            writer.Put(Items.Count);
+            foreach (var (itemId, materialsInfo) in Items)
             {
                 writer.Put(itemId);
                 SerializeMaterialsInfo(writer, materialsInfo);
@@ -52,13 +52,13 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
         {
             ProfileId = reader.GetString();
             var itemCount = reader.GetInt();
-            ItemDecals = new Dictionary<string, MaterialsInfo>(itemCount);
+            Items = new Dictionary<string, MaterialsInfo>(itemCount);
 
             for (var i = 0; i < itemCount; i++)
             {
                 var itemId = reader.GetString();
                 var materialsInfo = DeserializeDecalInfo(reader);
-                ItemDecals.Add(itemId, materialsInfo);
+                Items.Add(itemId, materialsInfo);
             }
         }
 
