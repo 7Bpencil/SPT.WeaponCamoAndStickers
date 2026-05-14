@@ -397,7 +397,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.x, 0.5f, 2f);
+                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.x, 0.5f, 4f);
                 if (newUVx != materialInfo.TextureUV.x)
                 {
                     materialInfo.TextureUV.x = newUVx;

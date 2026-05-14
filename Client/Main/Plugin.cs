@@ -28,6 +28,8 @@ using UnityEngine.Video;
 // TODO add separate CHANGE COLOR button in interaction menu
 // TODO I guess we track when item gets created first time, but not it comes from pool
 // TODO add change material to modding screen (so people can change material of their attachments faster)?
+// TODO add reset button right to every changed field
+// TODO dont forget to patch cursor in editor
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -87,6 +89,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public static readonly int _Color = Shader.PropertyToID("_Color");
         public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
         public static readonly int _Specularness = Shader.PropertyToID("_Glossness");
+        public static readonly int _BumpTiling = Shader.PropertyToID("_BumpTiling"); // this is used to tile main texture without tiling normals
 
         public static Plugin Instance;
 
@@ -617,6 +620,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+            propertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
             ApplyPropertyBlock(targetMaterial);
 
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
@@ -667,6 +671,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
             {
                 targetMaterial.PropertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+                targetMaterial.PropertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
                 ApplyPropertyBlock(targetMaterial);
             });
         }
