@@ -92,8 +92,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
         public static readonly int _Specularness = Shader.PropertyToID("_Glossness");
 
-        private const double SaveLagTime = 60;
-
         public static Plugin Instance;
 
 		public ManualLogSource LoggerInstance;
