@@ -626,8 +626,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             var propertyBlock = targetMaterial.PropertyBlock;
 
-            var color = materialInfo.ColorHSV.HSVtoRGBA();
-            propertyBlock.SetColor(_Color, color);
+            propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
             propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
@@ -656,8 +655,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public void ApplyColor(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
             var propertyBlock = targetMaterial.PropertyBlock;
-            var color = materialInfo.ColorHSV.HSVtoRGBA();
-            propertyBlock.SetColor(_Color, color);
+            propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
             ApplyPropertyBlock(targetMaterial, propertyBlock);
         }
 
