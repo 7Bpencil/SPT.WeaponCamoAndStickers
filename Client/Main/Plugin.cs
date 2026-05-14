@@ -185,7 +185,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
                     var materialsInfo = JsonConvert.DeserializeObject<MaterialsInfo>(json);
-                    UpgradeOldVersionsOfMaterialsInfo(materialsInfo);
                     var itemsWithMaterials = new ItemsWithMaterials()
                     {
                         Items = new(),
@@ -201,11 +200,6 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
 
             return result;
-        }
-
-        public static void UpgradeOldVersionsOfMaterialsInfo(MaterialsInfo materialsInfo)
-        {
-
         }
 
         public void OnCreateItemAsync(Item item)
@@ -265,12 +259,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public ItemWithMaterials BuildItemOverrides(AssetPoolObject assetPoolObject)
         {
             var targetMaterials = new Dictionary<string, TargetMaterial>();
-
             foreach (var renderer in assetPoolObject.Renderers)
             {
                 BuildRendererOverrides(renderer, targetMaterials);
             }
-
             return new()
             {
                 Item = assetPoolObject,
@@ -315,8 +307,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public bool IsSupportedShader(Material material)
         {
-            // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good
-            // TODO how to support other shaders? just a switch lol with predetermined list in enum
+            // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good, but it has different properties...
+            // TODO how to support other shaders? switch with predetermined list in enum
             var materialShaderName = material.shader.name;
 			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
                 materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
@@ -330,12 +322,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public Dictionary<string, MaterialInfo> GetOriginalMaterials(AssetPoolObject assetPoolObject)
         {
             var originals = new Dictionary<string, MaterialInfo>();
-
             foreach (var renderer in assetPoolObject.Renderers)
             {
                 GetOriginalMaterials(renderer, originals);
             }
-
             return originals;
         }
 
@@ -439,19 +429,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             Logger.LogInfo($"SetupCamoEditor: {itemId}");
 
             var instanceID = assetPoolObject.gameObject.GetInstanceID();
-
-            ItemWithMaterials getItemWithMaterials()
-            {
-                if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
-                    itemsWithMaterials.Items.TryGetValue(instanceID, out var itemWithMaterials))
-                {
-                    return itemWithMaterials;
-                }
-
-                return BuildItemOverrides(assetPoolObject);
-            }
-
-            var itemWithMaterials = getItemWithMaterials();
+            var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, assetPoolObject);
             var originalMaterials = GetOriginalMaterials(assetPoolObject);
             CamoEditor = new(new CamoEditor()
             {
@@ -466,6 +444,17 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
             });
+        }
+
+        public ItemWithMaterials GetOrBuildItemWithMaterials(string itemId, int instanceID, AssetPoolObject assetPoolObject)
+        {
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
+                itemsWithMaterials.Items.TryGetValue(instanceID, out var itemWithMaterials))
+            {
+                return itemWithMaterials;
+            }
+
+            return BuildItemOverrides(assetPoolObject);
         }
 
         public void WaitForWeaponPreview()
@@ -602,19 +591,23 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
         public void ResetMaterial(string itemId, string materialName)
         {
-            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
-                itemsWithMaterials.MaterialsInfo.Materials.Remove(materialName))
+            if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
-                foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
+                return;
+            }
+            if (!itemsWithMaterials.MaterialsInfo.Materials.Remove(materialName))
+            {
+                return;
+            }
+            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
+            {
+                if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
                 {
-                    if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
+                    targetMaterial.PropertyBlock.Clear();
+                    foreach (var (renderer, index) in targetMaterial.Renderers)
                     {
-                        targetMaterial.PropertyBlock.Clear();
-                        foreach (var (renderer, index) in targetMaterial.Renderers)
-                        {
-                            renderer.SetPropertyBlock(null, index);
-                            PatchedRenderers.Remove(renderer);
-                        }
+                        renderer.SetPropertyBlock(null, index);
+                        PatchedRenderers.Remove(renderer);
                     }
                 }
             }
