@@ -1311,7 +1311,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyColor(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeColor(decalInfo.ColorHSVA);
             });
@@ -1319,7 +1319,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyMaxAngle(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeMaxAngle(decalInfo.MaxAngle);
             });
@@ -1327,7 +1327,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyTextureUV(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeTextureUV(decalInfo.TextureUV);
             });
@@ -1335,7 +1335,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyTextureAngle(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeTextureAngle(decalInfo.TextureAngle);
             });
@@ -1343,7 +1343,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyMaskUV(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeMaskUV(decalInfo.MaskUV);
             });
@@ -1351,7 +1351,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyMaskAngle(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeMaskAngle(decalInfo.MaskAngle);
             });
@@ -1359,7 +1359,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyLocalPosition(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.DecalTransform.localPosition = decalInfo.LocalPosition;
             });
@@ -1367,7 +1367,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyLocalEulerAngles(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
             });
@@ -1375,7 +1375,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ApplyLocalScale(string itemId, int decalIndex)
         {
-            ModifyDecalOnItems(itemId, decalIndex, (decal, decalInfo) =>
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
             {
                 decal.ChangeLocalScale(decalInfo.LocalScale);
             });
