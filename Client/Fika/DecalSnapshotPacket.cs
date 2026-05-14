@@ -41,6 +41,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 
         private static void SerializeMaterialInfo(NetDataWriter writer, MaterialInfo d)
         {
+            writer.Put(d.Texture);
+            writer.PutUnmanaged<Vector4>(d.TextureUV);
             writer.PutUnmanaged<Vector3>(d.ColorHSV);
             writer.Put(d.Glossness);
             writer.Put(d.Specularness);
@@ -86,9 +88,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
         {
             return new()
             {
+                Texture = reader.GetString(),
+                TextureUV = reader.GetUnmanaged<Vector4>(),
                 ColorHSV = reader.GetUnmanaged<Vector3>(),
-        		Glossness = reader.GetFloat(),
-        		Specularness = reader.GetFloat(),
+                Glossness = reader.GetFloat(),
+                Specularness = reader.GetFloat(),
             };
         }
 

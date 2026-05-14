@@ -58,7 +58,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 		private DecalSnapshotPacket GetLocalDecals()
 		{
 			var localProfileId = FikaBackendUtils.Profile.ProfileId;
-			var decalsRepository = MainPlugin.Instance.SnapshotLocalDecals();
+			var decalsRepository = MainPlugin.Instance.SnapshotLocalMaterials();
 			var decals = new DecalSnapshotPacket()
 			{
 		        ProfileId = localProfileId,
@@ -120,7 +120,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor.Fika
 		{
 			if (!FikaBackendUtils.IsHeadless)
 			{
-                MainPlugin.Instance.IngestRemoteDecals(packet.ItemDecals);
+                MainPlugin.Instance.IngestRemoteMaterials(packet.ItemDecals);
 			}
 		}
 

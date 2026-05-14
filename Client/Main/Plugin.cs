@@ -74,11 +74,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 		public float Glossness;
 		public float Specularness;
 
-        public MaterialInfo GetCopy()
-        {
-            // this is enough for now
-            return (MaterialInfo)MemberwiseClone();
-        }
+        public MaterialInfo GetCopy() => (MaterialInfo)MemberwiseClone();
     }
 
     [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.0.0")]
@@ -751,23 +747,96 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return itemId;
         }
 
-        public Dictionary<string, MaterialsInfo> SnapshotLocalDecals()
+        public Dictionary<string, MaterialsInfo> SnapshotLocalMaterials()
         {
             var snapshot = new Dictionary<string, MaterialsInfo>();
+    		if (!TarkovApplication.Exist(out var tarkovApplication))
+            {
+                return snapshot;
+            }
+
+            // copies all items inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
+            var profile = tarkovApplication.Session.Profile;
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+
+            foreach (var item in equipmentItems)
+            {
+                if (ItemsWithMaterials.TryGetValue(item.Id, out var itemsWithMaterials))
+                {
+                    snapshot[item.Id] = CopyMaterialsInfo(itemsWithMaterials.MaterialsInfo);
+                }
+            }
+
             return snapshot;
         }
 
-        public void IngestRemoteDecals(Dictionary<string, MaterialsInfo> remoteDecals)
+        public MaterialsInfo CopyMaterialsInfo(MaterialsInfo source)
         {
-            foreach (var (itemId, decalInfo) in remoteDecals)
+            var destination = new MaterialsInfo()
             {
-                IngestRemoteDecals(itemId, decalInfo);
+                Materials = new Dictionary<string, MaterialInfo>(source.Materials.Count)
+            };
+
+            CopyMaterialsInfo(source, destination);
+            return destination;
+        }
+
+        public void CopyMaterialsInfo(MaterialsInfo source, MaterialsInfo destination)
+        {
+            destination.SchemaVersion = source.SchemaVersion;
+            destination.SaveTime = source.SaveTime;
+            destination.Materials.Clear();
+            foreach (var (materialName, materialInfo) in source.Materials)
+            {
+                destination.Materials.Add(materialName, materialInfo.GetCopy());
             }
         }
 
-        public void IngestRemoteDecals(string itemId, MaterialsInfo remoteDecalInfo)
+        public void IngestRemoteMaterials(Dictionary<string, MaterialsInfo> remoteMaterials)
         {
+            foreach (var (itemId, materialsInfo) in remoteMaterials)
+            {
+                IngestRemoteMaterials(itemId, materialsInfo);
+            }
+        }
 
+        public void IngestRemoteMaterials(string itemId, MaterialsInfo remoteMaterialsInfo)
+        {
+            if (remoteMaterialsInfo.Materials.Count == 0)
+            {
+                Logger.LogWarning($"IngestRemoteMaterials: {itemId} has no materials, but was replicated?");
+                return;
+            }
+
+            // TODO not sure if copying remoteMaterialsInfo is necessary
+            if (ItemsWithMaterials.ContainsKey(itemId))
+            {
+                // pick newer version
+                var itemsWithMaterials = ItemsWithMaterials[itemId];
+                var materialsInfo = itemsWithMaterials.MaterialsInfo;
+                if (materialsInfo.SaveTime >= remoteMaterialsInfo.SaveTime)
+                {
+                    Logger.LogInfo($"IngestRemoteMaterials: {itemId}, mine is newer");
+                    return;
+                }
+
+                CopyMaterialsInfo(remoteMaterialsInfo, materialsInfo);
+                WriteMaterialsToFile(itemId, materialsInfo);
+                Logger.LogInfo($"IngestRemoteMaterials: {itemId}, his is newer, already spawned count: {itemsWithMaterials.Items.Count}");
+            }
+            else
+            {
+                var materialsInfo = CopyMaterialsInfo(remoteMaterialsInfo);
+                var itemsWithMaterials = new ItemsWithMaterials()
+                {
+                    Items = new(),
+                    MaterialsInfo = materialsInfo,
+                };
+
+                ItemsWithMaterials.Add(itemId, itemsWithMaterials);
+                WriteMaterialsToFile(itemId, materialsInfo);
+                Logger.LogInfo($"IngestRemoteMaterials: {itemId}, new");
+            }
         }
 
     }
