@@ -15,19 +15,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
     public class DecalSnapshotPacket : INetSerializable
     {
         public string ProfileId;
-        public Dictionary<string, List<DecalInfo>> ItemDecals;
+        public Dictionary<string, List<DecalInfo>> Items;
 
         public void Serialize(NetDataWriter writer)
         {
             writer.Put(ProfileId);
-            writer.Put(ItemDecals.Count);
-            foreach (var kvp in ItemDecals)
+            writer.Put(Items.Count);
+            foreach (var (itemId, decalsInfo) in Items)
             {
-                writer.Put(kvp.Key);
-                writer.Put(kvp.Value.Count);
-                foreach (var decal in kvp.Value)
+                writer.Put(itemId);
+                writer.Put(decalsInfo.Count);
+                foreach (var decalInfo in decalsInfo)
                 {
-                    SerializeDecalInfo(writer, decal);
+                    SerializeDecalInfo(writer, decalInfo);
                 }
             }
         }
@@ -36,17 +36,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
         {
             ProfileId = reader.GetString();
             var itemCount = reader.GetInt();
-            ItemDecals = new Dictionary<string, List<DecalInfo>>(itemCount);
+            Items = new Dictionary<string, List<DecalInfo>>(itemCount);
             for (var i = 0; i < itemCount; i++)
             {
                 var itemId = reader.GetString();
                 var decalCount = reader.GetInt();
                 var decalsInfo = new List<DecalInfo>(decalCount);
-                for (var j = 0; j < decalCount; j++)
+                for (var k = 0; k < decalCount; k++)
                 {
                     decalsInfo.Add(DeserializeDecalInfo(reader));
                 }
-                ItemDecals[itemId] = decalsInfo;
+                Items[itemId] = decalsInfo;
             }
         }
 

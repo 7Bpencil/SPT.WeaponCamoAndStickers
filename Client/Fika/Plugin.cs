@@ -51,7 +51,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			if (FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
 				var decals = GetLocalDecals();
-				if (decals.ItemDecals.Count > 0)
+				if (decals.Items.Count > 0)
 				{
 					PlayersDecals.Add(decals.ProfileId, decals);
 				}
@@ -66,18 +66,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			var decals = new DecalSnapshotPacket()
 			{
 		        ProfileId = localProfileId,
-		        ItemDecals = decalsRepository,
+		        Items = decalsRepository,
 			};
 
 			return decals;
 		}
 
-		private void OnBotWeaponCamoGenerated(Dictionary<string, List<DecalInfo>> itemWithDecals)
+		private void OnBotWeaponCamoGenerated(Dictionary<string, List<DecalInfo>> itemsWithDecals)
 		{
 			var decals = new DecalSnapshotPacket()
 			{
 		        ProfileId = null,
-		        ItemDecals = itemWithDecals,
+		        Items = itemsWithDecals,
 			};
 			BotsDecals.Add(decals);
 
@@ -89,7 +89,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 			if (!FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
 				var decals = GetLocalDecals();
-				if (decals.ItemDecals.Count > 0)
+				if (decals.Items.Count > 0)
 				{
 					Singleton<IFikaNetworkManager>.Instance.SendData(ref decals, DeliveryMethod.ReliableUnordered);
 				}
@@ -141,7 +141,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
 		{
 			if (!FikaBackendUtils.IsHeadless)
 			{
-                MainPlugin.Instance.IngestRemoteDecals(packet.ItemDecals);
+                MainPlugin.Instance.IngestRemoteDecals(packet.Items);
 			}
 		}
 
