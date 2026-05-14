@@ -2296,7 +2296,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                Logger.LogInfo($"IngestRemoteDecals: {itemId}, new");
                 var decalsInfo = CopyDecalsInfo(remoteDecalsInfo);
                 var itemsWithDecals = new ItemsWithDecals()
                 {
@@ -2306,6 +2305,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 WriteDecalsToFile(itemId, decalsInfo);
+                Logger.LogInfo($"IngestRemoteDecals: {itemId}, new");
             }
 
             if (WeaponsWaitingForRemoteCamo.Remove(itemId, out var weaponPrefab))
