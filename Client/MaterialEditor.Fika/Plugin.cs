@@ -19,7 +19,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 {
     public class Plugin
 	{
-		public Dictionary<string, DecalSnapshotPacket> PlayersMaterials;
+		public Dictionary<string, MaterialSnapshotPacket> PlayersMaterials;
 
         public void Awake()
 		{
@@ -39,11 +39,11 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 			MainPlugin.Instance.IsFikaHeadless = FikaBackendUtils.IsHeadless;
             if (FikaBackendUtils.IsServer)
             {
-                e.Manager.RegisterPacket<DecalSnapshotPacket, NetPeer>(OnDecalSnapshotReceivedServer);
+                e.Manager.RegisterPacket<MaterialSnapshotPacket, NetPeer>(OnDecalSnapshotReceivedServer);
             }
             else
             {
-                e.Manager.RegisterPacket<DecalSnapshotPacket>(OnDecalSnapshotReceivedClient);
+                e.Manager.RegisterPacket<MaterialSnapshotPacket>(OnDecalSnapshotReceivedClient);
             }
 			if (FikaBackendUtils.IsServer && !FikaBackendUtils.IsHeadless)
 			{
@@ -55,11 +55,11 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 			}
 		}
 
-		private DecalSnapshotPacket GetLocalMaterials()
+		private MaterialSnapshotPacket GetLocalMaterials()
 		{
 			var localProfileId = FikaBackendUtils.Profile.ProfileId;
 			var materialsRepository = MainPlugin.Instance.SnapshotLocalMaterials();
-			var materials = new DecalSnapshotPacket()
+			var materials = new MaterialSnapshotPacket()
 			{
 		        ProfileId = localProfileId,
 		        Items = materialsRepository,
@@ -92,7 +92,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 			}
 		}
 
-		private void OnDecalSnapshotReceivedServer(DecalSnapshotPacket packet, NetPeer peer)
+		private void OnDecalSnapshotReceivedServer(MaterialSnapshotPacket packet, NetPeer peer)
 		{
             if (packet.ProfileId == null ||
 				packet.ProfileId == FikaBackendUtils.Profile.ProfileId)
@@ -106,7 +106,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 			}
 		}
 
-		private void OnDecalSnapshotReceivedClient(DecalSnapshotPacket packet)
+		private void OnDecalSnapshotReceivedClient(MaterialSnapshotPacket packet)
 		{
             if (packet.ProfileId == FikaBackendUtils.Profile.ProfileId)
             {
@@ -116,7 +116,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 			ApplyMaterials(packet);
 		}
 
-		private void ApplyMaterials(DecalSnapshotPacket packet)
+		private void ApplyMaterials(MaterialSnapshotPacket packet)
 		{
 			if (!FikaBackendUtils.IsHeadless)
 			{

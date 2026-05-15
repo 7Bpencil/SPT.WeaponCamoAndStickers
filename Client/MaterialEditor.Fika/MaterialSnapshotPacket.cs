@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace SevenBoldPencil.MaterialEditor.Fika
 {
-    public class DecalSnapshotPacket : INetSerializable
+    public class MaterialSnapshotPacket : INetSerializable
     {
         public string ProfileId;
         public Dictionary<string, MaterialsInfo> Items;
