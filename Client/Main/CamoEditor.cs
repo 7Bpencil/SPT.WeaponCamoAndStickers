@@ -437,13 +437,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var totalPresets = Plugin.GetPresetsCount();
                 if (totalPresets > 0)
                 {
-                    var (_, presetsScrollHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                    var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
                     return
                         bigMargin +
                         buttonHeight + mediumMargin + // preset name
                         buttonHeight + mediumMargin + // hide presets button
                         buttonHeight + mediumMargin + // generate random camo button
-                        presetsScrollHeight + bigMargin; // presets
+                        visibleHeight + bigMargin; // presets
                 }
                 else
                 {
@@ -481,13 +481,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var y = 0;
 
-            DrawPresetsListUI(y);
-            y += CalculatePresetsWindowHeight();
+            DrawPresetsListUI(ref y);
 
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin;
 
-            DrawDecalsListUI(y);
+            DrawDecalsListUI(ref y);
 
 			GUI.DragWindow();
         }
@@ -504,10 +503,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void DrawPresetsListUI(int windowY)
+        public void DrawPresetsListUI(ref int y)
         {
             var x = bigMargin;
-            var y = windowY;
 
             y += bigMargin;
 
@@ -589,12 +587,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     {
                         Plugin.DeletePreset(deletedPresetName);
                     }
+                    y += visibleHeight + bigMargin;
 
                     GUI.EndScrollView();
                 }
                 else
                 {
                     GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoStyle.LabelStyleValue);
+                    y += buttonHeight + bigMargin;
                 }
             }
             else
@@ -603,13 +603,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     ArePresetsOpened = true;
                 }
+                y += buttonHeight + bigMargin;
             }
         }
 
-        public void DrawDecalsListUI(int windowY)
+        public void DrawDecalsListUI(ref int y)
         {
             var x = bigMargin;
-            var y = windowY;
 
             y += bigMargin;
 
@@ -631,11 +631,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     DrawDecalElementUI(x, decalsY, i, decalInfo);
                     decalsY += boxHeight + mediumMargin;
                 }
+                y += visibleHeight + mediumMargin;
 
                 GUI.EndScrollView();
-
-                y += visibleHeight;
-                y += mediumMargin;
             }
 
             {
