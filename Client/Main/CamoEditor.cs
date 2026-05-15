@@ -571,6 +571,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                         {
                             CurrentPresetName = presetName;
+                            IsCurrentPresetNameValid = true;
                             Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
                         }
                         if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
