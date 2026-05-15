@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers.Fika", "Fika\WeaponCamoAndStickers.Fika.csproj", "{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers", "WeaponCamoAndStickers\WeaponCamoAndStickers.csproj", "{52A18216-EAFE-68D0-0443-A38258669E88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers", "Main\WeaponCamoAndStickers.csproj", "{2266F430-B596-BA09-29EA-1B1F5279256A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers.Fika", "WeaponCamoAndStickers.Fika\WeaponCamoAndStickers.Fika.csproj", "{C8249F5B-271C-2884-C7C6-A56EFC8576D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2266F430-B596-BA09-29EA-1B1F5279256A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2266F430-B596-BA09-29EA-1B1F5279256A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2266F430-B596-BA09-29EA-1B1F5279256A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2266F430-B596-BA09-29EA-1B1F5279256A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52A18216-EAFE-68D0-0443-A38258669E88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52A18216-EAFE-68D0-0443-A38258669E88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52A18216-EAFE-68D0-0443-A38258669E88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52A18216-EAFE-68D0-0443-A38258669E88}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

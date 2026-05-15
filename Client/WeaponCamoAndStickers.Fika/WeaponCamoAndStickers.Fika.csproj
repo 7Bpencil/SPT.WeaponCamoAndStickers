@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Main\WeaponCamoAndStickers.csproj" />
+    <ProjectReference Include="..\WeaponCamoAndStickers\WeaponCamoAndStickers.csproj" />
   </ItemGroup>
 
   <ItemGroup>
