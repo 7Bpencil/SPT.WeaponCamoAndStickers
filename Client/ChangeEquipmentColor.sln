@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeEquipmentColor.Fika", "Fika\ChangeEquipmentColor.Fika.csproj", "{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialEditor.Fika", "Fika\MaterialEditor.Fika.csproj", "{E110ACDD-DDCB-36A3-C2C1-A4BD28640320}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChangeEquipmentColor", "Main\ChangeEquipmentColor.csproj", "{2266F430-B596-BA09-29EA-1B1F5279256A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialEditor", "Main\MaterialEditor.csproj", "{2266F430-B596-BA09-29EA-1B1F5279256A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

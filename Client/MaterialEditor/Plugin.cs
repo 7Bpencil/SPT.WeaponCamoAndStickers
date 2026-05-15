@@ -36,7 +36,7 @@ using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorReso
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using SystemObject = System.Object;
 
-namespace SevenBoldPencil.ChangeEquipmentColor
+namespace SevenBoldPencil.MaterialEditor
 {
     public class ItemsWithMaterials
     {
@@ -85,7 +85,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public MaterialInfo Material;
     }
 
-    [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.0.0")]
+    [BepInPlugin("7Bpencil.MaterialEditor", "7Bpencil.MaterialEditor", "1.0.0")]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
@@ -168,14 +168,14 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
-            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.ChangeEquipmentColor.Fika.dll");
+            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.MaterialEditor.Fika.dll");
             if (!File.Exists(fikaAssemblyPath))
             {
                 return;
             }
 
             var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
-            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.ChangeEquipmentColor.Fika.Plugin");
+            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.MaterialEditor.Fika.Plugin");
             var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
             var fikaPlugin = Activator.CreateInstance(fikaPluginType);
             fikaPluginAwake.Invoke(fikaPlugin, null);
@@ -468,7 +468,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 IsCurrentPresetNameValid = false,
                 IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
-                WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
+                WindowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect()
             });
         }
 

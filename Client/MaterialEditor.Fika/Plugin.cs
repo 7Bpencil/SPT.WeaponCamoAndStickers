@@ -13,9 +13,9 @@ using Fika.Core.Networking;
 using Fika.Core.Networking.LiteNetLib;
 using System.Collections.Generic;
 
-using MainPlugin = SevenBoldPencil.ChangeEquipmentColor.Plugin;
+using MainPlugin = SevenBoldPencil.MaterialEditor.Plugin;
 
-namespace SevenBoldPencil.ChangeEquipmentColor.Fika
+namespace SevenBoldPencil.MaterialEditor.Fika
 {
     public class Plugin
 	{

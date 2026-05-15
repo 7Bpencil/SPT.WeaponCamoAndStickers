@@ -27,7 +27,7 @@ using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
 
-namespace SevenBoldPencil.ChangeEquipmentColor
+namespace SevenBoldPencil.MaterialEditor
 {
 	public struct WeaponPreview_Proxy
 	{

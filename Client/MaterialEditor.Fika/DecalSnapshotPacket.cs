@@ -9,7 +9,7 @@ using Fika.Core.Networking.LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SevenBoldPencil.ChangeEquipmentColor.Fika
+namespace SevenBoldPencil.MaterialEditor.Fika
 {
     public class DecalSnapshotPacket : INetSerializable
     {
