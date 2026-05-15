@@ -27,7 +27,6 @@ using UnityEngine.Video;
 // TODO fde is 0.09 hue and 6.7 glossness
 // TODO add change material to modding screen (so people can change material of their attachments faster)?
 // TODO add reset button right to every changed field
-// TODO dont forget to patch cursor in editor
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -139,6 +138,7 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
             new Patch_WeaponModdingScreen_method_6().Enable();
+            new Patch_GClass2304_smethod_0().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
@@ -481,6 +481,20 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsWaitingForWeaponPreview()
         {
             return IsCamoEditorWaitingForWeaponPreview;
+        }
+
+        public bool CanHideCursor()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                // game hides cursor and resets it to the center,
+                // when player drags in weapon modding screen, which
+                // fucks up dragging transform handles and sliders,
+                // so keep cursor visible
+                return !camoEditor.IsOpened;
+            }
+
+            return true;
         }
 
         public void CloseCamoEditor()
