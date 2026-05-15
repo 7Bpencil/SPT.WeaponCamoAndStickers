@@ -426,7 +426,6 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject)
         {
-            // TODO limit to only some types of items
             var itemId = GetOriginalItemId(item.Id);
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
 			if (IsCamoEditorWaitingForWeaponPreview)
