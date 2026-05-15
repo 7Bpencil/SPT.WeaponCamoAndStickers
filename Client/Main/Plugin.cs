@@ -393,14 +393,9 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 return;
             }
 
-            foreach (var renderer in assetPoolObject.Renderers)
+            foreach (var (materialName, materialInfo) in itemsWithMaterials.MaterialsInfo.Materials)
             {
-                var materialsCount = renderer.sharedMaterials.Length;
-                for (var i = 0; i < materialsCount; i++)
-                {
-                    renderer.SetPropertyBlock(null, i);
-                }
-                PatchedRenderers.Remove(renderer);
+                ResetMaterial(itemWithMaterials, materialName, materialInfo);
             }
 
 			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}");
@@ -494,8 +489,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 }
                 else
                 {
-                    var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    materialsInfo.SaveTime = time;
+                    materialsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                     WriteMaterialsToFile(itemId, materialsInfo);
                     Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite materials");
                 }
@@ -594,21 +588,35 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 return;
             }
-            if (!itemsWithMaterials.MaterialsInfo.Materials.Remove(materialName))
+            if (!itemsWithMaterials.MaterialsInfo.Materials.Remove(materialName, out var materialInfo))
             {
                 return;
             }
             foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
-                if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
-                {
-                    targetMaterial.PropertyBlock.Clear();
-                    foreach (var (renderer, index) in targetMaterial.Renderers)
-                    {
-                        renderer.SetPropertyBlock(null, index);
-                        PatchedRenderers.Remove(renderer);
-                    }
-                }
+                ResetMaterial(itemWithMaterials, materialName, materialInfo);
+            }
+        }
+
+        public void ResetMaterial(ItemWithMaterials itemWithMaterials, string materialName, MaterialInfo materialInfo)
+        {
+            if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
+            {
+                ResetMaterial(targetMaterial, materialInfo);
+            }
+        }
+
+        public void ResetMaterial(TargetMaterial targetMaterial, MaterialInfo materialInfo)
+        {
+            targetMaterial.PropertyBlock.Clear();
+            if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
+            {
+                BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, materialInfo.Texture);
+            }
+            foreach (var (renderer, index) in targetMaterial.Renderers)
+            {
+                renderer.SetPropertyBlock(null, index);
+                PatchedRenderers.Remove(renderer);
             }
         }
 
@@ -687,7 +695,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         {
             ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
             {
-                if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
+                if (!string.IsNullOrWhiteSpace(oldTextureName))
                 {
                     BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
                 }
