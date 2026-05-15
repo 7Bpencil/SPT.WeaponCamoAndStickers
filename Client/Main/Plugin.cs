@@ -79,6 +79,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public MaterialInfo GetCopy() => (MaterialInfo)MemberwiseClone();
     }
 
+    public class MaterialPreset
+    {
+        public int SchemaVersion;
+        public MaterialInfo Material;
+    }
+
     [BepInPlugin("7Bpencil.ChangeEquipmentColor", "7Bpencil.ChangeEquipmentColor", "1.0.0")]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
@@ -95,10 +101,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 
 		public ManualLogSource LoggerInstance;
 
-        private string PresetsDir;
+        private string MaterialPresetsDir;
         private string ItemsDir;
         private CamoEditorResources CamoEditorResources;
 
+        private Dictionary<string, MaterialPreset> MaterialPresets;
         private Dictionary<string, ItemsWithMaterials> ItemsWithMaterials;
         private HashSet<Renderer> PatchedRenderers;
         private Dictionary<string, string> Clones;
@@ -117,10 +124,11 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 			LoggerInstance = Logger;
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            PresetsDir = Path.Combine(assemblyDir, "presets-materials");
+            MaterialPresetsDir = Path.Combine(assemblyDir, "presets-materials");
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
+            MaterialPresets = LoadMaterialPresets(MaterialPresetsDir);
             ItemsWithMaterials = LoadItemsWithMaterials(ItemsDir);
             PatchedRenderers = new();
             Clones = new();
@@ -171,6 +179,28 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
             var fikaPlugin = Activator.CreateInstance(fikaPluginType);
             fikaPluginAwake.Invoke(fikaPlugin, null);
+        }
+
+        public Dictionary<string, MaterialPreset> LoadMaterialPresets(string directoryPath)
+        {
+            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
+            var result = new Dictionary<string, MaterialPreset>();
+
+            foreach (var filePath in filePaths)
+            {
+                var presetName = Path.GetFileNameWithoutExtension(filePath);
+                if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+                {
+                    var preset = JsonConvert.DeserializeObject<MaterialPreset>(json);
+                    result.Add(presetName, preset);
+                }
+                else
+                {
+                    Logger.LogError($"Failed to load preset: {presetName}, error: {e}");
+                }
+            }
+
+            return result;
         }
 
         public Dictionary<string, ItemsWithMaterials> LoadItemsWithMaterials(string directoryPath)
@@ -434,6 +464,8 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 ItemWithMaterials = itemWithMaterials,
                 OriginalMaterials = originalMaterials,
                 IsOpened = false,
+                CurrentPresetName = "",
+                IsCurrentPresetNameValid = false,
                 IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.ChangeEquipmentColor.CamoEditor.GetDefaultWindowRect()
@@ -519,6 +551,29 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return filePath;
         }
 
+        public void WriteMaterialPresetToFile(string presetName, MaterialPreset preset)
+        {
+            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            var filePath = GetMaterialPresetFilePath(presetName);
+            SafeIO.WriteAllTextAsync(filePath, json);
+        }
+
+        public void DeleteMaterialPreset(string presetName)
+        {
+            if (MaterialPresets.Remove(presetName))
+            {
+                var filePath = GetMaterialPresetFilePath(presetName);
+                SafeIO.DeleteFile(filePath);
+            }
+        }
+
+        public string GetMaterialPresetFilePath(string presetName)
+        {
+            var fileName = $"{presetName}.json";
+            var filePath = Path.Combine(MaterialPresetsDir, fileName);
+            return filePath;
+        }
+
         public void OnGUI()
         {
             if (CamoEditor.Some(out var camoEditor))
@@ -537,10 +592,28 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             return default;
         }
 
-        public MaterialInfo GetMaterialInfo(string itemId, string materialName)
+        public Option<MaterialInfo> GetMaterialInfo(string itemId, string materialName)
         {
-            var itemsWithMaterials = ItemsWithMaterials[itemId];
-            return itemsWithMaterials.MaterialsInfo.Materials[materialName];
+            if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
+            {
+                return default;
+            }
+            if (!itemsWithMaterials.MaterialsInfo.Materials.TryGetValue(materialName, out var materialInfo))
+            {
+                return default;
+            }
+
+            return new(materialInfo);
+        }
+
+        public int GetMaterialPresetsCount()
+        {
+            return MaterialPresets.Count;
+        }
+
+        public Dictionary<string, MaterialPreset>.KeyCollection GetMaterialPresetNames()
+        {
+            return MaterialPresets.Keys;
         }
 
         public void OverrideMaterial(ItemWithMaterials itemWithMaterials, Dictionary<string, MaterialInfo> originalMaterials, string itemId, int instanceID, string materialName)
@@ -699,7 +772,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 {
                     BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
                 }
-                BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
+                {
+                    BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                }
             });
         }
 
@@ -758,6 +834,65 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             }
 
             return itemId;
+        }
+
+        public void SaveMaterialIntoPreset(string itemId, string materialName, string presetName)
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                return;
+            }
+            if (!GetMaterialInfo(itemId, materialName).Some(out var materialInfo))
+            {
+                return;
+            }
+            if (MaterialPresets.TryGetValue(presetName, out var oldPresetMaterialInfo))
+            {
+                oldPresetMaterialInfo.Material = materialInfo.GetCopy();
+                WriteMaterialPresetToFile(presetName, oldPresetMaterialInfo);
+            }
+            else
+            {
+                var newPresetMaterialInfo = new MaterialPreset()
+                {
+                    SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
+                    Material = materialInfo.GetCopy(),
+                };
+                MaterialPresets.Add(presetName, newPresetMaterialInfo);
+                WriteMaterialPresetToFile(presetName, newPresetMaterialInfo);
+            }
+        }
+
+        public void SwitchToMaterialPreset(string itemId, string materialName, string presetName)
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                return;
+            }
+            if (!GetMaterialInfo(itemId, materialName).Some(out var materialInfo))
+            {
+                return;
+            }
+            if (!MaterialPresets.TryGetValue(presetName, out var preset))
+            {
+                return;
+            }
+
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                ResetMaterial(targetMaterial, materialInfo);
+            });
+
+            materialInfo.Texture = preset.Material.Texture;
+            materialInfo.TextureUV = preset.Material.TextureUV;
+            materialInfo.ColorHSV = preset.Material.ColorHSV;
+            materialInfo.Glossness = preset.Material.Glossness;
+            materialInfo.Specularness = preset.Material.Specularness;
+
+            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            {
+                ApplyAllOverrides(targetMaterial, materialInfo);
+            });
         }
 
         public Dictionary<string, MaterialsInfo> SnapshotLocalMaterials()

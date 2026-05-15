@@ -95,6 +95,10 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public ItemWithMaterials ItemWithMaterials;
         public Dictionary<string, MaterialInfo> OriginalMaterials;
         public bool IsOpened;
+        public bool ArePresetsOpened;
+        public string CurrentPresetName;
+        public bool IsCurrentPresetNameValid;
+        public Vector2 PresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
         public Option<string> CurrentlyEditedOverride;
         public bool IsColorPickerOpened;
@@ -108,7 +112,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public const int iconColumns = 5;
         public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
         public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
-        public const int maxPresetsVisible = 9;
+        public const int maxPresetsVisible = 24;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
         public const int maxMaterialsCount = 10;
@@ -136,7 +140,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly Rect colorPickerRect = new(0, 80, hsCircleDiameter + bigMargin * 2, hsCircleDiameter + bigMargin * 2);
+        public static readonly Rect colorPickerRect = new(0, 104, hsCircleDiameter + bigMargin * 2, hsCircleDiameter + bigMargin * 2);
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
         public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
@@ -171,26 +175,36 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 if (CurrentlyEditedOverride.HasValue)
                 {
-                    WindowRect.height = CalculateMaterialEditWindowHeight();
-                    WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI, GUIContent.none);
-
-                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
-
-                    if (IsColorPickerOpened)
+                    if (ArePresetsOpened)
                     {
-                        var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
-                        GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+                        WindowRect.height = CalculateMaterialEditWindowHeight_Presets();
+                        WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Presets, GUIContent.none);
 
-                        var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                        GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                        var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
                     }
                     else
                     {
-                        var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                        GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
-                    }
+                        WindowRect.height = CalculateMaterialEditWindowHeight_Material();
+                        WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Material, GUIContent.none);
 
+                        var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+
+                        if (IsColorPickerOpened)
+                        {
+                            var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
+                            GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+
+                            var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                            GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                        }
+                        else
+                        {
+                            var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                            GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                        }
+                    }
                 }
                 else
                 {
@@ -221,13 +235,39 @@ namespace SevenBoldPencil.ChangeEquipmentColor
                 visibleHeight + bigMargin; // materials
         }
 
-        private int CalculateMaterialEditWindowHeight()
+        private int CalculateMaterialEditWindowHeight_Presets()
+        {
+            var totalPresets = Plugin.GetMaterialPresetsCount();
+            if (totalPresets > 0)
+            {
+                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                return
+                    bigMargin +
+                    buttonHeight + mediumMargin + // back button
+                    buttonHeight + mediumMargin + // hide presets button
+                    buttonHeight + mediumMargin + // preset name
+                    visibleHeight + bigMargin; // presets
+            }
+            else
+            {
+                return
+                    bigMargin +
+                    buttonHeight + mediumMargin + // back button
+                    buttonHeight + mediumMargin + // hide presets button
+                    buttonHeight + mediumMargin + // preset name
+                    buttonHeight + bigMargin; // no presets text
+            }
+        }
+
+        private int CalculateMaterialEditWindowHeight_Material()
         {
             var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(DecalTypeMenu);
             var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
             return
                 bigMargin +
-                buttonHeight + bigMargin + // back button
+                buttonHeight + mediumMargin + // back button
+                buttonHeight + bigMargin + // show presets button
+                smallMargin + bigMargin + // separator
                 buttonHeight + smallMargin + // hue
                 buttonHeight + smallMargin + // saturation
                 buttonHeight + smallMargin + // value
@@ -296,12 +336,12 @@ namespace SevenBoldPencil.ChangeEquipmentColor
 			GUI.DragWindow();
         }
 
-        private void DrawMaterialEditUI(int windowID)
+        private void DrawMaterialEditUI_Presets(int windowID)
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var materialName = CurrentlyEditedOverride.Value;
-            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName);
+            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
 
             var x = bigMargin;
             var y = bigMargin;
@@ -310,7 +350,113 @@ namespace SevenBoldPencil.ChangeEquipmentColor
             {
                 CurrentlyEditedOverride = default;
             }
+            y += buttonHeight + mediumMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
+            {
+                ArePresetsOpened = false;
+            }
+            y += buttonHeight + mediumMargin;
+
+            // save button turns green only if there is valid input,
+            // text field goes red only if there is actual invalid input, stays default if no input
+            var previousBackgroundColor = GUI.backgroundColor;
+            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName) && !IsCurrentPresetNameValid;
+            var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
+
+            GUI.backgroundColor = buttonBackgroundColor;
+            var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
+            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
+            GUI.backgroundColor = previousBackgroundColor;
+
+            if (newPresetName != CurrentPresetName)
+            {
+                CurrentPresetName = newPresetName;
+                IsCurrentPresetNameValid = SafeIO.IsValidFileName(newPresetName);
+            }
+            if (string.IsNullOrWhiteSpace(CurrentPresetName))
+            {
+                GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoEditorStyle.LabelStyleName);
+            }
+
+            var saveX = x + boxWidth - buttonHeight;
+            var saveIcon = IsCurrentPresetNameValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
+            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
+            {
+                if (IsCurrentPresetNameValid)
+                {
+                    Plugin.SaveMaterialIntoPreset(ItemId, materialName, CurrentPresetName);
+                }
+            }
+            y += buttonHeight + mediumMargin;
+
+            var presetsCount = Plugin.GetMaterialPresetsCount();
+            if (presetsCount > 0)
+            {
+                var decalsY = y;
+
+                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
+                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
+
+                BigCamoEditor.DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
+                PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+                Option<string> deletedPresetNameOption = default;
+                foreach (var presetName in Plugin.GetMaterialPresetNames())
+                {
+                    if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
+                    {
+                        CurrentPresetName = presetName;
+                        IsCurrentPresetNameValid = true;
+                        Plugin.SwitchToMaterialPreset(ItemId, materialName, presetName);
+                    }
+                    if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
+                    {
+                        // theres no way user will click on multiple buttons in one frame, right?
+                        deletedPresetNameOption = new(presetName);
+                    }
+                    decalsY += buttonHeight + smallMargin;
+                }
+                if (deletedPresetNameOption.Some(out var deletedPresetName))
+                {
+                    Plugin.DeleteMaterialPreset(deletedPresetName);
+                }
+                y += visibleHeight + bigMargin;
+
+                GUI.EndScrollView();
+            }
+            else
+            {
+                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + bigMargin;
+            }
+        }
+
+        private void DrawMaterialEditUI_Material(int windowID)
+        {
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var materialName = CurrentlyEditedOverride.Value;
+            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
+            {
+                CurrentlyEditedOverride = default;
+            }
+            y += buttonHeight + mediumMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
+            {
+                ArePresetsOpened = true;
+            }
             y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
 
             {
                 var sliderWidth = 224;
@@ -572,7 +718,7 @@ namespace SevenBoldPencil.ChangeEquipmentColor
         private void DrawColorPickerWindow(int windowID)
         {
             var materialName = CurrentlyEditedOverride.Value;
-            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName);
+            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
 
             DrawColor(new Rect(0, 0, colorPickerRect.width, colorPickerRect.height), backgroundColor);
 
