@@ -24,8 +24,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
 
-// TODO fde is 0.09 hue and 6.7 glossness
-// TODO add change material to modding screen (so people can change material of their attachments faster)?
 // TODO add reset button right to every changed field
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;

@@ -135,7 +135,7 @@ namespace SevenBoldPencil.MaterialEditor
 
 		public static void OpenChangeMaterialWindow(ItemInfoInteractionsAbstractClass<EItemInfoButton> result)
 		{
-			if (result is GClass3758 gclass)
+			if (result is ContextInteractionsAbstractClass gclass)
 			{
 				Plugin.Instance.WaitForWeaponPreview();
 				gclass.method_28();
