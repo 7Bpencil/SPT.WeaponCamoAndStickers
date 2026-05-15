@@ -225,7 +225,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly Rect colorPickerRect = new(0, 258, 230, 304);
+        public static readonly Rect colorPickerRect = new(0, 252, 230, 304);
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
         public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
@@ -339,7 +339,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu, maxTextureIconsVisibleHeight);
                     return
                         bigMargin +
-                        buttonHeight + bigMargin + // back button
+                        buttonHeight + mediumMargin + // back button
                         buttonHeight + mediumMargin + // decal name
                         4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                         smallMargin + bigMargin + // separator
@@ -360,7 +360,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxMaskIconsVisibleHeight);
                     return
                         bigMargin +
-                        buttonHeight + bigMargin + // back button
+                        buttonHeight + mediumMargin + // back button
                         buttonHeight + mediumMargin + // decal name
                         4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                         smallMargin + bigMargin + // separator
@@ -378,7 +378,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var (_, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
                 return
                     bigMargin +
-                    buttonHeight + bigMargin + // back button
+                    buttonHeight + mediumMargin + // back button
                     buttonHeight + mediumMargin + // decal name
                     4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
                     smallMargin + bigMargin + // separator
@@ -928,7 +928,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     Plugin.SwitchMirrorMode(ItemId, decalIndex, decalInfo);
                 }
             }
-            y += buttonHeight + bigMargin;
+            y += buttonHeight + mediumMargin;
 
 
             decalInfo.Name = GUI.TextField(new Rect(x, y, boxWidth, buttonHeight), decalInfo.Name, maxDecalNameLength, CamoStyle.TextFieldStyle);
