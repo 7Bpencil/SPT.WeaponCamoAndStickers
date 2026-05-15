@@ -64,11 +64,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalMirrorMode MirrorMode;
         public DecalPaintMode PaintMode;
 
-        public DecalInfo GetCopy()
-        {
-            // this is enough for now
-            return (DecalInfo)MemberwiseClone();
-        }
+        // this is enough for now
+        public DecalInfo GetCopy() => (DecalInfo)MemberwiseClone();
     }
 
     public enum DecalPaintMode : byte
@@ -1414,9 +1411,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             decalInfo.IsVisible = !decalInfo.IsVisible;
         }
 
-        public void ApplyTextureAndMaskInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
+        public void ApplyPaintInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
         {
-            // why exactly those? ask @Bandoot, he knows better
+            // why exactly those? ask @Bandoot, he knows better,
+            // as I remember, he got tired of copy-pasting textures between multiple attachments
 
             // match flip
             decalInfo.LocalScale = Vector3.Scale(decalInfo.LocalScale.Abs(), fromDecalInfo.LocalScale.Sign());
@@ -1426,6 +1424,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             decalInfo.ColorHSVA = fromDecalInfo.ColorHSVA;
             ApplyColor(itemId, decalIndex);
+
+            decalInfo.MaxAngle = fromDecalInfo.MaxAngle;
+            ApplyMaxAngle(itemId, decalIndex);
+
+            decalInfo.MirrorMode = fromDecalInfo.MirrorMode;
+        }
+
+        public void ApplyEraserInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
+        {
+            // why exactly those? ask @Bandoot, he knows better,
+            // as I remember, he got tired of copy-pasting mag eraser between presets
+
+            decalInfo.Name = fromDecalInfo.Name;
+
+            ChangeMask(itemId, decalIndex, decalInfo, fromDecalInfo.Mask);
+
+            decalInfo.MaskUV = fromDecalInfo.MaskUV;
+            ApplyMaskUV(itemId, decalIndex);
+
+            decalInfo.MaskAngle = fromDecalInfo.MaskAngle;
+            ApplyMaskAngle(itemId, decalIndex);
+
+            decalInfo.LocalPosition = fromDecalInfo.LocalPosition;
+            decalInfo.LocalEulerAngles = fromDecalInfo.LocalEulerAngles;
+            decalInfo.LocalScale = fromDecalInfo.LocalScale;
+
+            ApplyLocalPosition(itemId, decalIndex);
+            ApplyLocalEulerAngles(itemId, decalIndex);
+            ApplyLocalScale(itemId, decalIndex);
 
             decalInfo.MaxAngle = fromDecalInfo.MaxAngle;
             ApplyMaxAngle(itemId, decalIndex);
@@ -2246,7 +2273,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return snapshot;
             }
 
-            // copies all guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
+            // copies all painted guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
             var profile = tarkovApplication.Session.Profile;
             var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
 

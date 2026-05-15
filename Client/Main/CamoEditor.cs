@@ -36,8 +36,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D EditMaskUVAngleIcon;
         public Texture2D EditMaskUVTilingIcon;
         public Texture2D DuplicateIcon;
-        public Texture2D CopyIcon;
-        public Texture2D PasteIcon;
+        public Texture2D CopyPaintIcon;
+        public Texture2D PastePaintIcon;
+        public Texture2D CopyEraserIcon;
+        public Texture2D PasteEraserIcon;
         public Texture2D DeleteIcon;
         public Texture2D SaveIcon;
         public Texture2D SaveErrorIcon;
@@ -77,8 +79,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png");
             EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png");
             DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/duplicate.png");
-            CopyIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy.png");
-            PasteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste.png");
+            CopyPaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-paint.png");
+            PastePaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-paint.png");
+            CopyEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-eraser.png");
+            PasteEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-eraser.png");
             DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
             SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
             SaveErrorIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette-error.png");
@@ -868,21 +872,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private void DrawDecalEditUI_Header(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             {
-                static int getButtonsCount(DecalInfo decalInfo)
-                {
-                    if (decalInfo.PaintMode == DecalPaintMode.Paint)
-                    {
-                       return 3;
-                    }
-                    if (decalInfo.PaintMode == DecalPaintMode.Erase)
-                    {
-                        return 1;
-                    }
-                    throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
-                }
-
                 var lineX = x;
-                var buttonsCount = getButtonsCount(decalInfo);
+                var buttonsCount = 3;
                 var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * buttonsCount;
                 if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
                 {
@@ -893,17 +884,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 if (decalInfo.PaintMode == DecalPaintMode.Paint)
                 {
-                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyIcon))
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyPaintIcon))
                     {
                         CopiedDecalInfo = new(decalInfo.GetCopy());
                     }
                     lineX += buttonHeight + smallMargin;
 
-                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PasteIcon))
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PastePaintIcon))
                     {
-                        if (CopiedDecalInfo.Some(out var copiedDecalInfo))
+                        if (CopiedDecalInfo.Some(out var copiedDecalInfo) && copiedDecalInfo.PaintMode == DecalPaintMode.Paint)
                         {
-                            Plugin.ApplyTextureAndMaskInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
+                            Plugin.ApplyPaintInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
+                            SyncTransformHandle(decalInfo, decal);
+                        }
+                    }
+                    lineX += buttonHeight + smallMargin;
+                }
+                if (decalInfo.PaintMode == DecalPaintMode.Erase)
+                {
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.CopyEraserIcon))
+                    {
+                        CopiedDecalInfo = new(decalInfo.GetCopy());
+                    }
+                    lineX += buttonHeight + smallMargin;
+
+                    if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.PasteEraserIcon))
+                    {
+                        if (CopiedDecalInfo.Some(out var copiedDecalInfo) && copiedDecalInfo.PaintMode == DecalPaintMode.Erase)
+                        {
+                            Plugin.ApplyEraserInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
                             SyncTransformHandle(decalInfo, decal);
                         }
                     }
