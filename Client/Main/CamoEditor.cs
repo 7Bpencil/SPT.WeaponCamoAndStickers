@@ -196,9 +196,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // brace for imGUI shitshow
 
         public const int iconColumns = 5;
-        public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
-        public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
-        public const int maxPresetsVisible = 9;
+        public const int maxDecalsVisible = 10;
+        public const int maxPresetsVisible = 24;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
 
@@ -290,11 +289,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
-                    var presetsWindowHeight = CalculatePresetsWindowHeight();
-                    var decalsWindowHeight = CalculateDecalsWindowHeight();
-
-                    WindowRect.height = presetsWindowHeight + smallMargin + decalsWindowHeight;
-                    WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+                    if (ArePresetsOpened)
+                    {
+                        WindowRect.height = CalculatePresetsWindowHeight();
+                        WindowRect = GUI.Window(1, WindowRect, DrawPresetsListUI, GUIContent.none);
+                    }
+                    else
+                    {
+                        WindowRect.height = CalculateDecalsWindowHeight();
+                        WindowRect = GUI.Window(1, WindowRect, DrawDecalsListUI, GUIContent.none);
+                    }
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                     GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
@@ -432,63 +436,38 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private int CalculatePresetsWindowHeight()
         {
-            if (ArePresetsOpened)
+            var totalPresets = Plugin.GetPresetsCount();
+            if (totalPresets > 0)
             {
-                var totalPresets = Plugin.GetPresetsCount();
-                if (totalPresets > 0)
-                {
-                    var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
-                    return
-                        bigMargin +
-                        buttonHeight + mediumMargin + // preset name
-                        buttonHeight + mediumMargin + // hide presets button
-                        buttonHeight + mediumMargin + // generate random camo button
-                        visibleHeight + bigMargin; // presets
-                }
-                else
-                {
-                    return
-                        bigMargin +
-                        buttonHeight + mediumMargin + // preset name
-                        buttonHeight + mediumMargin + // hide presets button
-                        buttonHeight + mediumMargin + // generate random camo button
-                        buttonHeight + bigMargin; // no presets text
-                }
+                var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                return
+                    bigMargin +
+                    buttonHeight + mediumMargin + // hide presets button
+                    buttonHeight + mediumMargin + // preset name
+                    buttonHeight + mediumMargin + // generate random camo button
+                    visibleHeight + bigMargin; // presets
             }
             else
             {
                 return
                     bigMargin +
+                    buttonHeight + mediumMargin + // hide presets button
                     buttonHeight + mediumMargin + // preset name
-                    buttonHeight + bigMargin; // show presets button
+                    buttonHeight + mediumMargin + // generate random camo button
+                    buttonHeight + bigMargin; // no presets text
             }
         }
 
         private int CalculateDecalsWindowHeight()
         {
             var totalDecalsCount = Plugin.GetDecalsCount(ItemId);
-            var maxDecalsVisible = ArePresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
             var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalDecalsCount, maxDecalsVisible, boxHeight, mediumMargin);
             return
                 bigMargin +
+                buttonHeight + bigMargin + // show presets button
+                smallMargin + bigMargin + // separator
                 visibleHeight + mediumMargin + // decals
                 buttonHeight + bigMargin; // add new decal button
-        }
-
-        private void DrawOpenedWindow(int windowID)
-		{
-            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
-
-            var y = 0;
-
-            DrawPresetsListUI(ref y);
-
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-            y += smallMargin;
-
-            DrawDecalsListUI(ref y);
-
-			GUI.DragWindow();
         }
 
         private void DrawOpenedWindowCloseButton(int windowID)
@@ -503,11 +482,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void DrawPresetsListUI(ref int y)
+        public void DrawPresetsListUI(int windowID)
         {
-            var x = bigMargin;
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            y += bigMargin;
+            var x = bigMargin;
+            var y = bigMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
+            {
+                ArePresetsOpened = false;
+            }
+            y += buttonHeight + mediumMargin;
 
             // save button turns green only if there is valid input,
             // text field goes red only if there is actual invalid input, stays default if no input
@@ -541,83 +527,77 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             y += buttonHeight + mediumMargin;
 
-            if (ArePresetsOpened)
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
             {
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
+                Plugin.SwitchToRandomPreset(ItemId, InstanceID, WeaponPrefab, Camera);
+            }
+            y += buttonHeight + mediumMargin;
+
+            var presetsCount = Plugin.GetPresetsCount();
+            if (presetsCount > 0)
+            {
+                var decalsY = y;
+
+                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
+                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
+
+                DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
+                PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+                Option<string> deletedPresetNameOption = default;
+                foreach (var presetName in Plugin.GetPresetNames())
                 {
-                    ArePresetsOpened = false;
-                }
-                y += buttonHeight + mediumMargin;
-
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
-                {
-                    Plugin.SwitchToRandomPreset(ItemId, InstanceID, WeaponPrefab, Camera);
-                }
-                y += buttonHeight + mediumMargin;
-
-                var presetsCount = Plugin.GetPresetsCount();
-                if (presetsCount > 0)
-                {
-                    var decalsY = y;
-
-                    var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
-                    var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
-                    var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
-
-                    DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
-                    PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-                    Option<string> deletedPresetNameOption = default;
-                    foreach (var presetName in Plugin.GetPresetNames())
+                    if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                     {
-                        if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
-                        {
-                            CurrentPresetName = presetName;
-                            IsCurrentPresetNameValid = true;
-                            Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
-                        }
-                        if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
-                        {
-                            // theres no way user will click on multiple buttons in one frame, right?
-                            deletedPresetNameOption = new(presetName);
-                        }
-                        decalsY += buttonHeight + smallMargin;
+                        CurrentPresetName = presetName;
+                        IsCurrentPresetNameValid = true;
+                        Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
                     }
-                    if (deletedPresetNameOption.Some(out var deletedPresetName))
+                    if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                     {
-                        Plugin.DeletePreset(deletedPresetName);
+                        // theres no way user will click on multiple buttons in one frame, right?
+                        deletedPresetNameOption = new(presetName);
                     }
-                    y += visibleHeight + bigMargin;
-
-                    GUI.EndScrollView();
+                    decalsY += buttonHeight + smallMargin;
                 }
-                else
+                if (deletedPresetNameOption.Some(out var deletedPresetName))
                 {
-                    GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoStyle.LabelStyleValue);
-                    y += buttonHeight + bigMargin;
+                    Plugin.DeletePreset(deletedPresetName);
                 }
+                y += visibleHeight + bigMargin;
+
+                GUI.EndScrollView();
             }
             else
             {
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
-                {
-                    ArePresetsOpened = true;
-                }
+                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoStyle.LabelStyleValue);
                 y += buttonHeight + bigMargin;
             }
+
+			GUI.DragWindow();
         }
 
-        public void DrawDecalsListUI(ref int y)
+        public void DrawDecalsListUI(int windowID)
         {
-            var x = bigMargin;
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            y += bigMargin;
+            var x = bigMargin;
+            var y = bigMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
+            {
+                ArePresetsOpened = true;
+            }
+            y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
 
             if (Plugin.GetDecalsInfo(ItemId).Some(out var decalsInfo))
             {
                 var decalsY = y;
 
-                var maxDecalsVisible = ArePresetsOpened ? maxDecalsVisibleWhenPresetsAreOpened : maxDecalsVisibleWhenPresetsAreNotOpened;
                 var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(decalsInfo.Count, maxDecalsVisible, boxHeight, mediumMargin);
                 var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
                 var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
@@ -653,6 +633,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
                 }
             }
+
+			GUI.DragWindow();
         }
 
         private void SetCurrentlyEditedDecal(int decalIndex, DecalTextureType decalTextureType)
