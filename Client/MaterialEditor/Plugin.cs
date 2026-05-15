@@ -517,6 +517,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (materialsInfo.Materials.Count == 0)
                 {
                     ItemsWithMaterials.Remove(itemId);
+                    InstanceIdToItemId.Remove(camoEditor.InstanceID);
                     RemoveMaterialsFile(itemId);
                     Logger.LogInfo($"CloseCamoEditor: {itemId} remove materials");
                 }

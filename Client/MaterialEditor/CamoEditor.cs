@@ -636,23 +636,10 @@ namespace SevenBoldPencil.MaterialEditor
 
                 if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
                 {
-                    Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
-                    // if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
-                    // {
-                    //     Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                    //     Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                    //     SyncTransformHandle(decalInfo, decal);
-                    // }
-                    // if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
-                    // {
-                    //     Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                    //     Plugin.FixScale(ItemId, decalIndex, decalInfo);
-                    //     SyncTransformHandle(decalInfo, decal);
-                    // }
-                    // if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
-                    // {
-                    //     Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
-                    // }
+                    if (materialInfo.Texture != textureName)
+                    {
+                        Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
+                    }
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
