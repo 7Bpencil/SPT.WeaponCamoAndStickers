@@ -25,8 +25,6 @@ using UnityEngine.Networking;
 using UnityEngine.Video;
 
 // TODO fde is 0.09 hue and 6.7 glossness
-// TODO add separate CHANGE COLOR button in interaction menu
-// TODO I guess we track when item gets created first time, but not it comes from pool
 // TODO add change material to modding screen (so people can change material of their attachments faster)?
 // TODO add reset button right to every changed field
 // TODO dont forget to patch cursor in editor
@@ -151,14 +149,6 @@ namespace SevenBoldPencil.MaterialEditor
 
             // TODO
             // should we color only item itself, or all subitems too?
-
-            // TODO
-            // Do not release without separation of items per profile
-            // Also since data per item is small, keep all of it in giant json (or maybe binary with some compression?),
-            // save that json after 1 min since last modification similar to transparent scopes,
-            // same with presets
-
-            // TODO limit scope of items to weapons, mods, equipment
         }
 
         public void TryEnableFikaSupport(string mainAssemblyDir)
