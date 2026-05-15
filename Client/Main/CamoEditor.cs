@@ -527,7 +527,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             if (string.IsNullOrWhiteSpace(CurrentPresetName))
             {
-                GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter preset name", CamoStyle.LabelStyleName);
+                GUI.Label(new Rect(x + CamoStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoStyle.LabelStyleName);
             }
 
             var saveX = x + boxWidth - buttonHeight;
