@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WeaponCamoAndStickers\WeaponCamoAndStickers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="PhysicsModule">
       <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
     </Reference>
@@ -86,9 +90,6 @@
     </Reference>
     <Reference Include="UnityEngine.VideoModule">
       <HintPath>..\..\..\..\EscapeFromTarkov_Data\Managed\UnityEngine.VideoModule.dll</HintPath>
-    </Reference>
-    <Reference Include="7Bpencil.WeaponCamoAndStickers">
-      <HintPath>..\..\..\..\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers\7Bpencil.WeaponCamoAndStickers.dll</HintPath>
     </Reference>
   </ItemGroup>
 

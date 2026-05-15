@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Main\MaterialEditor.csproj" />
+    <ProjectReference Include="..\MaterialEditor\MaterialEditor.csproj" />
   </ItemGroup>
 
   <ItemGroup>

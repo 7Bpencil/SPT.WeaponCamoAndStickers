@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers", "We
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WeaponCamoAndStickers.Fika", "WeaponCamoAndStickers.Fika\WeaponCamoAndStickers.Fika.csproj", "{C8249F5B-271C-2884-C7C6-A56EFC8576D2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialEditor", "MaterialEditor\MaterialEditor.csproj", "{FD4AB11E-855C-DBFB-2DBD-8115C4C7DEA6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialEditor.Fika", "MaterialEditor.Fika\MaterialEditor.Fika.csproj", "{C4B5502B-1F98-2699-3B05-F4C93B63FF6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C8249F5B-271C-2884-C7C6-A56EFC8576D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD4AB11E-855C-DBFB-2DBD-8115C4C7DEA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD4AB11E-855C-DBFB-2DBD-8115C4C7DEA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD4AB11E-855C-DBFB-2DBD-8115C4C7DEA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD4AB11E-855C-DBFB-2DBD-8115C4C7DEA6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4B5502B-1F98-2699-3B05-F4C93B63FF6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4B5502B-1F98-2699-3B05-F4C93B63FF6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4B5502B-1F98-2699-3B05-F4C93B63FF6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4B5502B-1F98-2699-3B05-F4C93B63FF6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
