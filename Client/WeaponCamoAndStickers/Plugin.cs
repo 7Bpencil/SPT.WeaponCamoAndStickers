@@ -256,14 +256,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTextures = new();
             DecalTextureAssets = new();
 
-            ClosedDirectories = LoadClosedTexturesDirectories(ClosedDirectoriesPath);
+            ClosedDirectories = LoadClosedTexturesDirectories();
             (CamosDirectory, Camos) = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             (StickersDirectory, Stickers) = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", ClosedDirectories.StickersDirectory, DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             (MasksDirectory, Masks) = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", ClosedDirectories.MasksDirectory, DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
-            FavouriteTextures = LoadFavouriteTextures(FavouriteTexturesPath);
+            FavouriteTextures = LoadFavouriteTextures();
 
-            DecalPresets = LoadDecalPresets(PresetsDir);
-            ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
+            DecalPresets = LoadDecalPresets();
+            ItemsWithDecals = LoadItemsWithDecals();
             Clones = new();
             ItemsWaitingForRandomCamo = new();
             WeaponPreviewCameras = new();
@@ -341,9 +341,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
-        public ClosedTexturesDirectories LoadClosedTexturesDirectories(string filePath)
+        public ClosedTexturesDirectories LoadClosedTexturesDirectories()
         {
-            if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+            if (SafeIO.ReadAllText(ClosedDirectoriesPath).Ok(out var json, out var e))
             {
                 var result = JsonConvert.DeserializeObject<ClosedTexturesDirectories>(json);
                 return result;
@@ -361,18 +361,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
         }
 
-        public void SaveClosedTexturesDirectoriesToDisk(ClosedTexturesDirectories closedDirectories, string filePath)
+        public void SaveClosedTexturesDirectoriesToDisk()
         {
-            closedDirectories.CamosDirectory.Clear();
-            closedDirectories.StickersDirectory.Clear();
-            closedDirectories.MasksDirectory.Clear();
+            ClosedDirectories.CamosDirectory.Clear();
+            ClosedDirectories.StickersDirectory.Clear();
+            ClosedDirectories.MasksDirectory.Clear();
 
-            SaveClosedTexturesDirectories(CamosDirectory, closedDirectories.CamosDirectory);
-            SaveClosedTexturesDirectories(StickersDirectory, closedDirectories.StickersDirectory);
-            SaveClosedTexturesDirectories(MasksDirectory, closedDirectories.MasksDirectory);
+            SaveClosedTexturesDirectories(CamosDirectory, ClosedDirectories.CamosDirectory);
+            SaveClosedTexturesDirectories(StickersDirectory, ClosedDirectories.StickersDirectory);
+            SaveClosedTexturesDirectories(MasksDirectory, ClosedDirectories.MasksDirectory);
 
-            var json = JsonConvert.SerializeObject(closedDirectories, Formatting.Indented);
-            SafeIO.WriteAllTextAsync(filePath, json);
+            var json = JsonConvert.SerializeObject(ClosedDirectories, Formatting.Indented);
+            SafeIO.WriteAllTextAsync(ClosedDirectoriesPath, json);
         }
 
         public void SaveClosedTexturesDirectories(TexturesDirectory directory, HashSet<string> result)
@@ -795,9 +795,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             LogTexture(LogLevel.Error, "Failed to load texture", param.Name);
         }
 
-        public HashSet<string> LoadFavouriteTextures(string filePath)
+        public HashSet<string> LoadFavouriteTextures()
         {
-            if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+            if (SafeIO.ReadAllText(FavouriteTexturesPath).Ok(out var json, out var e))
             {
                 var result = JsonConvert.DeserializeObject<HashSet<string>>(json);
                 return result;
@@ -810,15 +810,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return new();
         }
 
-        public void SaveFavouriteTexturesToDisk(HashSet<string> favouriteTextures, string filePath)
+        public void SaveFavouriteTexturesToDisk()
         {
-            var json = JsonConvert.SerializeObject(favouriteTextures, Formatting.Indented);
-            SafeIO.WriteAllTextAsync(filePath, json);
+            var json = JsonConvert.SerializeObject(FavouriteTextures, Formatting.Indented);
+            SafeIO.WriteAllTextAsync(FavouriteTexturesPath, json);
         }
 
-        public Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
+        public Dictionary<string, List<DecalInfo>> LoadDecalPresets()
         {
-            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(PresetsDir, "*.json");
             var result = new Dictionary<string, List<DecalInfo>>();
 
             foreach (var filePath in filePaths)
@@ -839,9 +839,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return result;
         }
 
-        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals(string directoryPath)
+        public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals()
         {
-            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(ItemsDir, "*.json");
             var result = new Dictionary<string, ItemsWithDecals>();
 
             foreach (var filePath in filePaths)
@@ -2277,8 +2277,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
             }
 
-            SaveClosedTexturesDirectoriesToDisk(ClosedDirectories, ClosedDirectoriesPath);
-            SaveFavouriteTexturesToDisk(FavouriteTextures, FavouriteTexturesPath);
+            SaveClosedTexturesDirectoriesToDisk();
+            SaveFavouriteTexturesToDisk();
 
             camoEditor.Destroy();
             CamoEditor = default;

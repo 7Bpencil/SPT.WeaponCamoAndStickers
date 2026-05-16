@@ -123,8 +123,8 @@ namespace SevenBoldPencil.MaterialEditor
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
-            MaterialPresets = LoadMaterialPresets(MaterialPresetsDir);
-            ItemsWithMaterials = LoadItemsWithMaterials(ItemsDir);
+            MaterialPresets = LoadMaterialPresets();
+            ItemsWithMaterials = LoadItemsWithMaterials();
             PatchedRenderers = new();
             Clones = new();
             ResourceKeyToItem = new();
@@ -169,9 +169,9 @@ namespace SevenBoldPencil.MaterialEditor
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
-        public Dictionary<string, MaterialPreset> LoadMaterialPresets(string directoryPath)
+        public Dictionary<string, MaterialPreset> LoadMaterialPresets()
         {
-            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(MaterialPresetsDir, "*.json");
             var result = new Dictionary<string, MaterialPreset>();
 
             foreach (var filePath in filePaths)
@@ -191,9 +191,9 @@ namespace SevenBoldPencil.MaterialEditor
             return result;
         }
 
-        public Dictionary<string, ItemsWithMaterials> LoadItemsWithMaterials(string directoryPath)
+        public Dictionary<string, ItemsWithMaterials> LoadItemsWithMaterials()
         {
-            var filePaths = SafeIO.GetFiles(directoryPath, "*.json");
+            var filePaths = SafeIO.GetFiles(ItemsDir, "*.json");
             var result = new Dictionary<string, ItemsWithMaterials>();
 
             foreach (var filePath in filePaths)
