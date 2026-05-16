@@ -88,6 +88,7 @@ namespace SevenBoldPencil.MaterialEditor
     public class CamoEditor
     {
         public Plugin Plugin;
+        public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
         public string ItemId;
@@ -262,7 +263,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private int CalculateMaterialEditWindowHeight_Material()
         {
-            var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(DecalTypeMenu);
+            var texturesDirectory = BigPlugin.GetTexturesDirectory(DecalTypeMenu);
             var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
             return
                 bigMargin +
@@ -561,7 +562,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
             else
             {
-                var textureData = BigPlugin.Instance.GetTextureData(materialInfo.Texture);
+                var textureData = BigPlugin.GetTextureData(materialInfo.Texture);
                 GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
 
                 var labelX = x + iconSize + smallMargin + 12;
@@ -582,7 +583,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawAllTextures(int x, int y, string materialName, MaterialInfo materialInfo, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
-            var texturesDirectory = BigPlugin.Instance.GetTexturesDirectory(decalTextureType);
+            var texturesDirectory = BigPlugin.GetTexturesDirectory(decalTextureType);
 
             var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
@@ -627,7 +628,7 @@ namespace SevenBoldPencil.MaterialEditor
             for (var i = 0; i < textures.Length; i++)
             {
                 var textureName = textures[i];
-                var textureData = BigPlugin.Instance.GetTextureData(textureName);
+                var textureData = BigPlugin.GetTextureData(textureName);
 
                 var ix = i % iconColumns;
                 var iy = i / iconColumns;
@@ -647,14 +648,14 @@ namespace SevenBoldPencil.MaterialEditor
                     }
                     if (e.button == 1) // right click
                     {
-                        BigPlugin.Instance.ToggleFavouriteTexture(textureName);
+                        BigPlugin.ToggleFavouriteTexture(textureName);
                     }
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
                     GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
                 }
-                if (BigPlugin.Instance.IsFavouriteTexture(textureName))
+                if (BigPlugin.IsFavouriteTexture(textureName))
                 {
                     GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
                 }

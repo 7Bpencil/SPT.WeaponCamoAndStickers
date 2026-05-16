@@ -445,6 +445,7 @@ namespace SevenBoldPencil.MaterialEditor
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
+                BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
                 ItemId = itemId,
                 InstanceID = instanceID,
