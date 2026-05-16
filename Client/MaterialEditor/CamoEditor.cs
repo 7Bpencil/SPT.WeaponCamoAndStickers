@@ -14,6 +14,7 @@ using UnityEngine;
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
+using CamoEditorStyle = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorStyle;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
@@ -21,70 +22,6 @@ using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFor
 
 namespace SevenBoldPencil.MaterialEditor
 {
-    public class CamoEditorStyle
-    {
-        public GUIStyle LabelStyleName;
-        public GUIStyle TextureNameStyle;
-        public GUIStyle LabelStyleValue;
-        public GUIStyle TextFieldStyle;
-		public GUIStyle ColorPickerButtonStyle;
-        public GUIStyle DirectoryButtonStyle;
-        public GUIStyle MaterialNameStyle;
-
-        public CamoEditorStyle(GUISkin currentSkin)
-        {
-            LabelStyleName = new()
-            {
-                alignment = TextAnchor.MiddleLeft,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
-            };
-
-            TextureNameStyle = new()
-            {
-                alignment = TextAnchor.UpperLeft,
-                wordWrap = true,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
-            };
-
-            LabelStyleValue = new()
-            {
-                alignment = TextAnchor.MiddleCenter,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
-            };
-
-            TextFieldStyle = new(currentSkin.textField)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                contentOffset = new Vector2(CamoEditor.mediumMargin, 0)
-            };
-
-			ColorPickerButtonStyle = new GUIStyle()
-			{
-				stretchWidth = true,
-				stretchHeight = true,
-			};
-
-            DirectoryButtonStyle = new(currentSkin.button)
-            {
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            MaterialNameStyle = new(currentSkin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-            };
-        }
-    }
-
     public class CamoEditor
     {
         public Plugin Plugin;
