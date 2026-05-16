@@ -180,6 +180,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string ItemsDir;
         private string PresetsDir;
         private string ClosedDirectoriesPath;
+        private string FavouriteTexturesPath;
         private Shader DecalShader;
         private Texture2D ErrorTexture;
         private DecalTextureData ErrorTextureData;
@@ -193,6 +194,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string[] Camos;
         private string[] Stickers;
         private string[] Masks;
+        private HashSet<string> FavouriteTextures;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -233,6 +235,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ItemsDir = Path.Combine(assemblyDir, "items");
             PresetsDir = Path.Combine(assemblyDir, "presets");
             ClosedDirectoriesPath = Path.Combine(assemblyDir, "temp", "closed-directories.json");
+            FavouriteTexturesPath = Path.Combine(assemblyDir, "temp", "favourite-textures.json");
 
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
@@ -257,6 +260,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             (CamosDirectory, Camos) = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             (StickersDirectory, Stickers) = LoadTexturesFromDirectory(DecalTextureType.Sticker, "stickers", ClosedDirectories.StickersDirectory, DefaultStickerName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
             (MasksDirectory, Masks) = LoadTexturesFromDirectory(DecalTextureType.Mask, "masks", ClosedDirectories.MasksDirectory, DefaultMaskName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
+            FavouriteTextures = LoadFavouriteTextures(FavouriteTexturesPath);
 
             DecalPresets = LoadDecalPresets(PresetsDir);
             ItemsWithDecals = LoadItemsWithDecals(ItemsDir);
@@ -789,6 +793,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             AddTexture(ErrorTexture, new(ErrorTexture.width, ErrorTexture.height), param, error: true);
             LogTexture(LogLevel.Error, "Failed to load texture", param.Name);
+        }
+
+        public HashSet<string> LoadFavouriteTextures(string filePath)
+        {
+            if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+            {
+                var result = JsonConvert.DeserializeObject<HashSet<string>>(json);
+                return result;
+            }
+            else
+            {
+                Logger.LogError($"Failed to load favourite textures, rolling back to default config: {e}");
+            }
+
+            return new();
+        }
+
+        public void SaveFavouriteTexturesToDisk(HashSet<string> favouriteTextures, string filePath)
+        {
+            var json = JsonConvert.SerializeObject(favouriteTextures, Formatting.Indented);
+            SafeIO.WriteAllTextAsync(filePath, json);
         }
 
         public Dictionary<string, List<DecalInfo>> LoadDecalPresets(string directoryPath)
@@ -1769,6 +1794,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public void ToggleFavouriteTexture(string textureName)
+        {
+            if (!FavouriteTextures.Add(textureName))
+            {
+                FavouriteTextures.Remove(textureName);
+            }
+        }
+
+        public bool IsFavouriteTexture(string textureName)
+        {
+            return FavouriteTextures.Contains(textureName);
+        }
+
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
@@ -2240,6 +2278,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             SaveClosedTexturesDirectoriesToDisk(ClosedDirectories, ClosedDirectoriesPath);
+            SaveFavouriteTexturesToDisk(FavouriteTextures, FavouriteTexturesPath);
 
             camoEditor.Destroy();
             CamoEditor = default;

@@ -529,6 +529,9 @@ namespace SevenBoldPencil.MaterialEditor
                 }
             }
 
+            BigPlugin.Instance.SaveClosedTexturesDirectoriesToDisk();
+            BigPlugin.Instance.SaveFavouriteTexturesToDisk();
+
             camoEditor.Destroy();
             CamoEditor = default;
         }

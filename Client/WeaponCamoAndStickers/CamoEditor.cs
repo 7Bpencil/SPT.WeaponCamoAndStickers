@@ -51,6 +51,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorEnabled;
         public Texture2D MirrorEnabledNoFilp;
         public Texture2D Reset;
+        public Texture2D FavouriteIcon;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -94,6 +95,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
             Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
+            FavouriteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/star.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
@@ -209,6 +211,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int startY = 10;
         public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
         public const int buttonHeight = 32;
+        public const int smallIconSize = 16;
         public const int iconSize = buttonHeight * 2 + smallMargin;
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
@@ -1548,26 +1551,38 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
                 {
-                    if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
+                    var e = Event.current;
+                    if (e.button == 0) // left click
                     {
-                        Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                        Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                        SyncTransformHandle(decalInfo, decal);
+                        if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
+                        {
+                            Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                            Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
+                            SyncTransformHandle(decalInfo, decal);
+                        }
+                        if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
+                        {
+                            Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                            Plugin.FixScale(ItemId, decalIndex, decalInfo);
+                            SyncTransformHandle(decalInfo, decal);
+                        }
+                        if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
+                        {
+                            Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
+                        }
                     }
-                    if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
+                    if (e.button == 1) // right click
                     {
-                        Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                        Plugin.FixScale(ItemId, decalIndex, decalInfo);
-                        SyncTransformHandle(decalInfo, decal);
-                    }
-                    if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
-                    {
-                        Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
+                        Plugin.ToggleFavouriteTexture(textureName);
                     }
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
-                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
+                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, smallIconSize, smallIconSize), CamoEditorResources.PlayIcon);
+                }
+                if (Plugin.IsFavouriteTexture(textureName))
+                {
+                    GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
                 }
             }
 

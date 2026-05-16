@@ -125,6 +125,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int startY = 10;
         public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
         public const int buttonHeight = 32;
+        public const int smallIconSize = 16;
         public const int iconSize = buttonHeight * 2 + smallMargin;
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
@@ -636,14 +637,26 @@ namespace SevenBoldPencil.MaterialEditor
 
                 if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
                 {
-                    if (materialInfo.Texture != textureName)
+                    var e = Event.current;
+                    if (e.button == 0) // left click
                     {
-                        Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
+                        if (materialInfo.Texture != textureName)
+                        {
+                            Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
+                        }
+                    }
+                    if (e.button == 1) // right click
+                    {
+                        BigPlugin.Instance.ToggleFavouriteTexture(textureName);
                     }
                 }
                 if (textureData.Format == DecalTextureFormat.Video)
                 {
                     GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
+                }
+                if (BigPlugin.Instance.IsFavouriteTexture(textureName))
+                {
+                    GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
                 }
             }
 
