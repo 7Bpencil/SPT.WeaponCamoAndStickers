@@ -324,6 +324,12 @@ namespace SevenBoldPencil.MaterialEditor
 
         public bool IsSupportedShader(Material material)
         {
+            if (!material)
+            {
+                Logger.LogWarning("this item has null material!");
+                return false;
+            }
+
             // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good, but it has different properties...
             // TODO how to support other shaders? switch with predetermined list in enum
             var materialShaderName = material.shader.name;
