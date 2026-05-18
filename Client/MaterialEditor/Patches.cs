@@ -300,4 +300,18 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
+	public class Patch_RainCondensator_UpdateValues : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(RainCondensator), nameof(RainCondensator.UpdateValues));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(Renderer ___renderer_0)
+		{
+			// RainCondensator works the same way as HotObject
+			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
+		}
+	}
 }
