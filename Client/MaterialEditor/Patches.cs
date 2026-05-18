@@ -259,11 +259,36 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
-	public class Patch_GClass928_GetItemHash : ModulePatch
+	// sadly postfixing GetItemHash and smethod_1 is not enough,
+	// full solution is to rewrite entire GetItemHash method chain
+ 	public class Patch_GClass928_GetItemHash : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
             return AccessTools.Method(typeof(GClass928), nameof(GClass928.GetItemHash));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(Item item, ref int __result)
+		{
+			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
+			{
+				// all this shit to fit SaveTime inside int
+				var saveTime = materialsInfo.SaveTime;
+				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
+				var saveTimeOffset = saveTime - newStartPointOffset;
+				var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
+				__result ^= saveTimeOffsetSeconds;
+			}
+		}
+	}
+
+	public class Patch_GClass928_smethod_1 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(GClass928), nameof(GClass928.smethod_1));
         }
 
         [PatchPostfix]
