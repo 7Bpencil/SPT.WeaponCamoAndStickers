@@ -44,7 +44,6 @@ namespace SevenBoldPencil.MaterialEditor
 
     public class ItemWithMaterials
     {
-        public AssetPoolObject Item;
         public Dictionary<string, TargetMaterial> Materials;
     }
 
@@ -284,7 +283,6 @@ namespace SevenBoldPencil.MaterialEditor
             }
             return new()
             {
-                Item = assetPoolObject,
                 Materials = targetMaterials,
             };
         }
