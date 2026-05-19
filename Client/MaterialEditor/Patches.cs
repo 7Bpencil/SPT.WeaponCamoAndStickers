@@ -313,6 +313,23 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
+	public class Patch_RainCondensator_OnEnable : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(RainCondensator), nameof(RainCondensator.OnEnable));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(Renderer ___renderer_0)
+		{
+			// I dont think this one is necessary, but for some reason
+			// some people still get reset by rain, so lets try
+			// to disable it completely
+			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
+		}
+	}
+
 	public class Patch_RainCondensator_UpdateValues : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
@@ -324,6 +341,23 @@ namespace SevenBoldPencil.MaterialEditor
         public static bool Prefix(Renderer ___renderer_0)
 		{
 			// RainCondensator works the same way as HotObject
+			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
+		}
+	}
+
+	public class Patch_RainCondensator_OnDisable : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(RainCondensator), nameof(RainCondensator.OnDisable));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(Renderer ___renderer_0)
+		{
+			// I dont think this one is necessary, but for some reason
+			// some people still get reset by rain, so lets try
+			// to disable it completely
 			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
 		}
 	}

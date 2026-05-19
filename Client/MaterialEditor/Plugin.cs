@@ -142,7 +142,9 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_GClass928_GetItemHash().Enable();
             new Patch_GClass928_smethod_1().Enable();
             new Patch_HotObject_SetTemperatureToRenderer().Enable();
+            new Patch_RainCondensator_OnEnable().Enable();
             new Patch_RainCondensator_UpdateValues().Enable();
+            new Patch_RainCondensator_OnDisable().Enable();
 
             TryEnableFikaSupport(assemblyDir);
 
