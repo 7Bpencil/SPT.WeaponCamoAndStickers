@@ -756,14 +756,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
 			if (item is Weapon && Plugin.Instance.GetDecalsInfo(item.Id).Some(out var decalsInfo) && decalsInfo.Count > 0)
 			{
-				// all this shit to fit SaveTime inside int
-				var saveTime = decalsInfo[0].SaveTime;
-				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
-				var saveTimeOffset = saveTime - newStartPointOffset;
-				var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
-				__result ^= saveTimeOffsetSeconds;
+				__result ^= GetSaveTimeInt(decalsInfo[0].SaveTime);
 			}
+		}
+
+		// all this shit to fit SaveTime inside int
+		public static int GetSaveTimeInt(long saveTime)
+		{
+			var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+			var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
+			var saveTimeOffset = saveTime - newStartPointOffset;
+			var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
+			return saveTimeOffsetSeconds;
 		}
 	}
 }

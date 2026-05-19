@@ -273,13 +273,7 @@ namespace SevenBoldPencil.MaterialEditor
 		{
 			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
 			{
-				// all this shit to fit SaveTime inside int
-				var saveTime = materialsInfo.SaveTime;
-				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
-				var saveTimeOffset = saveTime - newStartPointOffset;
-				var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
-				__result ^= saveTimeOffsetSeconds;
+				__result ^= SevenBoldPencil.WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime);
 			}
 		}
 	}
@@ -296,13 +290,7 @@ namespace SevenBoldPencil.MaterialEditor
 		{
 			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
 			{
-				// all this shit to fit SaveTime inside int
-				var saveTime = materialsInfo.SaveTime;
-				var newStartPoint = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-				var newStartPointOffset = new DateTimeOffset(newStartPoint).ToUnixTimeMilliseconds();
-				var saveTimeOffset = saveTime - newStartPointOffset;
-				var saveTimeOffsetSeconds = (int)(saveTimeOffset / 1000);
-				__result ^= saveTimeOffsetSeconds;
+				__result ^= SevenBoldPencil.WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime) / 2;
 			}
 		}
 	}
