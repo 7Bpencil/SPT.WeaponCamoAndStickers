@@ -307,7 +307,7 @@ namespace SevenBoldPencil.MaterialEditor
         public static bool Prefix(Renderer ___renderer_0, float temperatureCelsio, bool force = false)
 		{
 			// HotObjects (barrels, silencers, etc) override renderer materials parameters (_HeatSize, _HeatTemp, etc)
-			// the same as way we do via MaterialPropertyBlock, which results in them overriding our changes,
+			// the same way as we via MaterialPropertyBlock, which results in them overriding our changes,
 			// so stop them from doing that! (maybe we could combine their changes, but its already complicated enough)
 			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
 		}
