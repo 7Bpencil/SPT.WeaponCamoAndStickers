@@ -506,7 +506,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			foreach (var lod in _skin._lods)
 			{
 				var skinnedMeshRenderer = lod.SkinnedMeshRenderer;
-                foreach (var material in skinnedMeshRenderer.materials)
+                foreach (var material in skinnedMeshRenderer.sharedMaterials)
                 {
 					var shaderName = material.shader.name;
 					if (shaderName == "p0/Reflective/Bumped Specular SMap" ||
