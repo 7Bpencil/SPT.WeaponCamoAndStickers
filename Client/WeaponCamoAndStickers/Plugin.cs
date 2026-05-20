@@ -1278,7 +1278,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void LogPrefab(LogLevel level, string message, string itemId, int instanceID)
         {
+#if LOG_PREFAB
             Logger.Log(level, $"[Prefab] {message}: {itemId} {instanceID}");
+#endif
         }
 
         public void LogTexture(LogLevel level, string message, string textureName)
