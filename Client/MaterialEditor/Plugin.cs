@@ -438,27 +438,19 @@ namespace SevenBoldPencil.MaterialEditor
 			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(itemId, assetPoolObject);
+				SetupCamoEditor(item, assetPoolObject);
 			}
         }
 
-        public void SetupCamoEditor(string itemId, AssetPoolObject assetPoolObject)
+        public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject)
         {
-            itemId = GetOriginalItemId(itemId);
-            Logger.LogInfo($"SetupCamoEditor: {itemId}");
-
-            var instanceID = assetPoolObject.gameObject.GetInstanceID();
-            var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, assetPoolObject);
-            var originalMaterials = GetOriginalMaterials(assetPoolObject);
+            var items = GetOrBuildItemWithAllItSlots(item, assetPoolObject);
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
-                ItemId = itemId,
-                InstanceID = instanceID,
-                ItemWithMaterials = itemWithMaterials,
-                OriginalMaterials = originalMaterials,
+                Items = items,
                 IsOpened = false,
                 CurrentPresetName = "",
                 IsCurrentPresetNameValid = false,
@@ -466,6 +458,60 @@ namespace SevenBoldPencil.MaterialEditor
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect()
             });
+        }
+
+        public List<CamoEditorItem> GetOrBuildItemWithAllItSlots(Item item, AssetPoolObject assetPoolObject)
+        {
+            List<CamoEditorItem> result;
+
+            if (assetPoolObject.ContainerCollectionView != null)
+            {
+                var containerBones = assetPoolObject.ContainerCollectionView.ContainerBones;
+                result = new(containerBones.Count + 1);
+                result.Add(GetOrBuildItem(item, assetPoolObject));
+                foreach (var (container, containerData) in containerBones)
+                {
+                    // empty slots or slots with invisible items have nulls (soft armor, helmet plates, etc)
+                    if (containerData.Item == null)
+                    {
+                        continue;
+                    }
+                    if (!containerData.ItemView)
+                    {
+                        continue;
+                    }
+                    if (containerData.ItemView.TryGetComponent<AssetPoolObject>(out var subItemAssetPoolObject))
+                    {
+                        result.Add(GetOrBuildItem(containerData.Item, subItemAssetPoolObject));
+                    }
+                }
+            }
+            else
+            {
+                result = new(1);
+                result.Add(GetOrBuildItem(item, assetPoolObject));
+            }
+
+            return result;
+        }
+
+        public CamoEditorItem GetOrBuildItem(Item item, AssetPoolObject assetPoolObject)
+        {
+            var itemId = GetOriginalItemId(item.Id);
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, assetPoolObject);
+            var originalMaterials = GetOriginalMaterials(assetPoolObject);
+
+            Logger.LogInfo($"SetupCamoEditor: {itemId}");
+
+            return new()
+            {
+                Name = GClass2348.Localized(item.Name),
+                ItemId = itemId,
+                InstanceID = instanceID,
+                ItemWithMaterials = itemWithMaterials,
+                OriginalMaterials = originalMaterials,
+            };
         }
 
         public ItemWithMaterials GetOrBuildItemWithMaterials(string itemId, int instanceID, AssetPoolObject assetPoolObject)
@@ -520,21 +566,23 @@ namespace SevenBoldPencil.MaterialEditor
                 return;
             }
 
-            var itemId = camoEditor.ItemId;
-            if (GetMaterialsInfo(itemId).Some(out var materialsInfo))
+            foreach (var item in camoEditor.Items)
             {
-                if (materialsInfo.Materials.Count == 0)
+                if (GetMaterialsInfo(item.ItemId).Some(out var materialsInfo))
                 {
-                    ItemsWithMaterials.Remove(itemId);
-                    InstanceIdToItemId.Remove(camoEditor.InstanceID);
-                    RemoveMaterialsFile(itemId);
-                    Logger.LogInfo($"CloseCamoEditor: {itemId} remove materials");
-                }
-                else
-                {
-                    materialsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    WriteMaterialsToFile(itemId, materialsInfo);
-                    Logger.LogInfo($"CloseCamoEditor: {itemId} rewrite materials");
+                    if (materialsInfo.Materials.Count == 0)
+                    {
+                        ItemsWithMaterials.Remove(item.ItemId);
+                        InstanceIdToItemId.Remove(item.InstanceID);
+                        RemoveMaterialsFile(item.ItemId);
+                        Logger.LogInfo($"CloseCamoEditor: {item.ItemId} remove materials");
+                    }
+                    else
+                    {
+                        materialsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                        WriteMaterialsToFile(item.ItemId, materialsInfo);
+                        Logger.LogInfo($"CloseCamoEditor: {item.ItemId} rewrite materials");
+                    }
                 }
             }
 

@@ -22,23 +22,35 @@ using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFor
 
 namespace SevenBoldPencil.MaterialEditor
 {
+    public class CamoEditorItem
+    {
+        public string Name;
+        public string ItemId;
+        public int InstanceID;
+        public ItemWithMaterials ItemWithMaterials;
+        public Dictionary<string, MaterialInfo> OriginalMaterials;
+    }
+
+    public struct EditedOverride
+    {
+        public int ItemIndex;
+        public string MaterialName;
+    }
+
     public class CamoEditor
     {
         public Plugin Plugin;
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
-        public string ItemId;
-        public int InstanceID;
-        public ItemWithMaterials ItemWithMaterials;
-        public Dictionary<string, MaterialInfo> OriginalMaterials;
+        public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
         public string CurrentPresetName;
         public bool IsCurrentPresetNameValid;
         public Vector2 PresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
-        public Option<string> CurrentlyEditedOverride;
+        public Option<EditedOverride> CurrentlyEditedOverride;
         public bool IsColorPickerOpened;
         public DecalTextureType DecalTypeMenu;
         public Vector2 CamosScrollPosition;
@@ -53,7 +65,6 @@ namespace SevenBoldPencil.MaterialEditor
         public const int maxPresetsVisible = 24;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
-        public const int maxMaterialsCount = 10;
 
         public const int smallMargin = 4;
         public const int mediumMargin = 8;
@@ -68,6 +79,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxEraseMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxMaterialsVisibleHeight = 27 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
@@ -167,11 +179,28 @@ namespace SevenBoldPencil.MaterialEditor
 
         private int CalculateMaterialsWindowHeight()
         {
-            var totalMaterialsCount = ItemWithMaterials.Materials.Count;
-            var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalMaterialsCount, maxMaterialsCount, buttonHeight, smallMargin);
-            return
-                bigMargin +
-                visibleHeight + bigMargin; // materials
+            var materialsHeight = CalculateItemsWithMaterialsWindowHeight();
+            var visibleHeight = Math.Min(maxMaterialsVisibleHeight, materialsHeight);
+            return smallMargin + visibleHeight + bigMargin;
+        }
+
+        private int CalculateItemsWithMaterialsWindowHeight()
+        {
+            var totalMaterialsHeight = 0;
+            foreach (var item in Items)
+            {
+                var materialsCount = item.ItemWithMaterials.Materials.Count;
+                var materialsHeight = materialsCount * (buttonHeight + smallMargin) - smallMargin;
+                totalMaterialsHeight +=
+                    smallMargin +
+                    buttonHeight + smallMargin + // name
+                    materialsHeight + bigMargin;
+            }
+
+            var separatorHeight = (Items.Count - 1) * smallMargin;
+
+            // we subtract top margin and bottom margin so scroll rect is nicely bound
+            return -smallMargin + totalMaterialsHeight + separatorHeight - bigMargin;
         }
 
         private int CalculateMaterialEditWindowHeight_Presets()
@@ -225,62 +254,89 @@ namespace SevenBoldPencil.MaterialEditor
 		{
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var materialsInfoOption = Plugin.GetMaterialsInfo(ItemId);
-
             var x = bigMargin;
-            var y = bigMargin;
 
+            var scrollRectY = smallMargin;
+            var totalHeight = CalculateItemsWithMaterialsWindowHeight();
+            var visibleHeight = maxMaterialsVisibleHeight;
+            var totalRect = new Rect(0, scrollRectY, boxWidth + bigMargin, totalHeight);
+            var visibleRect = new Rect(0, scrollRectY, boxWidth + bigMargin + 16, visibleHeight);
+
+            MaterialsScrollPosition = GUI.BeginScrollView(visibleRect, MaterialsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+            var y = 0;
+            for (var i = 0; i < Items.Count - 1; i++)
             {
-                var materialsY = y;
-
-                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(ItemWithMaterials.Materials.Count, maxMaterialsCount, buttonHeight, smallMargin);
-                var totalRect = new Rect(x, materialsY, boxWidth, totalHeight);
-                var visibleRect = new Rect(x, materialsY, boxWidth + 16, visibleHeight);
-
-                BigCamoEditor.DrawScrollBar(x + boxWidth + 5, materialsY, totalHeight, visibleHeight, MaterialsScrollPosition);
-                MaterialsScrollPosition = GUI.BeginScrollView(visibleRect, MaterialsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-                var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
-                var resetX = x + overrideButtonWidth + smallMargin;
-                foreach (var materialName in ItemWithMaterials.Materials.Keys)
-                {
-                    if (materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName))
-                    {
-                        if (GUI.Button(new Rect(x, materialsY, overrideButtonWidth, buttonHeight), materialName))
-                        {
-                            CurrentlyEditedOverride = new(materialName);
-                        }
-                        if (GUI.Button(new Rect(resetX, materialsY, buttonHeight, buttonHeight), CamoEditorResources.Reset))
-                        {
-                            Plugin.ResetMaterial(ItemId, materialName);
-                        }
-                    }
-                    else
-                    {
-                        if (GUI.Button(new Rect(x, materialsY, boxWidth, buttonHeight), materialName))
-                        {
-                            Plugin.OverrideMaterial(ItemWithMaterials, OriginalMaterials, ItemId, InstanceID, materialName);
-                            CurrentlyEditedOverride = new(materialName);
-                        }
-                    }
-                    materialsY += buttonHeight + smallMargin;
-                }
-
-                GUI.EndScrollView();
-
-                y += visibleHeight;
-                y += bigMargin;
+                var item = Items[i];
+                DrawItemMaterials(ref x, ref y, i, item);
+                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+                y += smallMargin;
+            }
+            {
+                var i = Items.Count - 1;
+                var item = Items[i];
+                DrawItemMaterials(ref x, ref y, i, item);
             }
 
+            GUI.EndScrollView();
+
+            BigCamoEditor.DrawScrollBar(bigMargin + boxWidth + 5, scrollRectY, totalHeight, visibleHeight, MaterialsScrollPosition, drawBackground:false);
+
 			GUI.DragWindow();
+        }
+
+        private void DrawItemMaterials(ref int x, ref int y, int itemIndex, CamoEditorItem item)
+        {
+            var materialsInfoOption = Plugin.GetMaterialsInfo(item.ItemId);
+
+            y += smallMargin;
+
+            GUI.Label(new Rect(x + 5, y, boxWidth - bigMargin, buttonHeight), item.Name, CamoEditorStyle.LabelStyleName);
+            y += buttonHeight + smallMargin;
+
+            var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
+            var resetX = x + overrideButtonWidth + smallMargin;
+            foreach (var materialName in item.ItemWithMaterials.Materials.Keys)
+            {
+                if (materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName))
+                {
+                    if (GUI.Button(new Rect(x, y, overrideButtonWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
+                    {
+                        CurrentlyEditedOverride = new(new EditedOverride()
+                        {
+                            ItemIndex = itemIndex,
+                            MaterialName = materialName,
+                        });
+                    }
+                    if (GUI.Button(new Rect(resetX, y, buttonHeight, buttonHeight), CamoEditorResources.Reset))
+                    {
+                        Plugin.ResetMaterial(item.ItemId, materialName);
+                    }
+                }
+                else
+                {
+                    if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
+                    {
+                        Plugin.OverrideMaterial(item.ItemWithMaterials, item.OriginalMaterials, item.ItemId, item.InstanceID, materialName);
+                        CurrentlyEditedOverride = new(new EditedOverride()
+                        {
+                            ItemIndex = itemIndex,
+                            MaterialName = materialName,
+                        });
+                    }
+                }
+                y += buttonHeight + smallMargin;
+            }
+
+            y -= smallMargin;
+            y += bigMargin;
         }
 
         private void DrawMaterialEditUI_Presets(int windowID)
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var materialName = CurrentlyEditedOverride.Value;
-            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
+            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
 
             var x = bigMargin;
             var y = bigMargin;
@@ -324,7 +380,7 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 if (IsCurrentPresetNameValid)
                 {
-                    Plugin.SaveMaterialIntoPreset(ItemId, materialName, CurrentPresetName);
+                    Plugin.SaveMaterialIntoPreset(item.ItemId, materialName, CurrentPresetName);
                 }
             }
             y += buttonHeight + mediumMargin;
@@ -348,7 +404,7 @@ namespace SevenBoldPencil.MaterialEditor
                     {
                         CurrentPresetName = presetName;
                         IsCurrentPresetNameValid = true;
-                        Plugin.SwitchToMaterialPreset(ItemId, materialName, presetName);
+                        Plugin.SwitchToMaterialPreset(item.ItemId, materialName, presetName);
                     }
                     if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                     {
@@ -376,8 +432,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var materialName = CurrentlyEditedOverride.Value;
-            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
+            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
 
             var x = bigMargin;
             var y = bigMargin;
@@ -409,7 +464,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newHue != materialInfo.ColorHSV.x)
                 {
                     materialInfo.ColorHSV.x = newHue;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyColor(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -420,7 +475,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newSaturation != materialInfo.ColorHSV.y)
                 {
                     materialInfo.ColorHSV.y = newSaturation;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyColor(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -431,7 +486,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newValue != materialInfo.ColorHSV.z)
                 {
                     materialInfo.ColorHSV.z = newValue;
-                    Plugin.ApplyColor(ItemId, materialName);
+                    Plugin.ApplyColor(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -442,7 +497,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newGlossness != materialInfo.Glossness)
                 {
                     materialInfo.Glossness = newGlossness;
-                    Plugin.ApplyGlossness(ItemId, materialName);
+                    Plugin.ApplyGlossness(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Glossness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -453,7 +508,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newSpecularness != materialInfo.Specularness)
                 {
                     materialInfo.Specularness = newSpecularness;
-                    Plugin.ApplySpecularness(ItemId, materialName);
+                    Plugin.ApplySpecularness(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Specularness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -464,7 +519,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newUVz != materialInfo.TextureUV.z)
                 {
                     materialInfo.TextureUV.z = newUVz;
-                    Plugin.ApplyTextureUV(ItemId, materialName);
+                    Plugin.ApplyTextureUV(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.z:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -475,7 +530,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (newUVw != materialInfo.TextureUV.w)
                 {
                     materialInfo.TextureUV.w = newUVw;
-                    Plugin.ApplyTextureUV(ItemId, materialName);
+                    Plugin.ApplyTextureUV(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.w:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
@@ -487,7 +542,7 @@ namespace SevenBoldPencil.MaterialEditor
                 {
                     materialInfo.TextureUV.x = newUVx;
                     materialInfo.TextureUV.y = newUVx;
-                    Plugin.ApplyTextureUV(ItemId, materialName);
+                    Plugin.ApplyTextureUV(item.ItemId, materialName);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.x:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + bigMargin;
@@ -513,12 +568,12 @@ namespace SevenBoldPencil.MaterialEditor
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            DrawAllTextures(x, y, materialName, materialInfo, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
+            DrawAllTextures(x, y, item.ItemId, materialName, materialInfo, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
 
 			GUI.DragWindow();
         }
 
-        private void DrawAllTextures(int x, int y, string materialName, MaterialInfo materialInfo, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
+        private void DrawAllTextures(int x, int y, string itemId, string materialName, MaterialInfo materialInfo, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = BigPlugin.GetTexturesDirectory(decalTextureType);
 
@@ -529,12 +584,12 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, CamosScrollPosition);
             CamosScrollPosition = GUI.BeginScrollView(visibleRect, CamosScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            DrawAllTextures(ref x, ref y, materialName, materialInfo, texturesDirectory, drawName: false);
+            DrawAllTextures(ref x, ref y, itemId, materialName, materialInfo, texturesDirectory, drawName: false);
 
             GUI.EndScrollView();
         }
 
-        public void DrawAllTextures(ref int x, ref int y, string materialName, MaterialInfo materialInfo, TexturesDirectory texturesDirectory, bool drawName = true)
+        public void DrawAllTextures(ref int x, ref int y, string itemId, string materialName, MaterialInfo materialInfo, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -558,7 +613,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             foreach (var subDirectory in texturesDirectory.Directories)
             {
-                DrawAllTextures(ref x, ref y, materialName, materialInfo, subDirectory);
+                DrawAllTextures(ref x, ref y, itemId, materialName, materialInfo, subDirectory);
             }
 
             var textures = texturesDirectory.Textures;
@@ -580,7 +635,7 @@ namespace SevenBoldPencil.MaterialEditor
                     {
                         if (materialInfo.Texture != textureName)
                         {
-                            Plugin.ChangeTexture(ItemId, materialName, materialInfo, textureName);
+                            Plugin.ChangeTexture(itemId, materialName, materialInfo, textureName);
                         }
                     }
                     if (e.button == 1) // right click
@@ -653,10 +708,17 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
+        private (CamoEditorItem, string, MaterialInfo) GetEditedMaterialInfo()
+        {
+            var item = Items[CurrentlyEditedOverride.Value.ItemIndex];
+            var materialName = CurrentlyEditedOverride.Value.MaterialName;
+            var materialInfo = Plugin.GetMaterialInfo(item.ItemId, materialName).Value;
+            return (item, materialName, materialInfo);
+        }
+
         private void DrawColorPickerWindow(int windowID)
         {
-            var materialName = CurrentlyEditedOverride.Value;
-            var materialInfo = Plugin.GetMaterialInfo(ItemId, materialName).Value;
+            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
 
             DrawColor(new Rect(0, 0, colorPickerRect.width, colorPickerRect.height), backgroundColor);
 
@@ -681,7 +743,7 @@ namespace SevenBoldPencil.MaterialEditor
 
                 materialInfo.ColorHSV.x = hue;
                 materialInfo.ColorHSV.y = saturation;
-                Plugin.ApplyColor(ItemId, materialName);
+                Plugin.ApplyColor(item.ItemId, materialName);
             }
             y += hsCircleDiameter + bigMargin;
         }

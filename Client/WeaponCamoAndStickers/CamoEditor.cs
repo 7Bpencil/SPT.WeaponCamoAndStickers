@@ -110,36 +110,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public GUIStyle TextFieldStyle;
 		public GUIStyle ColorPickerButtonStyle;
         public GUIStyle DirectoryButtonStyle;
-        public GUIStyle MaterialNameStyle;
 
         public CamoEditorStyle(GUISkin currentSkin)
         {
-            LabelStyleName = new()
+            LabelStyleName = new(currentSkin.label)
             {
                 alignment = TextAnchor.MiddleLeft,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
+                clipping = TextClipping.Clip,
+                wordWrap = false,
             };
 
-            TextureNameStyle = new()
+            TextureNameStyle = new(currentSkin.label)
             {
                 alignment = TextAnchor.UpperLeft,
+                clipping = TextClipping.Overflow,
                 wordWrap = true,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
             };
 
-            LabelStyleValue = new()
+            LabelStyleValue = new(currentSkin.label)
             {
                 alignment = TextAnchor.MiddleCenter,
-                normal = new GUIStyleState()
-                {
-                    textColor = Color.white
-                }
             };
 
             TextFieldStyle = new(currentSkin.textField)
@@ -156,12 +146,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             DirectoryButtonStyle = new(currentSkin.button)
             {
-                alignment = TextAnchor.MiddleLeft
-            };
-
-            MaterialNameStyle = new(currentSkin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
+                alignment = TextAnchor.MiddleLeft,
+                clipping = TextClipping.Clip,
+                wordWrap = false,
             };
         }
     }
@@ -1631,14 +1618,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
 
         // render my own vertical scroll bar because unity's one cannot be set slimmer than 15 px...
-        public static void DrawScrollBar(int x, int y, int totalHeight, int visibleHeight, Vector2 scrollPosition)
+        public static void DrawScrollBar(int x, int y, int totalHeight, int visibleHeight, Vector2 scrollPosition, bool drawBackground = true)
         {
             if (totalHeight > visibleHeight)
             {
                 var handleHeight = visibleHeight * visibleHeight / (float)totalHeight;
                 var handlePositionT = scrollPosition.y / (float)totalHeight;
                 var handlePosition = handlePositionT * visibleHeight;
-                DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
+                if (drawBackground)
+                {
+                    DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
+                }
                 DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
         }
