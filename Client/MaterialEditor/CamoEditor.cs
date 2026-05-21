@@ -78,7 +78,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int iconSize = buttonHeight * 2 + smallMargin;
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxEraseMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxEraseMaskIconsVisibleHeight = 12 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 27 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
@@ -235,7 +235,8 @@ namespace SevenBoldPencil.MaterialEditor
                 bigMargin +
                 buttonHeight + mediumMargin + // back button
                 buttonHeight + bigMargin + // show presets button
-                smallMargin + bigMargin + // separator
+                smallMargin + smallMargin + // separator
+                buttonHeight + smallMargin + // material name
                 buttonHeight + smallMargin + // hue
                 buttonHeight + smallMargin + // saturation
                 buttonHeight + smallMargin + // value
@@ -450,7 +451,10 @@ namespace SevenBoldPencil.MaterialEditor
             y += buttonHeight + bigMargin;
 
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
-            y += smallMargin + bigMargin;
+            y += smallMargin + smallMargin;
+
+            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), materialName, CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
 
             {
                 var sliderWidth = 224;
