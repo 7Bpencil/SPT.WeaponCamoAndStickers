@@ -1798,10 +1798,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void ToggleFavouriteTexture(string textureName)
         {
-            if (!FavouriteTextures.Add(textureName))
-            {
-                FavouriteTextures.Remove(textureName);
-            }
+            FavouriteTextures.Toggle(textureName);
         }
 
         public bool IsFavouriteTexture(string textureName)

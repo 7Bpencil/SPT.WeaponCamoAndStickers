@@ -454,6 +454,8 @@ namespace SevenBoldPencil.MaterialEditor
                 IsOpened = false,
                 CurrentPresetName = "",
                 IsCurrentPresetNameValid = false,
+                CurrentlyEditedOverride = default,
+                LinkedOverrides = new(),
                 IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect()
@@ -692,7 +694,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var materials = itemsWithMaterials.MaterialsInfo.Materials;
                 if (materials.ContainsKey(materialName))
                 {
-                    Logger.LogError($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
+                    Logger.LogWarning($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
                     return;
                 }
 
@@ -782,54 +784,79 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        public void ApplyColor(string itemId, string materialName)
+        public void ChangeColor(string itemId, string materialName, Vector3 colorHSV)
         {
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
-            {
-                targetMaterial.PropertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
-                ApplyPropertyBlock(targetMaterial);
-            });
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.ColorHSV = colorHSV,
+                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA())
+            );
         }
 
-        public void ApplyGlossness(string itemId, string materialName)
+        public void ChangeGlossness(string itemId, string materialName, float glossness)
         {
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
-            {
-                targetMaterial.PropertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
-                ApplyPropertyBlock(targetMaterial);
-            });
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.Glossness = glossness,
+                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Glossness, materialInfo.Glossness)
+            );
         }
 
-        public void ApplySpecularness(string itemId, string materialName)
+        public void ChangeSpecularness(string itemId, string materialName, float specularness)
         {
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
-            {
-                targetMaterial.PropertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
-                ApplyPropertyBlock(targetMaterial);
-            });
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.Specularness = specularness,
+                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Specularness, materialInfo.Specularness)
+            );
         }
 
-        public void ApplyTextureUV(string itemId, string materialName)
+        public void ChangeTextureUV(string itemId, string materialName, Vector4 textureUV)
         {
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
-            {
-                targetMaterial.PropertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-                targetMaterial.PropertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
-                ApplyPropertyBlock(targetMaterial);
-            });
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.TextureUV = textureUV,
+                static (propertyBlock, materialInfo) =>
+                {
+                    propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
+                    propertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
+                }
+            );
         }
 
-        public void ChangeTexture(string itemId, string materialName, MaterialInfo materialInfo, string textureName)
+        // notice that we modify material on all items
+        public void ModifyMaterialOnItems(
+            string itemId, string materialName,
+            Action<MaterialInfo> changeMaterial,
+            Action<MaterialPropertyBlock, MaterialInfo> changePropertyBlock)
         {
+            var itemsWithMaterials = ItemsWithMaterials[itemId];
+            var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
+            changeMaterial(materialInfo);
+            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
+            {
+                var targetMaterial = itemWithMaterials.Materials[materialName];
+                changePropertyBlock(targetMaterial.PropertyBlock, materialInfo);
+                ApplyPropertyBlock(targetMaterial);
+            }
+        }
+
+        // textures as always require special handling
+        public void ChangeTexture(string itemId, string materialName, string textureName)
+        {
+            var itemsWithMaterials = ItemsWithMaterials[itemId];
+            var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
+
             var oldTextureName = materialInfo.Texture;
             materialInfo.Texture = textureName;
-            ApplyTexture(itemId, materialName, oldTextureName);
-        }
 
-        public void ApplyTexture(string itemId, string materialName, string oldTextureName)
-        {
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
+                var targetMaterial = itemWithMaterials.Materials[materialName];
                 if (!string.IsNullOrWhiteSpace(oldTextureName))
                 {
                     BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
@@ -838,7 +865,7 @@ namespace SevenBoldPencil.MaterialEditor
                 {
                     BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
                 }
-            });
+            }
         }
 
         public void MaterialChangeTexture(SystemObject key, Texture texture)
@@ -847,18 +874,6 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 targetMaterial.PropertyBlock.SetTexture(_MainTex, texture);
                 ApplyPropertyBlock(targetMaterial);
-            }
-        }
-
-        // notice that we modify material on all items
-        public void ModifyMaterialOnItems(string itemId, string materialName, Action<TargetMaterial, MaterialInfo> changeMaterial)
-        {
-            var itemsWithMaterials = ItemsWithMaterials[itemId];
-            var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
-            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
-            {
-                var targetMaterial = itemWithMaterials.Materials[materialName];
-                changeMaterial(targetMaterial, materialInfo);
             }
         }
 
@@ -940,10 +955,11 @@ namespace SevenBoldPencil.MaterialEditor
                 return;
             }
 
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
-            {
-                ResetMaterial(targetMaterial, materialInfo);
-            });
+            ForEveryMaterialOnItem
+            (
+                itemId, materialName,
+                (targetMaterial, materialInfo) => ResetMaterial(targetMaterial, materialInfo)
+            );
 
             materialInfo.Texture = preset.Material.Texture;
             materialInfo.TextureUV = preset.Material.TextureUV;
@@ -951,10 +967,22 @@ namespace SevenBoldPencil.MaterialEditor
             materialInfo.Glossness = preset.Material.Glossness;
             materialInfo.Specularness = preset.Material.Specularness;
 
-            ModifyMaterialOnItems(itemId, materialName, (targetMaterial, materialInfo) =>
+            ForEveryMaterialOnItem
+            (
+                itemId, materialName,
+                (targetMaterial, materialInfo) => ApplyAllOverrides(targetMaterial, materialInfo)
+            );
+        }
+
+        public void ForEveryMaterialOnItem(string itemId, string materialName, Action<TargetMaterial, MaterialInfo> changeMaterial)
+        {
+            var itemsWithMaterials = ItemsWithMaterials[itemId];
+            var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
+            foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
-                ApplyAllOverrides(targetMaterial, materialInfo);
-            });
+                var targetMaterial = itemWithMaterials.Materials[materialName];
+                changeMaterial(targetMaterial, materialInfo);
+            }
         }
 
         public Dictionary<string, MaterialsInfo> SnapshotLocalMaterials()

@@ -31,10 +31,18 @@ namespace SevenBoldPencil.MaterialEditor
         public Dictionary<string, MaterialInfo> OriginalMaterials;
     }
 
-    public struct EditedOverride
+    // would be nice to use record structs to avoid boilerplate,
+    // but I am afraid C# 10 will break on some people
+    public struct EditedOverride : IEquatable<EditedOverride>
     {
         public int ItemIndex;
         public string MaterialName;
+
+        public override bool Equals(object? obj) => obj is EditedOverride other && this.Equals(other);
+        public bool Equals(EditedOverride p) => ItemIndex == p.ItemIndex && MaterialName == p.MaterialName;
+        public override int GetHashCode() => (ItemIndex, MaterialName).GetHashCode();
+        public static bool operator ==(EditedOverride lhs, EditedOverride rhs) => lhs.Equals(rhs);
+        public static bool operator !=(EditedOverride lhs, EditedOverride rhs) => !(lhs == rhs);
     }
 
     public class CamoEditor
@@ -51,6 +59,7 @@ namespace SevenBoldPencil.MaterialEditor
         public Vector2 PresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
         public Option<EditedOverride> CurrentlyEditedOverride;
+        public HashSet<EditedOverride> LinkedOverrides;
         public bool IsColorPickerOpened;
         public DecalTextureType DecalTypeMenu;
         public Vector2 CamosScrollPosition;
@@ -189,18 +198,21 @@ namespace SevenBoldPencil.MaterialEditor
             var totalMaterialsHeight = 0;
             foreach (var item in Items)
             {
-                var materialsCount = item.ItemWithMaterials.Materials.Count;
-                var materialsHeight = materialsCount * (buttonHeight + smallMargin) - smallMargin;
-                totalMaterialsHeight +=
-                    smallMargin +
-                    buttonHeight + smallMargin + // name
-                    materialsHeight + bigMargin;
+                totalMaterialsHeight += CalculateItemWithMaterialsWindowHeight(item.ItemWithMaterials.Materials.Count);
             }
 
             var separatorHeight = (Items.Count - 1) * smallMargin;
 
             // we subtract top margin and bottom margin so scroll rect is nicely bound
             return -smallMargin + totalMaterialsHeight + separatorHeight - bigMargin;
+        }
+
+        private int CalculateItemWithMaterialsWindowHeight(int materialsCount)
+        {
+            var materialsHeight = materialsCount * (buttonHeight + smallMargin) - smallMargin;
+            return
+                smallMargin + buttonHeight + smallMargin + // name
+                materialsHeight + bigMargin;
         }
 
         private int CalculateMaterialEditWindowHeight_Presets()
@@ -295,36 +307,49 @@ namespace SevenBoldPencil.MaterialEditor
             GUI.Label(new Rect(x + 5, y, boxWidth - bigMargin, buttonHeight), item.Name, CamoEditorStyle.LabelStyleName);
             y += buttonHeight + smallMargin;
 
-            var overrideButtonWidth = boxWidth - buttonHeight - smallMargin;
-            var resetX = x + overrideButtonWidth + smallMargin;
+            var defaultMaterialButtonWidth = boxWidth - buttonHeight - smallMargin;
+            var overridenMaterialButtonWidth = defaultMaterialButtonWidth - buttonHeight - smallMargin;
+            var materialButtonX = x;
+            var resetX = materialButtonX + overridenMaterialButtonWidth + smallMargin;
+            var linkX = resetX + buttonHeight + smallMargin;
+
             foreach (var materialName in item.ItemWithMaterials.Materials.Keys)
             {
-                if (materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName))
+                var isOverridenMaterial = materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName);
+                var thisOverride = new EditedOverride()
                 {
-                    if (GUI.Button(new Rect(x, y, overrideButtonWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
-                    {
-                        CurrentlyEditedOverride = new(new EditedOverride()
-                        {
-                            ItemIndex = itemIndex,
-                            MaterialName = materialName,
-                        });
-                    }
+                    ItemIndex = itemIndex,
+                    MaterialName = materialName,
+                };
+
+                var materialButtonWidth = isOverridenMaterial ? overridenMaterialButtonWidth : defaultMaterialButtonWidth;
+                if (GUI.Button(new Rect(materialButtonX, y, materialButtonWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
+                {
+                    CurrentlyEditedOverride = new(thisOverride);
+                    ForEveryLinkedItem
+                    (
+                        thisOverride,
+                        (item, materialName) => Plugin.OverrideMaterial(item.ItemWithMaterials, item.OriginalMaterials, item.ItemId, item.InstanceID, materialName)
+                    );
+                }
+
+                if (isOverridenMaterial)
+                {
                     if (GUI.Button(new Rect(resetX, y, buttonHeight, buttonHeight), CamoEditorResources.Reset))
                     {
-                        Plugin.ResetMaterial(item.ItemId, materialName);
+                        ForEveryLinkedItem
+                        (
+                            thisOverride,
+                            (item, materialName) => Plugin.ResetMaterial(item.ItemId, materialName)
+                        );
                     }
                 }
-                else
+
+                var isLinked = LinkedOverrides.Contains(thisOverride);
+                var linkIcon = isLinked ? CamoEditorResources.LinkOn : CamoEditorResources.CheckboxOff;
+                if (GUI.Button(new Rect(linkX, y, buttonHeight, buttonHeight), linkIcon))
                 {
-                    if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
-                    {
-                        Plugin.OverrideMaterial(item.ItemWithMaterials, item.OriginalMaterials, item.ItemId, item.InstanceID, materialName);
-                        CurrentlyEditedOverride = new(new EditedOverride()
-                        {
-                            ItemIndex = itemIndex,
-                            MaterialName = materialName,
-                        });
-                    }
+                    LinkedOverrides.Toggle(thisOverride);
                 }
                 y += buttonHeight + smallMargin;
             }
@@ -337,7 +362,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
+            var (item, materialName, _, _) = GetEditedMaterialInfo();
 
             var x = bigMargin;
             var y = bigMargin;
@@ -405,7 +430,7 @@ namespace SevenBoldPencil.MaterialEditor
                     {
                         CurrentPresetName = presetName;
                         IsCurrentPresetNameValid = true;
-                        Plugin.SwitchToMaterialPreset(item.ItemId, materialName, presetName);
+                        ForEveryLinkedItem(Plugin.SwitchToMaterialPreset, presetName);
                     }
                     if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
                     {
@@ -433,7 +458,11 @@ namespace SevenBoldPencil.MaterialEditor
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
+            var (_, materialName, materialInfo, _) = GetEditedMaterialInfo();
+            var colorHSV = materialInfo.ColorHSV;
+            var glossness = materialInfo.Glossness;
+            var specularness = materialInfo.Specularness;
+            var textureUV = materialInfo.TextureUV;
 
             var x = bigMargin;
             var y = bigMargin;
@@ -464,91 +493,91 @@ namespace SevenBoldPencil.MaterialEditor
                 var valueX = sliderX + sliderWidth + smallMargin;
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Hue:", CamoEditorStyle.LabelStyleName);
-                var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.x, 0f, 1f);
-                if (newHue != materialInfo.ColorHSV.x)
+                var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.x, 0f, 1f);
+                if (newHue != colorHSV.x)
                 {
-                    materialInfo.ColorHSV.x = newHue;
-                    Plugin.ApplyColor(item.ItemId, materialName);
+                    colorHSV.x = newHue;
+                    ForEveryLinkedItem(Plugin.ChangeColor, colorHSV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Saturation:", CamoEditorStyle.LabelStyleName);
-                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.y, 0f, 1f);
-                if (newSaturation != materialInfo.ColorHSV.y)
+                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.y, 0f, 1f);
+                if (newSaturation != colorHSV.y)
                 {
-                    materialInfo.ColorHSV.y = newSaturation;
-                    Plugin.ApplyColor(item.ItemId, materialName);
+                    colorHSV.y = newSaturation;
+                    ForEveryLinkedItem(Plugin.ChangeColor, colorHSV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Value:", CamoEditorStyle.LabelStyleName);
-                var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.ColorHSV.z, 0f, 1f);
-                if (newValue != materialInfo.ColorHSV.z)
+                var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.z, 0f, 1f);
+                if (newValue != colorHSV.z)
                 {
-                    materialInfo.ColorHSV.z = newValue;
-                    Plugin.ApplyColor(item.ItemId, materialName);
+                    colorHSV.z = newValue;
+                    ForEveryLinkedItem(Plugin.ChangeColor, colorHSV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.ColorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Gloss:", CamoEditorStyle.LabelStyleName);
-                var newGlossness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Glossness, 0.01f, 10f);
-                if (newGlossness != materialInfo.Glossness)
+                var newGlossness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), glossness, 0.01f, 10f);
+                if (newGlossness != glossness)
                 {
-                    materialInfo.Glossness = newGlossness;
-                    Plugin.ApplyGlossness(item.ItemId, materialName);
+                    glossness = newGlossness;
+                    ForEveryLinkedItem(Plugin.ChangeGlossness, glossness);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Glossness:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{glossness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "Specular:", CamoEditorStyle.LabelStyleName);
-                var newSpecularness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.Specularness, 0.01f, 10f);
-                if (newSpecularness != materialInfo.Specularness)
+                var newSpecularness = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), specularness, 0.01f, 10f);
+                if (newSpecularness != specularness)
                 {
-                    materialInfo.Specularness = newSpecularness;
-                    Plugin.ApplySpecularness(item.ItemId, materialName);
+                    specularness = newSpecularness;
+                    ForEveryLinkedItem(Plugin.ChangeSpecularness, specularness);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.Specularness:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{specularness:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
-                var newUVz = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.z, -1f, 1f);
-                if (newUVz != materialInfo.TextureUV.z)
+                var newUVz = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.z, -1f, 1f);
+                if (newUVz != textureUV.z)
                 {
-                    materialInfo.TextureUV.z = newUVz;
-                    Plugin.ApplyTextureUV(item.ItemId, materialName);
+                    textureUV.z = newUVz;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.z:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV y:", CamoEditorStyle.LabelStyleName);
-                var newUVw = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.w, -1f, 1f);
-                if (newUVw != materialInfo.TextureUV.w)
+                var newUVw = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.w, -1f, 1f);
+                if (newUVw != textureUV.w)
                 {
-                    materialInfo.TextureUV.w = newUVw;
-                    Plugin.ApplyTextureUV(item.ItemId, materialName);
+                    textureUV.w = newUVw;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.w:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.w:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), materialInfo.TextureUV.x, 0.5f, 4f);
-                if (newUVx != materialInfo.TextureUV.x)
+                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.x, 0.5f, 4f);
+                if (newUVx != textureUV.x)
                 {
-                    materialInfo.TextureUV.x = newUVx;
-                    materialInfo.TextureUV.y = newUVx;
-                    Plugin.ApplyTextureUV(item.ItemId, materialName);
+                    textureUV.x = newUVx;
+                    textureUV.y = newUVx;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{materialInfo.TextureUV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.x:F3}", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + bigMargin;
             }
 
@@ -572,12 +601,12 @@ namespace SevenBoldPencil.MaterialEditor
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            DrawAllTextures(x, y, item.ItemId, materialName, materialInfo, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
+            DrawAllTextures(x, y, materialInfo.Texture, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
 
 			GUI.DragWindow();
         }
 
-        private void DrawAllTextures(int x, int y, string itemId, string materialName, MaterialInfo materialInfo, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
+        private void DrawAllTextures(int x, int y, string currentTextureName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = BigPlugin.GetTexturesDirectory(decalTextureType);
 
@@ -588,12 +617,12 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, CamosScrollPosition);
             CamosScrollPosition = GUI.BeginScrollView(visibleRect, CamosScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            DrawAllTextures(ref x, ref y, itemId, materialName, materialInfo, texturesDirectory, drawName: false);
+            DrawAllTextures(ref x, ref y, currentTextureName, texturesDirectory, drawName: false);
 
             GUI.EndScrollView();
         }
 
-        public void DrawAllTextures(ref int x, ref int y, string itemId, string materialName, MaterialInfo materialInfo, TexturesDirectory texturesDirectory, bool drawName = true)
+        public void DrawAllTextures(ref int x, ref int y, string currentTextureName, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -617,7 +646,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             foreach (var subDirectory in texturesDirectory.Directories)
             {
-                DrawAllTextures(ref x, ref y, itemId, materialName, materialInfo, subDirectory);
+                DrawAllTextures(ref x, ref y, currentTextureName, subDirectory);
             }
 
             var textures = texturesDirectory.Textures;
@@ -637,9 +666,9 @@ namespace SevenBoldPencil.MaterialEditor
                     var e = Event.current;
                     if (e.button == 0) // left click
                     {
-                        if (materialInfo.Texture != textureName)
+                        if (currentTextureName != textureName)
                         {
-                            Plugin.ChangeTexture(itemId, materialName, materialInfo, textureName);
+                            ForEveryLinkedItem(Plugin.ChangeTexture, textureName);
                         }
                     }
                     if (e.button == 1) // right click
@@ -712,17 +741,20 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        private (CamoEditorItem, string, MaterialInfo) GetEditedMaterialInfo()
+        private (CamoEditorItem, string, MaterialInfo, bool) GetEditedMaterialInfo()
         {
-            var item = Items[CurrentlyEditedOverride.Value.ItemIndex];
-            var materialName = CurrentlyEditedOverride.Value.MaterialName;
+            var thisOverride = CurrentlyEditedOverride.Value;
+            var item = Items[thisOverride.ItemIndex];
+            var materialName = thisOverride.MaterialName;
             var materialInfo = Plugin.GetMaterialInfo(item.ItemId, materialName).Value;
-            return (item, materialName, materialInfo);
+            var isLinked = LinkedOverrides.Contains(thisOverride);
+            return (item, materialName, materialInfo, isLinked);
         }
 
         private void DrawColorPickerWindow(int windowID)
         {
-            var (item, materialName, materialInfo) = GetEditedMaterialInfo();
+            var (_, _, materialInfo, _) = GetEditedMaterialInfo();
+            var colorHSV = materialInfo.ColorHSV;
 
             DrawColor(new Rect(0, 0, colorPickerRect.width, colorPickerRect.height), backgroundColor);
 
@@ -745,11 +777,46 @@ namespace SevenBoldPencil.MaterialEditor
 				var hue = angle;
 				var saturation = directionClamped.magnitude;
 
-                materialInfo.ColorHSV.x = hue;
-                materialInfo.ColorHSV.y = saturation;
-                Plugin.ApplyColor(item.ItemId, materialName);
+                colorHSV.x = hue;
+                colorHSV.y = saturation;
+                ForEveryLinkedItem(Plugin.ChangeColor, colorHSV);
             }
             y += hsCircleDiameter + bigMargin;
+        }
+
+        public void ForEveryLinkedItem(EditedOverride thisOverride, Action<CamoEditorItem, string> action)
+        {
+            if (LinkedOverrides.Contains(thisOverride))
+            {
+                foreach (var linkedOverride in LinkedOverrides)
+                {
+                    var linkedItem = Items[linkedOverride.ItemIndex];
+                    action(linkedItem, linkedOverride.MaterialName);
+                }
+            }
+            else
+            {
+                var item = Items[thisOverride.ItemIndex];
+                action(item, thisOverride.MaterialName);
+            }
+        }
+
+        public void ForEveryLinkedItem<T>(Action<string, string, T> action, T value)
+        {
+            var thisOverride = CurrentlyEditedOverride.Value;
+            if (LinkedOverrides.Contains(thisOverride))
+            {
+                foreach (var linkedOverride in LinkedOverrides)
+                {
+                    var linkedItem = Items[linkedOverride.ItemIndex];
+                    action(linkedItem.ItemId, linkedOverride.MaterialName, value);
+                }
+            }
+            else
+            {
+                var item = Items[thisOverride.ItemIndex];
+                action(item.ItemId, thisOverride.MaterialName, value);
+            }
         }
 
         public void Destroy()

@@ -52,6 +52,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D MirrorEnabledNoFilp;
         public Texture2D Reset;
         public Texture2D FavouriteIcon;
+        public Texture2D CheckboxOff;
+        public Texture2D LinkOn;
 
         public string[] DecalSettingsToolbar;
         public string[] DecalTypesToolbar;
@@ -96,6 +98,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
             Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
             FavouriteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/star.png");
+            CheckboxOff = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-off.png");
+            LinkOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/link-on.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
             DecalTypesToolbar = ["Camos", "Stickers"];
