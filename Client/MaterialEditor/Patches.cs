@@ -27,24 +27,10 @@ using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
 
+using WeaponPreview_Proxy = SevenBoldPencil.WeaponCamoAndStickers.WeaponPreview_Proxy;
+
 namespace SevenBoldPencil.MaterialEditor
 {
-	public struct WeaponPreview_Proxy
-	{
-		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
-		private static TypedFieldInfo<WeaponPreview, Item> __item_0 = new("item_0");
-
-		public GameObject gameObject_0 { get { return __gameObject_0.Get(__instance); } set { __gameObject_0.Set(__instance, value); } }
-		public Item item_0 { get { return __item_0.Get(__instance); } set { __item_0.Set(__instance, value); } }
-
-        private WeaponPreview __instance;
-
-        public WeaponPreview_Proxy(WeaponPreview instance)
-        {
-            __instance = instance;
-        }
-	}
-
 	public class Patch_PoolManagerClass_CreateItemAsync : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
