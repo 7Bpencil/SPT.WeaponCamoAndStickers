@@ -252,7 +252,7 @@ namespace SevenBoldPencil.MaterialEditor
             else
             {
                 ResourceKeyToItem.Add(item.Prefab, itemId);
-                Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
+                Logger.LogInfo($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
             }
         }
 
@@ -274,7 +274,7 @@ namespace SevenBoldPencil.MaterialEditor
                         PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
                         itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
                         InstanceIdToItemId.Add(instanceID, itemId);
-            			Logger.LogWarning($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
+            			Logger.LogInfo($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
                     }
                     else
                     {
@@ -423,7 +423,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (item.Materials.TryGetValue(materialName, out var targetMaterial))
                 {
                     ApplyAllOverrides(targetMaterial, materialInfo);
-                    Logger.LogWarning($"Patch: {materialName} | {targetMaterial.Renderers.Count}");
+                    Logger.LogInfo($"Patch: {materialName} | {targetMaterial.Renderers.Count}");
                 }
                 else
                 {
@@ -462,7 +462,7 @@ namespace SevenBoldPencil.MaterialEditor
                 ResetMaterial(itemWithMaterials, materialName, materialInfo);
             }
 
-			Logger.LogWarning($"OnItemDestroyed: {itemId} | {instanceID}");
+			Logger.LogInfo($"OnItemDestroyed: {itemId} | {instanceID}");
         }
 
         public bool IsPatchedRenderer(Renderer renderer)
@@ -565,7 +565,7 @@ namespace SevenBoldPencil.MaterialEditor
             return BuildItemOverrides(assetPoolObject);
         }
 
-        // TODO add option to copy material from body part to hands
+        // TODO add option to copy material from body part to hands (problem: they have different materials)
         public void OnSkinCreated(string profileId, string skinId, LoddedSkin skin)
         {
 			// opposite to other items skinId is the same for all players,
@@ -585,7 +585,7 @@ namespace SevenBoldPencil.MaterialEditor
                 PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
                 itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
                 InstanceIdToItemId.Add(instanceID, itemId);
-    			Logger.LogWarning($"OnSkinCreated: {itemId} | {instanceID}");
+    			Logger.LogInfo($"OnSkinCreated: {itemId} | {instanceID}");
             }
         }
 
@@ -1148,7 +1148,7 @@ namespace SevenBoldPencil.MaterialEditor
                 return snapshot;
             }
 
-            // copies all items inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
+            // copies all items with changed materials inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
             var profile = tarkovApplication.Session.Profile;
             var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
 

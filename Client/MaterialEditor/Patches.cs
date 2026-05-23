@@ -362,7 +362,7 @@ namespace SevenBoldPencil.MaterialEditor
 			string profileId = default;
 
 			// for some reason parent can be null at this moment,
-			// usually this happens on Overall screen,
+			// usually this happens in Overall screen,
 			// I guess it gets parented to PlayerModelView later
 			var parent = __instance.transform.parent;
 			if (parent)
@@ -375,7 +375,6 @@ namespace SevenBoldPencil.MaterialEditor
 				{
 					// we are in raid or walking in hideout
 					profileId = player.ProfileId;
-					Logger.LogError($"has player: accountId: {player.AccountId}, isAI: {player.IsAI}, profileId: {profileId}");
 				}
 			}
 			else
@@ -383,7 +382,6 @@ namespace SevenBoldPencil.MaterialEditor
 	    		if (TarkovApplication.Exist(out var tarkovApplication))
 	            {
 					// we are in hideout ui screens
-					Logger.LogError($"tarkov application");
 		            profileId = tarkovApplication.Session.Profile.Id;
 	            }
 			}
@@ -392,7 +390,6 @@ namespace SevenBoldPencil.MaterialEditor
 			{
 				var skinId = __instance.BodyCustomization[part.Key];
 				var skin = __instance.BodySkins[part.Key];
-				Logger.LogError($"Patch_PlayerBody_SetSkin: {profileId} {skinId}");
 				Plugin.Instance.OnSkinCreated(profileId, skinId, skin);
 			}
 		}
@@ -423,7 +420,6 @@ namespace SevenBoldPencil.MaterialEditor
         [PatchPostfix]
         public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, SessionCountersClass overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
 		{
-			Logger.LogError($"Patch_OverallScreen_Show");
 			Plugin.Instance.WaitForWeaponPreview();
 		}
 	}
@@ -439,7 +435,6 @@ namespace SevenBoldPencil.MaterialEditor
         [PatchPostfix]
         public static void Postfix(PlayerModelView __instance)
 		{
-			Logger.LogError($"Patch_PlayerModelView_method_0");
 			if (SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
 			{
 				return;
@@ -462,7 +457,6 @@ namespace SevenBoldPencil.MaterialEditor
         [PatchPrefix]
         public static void Prefix(OverallScreen __instance)
 		{
-			Logger.LogError($"Patch_OverallScreen_Close");
 			Plugin.Instance.CloseCamoEditor();
 		}
 	}
