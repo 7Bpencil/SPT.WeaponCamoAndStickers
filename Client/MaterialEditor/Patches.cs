@@ -5,9 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using Comfort.Common;
 using Diz.Skinning;
-using Diz.Jobs;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
@@ -15,12 +13,9 @@ using EFT.Visual;
 using EFT.CameraControl;
 using EFT.UI;
 using EFT.UI.WeaponModding;
-using SevenBoldPencil.Common;
 using System;
-using System.IO;
 using System.Reflection;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
 using JetBrains.Annotations;

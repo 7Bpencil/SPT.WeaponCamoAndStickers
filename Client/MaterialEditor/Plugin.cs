@@ -7,24 +7,19 @@
 
 using BepInEx;
 using BepInEx.Bootstrap;
-using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.Visual;
 using EFT.UI;
-using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
 using System;
 using System.IO;
 using System.Reflection;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
-using UnityEngine.Video;
 
 // TODO add reset button right to every changed field
 
