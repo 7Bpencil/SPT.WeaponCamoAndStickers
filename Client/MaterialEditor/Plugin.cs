@@ -12,6 +12,8 @@ using BepInEx.Logging;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
+using EFT.Visual;
+using EFT.UI;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
@@ -29,6 +31,7 @@ using UnityEngine.Video;
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
+using LoddedSkin_Proxy = SevenBoldPencil.WeaponCamoAndStickers.LoddedSkin_Proxy;
 using SystemObject = System.Object;
 
 namespace SevenBoldPencil.MaterialEditor
@@ -145,6 +148,11 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_RainCondensator_OnEnable().Enable();
             new Patch_RainCondensator_UpdateValues().Enable();
             new Patch_RainCondensator_OnDisable().Enable();
+            new Patch_PlayerBody_SetSkin().Enable();
+            new Patch_LoddedSkin_Unskin().Enable();
+            new Patch_OverallScreen_Show().Enable();
+            new Patch_PlayerModelView_method_0().Enable();
+            new Patch_OverallScreen_Close().Enable();
 
             TryEnableFikaSupport(assemblyDir);
 
@@ -289,6 +297,20 @@ namespace SevenBoldPencil.MaterialEditor
             };
         }
 
+        public ItemWithMaterials BuildItemOverrides(LoddedSkin skin)
+        {
+            var _skin = new LoddedSkin_Proxy(skin);
+            var targetMaterials = new Dictionary<string, TargetMaterial>();
+            foreach (var lod in _skin._lods)
+            {
+                BuildRendererOverrides(lod.SkinnedMeshRenderer, targetMaterials);
+            }
+            return new()
+            {
+                Materials = targetMaterials,
+            };
+        }
+
         public void BuildRendererOverrides(Renderer renderer, Dictionary<string, TargetMaterial> targetMaterials)
         {
             var materials = renderer.sharedMaterials;
@@ -354,6 +376,17 @@ namespace SevenBoldPencil.MaterialEditor
             return originals;
         }
 
+        public Dictionary<string, MaterialInfo> GetOriginalMaterials(LoddedSkin skin)
+        {
+            var _skin = new LoddedSkin_Proxy(skin);
+            var originals = new Dictionary<string, MaterialInfo>();
+            foreach (var lod in _skin._lods)
+            {
+                GetOriginalMaterials(lod.SkinnedMeshRenderer, originals);
+            }
+            return originals;
+        }
+
         public void GetOriginalMaterials(Renderer renderer, Dictionary<string, MaterialInfo> originalMaterials)
         {
             var materials = renderer.sharedMaterials;
@@ -402,6 +435,11 @@ namespace SevenBoldPencil.MaterialEditor
         public void OnItemDestroyed(AssetPoolObject assetPoolObject)
         {
             var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            OnItemDestroyed(instanceID);
+        }
+
+        public void OnItemDestroyed(int instanceID)
+        {
             if (!InstanceIdToItemId.Remove(instanceID, out var itemId))
             {
                 return;
@@ -525,6 +563,123 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             return BuildItemOverrides(assetPoolObject);
+        }
+
+        // TODO add option to copy material from body part to hands
+        public void OnSkinCreated(string profileId, string skinId, LoddedSkin skin)
+        {
+			// opposite to other items skinId is the same for all players,
+			// we could make separate system for such type of items,
+			// but its simpler to just prepend it by player id
+			var itemId = profileId + skinId;
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
+            {
+                var instanceID = skin.gameObject.GetInstanceID();
+                if (itemsWithMaterials.Items.ContainsKey(instanceID))
+                {
+        			Logger.LogError($"OnSkinCreated: {itemId} | {instanceID}, already added?");
+                    return;
+                }
+
+                var itemWithMaterials = BuildItemOverrides(skin);
+                PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
+                itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
+                InstanceIdToItemId.Add(instanceID, itemId);
+    			Logger.LogWarning($"OnSkinCreated: {itemId} | {instanceID}");
+            }
+        }
+
+        public void OnSkinDestroyed(LoddedSkin skin)
+        {
+            var instanceID = skin.gameObject.GetInstanceID();
+            OnItemDestroyed(instanceID);
+        }
+
+        public void OnClothesReloaded(string profileId, PlayerModelView playerModelView)
+        {
+            // closing camo editor puts IsCamoEditorWaitingForWeaponPreview to false,
+            // so check CamoEditor.HasValue for proper behaviour
+            if (IsCamoEditorWaitingForWeaponPreview || CamoEditor.HasValue)
+            {
+                SetupCamoEditorClothes(profileId, playerModelView);
+            }
+        }
+
+        public void SetupCamoEditorClothes(string profileId, PlayerModelView playerModelView)
+        {
+            // SetupCamoEditorClothes is called when:
+            // 1) player opens Overall screen and PlayerModelView gets loaded
+            // 2) player switches cloth piece in overall screen, in which case we must properly close previous editor
+
+            // save editor position
+            var isOpened = false;
+            var windowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect();
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                isOpened = camoEditor.IsOpened;
+                windowRect = camoEditor.WindowRect;
+                CloseCamoEditor();
+            }
+
+            var items = GetOrBuildItemsFromBodySkins(profileId, playerModelView);
+            CamoEditor = new(new CamoEditor()
+            {
+                Plugin = this,
+                BigPlugin = BigPlugin.Instance,
+                CamoEditorResources = CamoEditorResources,
+                Items = items,
+                IsOpened = isOpened,
+                CurrentPresetName = "",
+                IsCurrentPresetNameValid = false,
+                CurrentlyEditedOverride = default,
+                LinkedOverrides = new(),
+                IsColorPickerOpened = false,
+                DecalTypeMenu = DecalTextureType.Camo,
+                WindowRect = windowRect
+            });
+        }
+
+        public List<CamoEditorItem> GetOrBuildItemsFromBodySkins(string profileId, PlayerModelView playerModelView)
+        {
+            var bodySkins = playerModelView.PlayerBody.BodySkins;
+            var bodyCustomization = playerModelView.PlayerBody.BodyCustomization;
+            var result = new List<CamoEditorItem>(bodySkins.Count);
+            foreach (var (bodyPart, skin) in bodySkins)
+            {
+                var skinId = bodyCustomization[bodyPart];
+                result.Add(GetOrBuildItem(profileId, skinId, skin));
+            }
+            return result;
+        }
+
+        public CamoEditorItem GetOrBuildItem(string profileId, string skinId, LoddedSkin skin)
+        {
+            var itemId = profileId + skinId;
+            var instanceID = skin.gameObject.GetInstanceID();
+            var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, skin);
+            var originalMaterials = GetOriginalMaterials(skin);
+
+            Logger.LogInfo($"SetupCamoEditor: {itemId}");
+
+            return new()
+            {
+                Name = skin.gameObject.name, // getting the same name as in Overall or Ragfair screens is unreasonably annoying
+                ItemId = itemId,
+                InstanceID = instanceID,
+                ItemWithMaterials = itemWithMaterials,
+                OriginalMaterials = originalMaterials,
+            };
+        }
+
+        public ItemWithMaterials GetOrBuildItemWithMaterials(string itemId, int instanceID, LoddedSkin skin)
+        {
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials) &&
+                itemsWithMaterials.Items.TryGetValue(instanceID, out var itemWithMaterials))
+            {
+                return itemWithMaterials;
+            }
+
+            return BuildItemOverrides(skin);
         }
 
         public void WaitForWeaponPreview()
@@ -1002,6 +1157,17 @@ namespace SevenBoldPencil.MaterialEditor
                 if (ItemsWithMaterials.TryGetValue(item.Id, out var itemsWithMaterials))
                 {
                     snapshot[item.Id] = CopyMaterialsInfo(itemsWithMaterials.MaterialsInfo);
+                }
+            }
+
+            // copies all clothes with changed materials
+            var profileId = profile.Id;
+            foreach (var skinId in profile.Customization.Values)
+            {
+                var itemId = profileId + skinId;
+                if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
+                {
+                    snapshot[itemId] = CopyMaterialsInfo(itemsWithMaterials.MaterialsInfo);
                 }
             }
 

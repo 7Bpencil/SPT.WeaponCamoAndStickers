@@ -347,4 +347,124 @@ namespace SevenBoldPencil.MaterialEditor
 			return !Plugin.Instance.IsPatchedRenderer(___renderer_0);
 		}
 	}
+
+	// this is the method that inits skin and has access to skin id and body part
+	public class Patch_PlayerBody_SetSkin : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerBody), nameof(PlayerBody.SetSkin));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+		{
+			string profileId = default;
+
+			// for some reason parent can be null at this moment,
+			// usually this happens on Overall screen,
+			// I guess it gets parented to PlayerModelView later
+			var parent = __instance.transform.parent;
+			if (parent)
+			{
+				// We dont support changed materials on bots at this moment.
+				// AI has AccountId = "0",
+				// you would think that better way is to check player.IsAI,
+				// but it set to false even on AI at this stage in initialization.
+				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+				{
+					// we are in raid or walking in hideout
+					profileId = player.ProfileId;
+					Logger.LogError($"has player: accountId: {player.AccountId}, isAI: {player.IsAI}, profileId: {profileId}");
+				}
+			}
+			else
+			{
+	    		if (TarkovApplication.Exist(out var tarkovApplication))
+	            {
+					// we are in hideout ui screens
+					Logger.LogError($"tarkov application");
+		            profileId = tarkovApplication.Session.Profile.Id;
+	            }
+			}
+
+			if (profileId != default)
+			{
+				var skinId = __instance.BodyCustomization[part.Key];
+				var skin = __instance.BodySkins[part.Key];
+				Logger.LogError($"Patch_PlayerBody_SetSkin: {profileId} {skinId}");
+				Plugin.Instance.OnSkinCreated(profileId, skinId, skin);
+			}
+		}
+	}
+
+	// this is used right before lodded skin is destroyed
+	public class Patch_LoddedSkin_Unskin : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LoddedSkin), nameof(LoddedSkin.Unskin));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(LoddedSkin __instance)
+		{
+			Plugin.Instance.OnSkinDestroyed(__instance);
+		}
+	}
+
+	public class Patch_OverallScreen_Show : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(OverallScreen), nameof(OverallScreen.Show));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, SessionCountersClass overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
+		{
+			Logger.LogError($"Patch_OverallScreen_Show");
+			Plugin.Instance.WaitForWeaponPreview();
+		}
+	}
+
+	// this method is called when PlayerModelView is opened and finishes loading
+	public class Patch_PlayerModelView_method_0 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_0));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerModelView __instance)
+		{
+			Logger.LogError($"Patch_PlayerModelView_method_0");
+			if (SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
+			{
+				return;
+			}
+    		if (TarkovApplication.Exist(out var tarkovApplication))
+            {
+	            var profileId = tarkovApplication.Session.Profile.Id;
+				Plugin.Instance.OnClothesReloaded(profileId, __instance);
+            }
+		}
+	}
+
+	public class Patch_OverallScreen_Close : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(OverallScreen), nameof(OverallScreen.Close));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(OverallScreen __instance)
+		{
+			Logger.LogError($"Patch_OverallScreen_Close");
+			Plugin.Instance.CloseCamoEditor();
+		}
+	}
+
 }
