@@ -1,8 +1,9 @@
 ### Build
 
 Clone into `Escape from Tarkov/Development/SPT.WeaponCamoAndStickers`<br>
-`dotnet build ./Client` will compile both Main mod and Fika support<br>
-`dotnet build ./Client/Main/WeaponCamoAndStickers.csproj` will compile only Main mod<br>
+`dotnet build ./Client` will compile all projects including Fika support<br>
+`dotnet build ./Client/MaterialEditor` will skip Fika support<br>
+add `-c Release` at the end to get optimized build<br>
 Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.WeaponCamoAndStickers`<br>
 
 ### Images
