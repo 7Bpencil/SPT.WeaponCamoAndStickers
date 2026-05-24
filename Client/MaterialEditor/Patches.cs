@@ -5,6 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using Comfort.Common;
 using Diz.Skinning;
 using EFT;
 using EFT.AssetsManager;
@@ -438,7 +439,8 @@ namespace SevenBoldPencil.MaterialEditor
 			}
     		if (TarkovApplication.Exist(out var tarkovApplication) &&
 				tarkovApplication.Session != null &&
-				tarkovApplication.Session.Profile != null)
+				tarkovApplication.Session.Profile != null &&
+				Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
             {
 	            var profileId = tarkovApplication.Session.Profile.Id;
 				Plugin.Instance.OnClothesReloaded(profileId, __instance);
