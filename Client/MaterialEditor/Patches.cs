@@ -375,6 +375,7 @@ namespace SevenBoldPencil.MaterialEditor
 			}
 			else
 			{
+				// profile is null in character creation screen
 	    		if (TarkovApplication.Exist(out var tarkovApplication) &&
 					tarkovApplication.Session != null &&
 					tarkovApplication.Session.Profile != null)
@@ -437,6 +438,7 @@ namespace SevenBoldPencil.MaterialEditor
 			{
 				return;
 			}
+			// profile is null in character creation screen
     		if (TarkovApplication.Exist(out var tarkovApplication) &&
 				tarkovApplication.Session != null &&
 				tarkovApplication.Session.Profile != null &&
