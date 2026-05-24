@@ -374,7 +374,9 @@ namespace SevenBoldPencil.MaterialEditor
 			}
 			else
 			{
-	    		if (TarkovApplication.Exist(out var tarkovApplication))
+	    		if (TarkovApplication.Exist(out var tarkovApplication) &&
+					tarkovApplication.Session != null &&
+					tarkovApplication.Session.Profile != null)
 	            {
 					// we are in hideout ui screens
 		            profileId = tarkovApplication.Session.Profile.Id;
@@ -434,7 +436,9 @@ namespace SevenBoldPencil.MaterialEditor
 			{
 				return;
 			}
-    		if (TarkovApplication.Exist(out var tarkovApplication))
+    		if (TarkovApplication.Exist(out var tarkovApplication) &&
+				tarkovApplication.Session != null &&
+				tarkovApplication.Session.Profile != null)
             {
 	            var profileId = tarkovApplication.Session.Profile.Id;
 				Plugin.Instance.OnClothesReloaded(profileId, __instance);
