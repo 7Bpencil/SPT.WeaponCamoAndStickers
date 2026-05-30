@@ -62,6 +62,9 @@ namespace SevenBoldPencil.MaterialEditor
 
     public class MaterialInfo
     {
+        public const int CurrentSchemaVersion = 0;
+
+        public int SchemaVersion;
         public string Texture;
         public Vector4 TextureUV;
         public Vector3 ColorHSV;
@@ -73,6 +76,8 @@ namespace SevenBoldPencil.MaterialEditor
 
     public class MaterialPreset
     {
+        public const int CurrentSchemaVersion = 0;
+
         public int SchemaVersion;
         public MaterialInfo Material;
     }
@@ -187,6 +192,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
                     var preset = JsonConvert.DeserializeObject<MaterialPreset>(json);
+                    UpgradeOldVersionsOfMaterialPreset(preset);
                     result.Add(presetName, preset);
                 }
                 else
@@ -196,6 +202,11 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             return result;
+        }
+
+        public static void UpgradeOldVersionsOfMaterialPreset(MaterialPreset materialPreset)
+        {
+            UpgradeOldVersionsOfMaterialInfo(materialPreset.Material);
         }
 
         public Dictionary<string, ItemsWithMaterials> LoadItemsWithMaterials()
@@ -209,6 +220,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
                     var materialsInfo = JsonConvert.DeserializeObject<MaterialsInfo>(json);
+                    UpgradeOldVersionsOfMaterialsInfo(materialsInfo);
                     var itemsWithMaterials = new ItemsWithMaterials()
                     {
                         Items = new(),
@@ -224,6 +236,19 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             return result;
+        }
+
+        public static void UpgradeOldVersionsOfMaterialsInfo(MaterialsInfo materialsInfo)
+        {
+            foreach (var materialInfo in materialsInfo.Materials.Values)
+            {
+                UpgradeOldVersionsOfMaterialInfo(materialInfo);
+            }
+        }
+
+        public static void UpgradeOldVersionsOfMaterialInfo(MaterialInfo materialInfo)
+        {
+
         }
 
         public void OnCreateItemAsync(Item item)
@@ -404,6 +429,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             return new MaterialInfo()
             {
+                SchemaVersion = MaterialInfo.CurrentSchemaVersion,
                 Texture = "",
                 TextureUV = material.GetVector(_MainTex_ST),
                 ColorHSV = material.GetColor(_Color).RGBAtoHSV(),
@@ -868,7 +894,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var itemsWithMaterials = new ItemsWithMaterials()
                 {
                     Items = new() { { instanceID, itemWithMaterials } },
-                    MaterialsInfo = new()
+                    MaterialsInfo = new MaterialsInfo()
                     {
                         SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
                         SaveTime = time,
@@ -1094,7 +1120,7 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 var newPresetMaterialInfo = new MaterialPreset()
                 {
-                    SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
+                    SchemaVersion = MaterialPreset.CurrentSchemaVersion,
                     Material = materialInfo.GetCopy(),
                 };
                 MaterialPresets.Add(presetName, newPresetMaterialInfo);
