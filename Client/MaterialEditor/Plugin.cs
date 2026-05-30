@@ -687,18 +687,13 @@ namespace SevenBoldPencil.MaterialEditor
             return IsCamoEditorWaitingForWeaponPreview;
         }
 
+        // game hides cursor and resets it to the center,
+        // when player drags in weapon modding screen, which
+        // fucks up dragging transform handles and sliders,
+        // so keep cursor visible
         public bool CanHideCursor()
         {
-            if (CamoEditor.Some(out var camoEditor))
-            {
-                // game hides cursor and resets it to the center,
-                // when player drags in weapon modding screen, which
-                // fucks up dragging transform handles and sliders,
-                // so keep cursor visible
-                return !camoEditor.IsOpened;
-            }
-
-            return true;
+            return !CamoEditor.HasValue;
         }
 
         public void CloseCamoEditor()
