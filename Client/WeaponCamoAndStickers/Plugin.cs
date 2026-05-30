@@ -2060,17 +2060,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             });
         }
 
-		public bool CanWeaponPreviewRotate(string itemId)
+        // its annoying to drag sliders
+        // or tune decal placement
+        // while gun is rotating on every mouse
+        // movement, so disable rotation
+		public bool CanWeaponPreviewRotate()
         {
-            if (CamoEditor.Some(out var camoEditor) &&
-                camoEditor.ItemId == itemId &&
-                camoEditor.CurrentlyEditedDecalIndex.HasValue &&
-                camoEditor.TransformHandle)
+            if (CamoEditor.Some(out var camoEditor))
             {
-                // its annoying to tune decal placement
-                // while gun is rotating on every mouse
-                // movement, so disable rotation
-                return !camoEditor.TransformHandle.IsDragging;
+                if (GUIUtility.hotControl != 0)
+                {
+                    return false;
+                }
+                if (camoEditor.TransformHandle &&
+                    camoEditor.TransformHandle.IsDragging)
+                {
+                    return false;
+                }
             }
 
             return true;

@@ -206,6 +206,27 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
+	public class Patch_WeaponPreview_Rotate : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPreview), nameof(WeaponPreview.Rotate));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix(WeaponPreview __instance)
+		{
+			var _weaponPreview = new WeaponPreview_Proxy(__instance);
+			var item = _weaponPreview.item_0;
+			if (item != null)
+			{
+				return Plugin.Instance.CanWeaponPreviewRotate();
+			}
+
+			return true;
+		}
+	}
+
 	public class Patch_WeaponModdingScreen_Close : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()

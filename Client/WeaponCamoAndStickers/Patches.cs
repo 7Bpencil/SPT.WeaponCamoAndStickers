@@ -183,7 +183,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var item = _weaponPreview.item_0;
 			if (item != null)
 			{
-				return Plugin.Instance.CanWeaponPreviewRotate(item.Id);
+				return Plugin.Instance.CanWeaponPreviewRotate();
 			}
 
 			return true;

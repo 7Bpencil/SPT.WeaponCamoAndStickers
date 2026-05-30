@@ -135,6 +135,7 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_WeaponModdingScreen_method_6().Enable();
             new Patch_GClass2304_smethod_0().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
+            new Patch_WeaponPreview_Rotate().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
@@ -694,6 +695,22 @@ namespace SevenBoldPencil.MaterialEditor
         public bool CanHideCursor()
         {
             return !CamoEditor.HasValue;
+        }
+
+        // its annoying to drag sliders
+        // while gun is rotating on every mouse
+        // movement, so disable rotation
+        public bool CanWeaponPreviewRotate()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                if (GUIUtility.hotControl != 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void CloseCamoEditor()
