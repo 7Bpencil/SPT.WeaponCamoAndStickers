@@ -569,8 +569,9 @@ namespace SevenBoldPencil.MaterialEditor
                 y += buttonHeight + smallMargin;
 
 
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.x, 0.5f, 4f);
+                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.x, leftScale, rightScale);
                 if (newUVx != textureUV.x)
                 {
                     textureUV.x = newUVx;
@@ -604,6 +605,28 @@ namespace SevenBoldPencil.MaterialEditor
             DrawAllTextures(x, y, materialInfo.Texture, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
 
 			GUI.DragWindow();
+        }
+
+        // when fractional part of value goes over 0.5 slider moves to next page
+        // this way we still have precision of delegating entire slider to range of 1,
+        // but can to go higher values smoothly
+        public static (float left, float right) GetLoopingSliderBounds(float value)
+        {
+            const float offsetEffective = 0.5f;
+            const float offsetTotal = 0.6f;
+
+            var centerPoint = (int)value;
+            var valueFraction = value % 1;
+            if (valueFraction > offsetEffective)
+            {
+                centerPoint++;
+            }
+
+            centerPoint = Math.Max(centerPoint, 1);
+            var left = centerPoint - offsetTotal;
+            var right = centerPoint + offsetTotal;
+
+            return (left, right);
         }
 
         private void DrawAllTextures(int x, int y, string currentTextureName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
