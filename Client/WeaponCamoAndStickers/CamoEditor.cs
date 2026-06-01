@@ -53,6 +53,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D Reset;
         public Texture2D FavouriteIcon;
         public Texture2D CheckboxOff;
+        public Texture2D CheckboxOn;
         public Texture2D LinkOn;
 
         public string[] DecalSettingsToolbar;
@@ -99,6 +100,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
             FavouriteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/star.png");
             CheckboxOff = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-off.png");
+            CheckboxOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-on.png");
             LinkOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/link-on.png");
 
             DecalSettingsToolbar = ["Texture", "Mask"];
