@@ -62,14 +62,64 @@ namespace SevenBoldPencil.MaterialEditor
 
     public class MaterialInfo
     {
-        public const int CurrentSchemaVersion = 0;
+        public const int CurrentSchemaVersion = 1;
 
         public int SchemaVersion;
-        public string Texture;
-        public Vector4 TextureUV;
         public Vector3 ColorHSV;
+        public Vector3 SpecColorHSV;
 		public float Glossness;
 		public float Specularness;
+        public Vector3 ReflectColorHSV;
+        public string Texture;
+        public Vector4 TextureUV;
+        public Vector2 SpecVals; // defined as float3 in shader, but only x and y are used
+        public Vector2 DefVals; // defined as float3 in shader, but only x and y are used
+        public bool CompensateSpecular;
+        public float SpecularCompensationMultiplier;
+
+        public Color GetColor()
+        {
+            return ColorHSV.HSVtoRGBA();
+        }
+
+        public Color GetSpecColor()
+        {
+            return SpecColorHSV.HSVtoRGBA();
+        }
+
+        public float GetSpecularCompensationMultiplier()
+        {
+            // BSG puts specular map into main tex alpha channel,
+            // but all custom textures have flat alpha 1,
+            // so we have to compensate it by multiplying all values
+            // affected by alpha by some compensation value,
+            // most specular maps have average value of 0.2, so choose that.
+            if (CompensateSpecular && !string.IsNullOrWhiteSpace(Texture))
+            {
+                return SpecularCompensationMultiplier;
+            }
+
+            return 1;
+        }
+
+        public Color GetReflectColor()
+        {
+            // If we simply multiply srgb color, it wont look correct,
+            // yes, it does look different, yes, it does look better, I checked
+            var specularCompensationMultiplier = GetSpecularCompensationMultiplier();
+            return (ReflectColorHSV.HSVtoRGBA().linear * specularCompensationMultiplier).gamma;
+        }
+
+        public float GetSpecularness()
+        {
+            var specularCompensationMultiplier = GetSpecularCompensationMultiplier();
+            return Specularness * specularCompensationMultiplier;
+        }
+
+        public float GetBumpTiling()
+        {
+            return 1f / TextureUV.x;
+        }
 
         public MaterialInfo GetCopy() => (MaterialInfo)MemberwiseClone();
     }
@@ -87,12 +137,16 @@ namespace SevenBoldPencil.MaterialEditor
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
+        public static readonly int _Color = Shader.PropertyToID("_Color");
+        public static readonly int _SpecColor = Shader.PropertyToID("_SpecColor");
+        public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
+        public static readonly int _Specularness = Shader.PropertyToID("_Glossness"); // yes, its swapped in the BSG shader
+        public static readonly int _ReflectColor = Shader.PropertyToID("_ReflectColor");
         public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
         public static readonly int _MainTex_ST = Shader.PropertyToID("_MainTex_ST");
-        public static readonly int _Color = Shader.PropertyToID("_Color");
-        public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
-        public static readonly int _Specularness = Shader.PropertyToID("_Glossness");
         public static readonly int _BumpTiling = Shader.PropertyToID("_BumpTiling"); // this is used to tile main texture without tiling normals
+        public static readonly int _SpecVals = Shader.PropertyToID("_SpecVals");
+        public static readonly int _DefVals = Shader.PropertyToID("_DefVals");
 
         public static Plugin Instance;
 
@@ -248,7 +302,18 @@ namespace SevenBoldPencil.MaterialEditor
 
         public static void UpgradeOldVersionsOfMaterialInfo(MaterialInfo materialInfo)
         {
-
+            if (materialInfo.SchemaVersion == 0)
+            {
+                materialInfo.SchemaVersion = 1;
+                // actual solution is to get original values, but its too much hassle
+                // just tell people to reset material if looks bad (it wont)
+                materialInfo.SpecColorHSV = new(0, 0, 0.8f);
+                materialInfo.ReflectColorHSV = new(0, 0, 0.8f);
+                materialInfo.SpecVals = new(1, 1);
+                materialInfo.DefVals = new(1, 1);
+                materialInfo.CompensateSpecular = false;
+                materialInfo.SpecularCompensationMultiplier = 0.2f;
+            }
         }
 
         public void OnCreateItemAsync(Item item)
@@ -430,11 +495,17 @@ namespace SevenBoldPencil.MaterialEditor
             return new MaterialInfo()
             {
                 SchemaVersion = MaterialInfo.CurrentSchemaVersion,
-                Texture = "",
-                TextureUV = material.GetVector(_MainTex_ST),
                 ColorHSV = material.GetColor(_Color).RGBAtoHSV(),
+                SpecColorHSV = material.GetColor(_SpecColor).RGBAtoHSV(),
                 Glossness = material.GetFloat(_Glossness),
                 Specularness = material.GetFloat(_Specularness),
+                ReflectColorHSV = material.GetColor(_ReflectColor).RGBAtoHSV(),
+                Texture = "",
+                TextureUV = material.GetVector(_MainTex_ST),
+                SpecVals = material.GetVector(_SpecVals),
+                DefVals = material.GetVector(_DefVals),
+                CompensateSpecular = true,
+                SpecularCompensationMultiplier = 0.2f,
             };
         }
 
@@ -516,7 +587,6 @@ namespace SevenBoldPencil.MaterialEditor
                 IsCurrentPresetNameValid = false,
                 CurrentlyEditedOverride = default,
                 LinkedOverrides = new(),
-                IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect()
             });
@@ -655,7 +725,6 @@ namespace SevenBoldPencil.MaterialEditor
                 IsCurrentPresetNameValid = false,
                 CurrentlyEditedOverride = default,
                 LinkedOverrides = new(),
-                IsColorPickerOpened = false,
                 DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = windowRect
             });
@@ -949,16 +1018,25 @@ namespace SevenBoldPencil.MaterialEditor
         {
             var propertyBlock = targetMaterial.PropertyBlock;
 
-            propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA());
+            propertyBlock.SetColor(_Color, materialInfo.GetColor());
+            propertyBlock.SetColor(_SpecColor, materialInfo.GetSpecColor());
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
-            propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
+            propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
+            propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
             propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            propertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
-            ApplyPropertyBlock(targetMaterial);
+            propertyBlock.SetFloat(_BumpTiling, materialInfo.GetBumpTiling());
+            propertyBlock.SetVector(_SpecVals, materialInfo.SpecVals);
+            propertyBlock.SetVector(_DefVals, materialInfo.DefVals);
 
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
             {
+                // MaterialChangeTexture will call ApplyPropertyBlock for us
                 BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+            }
+            else
+            {
+                // otherwise, call it ourselves
+                ApplyPropertyBlock(targetMaterial);
             }
         }
 
@@ -978,7 +1056,57 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.ColorHSV = colorHSV,
-                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_Color, materialInfo.ColorHSV.HSVtoRGBA())
+                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_Color, materialInfo.GetColor())
+            );
+        }
+
+        public void ChangeSpecColor(string itemId, string materialName, Vector3 specColorHSV)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.SpecColorHSV = specColorHSV,
+                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_SpecColor, materialInfo.GetSpecColor())
+            );
+        }
+
+        public void ChangeReflectColor(string itemId, string materialName, Vector3 reflectColorHSV)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.ReflectColorHSV = reflectColorHSV,
+                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor())
+            );
+        }
+
+        public void ChangeCompensateSpecular(string itemId, string materialName, bool compensateSpecular)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.CompensateSpecular = compensateSpecular,
+                static (propertyBlock, materialInfo) =>
+                {
+                    // update all values that are affected by CompensateSpecular
+                    propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
+                    propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
+                }
+            );
+        }
+
+        public void ChangeSpecularCompensationMultiplier(string itemId, string materialName, float specularCompensationMultiplier)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.SpecularCompensationMultiplier = specularCompensationMultiplier,
+                static (propertyBlock, materialInfo) =>
+                {
+                    // update all values that are affected by SpecularCompensationMultiplier
+                    propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
+                    propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
+                }
             );
         }
 
@@ -998,7 +1126,27 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.Specularness = specularness,
-                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Specularness, materialInfo.Specularness)
+                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness())
+            );
+        }
+
+        public void ChangeSpecVals(string itemId, string materialName, Vector2 specVals)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.SpecVals = specVals,
+                static (propertyBlock, materialInfo) => propertyBlock.SetVector(_SpecVals, materialInfo.SpecVals)
+            );
+        }
+
+        public void ChangeDefVals(string itemId, string materialName, Vector2 defVals)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.DefVals = defVals,
+                static (propertyBlock, materialInfo) => propertyBlock.SetVector(_DefVals, materialInfo.DefVals)
             );
         }
 
@@ -1011,7 +1159,7 @@ namespace SevenBoldPencil.MaterialEditor
                 static (propertyBlock, materialInfo) =>
                 {
                     propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-                    propertyBlock.SetFloat(_BumpTiling, 1f / materialInfo.TextureUV.x);
+                    propertyBlock.SetFloat(_BumpTiling, materialInfo.GetBumpTiling());
                 }
             );
         }
@@ -1042,9 +1190,17 @@ namespace SevenBoldPencil.MaterialEditor
             var oldTextureName = materialInfo.Texture;
             materialInfo.Texture = textureName;
 
+            // changing texture to non default one turns specular compensation on
+            var specularness = materialInfo.GetSpecularness();
+            var reflectColor = materialInfo.GetReflectColor();
+
             foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
                 var targetMaterial = itemWithMaterials.Materials[materialName];
+                var propertyBlock = targetMaterial.PropertyBlock;
+                propertyBlock.SetFloat(_Specularness, specularness);
+                propertyBlock.SetColor(_ReflectColor, reflectColor);
+
                 if (!string.IsNullOrWhiteSpace(oldTextureName))
                 {
                     BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
@@ -1060,7 +1216,8 @@ namespace SevenBoldPencil.MaterialEditor
         {
             if (key is TargetMaterial targetMaterial)
             {
-                targetMaterial.PropertyBlock.SetTexture(_MainTex, texture);
+                var propertyBlock = targetMaterial.PropertyBlock;
+                propertyBlock.SetTexture(_MainTex, texture);
                 ApplyPropertyBlock(targetMaterial);
             }
         }
@@ -1134,7 +1291,7 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 return;
             }
-            if (!GetMaterialInfo(itemId, materialName).Some(out var materialInfo))
+            if (!GetMaterialInfo(itemId, materialName).Some(out var target))
             {
                 return;
             }
@@ -1149,11 +1306,19 @@ namespace SevenBoldPencil.MaterialEditor
                 (targetMaterial, materialInfo) => ResetMaterial(targetMaterial, materialInfo)
             );
 
-            materialInfo.Texture = preset.Material.Texture;
-            materialInfo.TextureUV = preset.Material.TextureUV;
-            materialInfo.ColorHSV = preset.Material.ColorHSV;
-            materialInfo.Glossness = preset.Material.Glossness;
-            materialInfo.Specularness = preset.Material.Specularness;
+            var source = preset.Material;
+
+            target.ColorHSV = source.ColorHSV;
+            target.SpecColorHSV = source.SpecColorHSV;
+    		target.Glossness = source.Glossness;
+    		target.Specularness = source.Specularness;
+            target.ReflectColorHSV = source.ReflectColorHSV;
+            target.Texture = source.Texture;
+            target.TextureUV = source.TextureUV;
+            target.SpecVals = source.SpecVals;
+            target.DefVals = source.DefVals;
+            target.CompensateSpecular = source.CompensateSpecular;
+            target.SpecularCompensationMultiplier = source.SpecularCompensationMultiplier;
 
             ForEveryMaterialOnItem
             (
