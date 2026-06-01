@@ -198,7 +198,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public const int iconColumns = 5;
         public const int maxDecalsVisible = 10;
-        public const int maxPresetsVisible = 24;
+        public const int maxPresetsVisible = 22;
         public const int maxPresetNameLength = 25;
         public const int maxDecalNameLength = 30;
 
@@ -438,24 +438,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private int CalculatePresetsWindowHeight()
         {
+            var header =
+                bigMargin + buttonHeight + bigMargin + // hide presets button
+                smallMargin + bigMargin + // separator
+                buttonHeight + mediumMargin + // preset name
+                buttonHeight + mediumMargin; // generate random camo button
+
             var totalPresets = Plugin.GetPresetsCount();
             if (totalPresets > 0)
             {
                 var (_, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
                 return
-                    bigMargin +
-                    buttonHeight + mediumMargin + // hide presets button
-                    buttonHeight + mediumMargin + // preset name
-                    buttonHeight + mediumMargin + // generate random camo button
+                    header +
                     visibleHeight + bigMargin; // presets
             }
             else
             {
                 return
-                    bigMargin +
-                    buttonHeight + mediumMargin + // hide presets button
-                    buttonHeight + mediumMargin + // preset name
-                    buttonHeight + mediumMargin + // generate random camo button
+                    header +
                     buttonHeight + bigMargin; // no presets text
             }
         }
@@ -495,7 +495,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 ArePresetsOpened = false;
             }
-            y += buttonHeight + mediumMargin;
+            y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
 
             // save button turns green only if there is valid input,
             // text field goes red only if there is actual invalid input, stays default if no input

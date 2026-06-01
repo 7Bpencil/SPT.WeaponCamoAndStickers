@@ -238,7 +238,8 @@ namespace SevenBoldPencil.MaterialEditor
             var header =
                 smallMargin + buttonHeight + smallMargin + // material name
                 buttonHeight + mediumMargin + // back button
-                buttonHeight + mediumMargin + // show/hide presets button
+                buttonHeight + bigMargin + // show/hide presets button
+                smallMargin + bigMargin + // separator
                 buttonHeight + mediumMargin; // preset name
 
             var totalPresets = Plugin.GetMaterialPresetsCount();
@@ -431,7 +432,10 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 ArePresetsOpened = false;
             }
-            y += buttonHeight + mediumMargin;
+            y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
 
             // save button turns green only if there is valid input,
             // text field goes red only if there is actual invalid input, stays default if no input
