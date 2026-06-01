@@ -452,6 +452,8 @@ namespace SevenBoldPencil.MaterialEditor
                 GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + bigMargin;
             }
+
+			GUI.DragWindow();
         }
 
         private void DrawMaterialEditUI_Material(int windowID)
