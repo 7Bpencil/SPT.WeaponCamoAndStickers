@@ -210,9 +210,6 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_OverallScreen_Close().Enable();
 
             TryEnableFikaSupport(assemblyDir);
-
-            // TODO
-            // should we color only item itself, or all subitems too?
         }
 
         public void TryEnableFikaSupport(string mainAssemblyDir)
