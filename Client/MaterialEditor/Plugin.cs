@@ -307,11 +307,12 @@ namespace SevenBoldPencil.MaterialEditor
                 materialInfo.SchemaVersion = 1;
                 // actual solution is to get original values, but its too much hassle
                 // just tell people to reset material if looks bad (it wont)
+                materialInfo.Specularness *= 5; // we will multiply it by 0.2 anyway
                 materialInfo.SpecColorHSV = new(0, 0, 0.8f);
                 materialInfo.ReflectColorHSV = new(0, 0, 0.8f);
                 materialInfo.SpecVals = new(1, 1);
                 materialInfo.DefVals = new(1, 1);
-                materialInfo.CompensateSpecular = false;
+                materialInfo.CompensateSpecular = true;
                 materialInfo.SpecularCompensationMultiplier = 0.2f;
             }
         }
