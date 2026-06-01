@@ -90,7 +90,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int iconSize = buttonHeight * 2 + smallMargin;
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxEraseMaskIconsVisibleHeight = 12 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxEraseMaskIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 27 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
@@ -175,10 +175,9 @@ namespace SevenBoldPencil.MaterialEditor
 
                         }
 
-                        DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
-
                         if (AreAdvancedSettingsOpened)
                         {
+                            DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
                             DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DrawColorPickerWindow_SpecColor, DrawColorPickerWindowOpenButton_SpecColor, DrawColorPickerWindowCloseButton_SpecColor);
                             DrawColorPicker(7, IsColorPickerOpened_ReflectColor, colorPickerY_ReflectColor, DrawColorPickerWindow_ReflectColor, DrawColorPickerWindowOpenButton_ReflectColor, DrawColorPickerWindowCloseButton_ReflectColor);
                         }
@@ -265,7 +264,7 @@ namespace SevenBoldPencil.MaterialEditor
                 buttonHeight + mediumMargin + // back button
                 buttonHeight + bigMargin + // show/hide presets button
                 smallMargin + bigMargin + // separator
-                buttonHeight + smallMargin; // show/hide advanced settings
+                buttonHeight + mediumMargin; // show/hide advanced settings
 
             if (AreAdvancedSettingsOpened)
             {
@@ -303,10 +302,6 @@ namespace SevenBoldPencil.MaterialEditor
                     header +
                     buttonHeight + smallMargin + // compensate specular
                     buttonHeight + smallMargin + // specular compensation multiplier
-                    buttonHeight + smallMargin + // color
-                    buttonHeight + smallMargin + // color hue
-                    buttonHeight + smallMargin + // color saturation
-                    buttonHeight + smallMargin + // color value
                     buttonHeight + mediumMargin + // texture uv scale
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
@@ -654,9 +649,9 @@ namespace SevenBoldPencil.MaterialEditor
             y += buttonHeight + mediumMargin;
 
 
-            var sliderWidth = 224;
+            var sliderWidth = 224 + 12;
             var labelX = x;
-            var sliderX = labelX + nameWidth + smallMargin - 42;
+            var sliderX = labelX + nameWidth + smallMargin - 42 - 12;
             var valueX = sliderX + sliderWidth + smallMargin;
 
             {
@@ -668,17 +663,17 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 {
                     var buttonLabelX = x + buttonHeight + smallMargin + 7;
-                    GUI.Label(new Rect(buttonLabelX, y, boxWidth, buttonHeight), "Compensate for Texture Alpha = 1", CamoEditorStyle.LabelStyleName);
+                    GUI.Label(new Rect(buttonLabelX, y, boxWidth, buttonHeight), "Compensate missing specular map in alpha channel", CamoEditorStyle.LabelStyleName);
                 }
                 y += buttonHeight + smallMargin;
 
 
-                DrawSliderFloat(ref x, ref y, ref specularCompensationMultiplier, 0.01f, 1, "Compensation Multiplier:", 152, Plugin.ChangeSpecularCompensationMultiplier);
-                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, "Color:", Plugin.ChangeColor);
+                DrawSliderFloat(ref x, ref y, ref specularCompensationMultiplier, 0.01f, 1, "Compensation:", 96, Plugin.ChangeSpecularCompensationMultiplier);
             }
 
             if (AreAdvancedSettingsOpened)
             {
+                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, "Color:", Plugin.ChangeColor);
                 DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Plugin.ChangeDefVals);
                 DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Plugin.ChangeGlossness);
                 DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, "Specular Color:", Plugin.ChangeSpecColor);
