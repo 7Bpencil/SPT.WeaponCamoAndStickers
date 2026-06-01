@@ -758,16 +758,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             {
-                var sliderWidth = 120;
+                var sliderWidth = 120 + 70 - 14;
 
                 var labelX = bigMargin;
-                var sliderX = labelX + nameWidth + smallMargin - 42;
+                var sliderX = labelX + nameWidth + smallMargin - 42 - 70 + 14;
 
                 var hueY = bigMargin + hsCircleDiameter + bigMargin - 9;
                 var saturationY = hueY + buttonHeight + smallMargin;
                 var valueY = saturationY + buttonHeight + smallMargin;
 
-                GUI.Label(new Rect(labelX, hueY, nameWidth, buttonHeight), "Hue:", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, hueY, nameWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
                 var newHue = GUI.HorizontalSlider(new Rect(sliderX, hueY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.x, 0f, 1f);
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
@@ -775,7 +775,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
 
-                GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "Saturation:", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "S:", CamoEditorStyle.LabelStyleName);
                 var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, saturationY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.y, 0f, 1f);
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
@@ -783,7 +783,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
 
-                GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "Value:", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "V:", CamoEditorStyle.LabelStyleName);
                 var newValue = GUI.HorizontalSlider(new Rect(sliderX, valueY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.z, 0f, 1f);
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
