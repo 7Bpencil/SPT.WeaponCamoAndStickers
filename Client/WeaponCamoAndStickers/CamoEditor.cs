@@ -414,7 +414,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return (totalHeight, visibleHeight);
         }
 
-        public static void CalculateTexturesDirectoryHeight(ref int y, TexturesDirectory texturesDirectory, bool drawName = true)
+        private static void CalculateTexturesDirectoryHeight(ref int y, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -484,7 +484,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void DrawPresetsListUI(int windowID)
+        private void DrawPresetsListUI(int windowID)
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
@@ -583,7 +583,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			GUI.DragWindow();
         }
 
-        public void DrawDecalsListUI(int windowID)
+        private void DrawDecalsListUI(int windowID)
         {
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
@@ -1347,7 +1347,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void SetupTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
+        private void SetupTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             if (TransformHandle)
             {
@@ -1415,7 +1415,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
 
-        public void OnEndedDraggingHandle(int decalIndex, DecalInfo decalInfo, Decal decal)
+        private void OnEndedDraggingHandle(int decalIndex, DecalInfo decalInfo, Decal decal)
         {
             var handleType = TransformHandle.type;
 
@@ -1460,7 +1460,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void SyncTransformHandle(DecalInfo decalInfo, Decal decal)
+        private void SyncTransformHandle(DecalInfo decalInfo, Decal decal)
         {
             if (TransformHandle)
             {
@@ -1476,7 +1476,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void DestroyTransformHandle()
+        private void DestroyTransformHandle()
         {
             if (TransformHandle)
             {
@@ -1512,7 +1512,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             GUI.EndScrollView();
         }
 
-        public void DrawAllTextures(ref int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal, TexturesDirectory texturesDirectory, bool drawName = true)
+        private void DrawAllTextures(ref int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -1692,7 +1692,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DrawDecal(localToWorldMatrix, runtimeGizmos);
 		}
 
-        public void DrawDecal(in Matrix4x4 localToWorldMatrix, RuntimeGizmos runtimeGizmos)
+        private void DrawDecal(in Matrix4x4 localToWorldMatrix, RuntimeGizmos runtimeGizmos)
         {
 			// its easier to accurately place decal when
 			// its transform handle is located on the face

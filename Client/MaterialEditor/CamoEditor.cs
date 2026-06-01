@@ -789,7 +789,7 @@ namespace SevenBoldPencil.MaterialEditor
             GUI.EndScrollView();
         }
 
-        public void DrawAllTextures(ref int x, ref int y, string currentTextureName, TexturesDirectory texturesDirectory, bool drawName = true)
+        private void DrawAllTextures(ref int x, ref int y, string currentTextureName, TexturesDirectory texturesDirectory, bool drawName = true)
         {
             if (drawName)
             {
@@ -966,7 +966,7 @@ namespace SevenBoldPencil.MaterialEditor
             DrawColorPickerWindow_Common(ref materialInfo.ReflectColorHSV, Plugin.ChangeReflectColor);
         }
 
-        public void DrawColorPickerWindow_Common(ref Vector3 colorHSV, Action<string, string, Vector3> changeColorAction)
+        private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, Action<string, string, Vector3> changeColorAction)
         {
             DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
 
@@ -996,7 +996,7 @@ namespace SevenBoldPencil.MaterialEditor
             y += hsCircleDiameter + bigMargin;
         }
 
-        public void ForEveryLinkedItem(EditedOverride thisOverride, Action<CamoEditorItem, string> action)
+        private void ForEveryLinkedItem(EditedOverride thisOverride, Action<CamoEditorItem, string> action)
         {
             if (LinkedOverrides.Contains(thisOverride))
             {
@@ -1013,7 +1013,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        public void ForEveryLinkedItem<T>(Action<string, string, T> action, T value)
+        private void ForEveryLinkedItem<T>(Action<string, string, T> action, T value)
         {
             var thisOverride = CurrentlyEditedOverride.Value;
             if (LinkedOverrides.Contains(thisOverride))
