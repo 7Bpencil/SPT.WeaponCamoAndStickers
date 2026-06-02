@@ -950,7 +950,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var materials = itemsWithMaterials.MaterialsInfo.Materials;
                 if (materials.ContainsKey(materialName))
                 {
-                    Logger.Log(LogLevel.Warning, "OverrideMaterial", "Already overriden", itemId, instanceID, materialName);
+                    Logger.Log(LogLevel.Info, "OverrideMaterial", "Potential warning. Already overriden", itemId, instanceID, materialName);
                     return;
                 }
 
