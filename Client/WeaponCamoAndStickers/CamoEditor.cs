@@ -114,6 +114,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public GUIStyle TextureNameStyle;
         public GUIStyle LabelStyleValue;
         public GUIStyle TextFieldStyle;
+        public GUIStyle RGBHexTextFieldStyle;
 		public GUIStyle ColorPickerButtonStyle;
         public GUIStyle DirectoryButtonStyle;
 
@@ -142,6 +143,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 alignment = TextAnchor.MiddleLeft,
                 contentOffset = new Vector2(CamoEditor.mediumMargin, 0)
+            };
+
+            RGBHexTextFieldStyle = new(currentSkin.textField)
+            {
+                alignment = TextAnchor.MiddleCenter,
             };
 
 			ColorPickerButtonStyle = new GUIStyle()
@@ -196,12 +202,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public StringCache<float> ColorA = new(v => $"{v:F3}");
 
         public StringCache<float> MaxAngle = new(v => $"{v:F3}");
+
+        public StringCache<Vector4> ColorHex = new(ColorExtensions.HSVAtoHexRGB);
     }
 
     public enum DecalSettingType
     {
         Texture,
         Mask
+    }
+
+    public struct ColorTextField
+    {
+        public string Hex;
+        public bool IsValid;
     }
 
     public class CamoEditor
@@ -230,6 +244,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Vector2 StickersScrollPosition;
         public Vector2 MasksScrollPosition;
         public bool IsColorPickerOpened;
+        public ColorTextField ColorTextField;
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect;
@@ -684,8 +699,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private void SetCurrentlyEditedDecal(int decalIndex, DecalTextureType decalTextureType)
         {
+            var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+
+            // TODO
+            // these should be grouped together with decal index,
+            // so we dont forget to correctly init/clean those fields
+
             CurrentlyEditedDecalIndex = new(decalIndex);
             DecalTypeMenu = decalTextureType;
+            ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
+            ColorTextField.IsValid = true;
         }
 
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
@@ -797,6 +820,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
+                ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
+                ColorTextField.IsValid = true;
                 Plugin.ApplyColor(ItemId, decalIndex);
             }
 
@@ -805,32 +830,37 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 var labelX = bigMargin;
                 var sliderX = labelX + nameWidth + smallMargin - 42 - 70 + 14;
+                var y = bigMargin + hsCircleDiameter + bigMargin - 9;
 
-                var hueY = bigMargin + hsCircleDiameter + bigMargin - 9;
-                var saturationY = hueY + buttonHeight + smallMargin;
-                var valueY = saturationY + buttonHeight + smallMargin;
-
-                GUI.Label(new Rect(labelX, hueY, nameWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
-                var newHue = GUI.HorizontalSlider(new Rect(sliderX, hueY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.x, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
+                var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.x, 0f, 1f);
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
+                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
+                    ColorTextField.IsValid = true;
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
+                y += buttonHeight + smallMargin;
 
-                GUI.Label(new Rect(labelX, saturationY, nameWidth, buttonHeight), "S:", CamoEditorStyle.LabelStyleName);
-                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, saturationY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.y, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "S:", CamoEditorStyle.LabelStyleName);
+                var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.y, 0f, 1f);
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
+                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
+                    ColorTextField.IsValid = true;
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
+                y += buttonHeight + smallMargin;
 
-                GUI.Label(new Rect(labelX, valueY, nameWidth, buttonHeight), "V:", CamoEditorStyle.LabelStyleName);
-                var newValue = GUI.HorizontalSlider(new Rect(sliderX, valueY + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.z, 0f, 1f);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "V:", CamoEditorStyle.LabelStyleName);
+                var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), decalInfo.ColorHSVA.z, 0f, 1f);
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
+                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
+                    ColorTextField.IsValid = true;
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
             }
@@ -1151,6 +1181,31 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 valueX += longFieldWidth + smallMargin;
 
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.ColorV.Get(decalInfo.ColorHSVA.z), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                {
+                    var textFieldX = x + boxWidth - fourthBoxWidthButton;
+                    GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
+
+                    var previousBackgroundColor = GUI.backgroundColor;
+                    var buttonBackgroundColor = ColorTextField.IsValid ? previousBackgroundColor : Color.red;
+
+                    GUI.backgroundColor = buttonBackgroundColor;
+                    var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Hex, 7, CamoEditorStyle.RGBHexTextFieldStyle);
+                    GUI.backgroundColor = previousBackgroundColor;
+
+                    if (newColorHex != ColorTextField.Hex)
+                    {
+                        var newColorOption = ColorExtensions.HexRGBtoHSVA(newColorHex, decalInfo.ColorHSVA.w);
+                        if (newColorOption.Some(out var newColor))
+                        {
+                            decalInfo.ColorHSVA = newColor;
+                            Plugin.ApplyColor(ItemId, decalIndex);
+                        }
+                        ColorTextField.Hex = newColorHex;
+                        ColorTextField.IsValid = newColorOption.HasValue;
+                    }
+                }
             }
             y += buttonHeight + bigMargin;
 

@@ -19,6 +19,7 @@ using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorReso
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
 using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
+using ColorTextField = SevenBoldPencil.WeaponCamoAndStickers.ColorTextField;
 
 namespace SevenBoldPencil.MaterialEditor
 {
@@ -51,6 +52,10 @@ namespace SevenBoldPencil.MaterialEditor
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
+
+        public StringCache<Vector3> ColorHex = new(ColorExtensions.HSVtoHexRGB);
+        public StringCache<Vector3> SpecColorHex = new(ColorExtensions.HSVtoHexRGB);
+        public StringCache<Vector3> ReflectColorHex = new(ColorExtensions.HSVtoHexRGB);
 
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
     }
@@ -99,6 +104,9 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsColorPickerOpened_ReflectColor;
         public bool AreAdvancedSettingsOpened;
         public DecalTextureType DecalTypeMenu;
+        public ColorTextField TextField_Color;
+        public ColorTextField TextField_SpecColor;
+        public ColorTextField TextField_ReflectColor;
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
 		public Rect WindowRect;
@@ -137,9 +145,9 @@ namespace SevenBoldPencil.MaterialEditor
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly int colorPickerY_Color = 264;
-        public static readonly int colorPickerY_SpecColor = 516;
-        public static readonly int colorPickerY_ReflectColor = 768;
+        public static readonly int colorPickerY_Color = 253;
+        public static readonly int colorPickerY_SpecColor = 505;
+        public static readonly int colorPickerY_ReflectColor = 757;
         public static readonly int colorPickerSize = hsCircleDiameter + bigMargin * 2;
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
@@ -412,6 +420,18 @@ namespace SevenBoldPencil.MaterialEditor
                         thisOverride,
                         (item, materialName) => Plugin.OverrideMaterial(item.ItemWithMaterials, item.OriginalMaterials, item.ItemId, item.InstanceID, materialName)
                     );
+
+                    {
+                        // TODO make it smarter? also notice that we init text fields
+                        // after Plugin.OverrideMaterial, because they can be unintialized
+                        var (_, _, materialInfo, _) = GetEditedMaterialInfo();
+                        TextField_Color.Hex = Strings.ColorHex.Get(materialInfo.ColorHSV);
+                        TextField_Color.IsValid = true;
+                        TextField_SpecColor.Hex = Strings.SpecColorHex.Get(materialInfo.SpecColorHSV);
+                        TextField_SpecColor.IsValid = true;
+                        TextField_ReflectColor.Hex = Strings.ReflectColorHex.Get(materialInfo.ReflectColorHSV);
+                        TextField_ReflectColor.IsValid = true;
+                    }
                 }
 
                 if (isOverridenMaterial)
@@ -543,7 +563,7 @@ namespace SevenBoldPencil.MaterialEditor
 			GUI.DragWindow();
         }
 
-        private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, string name, ColorStringCache strings, Action<string, string, Vector3> action)
+        private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, ref ColorTextField textField, string name, ColorStringCache strings, ref StringCache<Vector3> colorHexString, Action<string, string, Vector3> action)
         {
             var labelWidth = 23;
             var nameDelta = labelWidth - (nameWidth - 42);
@@ -554,6 +574,33 @@ namespace SevenBoldPencil.MaterialEditor
 
             DrawColor(new Rect(labelX, y + 8, buttonHeight, buttonHeight / 2), colorHSV.HSVtoRGBA());
             GUI.Label(new Rect(labelX + buttonHeight + mediumMargin, y, boxWidth, buttonHeight), name, CamoEditorStyle.LabelStyleName);
+
+
+            {
+                var textFieldX = x + boxWidth - fourthBoxWidthButton;
+                GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
+
+                var previousBackgroundColor = GUI.backgroundColor;
+                var buttonBackgroundColor = textField.IsValid ? previousBackgroundColor : Color.red;
+
+                GUI.backgroundColor = buttonBackgroundColor;
+                var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), textField.Hex, 7, CamoEditorStyle.RGBHexTextFieldStyle);
+                GUI.backgroundColor = previousBackgroundColor;
+
+                if (newColorHex != textField.Hex)
+                {
+                    var newColorOption = ColorExtensions.HexRGBtoHSV(newColorHex);
+                    if (newColorOption.Some(out var newColor))
+                    {
+                        colorHSV = newColor;
+                        ForEveryLinkedItem(action, colorHSV);
+                    }
+                    textField.Hex = newColorHex;
+                    textField.IsValid = newColorOption.HasValue;
+                }
+            }
+
+
             y += buttonHeight + smallMargin;
 
             GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
@@ -561,6 +608,8 @@ namespace SevenBoldPencil.MaterialEditor
             if (newHue != colorHSV.x)
             {
                 colorHSV.x = newHue;
+                textField.Hex = colorHexString.Get(colorHSV);
+                textField.IsValid = true;
                 ForEveryLinkedItem(action, colorHSV);
             }
             GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.H.Get(colorHSV.x), CamoEditorStyle.LabelStyleValue);
@@ -572,6 +621,8 @@ namespace SevenBoldPencil.MaterialEditor
             if (newSaturation != colorHSV.y)
             {
                 colorHSV.y = newSaturation;
+                textField.Hex = colorHexString.Get(colorHSV);
+                textField.IsValid = true;
                 ForEveryLinkedItem(action, colorHSV);
             }
             GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.S.Get(colorHSV.y), CamoEditorStyle.LabelStyleValue);
@@ -583,6 +634,8 @@ namespace SevenBoldPencil.MaterialEditor
             if (newValue != colorHSV.z)
             {
                 colorHSV.z = newValue;
+                textField.Hex = colorHexString.Get(colorHSV);
+                textField.IsValid = true;
                 ForEveryLinkedItem(action, colorHSV);
             }
             GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.V.Get(colorHSV.z), CamoEditorStyle.LabelStyleValue);
@@ -707,13 +760,13 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (AreAdvancedSettingsOpened)
             {
-                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, "Color:", Strings.Color, Plugin.ChangeColor);
+                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, ref TextField_Color, "Color:", Strings.Color, ref Strings.ColorHex, Plugin.ChangeColor);
                 DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Strings.DefVals, Plugin.ChangeDefVals);
                 DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Strings.Glossness, Plugin.ChangeGlossness);
-                DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
+                DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, ref TextField_SpecColor, "Specular Color:", Strings.SpecColor, ref Strings.SpecColorHex, Plugin.ChangeSpecColor);
                 DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Strings.Specularness, Plugin.ChangeSpecularness);
                 DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Strings.SpecVals, Plugin.ChangeSpecVals);
-                DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
+                DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, ref TextField_ReflectColor, "Reflect Color:", Strings.ReflectColor, ref Strings.ReflectColorHex, Plugin.ChangeReflectColor);
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
@@ -980,22 +1033,22 @@ namespace SevenBoldPencil.MaterialEditor
         private void DrawColorPickerWindow_Color(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.ColorHSV, Plugin.ChangeColor);
+            DrawColorPickerWindow_Common(ref materialInfo.ColorHSV, ref TextField_Color, ref Strings.ColorHex, Plugin.ChangeColor);
         }
 
         private void DrawColorPickerWindow_SpecColor(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.SpecColorHSV, Plugin.ChangeSpecColor);
+            DrawColorPickerWindow_Common(ref materialInfo.SpecColorHSV, ref TextField_SpecColor, ref Strings.SpecColorHex, Plugin.ChangeSpecColor);
         }
 
         private void DrawColorPickerWindow_ReflectColor(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.ReflectColorHSV, Plugin.ChangeReflectColor);
+            DrawColorPickerWindow_Common(ref materialInfo.ReflectColorHSV, ref TextField_ReflectColor, ref Strings.ReflectColorHex, Plugin.ChangeReflectColor);
         }
 
-        private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, Action<string, string, Vector3> changeColorAction)
+        private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, ref ColorTextField textField, ref StringCache<Vector3> colorHexString, Action<string, string, Vector3> changeColorAction)
         {
             DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
 
@@ -1020,6 +1073,8 @@ namespace SevenBoldPencil.MaterialEditor
 
                 colorHSV.x = hue;
                 colorHSV.y = saturation;
+                textField.Hex = colorHexString.Get(colorHSV);
+                textField.IsValid = true;
                 ForEveryLinkedItem(changeColorAction, colorHSV);
             }
             y += hsCircleDiameter + bigMargin;
