@@ -172,6 +172,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static ConfigEntry<int> GoonsWeaponCamoSpawnChance;
         public static ConfigEntry<int> PMCWeaponCamoSpawnChance;
         public static ConfigEntry<int> OtherBossesWeaponCamoSpawnChance;
+        public static ConfigEntry<int> ScavsWeaponCamoSpawnChance;
 
 		public ManualLogSource LoggerInstance;
 
@@ -228,6 +229,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             GoonsWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Goons", 100, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
             PMCWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | PMC", 33, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
             OtherBossesWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Other Bosses", 50, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
+            ScavsWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Scavs", 0, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             TexturesDir = Path.Combine(assemblyDir, "textures");
@@ -2371,6 +2373,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             switch (botRole)
             {
+                case WildSpawnType.marksman:
+                case WildSpawnType.assault:
+                case WildSpawnType.assaultGroup:
+                    return ScavsWeaponCamoSpawnChance.Value;
                 case WildSpawnType.bossKnight:
                 case WildSpawnType.followerBigPipe:
                 case WildSpawnType.followerBirdEye:
@@ -2385,7 +2391,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return OtherBossesWeaponCamoSpawnChance.Value;
 			}
 
-            // TODO we can give scavs dirty/rusty camos
             return 0;
         }
 
