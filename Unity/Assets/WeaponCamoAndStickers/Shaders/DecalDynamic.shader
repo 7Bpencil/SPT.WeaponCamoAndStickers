@@ -88,8 +88,8 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             sampler2D _MaskTex;
 
             float _AspectRatio;
-            float4 _MainTexRotation;
-            float4 _MaskTexRotation;
+            float2 _MainTexRotation;
+            float2 _MaskTexRotation;
 
 			float2 rotate(float2 vec, float2 rot)
 			{
@@ -128,7 +128,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 				clip(dot(normal, objectAxisY));
 
 				float2 uvY = localPosition.xz;
-                float2 maskUV = transformUV(uvY, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
+                float2 maskUV = transformUV(uvY, _MaskTexRotation, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
                 float maskAlpha = tex2D(_MaskTex, maskUV).a;
 
 				clip(maskAlpha - _MaxAngle);
@@ -138,8 +138,8 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
 				clip(dot(normal, objectAxisY) - _MaxAngle);
 
 				float2 uvY = localPosition.xz;
-                float2 mainUV = transformUV(uvY, _MainTexRotation.xy, _MainTexUV.xy, _MainTexUV.zw, _AspectRatio);
-                float2 maskUV = transformUV(uvY, _MaskTexRotation.xy, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
+                float2 mainUV = transformUV(uvY, _MainTexRotation, _MainTexUV.xy, _MainTexUV.zw, _AspectRatio);
+                float2 maskUV = transformUV(uvY, _MaskTexRotation, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
 
                 float4 visibleColor = tex2D(_MainTex, mainUV) * tex2D(_MaskTex, maskUV) * _Color;
 
