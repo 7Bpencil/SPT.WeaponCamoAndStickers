@@ -159,6 +159,45 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
     }
 
+    public class DecalStringCache
+    {
+        public StringCache<float> LocalPositionX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalPositionY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalPositionZ = new(v => $"Z: {v:F3}");
+
+        public StringCache<float> LocalEulerAnglesX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalEulerAnglesY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalEulerAnglesZ = new(v => $"Z: {v:F3}");
+
+        public StringCache<float> LocalScaleX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalScaleY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalScaleZ = new(v => $"Z: {v:F3}");
+
+        public StringCache<float> TextureUVx = new(v => $"X: {v:F3}");
+        public StringCache<float> TextureUVy = new(v => $"Y: {v:F3}");
+
+        public StringCache<float> TextureAngle = new(v => $"X: {v:F3}");
+
+        public StringCache<float> TextureUVz = new(v => $"X: {v:F3}");
+        public StringCache<float> TextureUVw = new(v => $"Y: {v:F3}");
+
+        public StringCache<float> MaskUVx = new(v => $"X: {v:F3}");
+        public StringCache<float> MaskUVy = new(v => $"Y: {v:F3}");
+
+        public StringCache<float> MaskAngle = new(v => $"X: {v:F3}");
+
+        public StringCache<float> MaskUVz = new(v => $"X: {v:F3}");
+        public StringCache<float> MaskUVw = new(v => $"Y: {v:F3}");
+
+        public StringCache<float> ColorH = new(v => $"H: {v:F3}");
+        public StringCache<float> ColorS = new(v => $"S: {v:F3}");
+        public StringCache<float> ColorV = new(v => $"V: {v:F3}");
+
+        public StringCache<float> ColorA = new(v => $"{v:F3}");
+
+        public StringCache<float> MaxAngle = new(v => $"{v:F3}");
+    }
+
     public enum DecalSettingType
     {
         Texture,
@@ -170,6 +209,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Plugin Plugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
+        public DecalStringCache Strings;
         public Camera Camera;
         public RuntimeGizmos RuntimeGizmos;
         public string ItemId;
@@ -935,13 +975,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localPosition.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionX.Get(decal.DecalTransform.localPosition.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localPosition.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionY.Get(decal.DecalTransform.localPosition.y), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localPosition.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionZ.Get(decal.DecalTransform.localPosition.z), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "mirror left/right"))
             {
@@ -958,13 +998,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localEulerAngles.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesX.Get(decal.DecalTransform.localEulerAngles.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localEulerAngles.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesY.Get(decal.DecalTransform.localEulerAngles.y), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localEulerAngles.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesZ.Get(decal.DecalTransform.localEulerAngles.z), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, sixthBoxWidthButton, buttonHeight), "round"))
             {
@@ -985,13 +1025,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decal.DecalTransform.localScale.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleX.Get(decal.DecalTransform.localScale.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decal.DecalTransform.localScale.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleY.Get(decal.DecalTransform.localScale.y), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Z: {decal.DecalTransform.localScale.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleZ.Get(decal.DecalTransform.localScale.z), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "fix scale"))
             {
@@ -1036,10 +1076,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVx.Get(decalInfo.TextureUV.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(decalInfo.TextureUV.y), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1055,7 +1095,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureAngle:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureAngle.Get(decalInfo.TextureAngle), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1071,10 +1111,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.TextureUV.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVz.Get(decalInfo.TextureUV.z), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.TextureUV.w:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVw.Get(decalInfo.TextureUV.w), CamoEditorStyle.LabelStyleName);
             }
             {
                 var valueX = x + boxWidth - halfBoxWidthButton;
@@ -1104,13 +1144,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"H: {decalInfo.ColorHSVA.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.ColorH.Get(decalInfo.ColorHSVA.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"S: {decalInfo.ColorHSVA.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.ColorS.Get(decalInfo.ColorHSVA.y), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"V: {decalInfo.ColorHSVA.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.ColorV.Get(decalInfo.ColorHSVA.z), CamoEditorStyle.LabelStyleName);
             }
             y += buttonHeight + bigMargin;
 
@@ -1133,7 +1173,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.ColorHSVA.w = newAlpha;
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
-                GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), $"{decalInfo.ColorHSVA.w:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, opacityY, longFieldWidth, buttonHeight), Strings.ColorA.Get(decalInfo.ColorHSVA.w), CamoEditorStyle.LabelStyleValue);
 
 
                 GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "Max Angle:", CamoEditorStyle.LabelStyleName);
@@ -1143,7 +1183,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.MaxAngle = newMaxAngle;
                     Plugin.ApplyMaxAngle(ItemId, decalIndex);
                 }
-                GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, maxAngleY, longFieldWidth, buttonHeight), Strings.MaxAngle.Get(decalInfo.MaxAngle), CamoEditorStyle.LabelStyleValue);
 
 
                 y = maxAngleY + buttonHeight + bigMargin;
@@ -1178,10 +1218,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVx.Get(decalInfo.MaskUV.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVy.Get(decalInfo.MaskUV.y), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1197,7 +1237,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskAngle.Get(decalInfo.MaskAngle), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1213,10 +1253,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVz.Get(decalInfo.MaskUV.z), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVw.Get(decalInfo.MaskUV.w), CamoEditorStyle.LabelStyleName);
             }
             {
                 var valueX = x + boxWidth - halfBoxWidthButton;
@@ -1254,10 +1294,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.x:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVx.Get(decalInfo.MaskUV.x), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.y:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVy.Get(decalInfo.MaskUV.y), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1273,7 +1313,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskAngle:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskAngle.Get(decalInfo.MaskAngle), CamoEditorStyle.LabelStyleName);
             }
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
@@ -1289,10 +1329,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"X: {decalInfo.MaskUV.z:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVz.Get(decalInfo.MaskUV.z), CamoEditorStyle.LabelStyleName);
                 valueX += longFieldWidth + smallMargin;
 
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"Y: {decalInfo.MaskUV.w:F3}", CamoEditorStyle.LabelStyleName);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaskUVw.Get(decalInfo.MaskUV.w), CamoEditorStyle.LabelStyleName);
             }
             {
                 var valueX = x + boxWidth - halfBoxWidthButton;
@@ -1318,7 +1358,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.MaxAngle = newMaxAngle;
                     Plugin.ApplyMaxAngle(ItemId, decalIndex);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{decalInfo.MaxAngle:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.MaxAngle.Get(decalInfo.MaxAngle), CamoEditorStyle.LabelStyleValue);
 
                 y += buttonHeight + bigMargin;
             }

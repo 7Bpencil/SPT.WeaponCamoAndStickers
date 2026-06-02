@@ -2033,6 +2033,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 Plugin = this,
                 CamoEditorResources = CamoEditorResources,
+                Strings = new DecalStringCache(),
                 Camera = editorCamera,
                 RuntimeGizmos = runtimeGizmos,
                 ItemId = itemId,
