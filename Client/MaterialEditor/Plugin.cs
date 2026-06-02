@@ -248,7 +248,7 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 else
                 {
-                    Logger.LogError($"Failed to load preset: {presetName}, error: {e}");
+                    Logger.Log(LogLevel.Error, "Preset", "Failed to load from disk", presetName, e);
                 }
             }
 
@@ -282,7 +282,7 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 else
                 {
-                    Logger.LogError($"Failed to load item: {itemId}, error: {e}");
+                    Logger.Log(LogLevel.Error, "Item", "Failed to load from disk", itemId, e);
                 }
             }
 
@@ -325,18 +325,17 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 if (existingItemId == itemId)
                 {
-                    // yes, this does happen, for instance when player reloads his weapon (why?)
-                    Logger.LogWarning($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, already loading?");
+                    Logger.Log(LogLevel.Info, "Item", "Potential warning, already loading (ignore if happened on weapon reload)", itemId, item.Prefab.path);
                 }
                 else
                 {
-                    Logger.LogError($"OnCreateItemAsync: {itemId} | {item.Prefab.path}, collision with {existingItemId}!");
+                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItemId, item.Prefab.path);
                 }
             }
             else
             {
                 ResourceKeyToItem.Add(item.Prefab, itemId);
-                Logger.LogInfo($"OnCreateItemAsync: {itemId} | {item.Prefab.path}");
+                Logger.Log(LogLevel.Info, "Item", "Loading", itemId, item.Prefab.path);
             }
         }
 
@@ -349,7 +348,7 @@ namespace SevenBoldPencil.MaterialEditor
                     var instanceID = itemGameObject.GetInstanceID();
                     if (itemsWithMaterials.Items.ContainsKey(instanceID))
                     {
-            			Logger.LogError($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, already added?");
+            			Logger.Log(LogLevel.Error, "Item", "Already added", itemId, itemPrefab.path, instanceID);
                         return;
                     }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
@@ -358,11 +357,11 @@ namespace SevenBoldPencil.MaterialEditor
                         PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
                         itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
                         InstanceIdToItemId.Add(instanceID, itemId);
-            			Logger.LogInfo($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}");
+            			Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, itemPrefab.path, instanceID);
                     }
                     else
                     {
-            			Logger.LogError($"OnCreatedItemGameObject: {itemId} | {itemPrefab.path} | {instanceID}, no AssetPoolObject?");
+            			Logger.Log(LogLevel.Error, "Item", "No AssetPoolObject", itemId, itemPrefab.path, instanceID);
                     }
                 }
             }
@@ -434,7 +433,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             if (!material)
             {
-                Logger.LogWarning("this item has null material!");
+                Logger.Log(LogLevel.Warning, "Item has null material");
                 return false;
             }
 
@@ -514,11 +513,11 @@ namespace SevenBoldPencil.MaterialEditor
                 if (item.Materials.TryGetValue(materialName, out var targetMaterial))
                 {
                     ApplyAllOverrides(targetMaterial, materialInfo);
-                    Logger.LogInfo($"Patch: {materialName} | {targetMaterial.Renderers.Count}");
+                    Logger.Log(LogLevel.Info, "Patch", materialName, targetMaterial.Renderers.Count);
                 }
                 else
                 {
-                    Logger.LogError($"Patch: {materialName}, failure");
+                    Logger.Log(LogLevel.Error, "Patch", "Failure", materialName);
                 }
             }
         }
@@ -538,13 +537,13 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
-    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered item?");
+    			Logger.Log(LogLevel.Error, "Item", "Tried to destroy not registered item", itemId, instanceID);
                 return;
             }
 
             if (!itemsWithMaterials.Items.Remove(instanceID, out var itemWithMaterials))
             {
-    			Logger.LogError($"OnItemDestroyed: {itemId} | {instanceID}, not registered clone?");
+    			Logger.Log(LogLevel.Error, "Item", "Tried to destroy not registered clone", itemId, instanceID);
                 return;
             }
 
@@ -553,7 +552,7 @@ namespace SevenBoldPencil.MaterialEditor
                 ResetMaterial(itemWithMaterials, materialName, materialInfo);
             }
 
-			Logger.LogInfo($"OnItemDestroyed: {itemId} | {instanceID}");
+			Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
         }
 
         public bool IsPatchedRenderer(Renderer renderer)
@@ -564,7 +563,7 @@ namespace SevenBoldPencil.MaterialEditor
         public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject)
         {
             var itemId = GetOriginalItemId(item.Id);
-			Logger.LogInfo($"OnWeaponPreviewOpened: {itemId}");
+			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
 				SetupCamoEditor(item, assetPoolObject);
@@ -632,7 +631,7 @@ namespace SevenBoldPencil.MaterialEditor
             var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, assetPoolObject);
             var originalMaterials = GetOriginalMaterials(assetPoolObject);
 
-            Logger.LogInfo($"SetupCamoEditor: {itemId}");
+            Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
 
             return new()
             {
@@ -667,7 +666,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var instanceID = skin.gameObject.GetInstanceID();
                 if (itemsWithMaterials.Items.ContainsKey(instanceID))
                 {
-        			Logger.LogError($"OnSkinCreated: {itemId} | {instanceID}, already added?");
+        			Logger.Log(LogLevel.Error, "Skin", "Already created", itemId, instanceID);
                     return;
                 }
 
@@ -675,7 +674,7 @@ namespace SevenBoldPencil.MaterialEditor
                 PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
                 itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
                 InstanceIdToItemId.Add(instanceID, itemId);
-    			Logger.LogInfo($"OnSkinCreated: {itemId} | {instanceID}");
+    			Logger.Log(LogLevel.Info, "Skin", "Created", itemId, instanceID);
             }
         }
 
@@ -748,7 +747,7 @@ namespace SevenBoldPencil.MaterialEditor
             var itemWithMaterials = GetOrBuildItemWithMaterials(itemId, instanceID, skin);
             var originalMaterials = GetOriginalMaterials(skin);
 
-            Logger.LogInfo($"SetupCamoEditor: {itemId}");
+            Logger.Log(LogLevel.Info, "CamoEditor", "Setup item", itemId);
 
             return new()
             {
@@ -819,7 +818,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (!CamoEditor.Some(out var camoEditor))
             {
-                Logger.LogWarning($"CloseCamoEditor: tried to close uninitialized decal editor");
+                Logger.Log(LogLevel.Info, "CamoEditor", "Potential warning. Tried to close uninitialized decal editor");
                 return;
             }
 
@@ -832,13 +831,13 @@ namespace SevenBoldPencil.MaterialEditor
                         ItemsWithMaterials.Remove(item.ItemId);
                         InstanceIdToItemId.Remove(item.InstanceID);
                         RemoveMaterialsFile(item.ItemId);
-                        Logger.LogInfo($"CloseCamoEditor: {item.ItemId} remove materials");
+                        Logger.Log(LogLevel.Info, "CamoEditor", "Remove materials", item.ItemId);
                     }
                     else
                     {
                         materialsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                         WriteMaterialsToFile(item.ItemId, materialsInfo);
-                        Logger.LogInfo($"CloseCamoEditor: {item.ItemId} rewrite materials");
+                        Logger.Log(LogLevel.Info, "CamoEditor", "Rewrite materials", item.ItemId);
                     }
                 }
             }
@@ -939,7 +938,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             if (!originalMaterials.TryGetValue(materialName, out var originalMaterial))
             {
-                Logger.LogError($"OverrideMaterial: {itemId} {instanceID} {materialName}, no original material?");
+                Logger.Log(LogLevel.Error, "OverrideMaterial", "No original material", itemId, instanceID, materialName);
                 return;
             }
 
@@ -949,7 +948,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var materials = itemsWithMaterials.MaterialsInfo.Materials;
                 if (materials.ContainsKey(materialName))
                 {
-                    Logger.LogWarning($"OverrideMaterial: {itemId} {instanceID} {materialName}, already overriden");
+                    Logger.Log(LogLevel.Warning, "OverrideMaterial", "Already overriden", itemId, instanceID, materialName);
                     return;
                 }
 
@@ -1232,16 +1231,16 @@ namespace SevenBoldPencil.MaterialEditor
                 if (originalId == cloneId)
                 {
                     // yes, it does happen a lot, no idea why
-                    Logger.LogWarning($"OneCloneItem: {originalId} same id");
+                    Logger.Log(LogLevel.Warning, "Clone", "Same Id", originalId);
                     return;
                 }
                 if (Clones.TryAdd(cloneId, originalId))
                 {
-                    Logger.LogInfo($"OnCloneItem: original: {originalId}, clone: {cloneId}, clones recorded: {Clones.Count}");
+                    Logger.Log(LogLevel.Info, "Clone", "Added", originalId, cloneId);
                 }
                 else
                 {
-                    Logger.LogError($"OnCloneItem: original: {originalId}, clone: {cloneId}, already added???");
+                    Logger.Log(LogLevel.Error, "Clone", "Already added", originalId, cloneId);
                 }
             }
         }
@@ -1404,7 +1403,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             if (remoteMaterialsInfo.Materials.Count == 0)
             {
-                Logger.LogWarning($"IngestRemoteMaterials: {itemId} has no materials, but was replicated?");
+                Logger.Log(LogLevel.Warning, "RemoteMaterials", "Has no materials, but was replicated", itemId);
                 return;
             }
 
@@ -1416,13 +1415,13 @@ namespace SevenBoldPencil.MaterialEditor
                 var materialsInfo = itemsWithMaterials.MaterialsInfo;
                 if (materialsInfo.SaveTime >= remoteMaterialsInfo.SaveTime)
                 {
-                    Logger.LogInfo($"IngestRemoteMaterials: {itemId}, mine is newer");
+                    Logger.Log(LogLevel.Info, "RemoteMaterials", "Mine is newer", itemId);
                     return;
                 }
 
                 CopyMaterialsInfo(remoteMaterialsInfo, materialsInfo);
                 WriteMaterialsToFile(itemId, materialsInfo);
-                Logger.LogInfo($"IngestRemoteMaterials: {itemId}, his is newer, already spawned count: {itemsWithMaterials.Items.Count}");
+                Logger.Log(LogLevel.Info, "RemoteMaterials", "His is newer", itemId, itemsWithMaterials.Items.Count);
             }
             else
             {
@@ -1435,7 +1434,7 @@ namespace SevenBoldPencil.MaterialEditor
 
                 ItemsWithMaterials.Add(itemId, itemsWithMaterials);
                 WriteMaterialsToFile(itemId, materialsInfo);
-                Logger.LogInfo($"IngestRemoteMaterials: {itemId}, new");
+                Logger.Log(LogLevel.Info, "RemoteMaterials", "New", itemId);
             }
         }
 
