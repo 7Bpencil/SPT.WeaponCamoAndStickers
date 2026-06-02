@@ -22,6 +22,39 @@ using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFor
 
 namespace SevenBoldPencil.MaterialEditor
 {
+    public class ColorStringCache
+    {
+        public StringCache<float> H = new(MaterialStringCache.SimpleFloatFormat);
+        public StringCache<float> S = new(MaterialStringCache.SimpleFloatFormat);
+        public StringCache<float> V = new(MaterialStringCache.SimpleFloatFormat);
+    }
+
+    public class Vector2StringCache
+    {
+        public StringCache<float> X = new(MaterialStringCache.SimpleFloatFormat);
+        public StringCache<float> Y = new(MaterialStringCache.SimpleFloatFormat);
+    }
+
+    public class MaterialStringCache
+    {
+        public ColorStringCache Color = new();
+        public ColorStringCache SpecColor = new();
+        public ColorStringCache ReflectColor = new();
+
+        public StringCache<float> SpecularCompensation = new(SimpleFloatFormat);
+        public StringCache<float> Glossness = new(SimpleFloatFormat);
+        public StringCache<float> Specularness = new(SimpleFloatFormat);
+
+        public Vector2StringCache DefVals = new();
+        public Vector2StringCache SpecVals = new();
+
+        public StringCache<float> TextureUVx = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVy = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
+
+        public static string SimpleFloatFormat(float v) => $"{v:F3}";
+    }
+
     public class CamoEditorItem
     {
         public string Name;
@@ -51,6 +84,7 @@ namespace SevenBoldPencil.MaterialEditor
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
+        public MaterialStringCache Strings;
         public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
@@ -509,7 +543,7 @@ namespace SevenBoldPencil.MaterialEditor
 			GUI.DragWindow();
         }
 
-        private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, string name, Action<string, string, Vector3> action)
+        private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, string name, ColorStringCache strings, Action<string, string, Vector3> action)
         {
             var labelWidth = 23;
             var nameDelta = labelWidth - (nameWidth - 42);
@@ -529,7 +563,7 @@ namespace SevenBoldPencil.MaterialEditor
                 colorHSV.x = newHue;
                 ForEveryLinkedItem(action, colorHSV);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.x:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.H.Get(colorHSV.x), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
 
 
@@ -540,7 +574,7 @@ namespace SevenBoldPencil.MaterialEditor
                 colorHSV.y = newSaturation;
                 ForEveryLinkedItem(action, colorHSV);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.y:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.S.Get(colorHSV.y), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
 
 
@@ -551,11 +585,11 @@ namespace SevenBoldPencil.MaterialEditor
                 colorHSV.z = newValue;
                 ForEveryLinkedItem(action, colorHSV);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{colorHSV.z:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.V.Get(colorHSV.z), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
         }
 
-        private void DrawSliderFloat(ref int x, ref int y, ref float value, float left, float right, string name, int labelWidth, Action<string, string, float> action)
+        private void DrawSliderFloat(ref int x, ref int y, ref float value, float left, float right, string name, int labelWidth, StringCache<float> strings, Action<string, string, float> action)
         {
             var nameDelta = labelWidth - (nameWidth - 42);
             var sliderWidth = 224 - nameDelta;
@@ -570,11 +604,11 @@ namespace SevenBoldPencil.MaterialEditor
                 value = newValue;
                 ForEveryLinkedItem(action, value);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{value:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.Get(value), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
         }
 
-        private void DrawSliderVector2(ref int x, ref int y, ref Vector2 value, float left, float right, string nameX, string nameY, int labelWidth, Action<string, string, Vector2> action)
+        private void DrawSliderVector2(ref int x, ref int y, ref Vector2 value, float left, float right, string nameX, string nameY, int labelWidth, Vector2StringCache strings, Action<string, string, Vector2> action)
         {
             var nameDelta = labelWidth - (nameWidth - 42);
             var sliderWidth = 224 - nameDelta;
@@ -589,7 +623,7 @@ namespace SevenBoldPencil.MaterialEditor
                 value.x = newValueX;
                 ForEveryLinkedItem(action, value);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{value.x:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.X.Get(value.x), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
 
 
@@ -600,7 +634,7 @@ namespace SevenBoldPencil.MaterialEditor
                 value.y = newValueY;
                 ForEveryLinkedItem(action, value);
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{value.y:F3}", CamoEditorStyle.LabelStyleValue);
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.Y.Get(value.y), CamoEditorStyle.LabelStyleValue);
             y += buttonHeight + smallMargin;
         }
 
@@ -668,18 +702,18 @@ namespace SevenBoldPencil.MaterialEditor
                 y += buttonHeight + smallMargin;
 
 
-                DrawSliderFloat(ref x, ref y, ref specularCompensationMultiplier, 0.01f, 1, "Compensation:", 96, Plugin.ChangeSpecularCompensationMultiplier);
+                DrawSliderFloat(ref x, ref y, ref specularCompensationMultiplier, 0.01f, 1, "Compensation:", 96, Strings.SpecularCompensation, Plugin.ChangeSpecularCompensationMultiplier);
             }
 
             if (AreAdvancedSettingsOpened)
             {
-                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, "Color:", Plugin.ChangeColor);
-                DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Plugin.ChangeDefVals);
-                DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Plugin.ChangeGlossness);
-                DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, "Specular Color:", Plugin.ChangeSpecColor);
-                DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Plugin.ChangeSpecularness);
-                DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Plugin.ChangeSpecVals);
-                DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, "Reflect Color:", Plugin.ChangeReflectColor);
+                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, "Color:", Strings.Color, Plugin.ChangeColor);
+                DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Strings.DefVals, Plugin.ChangeDefVals);
+                DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Strings.Glossness, Plugin.ChangeGlossness);
+                DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
+                DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Strings.Specularness, Plugin.ChangeSpecularness);
+                DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Strings.SpecVals, Plugin.ChangeSpecVals);
+                DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
@@ -689,7 +723,7 @@ namespace SevenBoldPencil.MaterialEditor
                     textureUV.z = newUVz;
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.z:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVx.Get(textureUV.z), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 
@@ -700,7 +734,7 @@ namespace SevenBoldPencil.MaterialEditor
                     textureUV.w = newUVw;
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.w:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
             }
 
@@ -714,7 +748,7 @@ namespace SevenBoldPencil.MaterialEditor
                     textureUV.y = newUVx;
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), $"{textureUV.x:F3}", CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + mediumMargin;
             }
 
