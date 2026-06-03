@@ -41,11 +41,18 @@ namespace SevenBoldPencil.MaterialEditor.Fika
 
         private static void SerializeMaterialInfo(NetDataWriter writer, MaterialInfo d)
         {
+            writer.Put(d.SchemaVersion);
+            writer.PutUnmanaged<Vector3>(d.ColorHSV);
+            writer.PutUnmanaged<Vector3>(d.SpecColorHSV);
+    		writer.Put(d.Glossness);
+    		writer.Put(d.Specularness);
+            writer.PutUnmanaged<Vector3>(d.ReflectColorHSV);
             writer.Put(d.Texture);
             writer.PutUnmanaged<Vector4>(d.TextureUV);
-            writer.PutUnmanaged<Vector3>(d.ColorHSV);
-            writer.Put(d.Glossness);
-            writer.Put(d.Specularness);
+            writer.PutUnmanaged<Vector2>(d.SpecVals);
+            writer.PutUnmanaged<Vector2>(d.DefVals);
+            writer.Put(d.CompensateSpecular);
+            writer.Put(d.SpecularCompensationMultiplier);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -57,12 +64,12 @@ namespace SevenBoldPencil.MaterialEditor.Fika
             for (var i = 0; i < itemCount; i++)
             {
                 var itemId = reader.GetString();
-                var materialsInfo = DeserializeDecalInfo(reader);
+                var materialsInfo = DeserializeMaterialsInfo(reader);
                 Items.Add(itemId, materialsInfo);
             }
         }
 
-        private static MaterialsInfo DeserializeDecalInfo(NetDataReader reader)
+        private static MaterialsInfo DeserializeMaterialsInfo(NetDataReader reader)
         {
             var schemaVersion = reader.GetInt();
             var saveTime = reader.GetLong();
@@ -88,11 +95,18 @@ namespace SevenBoldPencil.MaterialEditor.Fika
         {
             return new()
             {
+                SchemaVersion = reader.GetInt(),
+                ColorHSV = reader.GetUnmanaged<Vector3>(),
+                SpecColorHSV = reader.GetUnmanaged<Vector3>(),
+        		Glossness = reader.GetFloat(),
+        		Specularness = reader.GetFloat(),
+                ReflectColorHSV = reader.GetUnmanaged<Vector3>(),
                 Texture = reader.GetString(),
                 TextureUV = reader.GetUnmanaged<Vector4>(),
-                ColorHSV = reader.GetUnmanaged<Vector3>(),
-                Glossness = reader.GetFloat(),
-                Specularness = reader.GetFloat(),
+                SpecVals = reader.GetUnmanaged<Vector2>(),
+                DefVals = reader.GetUnmanaged<Vector2>(),
+                CompensateSpecular = reader.GetBool(),
+                SpecularCompensationMultiplier = reader.GetFloat(),
             };
         }
 
