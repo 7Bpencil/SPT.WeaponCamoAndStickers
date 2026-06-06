@@ -98,20 +98,20 @@ namespace SevenBoldPencil.MaterialEditor
 			{
 				return;
 			}
-			if (SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
+			if (WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
 			{
 				return;
 			}
 
-			var __result__ = new SevenBoldPencil.WeaponCamoAndStickers.ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
+			var __result__ = new WeaponCamoAndStickers.ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
 			var interactions = __result__.Dictionary_0;
 			var item = itemContext.Item;
 
 			var key = "CHANGE MATERIAL";
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
-	        interactions[key] = new SevenBoldPencil.WeaponCamoAndStickers.Custom_DynamicInteractionClass(item.Id, key, () => OpenChangeMaterialWindow(__result), icon)
+	        interactions[key] = new WeaponCamoAndStickers.Custom_DynamicInteractionClass(item.Id, key, () => OpenChangeMaterialWindow(__result), icon)
 			{
-				NonInteractiveTooltip = SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.GetRequiresBenchTooltip(),
+				NonInteractiveTooltip = WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.GetRequiresBenchTooltip(),
 			};
 	    }
 
@@ -276,7 +276,7 @@ namespace SevenBoldPencil.MaterialEditor
 		{
 			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
 			{
-				__result ^= SevenBoldPencil.WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime);
+				__result ^= WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime);
 			}
 		}
 	}
@@ -293,7 +293,7 @@ namespace SevenBoldPencil.MaterialEditor
 		{
 			if (Plugin.Instance.GetMaterialsInfo(item.Id).Some(out var materialsInfo) && materialsInfo.Materials.Count > 0)
 			{
-				__result ^= SevenBoldPencil.WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime) / 2;
+				__result ^= WeaponCamoAndStickers.Patch_GClass928_GetItemHash.GetSaveTimeInt(materialsInfo.SaveTime) / 2;
 			}
 		}
 	}
@@ -455,7 +455,7 @@ namespace SevenBoldPencil.MaterialEditor
         [PatchPostfix]
         public static void Postfix(PlayerModelView __instance)
 		{
-			if (SevenBoldPencil.WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
+			if (WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
 			{
 				return;
 			}
