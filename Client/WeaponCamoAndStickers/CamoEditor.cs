@@ -223,7 +223,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Plugin Plugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
-        public DecalStringCache Strings;
+        public DecalStringCache Strings = new();
         public Camera Camera;
         public RuntimeGizmos RuntimeGizmos;
         public string ItemId;
@@ -233,7 +233,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public float PreviewPivotZ;
         public bool IsOpened;
         public bool ArePresetsOpened;
-        public string CurrentPresetName;
+        public string CurrentPresetName = "";
         public bool IsCurrentPresetNameValid;
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
@@ -247,7 +247,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public ColorTextField ColorTextField;
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
-		public Rect WindowRect;
+		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
 

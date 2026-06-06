@@ -2033,7 +2033,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 Plugin = this,
                 CamoEditorResources = CamoEditorResources,
-                Strings = new DecalStringCache(),
                 Camera = editorCamera,
                 RuntimeGizmos = runtimeGizmos,
                 ItemId = itemId,
@@ -2041,11 +2040,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 WeaponPrefab = weaponPrefab,
                 WeaponPreviewRotator = rotator,
                 PreviewPivotZ = previewPivot.pivotPosition.z,
-                IsOpened = false,
-                IsColorPickerOpened = false,
-                CurrentPresetName = "",
-                IsCurrentPresetNameValid = false,
-                WindowRect = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect()
             });
         }
 

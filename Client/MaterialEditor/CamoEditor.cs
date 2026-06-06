@@ -89,27 +89,27 @@ namespace SevenBoldPencil.MaterialEditor
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
-        public MaterialStringCache Strings;
+        public MaterialStringCache Strings = new();
         public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
-        public string CurrentPresetName;
+        public string CurrentPresetName = "";
         public bool IsCurrentPresetNameValid;
         public Vector2 PresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
         public Option<EditedOverride> CurrentlyEditedOverride;
-        public HashSet<EditedOverride> LinkedOverrides;
+        public HashSet<EditedOverride> LinkedOverrides = new();
         public bool IsColorPickerOpened_Color;
         public bool IsColorPickerOpened_SpecColor;
         public bool IsColorPickerOpened_ReflectColor;
         public bool AreAdvancedSettingsOpened;
-        public DecalTextureType DecalTypeMenu;
+        public DecalTextureType DecalTypeMenu = DecalTextureType.Camo;
         public ColorTextField TextField_Color;
         public ColorTextField TextField_SpecColor;
         public ColorTextField TextField_ReflectColor;
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
-		public Rect WindowRect;
+		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
 

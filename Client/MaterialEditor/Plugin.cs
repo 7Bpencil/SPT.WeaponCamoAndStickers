@@ -578,15 +578,7 @@ namespace SevenBoldPencil.MaterialEditor
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
-                Strings = new MaterialStringCache(),
                 Items = items,
-                IsOpened = false,
-                CurrentPresetName = "",
-                IsCurrentPresetNameValid = false,
-                CurrentlyEditedOverride = default,
-                LinkedOverrides = new(),
-                DecalTypeMenu = DecalTextureType.Camo,
-                WindowRect = SevenBoldPencil.MaterialEditor.CamoEditor.GetDefaultWindowRect()
             });
         }
 
@@ -717,14 +709,8 @@ namespace SevenBoldPencil.MaterialEditor
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
-                Strings = new MaterialStringCache(),
                 Items = items,
                 IsOpened = isOpened,
-                CurrentPresetName = "",
-                IsCurrentPresetNameValid = false,
-                CurrentlyEditedOverride = default,
-                LinkedOverrides = new(),
-                DecalTypeMenu = DecalTextureType.Camo,
                 WindowRect = windowRect
             });
         }
