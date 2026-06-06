@@ -11,10 +11,10 @@ namespace SevenBoldPencil.Common
 {
     public struct StringCache<T> where T : IEquatable<T>
     {
-        private Func<T, string> Format; // use string interpolation instead of string.Format
-        private T Value;
-        private string ValueString;
-        private bool HasValue;
+        public Func<T, string> Format;
+        public T Value;
+        public string ValueString;
+        public bool HasValue;
 
         public StringCache(Func<T, string> format)
         {

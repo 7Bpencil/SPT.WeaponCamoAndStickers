@@ -202,20 +202,46 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public StringCache<float> ColorA = new(v => $"{v:F3}");
 
         public StringCache<float> MaxAngle = new(v => $"{v:F3}");
+    }
 
-        public StringCache<Vector4> ColorHex = new(ColorExtensions.HSVAtoHexRGB);
+    public struct TextField<T> where T : IEquatable<T>
+    {
+        public StringCache<T> String;
+        public Func<string, Option<T>> TryParse;
+        public string Value;
+        public bool IsValid;
+
+        public TextField(Func<T, string> format, Func<string, Option<T>> tryParse)
+        {
+            String = new(format);
+            TryParse = tryParse;
+        }
+
+        public void SetValue(T value)
+        {
+            Value = String.Get(value);
+            IsValid = true;
+        }
+
+        public bool SetValue(string value, out Option<T> valueOption)
+        {
+            if (Value != value)
+            {
+                valueOption = TryParse(value);
+                Value = value;
+                IsValid = valueOption.HasValue;
+                return true;
+            }
+
+            valueOption = default;
+            return false;
+        }
     }
 
     public enum DecalSettingType
     {
         Texture,
         Mask
-    }
-
-    public struct ColorTextField
-    {
-        public string Hex;
-        public bool IsValid;
     }
 
     public class CamoEditor
@@ -244,7 +270,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Vector2 StickersScrollPosition;
         public Vector2 MasksScrollPosition;
         public bool IsColorPickerOpened;
-        public ColorTextField ColorTextField;
+        public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect = GetDefaultWindowRect();
@@ -707,8 +733,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             CurrentlyEditedDecalIndex = new(decalIndex);
             DecalTypeMenu = decalTextureType;
-            ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
-            ColorTextField.IsValid = true;
+            ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
         private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
@@ -820,8 +845,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
-                ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
-                ColorTextField.IsValid = true;
+                ColorTextField.SetValue(decalInfo.ColorHSVA);
                 Plugin.ApplyColor(ItemId, decalIndex);
             }
 
@@ -837,8 +861,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
-                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
-                    ColorTextField.IsValid = true;
+                    ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -848,8 +871,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
-                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
-                    ColorTextField.IsValid = true;
+                    ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -859,8 +881,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
-                    ColorTextField.Hex = Strings.ColorHex.Get(decalInfo.ColorHSVA);
-                    ColorTextField.IsValid = true;
+                    ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
             }
@@ -1191,19 +1212,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var buttonBackgroundColor = ColorTextField.IsValid ? previousBackgroundColor : Color.red;
 
                     GUI.backgroundColor = buttonBackgroundColor;
-                    var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Hex, 7, CamoEditorStyle.RGBHexTextFieldStyle);
+                    var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
                     GUI.backgroundColor = previousBackgroundColor;
 
-                    if (newColorHex != ColorTextField.Hex)
+                    if (ColorTextField.SetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
                     {
-                        var newColorOption = ColorExtensions.HexRGBtoHSVA(newColorHex, decalInfo.ColorHSVA.w);
-                        if (newColorOption.Some(out var newColor))
-                        {
-                            decalInfo.ColorHSVA = newColor;
-                            Plugin.ApplyColor(ItemId, decalIndex);
-                        }
-                        ColorTextField.Hex = newColorHex;
-                        ColorTextField.IsValid = newColorOption.HasValue;
+                        decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
+                        Plugin.ApplyColor(ItemId, decalIndex);
                     }
                 }
             }

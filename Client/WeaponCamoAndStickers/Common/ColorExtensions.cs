@@ -18,6 +18,11 @@ namespace SevenBoldPencil.Common
 			return new(color.r, color.g, color.b, alpha);
 		}
 
+		public static Vector4 WithAlpha(this Vector3 color, float alpha)
+		{
+			return new(color.x, color.y, color.z, alpha);
+		}
+
 		public static Color HSVtoRGBA(this Vector3 hsv)
 		{
             return Color.HSVToRGB(hsv.x, hsv.y, hsv.z);
@@ -32,13 +37,6 @@ namespace SevenBoldPencil.Common
 		public static Color HSVAtoRGBA(this Vector4 hsva)
 		{
             return Color.HSVToRGB(hsva.x, hsva.y, hsva.z).WithAlpha(hsva.w);
-		}
-
-		public static string HSVAtoHexRGB(this Vector4 hsva)
-		{
-			var rgb = Color.HSVToRGB(hsva.x, hsva.y, hsva.z);
-			var rgb32 = (Color32)rgb; // we lose precision, but people dont care anyway
-			return $"#{rgb32.r:X2}{rgb32.g:X2}{rgb32.b:X2}";
 		}
 
 		public static string HSVtoHexRGB(this Vector3 hsv)
@@ -82,16 +80,6 @@ namespace SevenBoldPencil.Common
 			var color32 = new Color32(r, g, b, 0);
 			Color.RGBToHSV(color32, out var h, out var s, out var v);
 			return new(new(h, s, v));
-		}
-
-		public static Option<Vector4> HexRGBtoHSVA(string hexRGB, float a)
-		{
-			if (HexRGBtoHSV(hexRGB).Some(out var colorHSV))
-			{
-				return new(new(colorHSV.x, colorHSV.y, colorHSV.z, a));
-			}
-
-			return default;
 		}
     }
 }
