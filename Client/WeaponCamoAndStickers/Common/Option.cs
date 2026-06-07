@@ -23,5 +23,10 @@ namespace SevenBoldPencil.Common
             value = Value;
             return HasValue;
         }
+
+        public T Else(T defaultValue)
+        {
+            return HasValue ? Value : defaultValue;
+        }
     }
 }
