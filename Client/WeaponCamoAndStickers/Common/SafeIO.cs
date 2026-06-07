@@ -56,7 +56,7 @@ namespace SevenBoldPencil.Common
 			}
 		}
 
-        public static string[] GetFiles(string directoryPath, string searchPattern = "*")
+        public static string[] GetFiles(string directoryPath, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
         {
             if (!Directory.Exists(directoryPath))
             {
@@ -64,7 +64,7 @@ namespace SevenBoldPencil.Common
             }
             try
             {
-                return Directory.GetFiles(directoryPath, searchPattern);
+                return Directory.GetFiles(directoryPath, searchPattern, searchOption);
             }
             catch
             {
@@ -72,7 +72,7 @@ namespace SevenBoldPencil.Common
             }
         }
 
-        public static string[] GetDirectories(string directoryPath, string searchPattern = "*")
+        public static string[] GetDirectories(string directoryPath, string searchPattern = "*", SearchOption searchOption = SearchOption.TopDirectoryOnly)
         {
             if (!Directory.Exists(directoryPath))
             {
@@ -80,7 +80,7 @@ namespace SevenBoldPencil.Common
             }
             try
             {
-                return Directory.GetDirectories(directoryPath, searchPattern);
+                return Directory.GetDirectories(directoryPath, searchPattern, searchOption);
             }
             catch
             {
