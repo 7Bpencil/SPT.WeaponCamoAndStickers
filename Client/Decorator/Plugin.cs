@@ -18,10 +18,9 @@ using SevenBoldPencil.Common;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
-// TODO add reset button right to every changed field
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -42,8 +41,8 @@ namespace SevenBoldPencil.Decorator
 
     public class ItemWithDecorators
     {
-        public Transform Root;
-        // public List<Decorator> Decorators;
+        public Transform DecoratorsRoot;
+        public List<Decorator> Decorators;
     }
 
     public class DecoratorsInfo
@@ -52,20 +51,44 @@ namespace SevenBoldPencil.Decorator
 
         public int SchemaVersion;
         public long SaveTime;
-        public Dictionary<string, DecoratorInfo> Decorators;
+        public List<DecoratorInfo> Decorators;
     }
 
     public class DecoratorInfo
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 0;
 
         public int SchemaVersion;
+        public string Name;
         public string Prefab;
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
+        public bool IsVisible;
 
         public DecoratorInfo GetCopy() => (DecoratorInfo)MemberwiseClone();
+    }
+
+    public class DecoratorPrefabData
+    {
+        public Texture2D Preview;
+        public string BundleFilePath;
+        public string AssetFilePath;
+        public bool Error; // this flag is needed so we dont try to load corrupted asset over and over again
+    }
+
+    public class DecoratorPrefabAsset
+    {
+        public bool IsLoaded;
+        public int InstancesCount;
+        public Dictionary<SystemObject, Action<SystemObject, Texture>> WaitingAfterLoad;
+        public GameObject GameObject;
+
+        public void Release()
+        {
+            // TODO how to properly destroy all assets to free memory?
+            // maybe move to Addressables?
+        }
     }
 
     [BepInPlugin("7Bpencil.Decorator", "7Bpencil.Decorator", "1.14.1")]
@@ -77,8 +100,13 @@ namespace SevenBoldPencil.Decorator
 
 		public ManualLogSource LoggerInstance;
 
+        private string DecoratorsDir;
         private string ItemsDir;
+        private Texture2D ErrorTexture; // TODO need separate "No preview texture"
         private CamoEditorResources CamoEditorResources;
+        private Dictionary<string, DecoratorPrefabData> DecoratorPrefabs;
+        private Dictionary<string, DecoratorPrefabAsset> DecoratorPrefabAssets;
+        private string[] Decorators;
 
         private Dictionary<string, ItemsWithDecorators> ItemsWithDecorators;
         private Dictionary<string, string> Clones;
@@ -94,8 +122,15 @@ namespace SevenBoldPencil.Decorator
 			LoggerInstance = Logger;
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            DecoratorsDir = Path.Combine(assemblyDir, "decorators");
             ItemsDir = Path.Combine(assemblyDir, "items-decorators");
+            ErrorTexture = new TypedFieldInfo<BigPlugin, Texture2D>("ErrorTexture").Get(BigPlugin.Instance);
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
+
+            DecoratorPrefabs = new();
+            DecoratorPrefabAssets = new();
+
+            Decorators = LoadDecorators(DecoratorsDir);
 
             ItemsWithDecorators = LoadItemsWithDecorators();
             Clones = new();
@@ -114,6 +149,71 @@ namespace SevenBoldPencil.Decorator
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
+        }
+
+        public string[] LoadDecorators(string directoryPath)
+        {
+            var filePaths = SafeIO.GetFiles(directoryPath, "*.bundle", SearchOption.AllDirectories);
+            var decorators = new string[filePaths.Length];
+            for (var i = 0; i < filePaths.Length; i++)
+            {
+                var filePath = filePaths[i];
+                var decoratorIndex = i;
+                TryLoadDecorator(filePath, decoratorIndex, decorators);
+            }
+
+            return decorators;
+        }
+
+        public void TryLoadDecorator(string decoratorBundleFilePath, int decoratorIndex, string[] decorators)
+        {
+            var (decoratorShortName, decoratorLongName) = GetDecoratorName(decoratorBundleFilePath);
+            decorators[decoratorIndex] = decoratorLongName;
+            var previewFilePath = Path.Combine(DecoratorsDir, $"{decoratorLongName}.png"); // TODO not really optimal
+            Logger.LogWarning(previewFilePath);
+            var preview = LoadPreviewFromDisk(previewFilePath).Else(ErrorTexture);
+            var prefabData = new DecoratorPrefabData()
+            {
+                Preview = preview,
+                BundleFilePath = decoratorBundleFilePath,
+                AssetFilePath = $"Assets/{decoratorShortName}/prefab.prefab",
+                Error = false,
+            };
+
+            DecoratorPrefabs.Add(decoratorLongName, prefabData);
+        }
+
+        public Option<Texture2D> LoadPreviewFromDisk(string previewFilePath)
+        {
+            if (!File.Exists(previewFilePath))
+            {
+                return default;
+            }
+
+            var previewFileData = File.ReadAllBytes(previewFilePath);
+            var preview = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false, linear: false, createUninitialized: true);
+            if (ImageConversion.LoadImage(preview, previewFileData, markNonReadable: true))
+            {
+                return new(preview);
+            }
+            else
+            {
+                Destroy(preview);
+                return default;
+            }
+        }
+
+        public (string shortName, string longName) GetDecoratorName(string filePath)
+        {
+            var shortName = Path.GetFileNameWithoutExtension(filePath);
+            var extension = Path.GetExtension(filePath);
+            var longName = filePath
+                .Replace(DecoratorsDir, "")
+                .Replace(extension, "")
+                .Remove(0, 1) // remove first slash
+                .Replace(@"\", @"/"); // replace windows slashes with unix ones
+
+            return (shortName, longName);
         }
 
         public Dictionary<string, ItemsWithDecorators> LoadItemsWithDecorators()
@@ -147,7 +247,7 @@ namespace SevenBoldPencil.Decorator
 
         public static void UpgradeOldVersionsOfDecoratorsInfo(DecoratorsInfo decoratorsInfo)
         {
-            foreach (var decoratorInfo in decoratorsInfo.Decorators.Values)
+            foreach (var decoratorInfo in decoratorsInfo.Decorators)
             {
                 UpgradeOldVersionsOfDecoratorInfo(decoratorInfo);
             }
@@ -197,10 +297,8 @@ namespace SevenBoldPencil.Decorator
                     }
                     if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                     {
-                        // TODO create decorators
-                        // var itemWithDecorators = BuildItemOverrides(assetPoolObject);
-                        // PatchItem(itemWithDecorators, itemsWithDecorators.DecoratorsInfo);
-                        // itemsWithDecorators.Items.Add(instanceID, itemWithDecorators);
+                        var itemWithDecorators = BuildDecorators(assetPoolObject, itemsWithDecorators.DecoratorsInfo);
+                        itemsWithDecorators.Items.Add(instanceID, itemWithDecorators);
                         InstanceIdToItemId.Add(instanceID, itemId);
             			Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, itemPrefab.path, instanceID);
                     }
@@ -210,6 +308,35 @@ namespace SevenBoldPencil.Decorator
                     }
                 }
             }
+        }
+
+        public ItemWithDecorators BuildDecorators(AssetPoolObject assetPoolObject, DecoratorsInfo decoratorsInfo)
+        {
+            var decorators = new List<Decorator>(decoratorsInfo.Decorators.Count);
+            var decoratorsRoot = GetDecoratorsRoot(assetPoolObject);
+            foreach (var decoratorInfo in decoratorsInfo.Decorators)
+            {
+                var decorator = CreateDecorator(decoratorInfo, decoratorsRoot);
+                decorators.Add(decorator);
+            }
+
+            var itemWithDecorators = new ItemWithDecorators()
+            {
+                DecoratorsRoot = decoratorsRoot,
+                Decorators = decorators,
+            };
+
+            return itemWithDecorators;
+        }
+
+        public Transform GetDecoratorsRoot(AssetPoolObject assetPoolObject)
+        {
+            if (assetPoolObject is WeaponPrefab weaponPrefab)
+            {
+                return WeaponCamoAndStickers.Plugin.GetWeaponRoot(weaponPrefab);
+            }
+
+            return assetPoolObject.transform;
         }
 
         public void OnItemDestroyed(AssetPoolObject assetPoolObject)
@@ -234,14 +361,15 @@ namespace SevenBoldPencil.Decorator
             if (!itemsWithDecorators.Items.Remove(instanceID, out var itemWithDecorators))
             {
     			Logger.Log(LogLevel.Error, "Item", "Tried to destroy not registered clone", itemId, instanceID);
-                return;
             }
 
-            // TODO destroy decorators
-            // foreach (var (decoratorName, decoratorInfo) in itemsWithDecorators.DecoratorsInfo.Decorators)
-            // {
-            //     Resetdecorator(itemWithDecorators, decoratorName, decoratorInfo);
-            // }
+            for (var i = 0; i < itemWithDecorators.Decorators.Count; i++)
+            {
+                var decorator = itemWithDecorators.Decorators[i];
+                var decoratorInfo = itemsWithDecorators.DecoratorsInfo.Decorators[i];
+                DestroyDecorator(decorator, decoratorInfo);
+            }
+            itemWithDecorators.Decorators.Clear();
 
 			Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
         }
@@ -258,14 +386,160 @@ namespace SevenBoldPencil.Decorator
 
         public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject)
         {
-            // var items = GetOrBuildItemWithAllItSlots(item, assetPoolObject);
-            // CamoEditor = new(new CamoEditor()
-            // {
-            //     Plugin = this,
-            //     BigPlugin = BigPlugin.Instance,
-            //     CamoEditorResources = CamoEditorResources,
-            //     Items = items,
-            // });
+            var itemId = GetOriginalItemId(item.Id);
+			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
+            IsCamoEditorWaitingForWeaponPreview = false;
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            CamoEditor = new(new CamoEditor()
+            {
+                Plugin = this,
+                BigPlugin = BigPlugin.Instance,
+                CamoEditorResources = CamoEditorResources,
+                ItemId = itemId,
+                InstanceID = instanceID,
+                AssetPoolObject = assetPoolObject,
+            });
+        }
+
+        public int AddNewDecorator(string itemId, int instanceID, AssetPoolObject assetPoolObject)
+        {
+            var decoratorInfo = new DecoratorInfo()
+            {
+                SchemaVersion = DecoratorInfo.CurrentSchemaVersion,
+                Name = "",
+                Prefab = "7Bpencil/cube", // TODO make default cube, which user cannot delete
+                LocalPosition = Vector3.zero, // TODO choose better position near preview rotation point
+                LocalEulerAngles = Vector3.zero,
+                LocalScale = Vector3.one,
+                IsVisible = true,
+            };
+
+            if (ItemsWithDecorators.TryGetValue(itemId, out var itemsWithDecorators))
+            {
+                var decoratorIndex = itemsWithDecorators.DecoratorsInfo.Decorators.Count;
+                SpawnNewDecoratorOnItems(itemId, decoratorIndex, decoratorInfo);
+                return decoratorIndex;
+            }
+            else
+            {
+                CreateNewItemsWithDecorators(itemId, instanceID, assetPoolObject, decoratorInfo);
+                return 0;
+            }
+        }
+
+        public void SpawnNewDecoratorOnItems(string itemId, int decoratorIndex, DecoratorInfo decoratorInfo)
+        {
+            var itemsWithDecorators = ItemsWithDecorators[itemId];
+            itemsWithDecorators.DecoratorsInfo.Decorators.Insert(decoratorIndex, decoratorInfo);
+            foreach (var itemWithDecorators in itemsWithDecorators.Items.Values)
+            {
+                var decorator = CreateDecorator(decoratorInfo, itemWithDecorators.DecoratorsRoot);
+                itemWithDecorators.Decorators.Insert(decoratorIndex, decorator);
+            }
+        }
+
+        public Decorator CreateDecorator(DecoratorInfo decoratorInfo, Transform decoratorRoot)
+        {
+            var decorator = new GameObject("Decorator", typeof(Decorator)).GetComponent<Decorator>();
+            decorator.Init(decoratorInfo, decoratorRoot);
+            StartCoroutine(LoadPrefabAsset(decorator, decoratorInfo.Prefab));
+            return decorator;
+        }
+
+        private Dictionary<string, AssetBundle> LoadedBundles = new();
+        public IEnumerator LoadPrefabAsset(Decorator decorator, string prefabName)
+        {
+            // TODO check if file exist or if .Error = true and set error asset
+
+            var prefabData = GetPrefabData(prefabName);
+            if (!LoadedBundles.TryGetValue(prefabName, out var loadedAssetBundle))
+            {
+                var bundleLoadRequest = AssetBundle.LoadFromFileAsync(prefabData.BundleFilePath);
+                yield return bundleLoadRequest;
+
+                loadedAssetBundle = bundleLoadRequest.assetBundle;
+                if (!loadedAssetBundle)
+                {
+                    prefabData.Error = true;
+                    // TODO set error asset
+                    Logger.Log(LogLevel.Error, "Prefab", "Failed to load");
+                    yield break;
+                }
+
+                LoadedBundles.Add(prefabName, loadedAssetBundle);
+            }
+            // var bundleLoadRequest = AssetBundle.LoadFromFileAsync(prefabData.BundleFilePath);
+            // yield return bundleLoadRequest;
+
+            // var loadedAssetBundle = bundleLoadRequest.assetBundle;
+
+            var assetLoadRequest = loadedAssetBundle.LoadAssetAsync<GameObject>(prefabData.AssetFilePath);
+            yield return assetLoadRequest;
+
+            // TODO check if decorator still exists, usual stuff
+            if (assetLoadRequest.asset is GameObject prefab)
+            {
+                var prefabGameObject = Instantiate(prefab);
+                decorator.Set(prefabGameObject);
+            }
+
+            // TODO should we unload it?
+            // loadedAssetBundle.Unload(false);
+        }
+
+        public void CreateNewItemsWithDecorators(string itemId, int instanceID, AssetPoolObject assetPoolObject, DecoratorInfo decoratorInfo)
+        {
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var decoratorsRoot = GetDecoratorsRoot(assetPoolObject);
+            var decorator = CreateDecorator(decoratorInfo, decoratorsRoot);
+            var decorators = new List<Decorator>() { decorator };
+            var decoratorsInfo = new DecoratorsInfo()
+            {
+                SchemaVersion = DecoratorsInfo.CurrentSchemaVersion,
+                SaveTime = time,
+                Decorators = new() { decoratorInfo },
+            };
+            var itemsWithDecorators = new ItemsWithDecorators()
+            {
+                Items = new Dictionary<int, ItemWithDecorators>()
+                {
+                    {
+                        instanceID,
+                        new ItemWithDecorators()
+                        {
+                            DecoratorsRoot = decoratorsRoot,
+                            Decorators = decorators,
+                        }
+                    }
+                },
+                DecoratorsInfo = decoratorsInfo
+            };
+
+            Logger.LogWarning($"New decorator: {itemId} {instanceID}");
+            ItemsWithDecorators.Add(itemId, itemsWithDecorators);
+            InstanceIdToItemId.Add(instanceID, itemId);
+        }
+
+        public void Delete(string itemId, int decoratorIndex)
+        {
+            var itemsWithDecorators = ItemsWithDecorators[itemId];
+            var decoratorInfo = itemsWithDecorators.DecoratorsInfo.Decorators[decoratorIndex];
+            itemsWithDecorators.DecoratorsInfo.Decorators.RemoveAt(decoratorIndex);
+            foreach (var itemWithDecorators in itemsWithDecorators.Items.Values)
+            {
+                var decorator = itemWithDecorators.Decorators[decoratorIndex];
+                itemWithDecorators.Decorators.RemoveAt(decoratorIndex);
+                DestroyDecorator(decorator, decoratorInfo);
+            }
+        }
+
+        public void DestroyDecorator(Decorator decorator, DecoratorInfo decoratorInfo)
+        {
+            // TODO clean resources
+            if (decorator)
+            {
+                Destroy(decorator.gameObject);
+            }
         }
 
         public void WaitForWeaponPreview()
@@ -379,18 +653,37 @@ namespace SevenBoldPencil.Decorator
             return default;
         }
 
-        public Option<DecoratorInfo> GetDecoratorInfo(string itemId, string decoratorName)
+        public Option<DecoratorInfo> GetDecoratorInfo(string itemId, int decoratorIndex)
         {
             if (!ItemsWithDecorators.TryGetValue(itemId, out var itemsWithDecorators))
             {
                 return default;
             }
-            if (!itemsWithDecorators.DecoratorsInfo.Decorators.TryGetValue(decoratorName, out var decoratorInfo))
+
+            return new(itemsWithDecorators.DecoratorsInfo.Decorators[decoratorIndex]);
+        }
+
+        public int GetDecoratorsCount(string itemId)
+        {
+            if (ItemsWithDecorators.TryGetValue(itemId, out var itemsWithDecorators))
             {
-                return default;
+                return itemsWithDecorators.DecoratorsInfo.Decorators.Count;
             }
 
-            return new(decoratorInfo);
+            return 0;
+        }
+
+        public DecoratorPrefabData GetPrefabData(string prefabName)
+        {
+			if (DecoratorPrefabs.TryGetValue(prefabName, out var prefabData))
+            {
+                return prefabData;
+            }
+
+            throw new ArgumentException();
+            // TODO we need error prefab,
+            // I guess we will have to ship new bundle along weapon-camo-and-stickers
+            // return ErrorTextureData;
         }
 
         // TODO I forget to clean clone dict in OnItemDestroy...
