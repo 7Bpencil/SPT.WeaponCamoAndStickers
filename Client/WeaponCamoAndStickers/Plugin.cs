@@ -1855,7 +1855,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public Decal CreateDecal(DecalInfo decalInfo, Transform decalRoot)
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
-			decal.Init(DecalShader, decalRoot, decalInfo);
+			decal.Init(decalInfo, decalRoot, DecalShader);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
             AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
 			return decal;

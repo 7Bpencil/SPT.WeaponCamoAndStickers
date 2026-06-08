@@ -28,24 +28,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public LocalKeyword DecalMaterialKeywordErase;
 		public Transform DecalTransform;
 
-		public void Init(Shader shader, Transform root, DecalInfo decalInfo)
+		public void Init(DecalInfo info, Transform root, Shader shader)
 		{
 			DecalTransform = transform;
 			DecalMaterial = new Material(shader);
 			DecalMaterialKeywordErase = new LocalKeyword(shader, "ERASE");
 
             DecalTransform.parent = root;
-			DecalTransform.localPosition = decalInfo.LocalPosition;
-			DecalTransform.localEulerAngles = decalInfo.LocalEulerAngles;
-			ChangeLocalScale(decalInfo.LocalScale);
+			DecalTransform.localPosition = info.LocalPosition;
+			DecalTransform.localEulerAngles = info.LocalEulerAngles;
+			ChangeLocalScale(info.LocalScale);
 
-			ChangeTextureUV(decalInfo.TextureUV);
-			ChangeTextureAngle(decalInfo.TextureAngle);
-			ChangeMaskUV(decalInfo.MaskUV);
-			ChangeMaskAngle(decalInfo.MaskAngle);
-			ChangeColor(decalInfo.ColorHSVA);
-			ChangeMaxAngle(decalInfo.MaxAngle);
-			ChangePaintMode(decalInfo.PaintMode);
+			ChangeTextureUV(info.TextureUV);
+			ChangeTextureAngle(info.TextureAngle);
+			ChangeMaskUV(info.MaskUV);
+			ChangeMaskAngle(info.MaskAngle);
+			ChangeColor(info.ColorHSVA);
+			ChangeMaxAngle(info.MaxAngle);
+			ChangePaintMode(info.PaintMode);
 
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 		}
