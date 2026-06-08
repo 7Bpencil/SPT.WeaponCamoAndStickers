@@ -1588,9 +1588,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 PaintMode = DecalPaintMode.Paint,
             };
 
-            if (ItemsWithDecals.ContainsKey(itemId))
+            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                var itemsWithDecals = ItemsWithDecals[itemId];
                 var decalIndex = itemsWithDecals.DecalsInfo.Count;
                 SpawnNewDecalOnItems(itemId, decalIndex, decalInfo);
                 return decalIndex;
