@@ -61,7 +61,7 @@ namespace RuntimeHandle
         public override void StartInteraction(Ray cameraRay)
         {
             TransformHandle.rotation = Target.rotation;
-			_rotationHandle.rotation = Quaternion.identity;
+			_rotationHandle.localRotation = Quaternion.identity;
 
 			var offset = StartInteraction_Rotation_Axis(cameraRay, TransformHandle, _perp);
 
