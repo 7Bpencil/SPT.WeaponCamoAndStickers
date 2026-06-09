@@ -56,9 +56,8 @@ namespace RuntimeHandle
 			var offset = hitPoint - position;
 			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
-			var newLocalRotation = _startLocalRotation * Quaternion.AngleAxis(angle, _perp);
 
-			Target.localRotation = newLocalRotation;
+			Target.localRotation = _startLocalRotation * Quaternion.AngleAxis(angle, _perp);
 			_rotationHandle.rotation = Target.rotation;
         }
 
