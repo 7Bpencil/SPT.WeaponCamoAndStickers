@@ -80,13 +80,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var raxis = TransformHandle.TransformDirection(_axis1);
-            var position = TransformHandle.position;
-            var ray = new Ray(position, raxis);
-            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
-            var hitPoint = ray.GetPoint(closestT);
-            var offset = raxis * _startOffsetLength;
-            var newPosition = hitPoint - offset;
+			var newPosition = Interact_Position_Axis(cameraRay, TransformHandle, _axis1, _startOffsetLength);
 
 			var newLocalPosition = Target.InverseTransformPoint(newPosition);
 			var delta = newLocalPosition - _startLocalPosition;
@@ -104,12 +98,7 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var raxis = TransformHandle.TransformDirection(_axis1);
-            var position = TransformHandle.position;
-            var ray = new Ray(position, raxis);
-            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
-            var hitPoint = ray.GetPoint(closestT);
-            var offset = hitPoint - position;
+			var offset = StartInteraction_Position_Axis(cameraRay, TransformHandle, _axis1);
 
             _startOffsetLength = offset.magnitude;
 			_startLocalPosition = UVTools.GetHandleLocalPosition(_decalInfo.MaskUV);

@@ -58,34 +58,20 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
-			var offset = hitPoint - position;
-			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
-			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
+			var angle = Interact_Rotation_Axis(cameraRay, TransformHandle, _perp, _startOffsetLocalSpace);
 
 			_decalInfo.TextureAngle = _startAngle + angle;
 			_decal.ChangeTextureAngle(_decalInfo.TextureAngle);
         }
 
-        public override bool CanInteract(Vector3 p_hitPoint)
+        public override bool CanInteract(Vector3 hitPoint)
         {
-            var cameraDistance = (TransformHandle.position - _transformHandle.handleCamera.transform.position).magnitude;
-            var pointDistance = (p_hitPoint - _transformHandle.handleCamera.transform.position).magnitude;
-            return pointDistance <= cameraDistance;
+			return CanInteract_Rotation_Axis(hitPoint, TransformHandle, _transformHandle.handleCamera);
         }
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
-            var offset = hitPoint - position;
+			var offset = StartInteraction_Rotation_Axis(cameraRay, TransformHandle, _perp);
 
 			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			_startAngle = _decalInfo.TextureAngle;

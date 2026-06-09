@@ -81,14 +81,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
-            var offset = hitPoint - position;
-            var offsetLength = offset.magnitude;
-            var scale = offsetLength / _startOffsetLength;
+			var scale = Interact_Scale_Plane(cameraRay, TransformHandle, _perp, _startOffsetLength);
 
 			var uv = UVTools.ScaleUV(_startUV, _uvAxis1 + _uvAxis2, scale);
 			_decalInfo.TextureUV = uv;
@@ -99,12 +92,7 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
-            var offset = hitPoint - position;
+			var offset = StartInteraction_Scale_Plane(cameraRay, TransformHandle, _perp);
 
             _startOffsetLength = offset.magnitude;
 			_startUV = _decalInfo.TextureUV;
