@@ -22,6 +22,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// TODO
+// plan mostly patches, but for that I have to make full editor anyway,
+// maybe just assign to the closest bone (but only from the predefined list so it wont attach to clavicles instead of shoulders)
+// all bones are inside PlayerBones class, it can be found:
+// Player.PlayerBones
+// PlayerBody.PlayerBones
+
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
@@ -533,6 +540,36 @@ namespace SevenBoldPencil.Decorator
             }
         }
 
+        public void ChangePrefab(string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, string prefabName)
+        {
+            var oldPrefabName = decoratorInfo.Prefab;
+            decoratorInfo.Prefab = prefabName;
+
+            ModifyDecoratorOnItems(itemId, decoratorIndex, (decorator, decoratorInfo) =>
+            {
+                // TODO release asset data correctly
+                if (decorator.Prefab)
+                {
+                    Destroy(decorator.Prefab);
+                }
+
+                // TODO rethink how assets are handled
+                StartCoroutine(LoadPrefabAsset(decorator, decoratorInfo.Prefab));
+            });
+        }
+
+        // notice that we modify decorator on all items
+        public void ModifyDecoratorOnItems(string itemId, int decoratorIndex, Action<Decorator, DecoratorInfo> changeDecorator)
+        {
+            var itemsWithDecorators = ItemsWithDecorators[itemId];
+            var decoratorInfo = itemsWithDecorators.DecoratorsInfo.Decorators[decoratorIndex];
+            foreach (var itemWithDecorators in itemsWithDecorators.Items.Values)
+            {
+                var decorator = itemWithDecorators.Decorators[decoratorIndex];
+                changeDecorator(decorator, decoratorInfo);
+            }
+        }
+
         public void DestroyDecorator(Decorator decorator, DecoratorInfo decoratorInfo)
         {
             // TODO clean resources
@@ -673,6 +710,11 @@ namespace SevenBoldPencil.Decorator
             return 0;
         }
 
+        public int GetTotalDecoratorsCount()
+        {
+            return Decorators.Length;
+        }
+
         public DecoratorPrefabData GetPrefabData(string prefabName)
         {
 			if (DecoratorPrefabs.TryGetValue(prefabName, out var prefabData))
@@ -684,6 +726,20 @@ namespace SevenBoldPencil.Decorator
             // TODO we need error prefab,
             // I guess we will have to ship new bundle along weapon-camo-and-stickers
             // return ErrorTextureData;
+        }
+
+        // TODO this sometimes panics, no idea why
+        public (DecoratorInfo, Decorator) GetDecorator(string itemId, int instanceID, int decoratorIndex)
+        {
+            var itemsWithDecorators = ItemsWithDecorators[itemId];
+            var decoratorInfo = itemsWithDecorators.DecoratorsInfo.Decorators[decoratorIndex];
+            var decorator = itemsWithDecorators.Items[instanceID].Decorators[decoratorIndex];
+            return (decoratorInfo, decorator);
+        }
+
+        public string[] GetAllDecorators()
+        {
+            return Decorators;
         }
 
         // TODO I forget to clean clone dict in OnItemDestroy...

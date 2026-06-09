@@ -24,18 +24,35 @@ using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFor
 
 namespace SevenBoldPencil.Decorator
 {
+    public class DecoratorStringCache
+    {
+        public StringCache<float> LocalPositionX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalPositionY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalPositionZ = new(v => $"Z: {v:F3}");
+
+        public StringCache<float> LocalEulerAnglesX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalEulerAnglesY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalEulerAnglesZ = new(v => $"Z: {v:F3}");
+
+        public StringCache<float> LocalScaleX = new(v => $"X: {v:F3}");
+        public StringCache<float> LocalScaleY = new(v => $"Y: {v:F3}");
+        public StringCache<float> LocalScaleZ = new(v => $"Z: {v:F3}");
+    }
+
     public class CamoEditor
     {
         public Plugin Plugin;
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
+		public DecoratorStringCache Strings = new();
         public string ItemId;
         public int InstanceID;
 		public AssetPoolObject AssetPoolObject;
         public bool IsOpened;
 		public Vector2 DecoratorsScrollPosition;
         public Option<int> CurrentlyEditedDecoratorIndex;
+        public Vector2 PrefabsScrollPosition;
 		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
@@ -109,11 +126,22 @@ namespace SevenBoldPencil.Decorator
 
             if (IsOpened)
             {
-                WindowRect.height = CalculateWindowHeight();
-                WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+				if (CurrentlyEditedDecoratorIndex.Some(out var decoratorIndex))
+				{
+	                WindowRect.height = CalculateDecoratorEditWindowHeight();
+	                WindowRect = GUI.Window(1, WindowRect, DrawDecoratorEditUI, GUIContent.none);
 
-                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+	                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+	                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+				}
+				else
+				{
+	                WindowRect.height = CalculateWindowHeight();
+	                WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+
+	                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+	                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+				}
             }
             else
             {
@@ -136,6 +164,22 @@ namespace SevenBoldPencil.Decorator
                 smallMargin + bigMargin + // separator
                 visibleHeight + mediumMargin + // decorators
                 buttonHeight + bigMargin; // add new decorator button
+		}
+
+		private int CalculateDecoratorEditWindowHeight()
+		{
+            var decoratorsCount = Plugin.GetTotalDecoratorsCount();
+            var totalRows = BigCamoEditor.DivideIntCeil(decoratorsCount, iconColumns);
+			var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
+			return
+				bigMargin +
+                buttonHeight + mediumMargin + // back button
+                buttonHeight + mediumMargin + // decal name
+                4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
+                smallMargin + bigMargin + // separator
+                iconSize + bigMargin + // icon
+                smallMargin + bigMargin + // separator
+                visibleHeight + bigMargin; // icons grid
 		}
 
         private void DrawOpenedWindow(int windowID)
@@ -231,6 +275,182 @@ namespace SevenBoldPencil.Decorator
                 // Plugin.SwitchIsVisible(ItemId, decalIndex, decalInfo);
             }
             lineX += buttonHeight + smallMargin;
+		}
+
+        private void DrawDecoratorEditUI(int windowID)
+		{
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var decoratorIndex = CurrentlyEditedDecoratorIndex.Value;
+            var (decoratorInfo, decorator) = Plugin.GetDecorator(ItemId, InstanceID, decoratorIndex);
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+			DrawDecoratorEditUI_Header(x, ref y, decoratorIndex, decoratorInfo, decorator);
+			DrawDecoratorEditUI_Transform(x, ref y, decoratorIndex, decoratorInfo, decorator);
+			DrawDecoratorEditUI_Icons(x, ref y, decoratorIndex, decoratorInfo, decorator);
+
+			GUI.DragWindow();
+		}
+
+		private void DrawDecoratorEditUI_Header(int x, ref int y, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		{
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
+            {
+                CurrentlyEditedDecoratorIndex = default;
+            }
+            y += buttonHeight + mediumMargin;
+
+
+            decoratorInfo.Name = GUI.TextField(new Rect(x, y, boxWidth, buttonHeight), decoratorInfo.Name, maxDecalNameLength, CamoEditorStyle.TextFieldStyle);
+            if (string.IsNullOrWhiteSpace(decoratorInfo.Name))
+            {
+                GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, boxWidth, buttonHeight), "enter decorator name (optional)", CamoEditorStyle.LabelStyleName);
+            }
+            y += buttonHeight + mediumMargin;
+		}
+
+		private void DrawDecoratorEditUI_Transform(int x, ref int y, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		{
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
+            {
+                // SetupTransformHandle(HandleType.Position, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionX.Get(decorator.DecoratorTransform.localPosition.x), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionY.Get(decorator.DecoratorTransform.localPosition.y), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalPositionZ.Get(decorator.DecoratorTransform.localPosition.z), CamoEditorStyle.LabelStyleName);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditRotationIcon))
+            {
+                // SetupTransformHandle(HandleType.Rotation, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesX.Get(decorator.DecoratorTransform.localEulerAngles.x), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesY.Get(decorator.DecoratorTransform.localEulerAngles.y), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalEulerAnglesZ.Get(decorator.DecoratorTransform.localEulerAngles.z), CamoEditorStyle.LabelStyleName);
+            }
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditScaleIcon))
+            {
+                // SetupTransformHandle(HandleType.Scale, decalIndex, decalInfo, decal);
+            }
+            {
+                var valueX = x + buttonHeight + smallMargin + 7;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleX.Get(decorator.DecoratorTransform.localScale.x), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleY.Get(decorator.DecoratorTransform.localScale.y), CamoEditorStyle.LabelStyleName);
+                valueX += longFieldWidth + smallMargin;
+
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.LocalScaleZ.Get(decorator.DecoratorTransform.localScale.z), CamoEditorStyle.LabelStyleName);
+            }
+            y += buttonHeight + smallMargin;
+
+            {
+                var lineX = x;
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip X"))
+                {
+                    // Plugin.FlipHorizontally(ItemId, decalIndex, decalInfo);
+                    // SyncTransformHandle(decalInfo, decal);
+                }
+                lineX += thirdBoxWidthButton + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip Y"))
+                {
+                    // Plugin.FlipVertically(ItemId, decalIndex, decalInfo);
+                    // SyncTransformHandle(decalInfo, decal);
+                }
+                lineX += thirdBoxWidthButton + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip Z"))
+                {
+                    // Plugin.FlipDirection(ItemId, decalIndex, decalInfo);
+                    // SyncTransformHandle(decalInfo, decal);
+                }
+            }
+            y += buttonHeight + bigMargin;
+		}
+
+		private void DrawDecoratorEditUI_Icons(int x, ref int y, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		{
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            {
+				var prefabData = Plugin.GetPrefabData(decoratorInfo.Prefab);
+
+                GUI.Button(new Rect(x, y, iconSize, iconSize), prefabData.Preview);
+
+                var labelX = x + iconSize + smallMargin + 12;
+                GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decoratorInfo.Prefab, CamoEditorStyle.TextureNameStyle);
+
+                y += iconSize + bigMargin;
+            }
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+
+			{
+				var decorators = Plugin.GetAllDecorators();
+
+	            var totalRows = BigCamoEditor.DivideIntCeil(decorators.Length, iconColumns);
+                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
+
+                var totalRect = new Rect(x, y, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
+
+                BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, PrefabsScrollPosition);
+                PrefabsScrollPosition = GUI.BeginScrollView(visibleRect, PrefabsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+	            for (var i = 0; i < decorators.Length; i++)
+				{
+	                var prefabName = decorators[i];
+	                var prefabData = Plugin.GetPrefabData(prefabName);
+
+	                var ix = i % iconColumns;
+	                var iy = i / iconColumns;
+
+	                var xi = x + ix * (iconSize + smallMargin);
+	                var yi = y + iy * (iconSize + smallMargin);
+
+	                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), prefabData.Preview))
+	                {
+	                    var e = Event.current;
+	                    if (e.button == 0) // left click
+	                    {
+							if (decoratorInfo.Prefab != prefabName)
+							{
+								Plugin.ChangePrefab(ItemId, decoratorIndex, decoratorInfo, prefabName);
+							}
+	                    }
+	                    if (e.button == 1) // right click
+	                    {
+	                        // Plugin.ToggleFavouriteTexture(textureName);
+	                    }
+	                }
+				}
+
+                GUI.EndScrollView();
+			}
 		}
 
         private void DrawOpenedWindowCloseButton(int windowID)
