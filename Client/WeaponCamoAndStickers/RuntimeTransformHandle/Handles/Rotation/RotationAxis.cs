@@ -45,12 +45,11 @@ namespace RuntimeHandle
             _material.SetFloat("_CameraDistance", (_transformHandle.handleCamera.transform.position - TransformHandle.position).magnitude);
         }
 
-        public override void Interact()
+        public override void Interact(Ray cameraRay)
         {
             var rperp = TransformHandle.TransformDirection(_perp);
             var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
-            var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);
             var hitPoint = cameraRay.GetPoint(closestT);
 			var offset = hitPoint - position;
@@ -68,7 +67,7 @@ namespace RuntimeHandle
             return pointDistance <= cameraDistance;
         }
 
-        public override void StartInteraction()
+        public override void StartInteraction(Ray cameraRay)
         {
             TransformHandle.rotation = Target.rotation;
 			_rotationHandle.rotation = Quaternion.identity;
@@ -76,7 +75,6 @@ namespace RuntimeHandle
             var rperp = TransformHandle.TransformDirection(_perp);
             var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
-            var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);
             var hitPoint = cameraRay.GetPoint(closestT);
             var offset = hitPoint - position;

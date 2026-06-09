@@ -33,9 +33,9 @@ namespace RuntimeHandle
 
         public abstract bool CanInteract(Vector3 hitPoint);
 
-        public abstract void StartInteraction();
+        public abstract void StartInteraction(Ray cameraRay);
 
-        public abstract void Interact();
+        public abstract void Interact(Ray cameraRay);
 
         public abstract void EndInteraction();
 

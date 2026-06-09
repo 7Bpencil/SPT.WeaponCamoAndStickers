@@ -171,7 +171,8 @@ namespace RuntimeHandle
 			{
 	            if (mouseDown)
 	            {
-	                _draggingHandle.Interact();
+		            var cameraRay = GetCameraRay();
+	                _draggingHandle.Interact(cameraRay);
 	                OnDraggingHandle?.Invoke();
 	            }
 	            if (hasReleased)
@@ -183,8 +184,8 @@ namespace RuntimeHandle
 			}
 			else
 			{
-	            var (handle, hitPoint) = GetHandle();
-
+	            var cameraRay = GetCameraRay();
+	            var (handle, hitPoint) = GetHandle(cameraRay);
 				var canInteract = handle && handle.CanInteract(hitPoint);
 				if (handle != _previousHandle)
 				{
@@ -200,7 +201,7 @@ namespace RuntimeHandle
 				if (hasPressed && canInteract)
 				{
 	                _draggingHandle = handle;
-	                _draggingHandle.StartInteraction();
+	                _draggingHandle.StartInteraction(cameraRay);
 	                OnStartedDraggingHandle?.Invoke();
 				}
 
@@ -224,10 +225,9 @@ namespace RuntimeHandle
             return handleCamera.ScreenPointToRay(Input.mousePosition);
 		}
 
-        private (HandleBase, Vector3) GetHandle()
+        private (HandleBase, Vector3) GetHandle(Ray cameraRay)
         {
-            var ray = GetCameraRay();
-			var hitsCount = Physics.RaycastNonAlloc(ray, raycastHits, maxDistance: 10, layerMask: raycastLayerMask);
+			var hitsCount = Physics.RaycastNonAlloc(cameraRay, raycastHits, maxDistance: 10, layerMask: raycastLayerMask);
             if (hitsCount != 0)
 			{
 				for (var i = 0; i < hitsCount; i++)
