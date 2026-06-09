@@ -73,8 +73,8 @@ namespace RuntimeHandle
 
         public override void Interact()
         {
-            var rperp = Target.TransformDirection(_perp);
-            var position = Target.position;
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
             var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);
@@ -92,8 +92,8 @@ namespace RuntimeHandle
 
         public override void StartInteraction()
         {
-            var rperp = Target.TransformDirection(_perp);
-            var position = Target.position;
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
             var plane = new Plane(rperp, position);
             var cameraRay = _transformHandle.GetCameraRay();
             plane.Raycast(cameraRay, out var closestT);

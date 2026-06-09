@@ -80,8 +80,8 @@ namespace RuntimeHandle
 
         public override void Interact()
         {
-            var raxis = Target.TransformDirection(_axis);
-            var position = Target.position;
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
             var ray = new Ray(position, raxis);
             var cameraRay = _transformHandle.GetCameraRay();
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
@@ -99,8 +99,8 @@ namespace RuntimeHandle
 
         public override void StartInteraction()
         {
-            var raxis = Target.TransformDirection(_axis);
-            var position = Target.position;
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
             var ray = new Ray(position, raxis);
             var cameraRay = _transformHandle.GetCameraRay();
             var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
