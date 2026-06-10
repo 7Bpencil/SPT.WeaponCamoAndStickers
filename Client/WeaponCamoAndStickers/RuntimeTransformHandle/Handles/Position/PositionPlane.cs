@@ -9,29 +9,35 @@ namespace RuntimeHandle
      */
     public class PositionPlane : HandleBase
     {
-        private Vector3 _axis1;
-        private Vector3 _axis2;
+		private IPositionAxisHandler _handler;
         private Vector3 _perp;
-
         private Vector3 _offsetLocalSpace;
 
-        public PositionPlane Initialize(RuntimeTransformHandle transformHandle, PositionHandle positionHandle, Vector3 axis1, Vector3 axis2, Vector3 perp, Color color, Shader handleShader)
+        public PositionPlane Initialize(
+			RuntimeTransformHandle transformHandle,
+			Transform positionHandle,
+			IPositionAxisHandler handler,
+			Vector3 axis1,
+			Vector3 axis2,
+			Vector3 perp,
+			Color color,
+			Shader handleShader)
         {
             _transformHandle = transformHandle;
             _defaultColor = color.WithAlpha(0.5f);
-            _axis1 = axis1;
-            _axis2 = axis2;
+
+			_handler = handler;
             _perp = perp;
 
             InitializeMaterial(handleShader);
 
-            transform.SetParent(positionHandle.transform, false);
+            transform.SetParent(positionHandle, false);
 
 			{
 	            var o = new GameObject("PositionPlane");
 	            o.transform.SetParent(transform, false);
 	            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
-	            o.transform.localPosition = _axis1 + _axis2;
+	            o.transform.localPosition = axis1 + axis2;
 	            o.AddComponent<MeshRenderer>().material = _material;
 	            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
 	            o.AddComponent<MeshCollider>();
@@ -49,7 +55,7 @@ namespace RuntimeHandle
         {
 			var newPosition = Interact_Position_Plane(cameraRay, TransformHandle, _perp, _offsetLocalSpace);
 
-            Target.position = newPosition;
+			_handler.SetPosition(newPosition);
             TransformHandle.position = newPosition;
         }
 
@@ -58,6 +64,7 @@ namespace RuntimeHandle
 			var offset = StartInteraction_Position_Plane(cameraRay, TransformHandle, _perp);
 
             _offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			_handler.OnStartInteraction();
         }
 
         public override void EndInteraction()

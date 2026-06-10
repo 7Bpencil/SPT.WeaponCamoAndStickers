@@ -39,9 +39,9 @@ namespace RuntimeHandle
             var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.up, Color.green, handleShader);
             var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.forward, Color.blue, handleShader);
 
-            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
-            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
-            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
+            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
+            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
+            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
 
             return this;
         }

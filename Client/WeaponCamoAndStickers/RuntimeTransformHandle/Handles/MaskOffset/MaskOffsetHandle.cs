@@ -69,7 +69,7 @@ namespace RuntimeHandle
 
             var axisX = new GameObject("MaskOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandlerX, Vector3.right, Color.red, handleShader);
             var axisZ = new GameObject("MaskOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandlerZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<MaskOffsetPlane>().Initialize(transformHandle, this, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), decalInfo, decal);
+            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandlerX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
 
             return this;
         }
