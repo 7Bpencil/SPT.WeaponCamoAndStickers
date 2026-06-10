@@ -16,6 +16,9 @@ namespace RuntimeHandle
      */
     public class RotationAxis : HandleBase
     {
+        public static readonly int _CameraPosition = Shader.PropertyToID("_CameraPosition");
+        public static readonly int _CameraDistance = Shader.PropertyToID("_CameraDistance");
+
 		private Transform _rotationHandle;
 		private IRotationAxisHandler _handler;
         private Vector3 _perp;
@@ -52,8 +55,9 @@ namespace RuntimeHandle
         public void Update()
         {
 			var cameraPosition = _transformHandle.handleCamera.transform.position;
-            _material.SetVector("_CameraPosition", cameraPosition);
-            _material.SetFloat("_CameraDistance", (cameraPosition - TransformHandle.position).magnitude);
+			var cameraDistance = (cameraPosition - TransformHandle.position).magnitude;
+            _material.SetVector(_CameraPosition, cameraPosition);
+            _material.SetFloat(_CameraDistance, cameraDistance);
         }
 
         public override void Interact(Ray cameraRay)
