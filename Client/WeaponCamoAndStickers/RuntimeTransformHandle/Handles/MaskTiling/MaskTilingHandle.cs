@@ -10,6 +10,33 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public class ScaleAxisHandler_MaskTiling : IScaleAxisHandler
+	{
+		private readonly DecalInfo _decalInfo;
+		private readonly Decal _decal;
+		private readonly Vector2 _uvAxis;
+		private Vector4 _startUV;
+
+        public ScaleAxisHandler_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvAxis)
+        {
+            _decalInfo = decalInfo;
+            _decal = decal;
+            _uvAxis = uvAxis;
+        }
+
+		public void OnStartInteraction()
+		{
+			_startUV = _decalInfo.MaskUV;
+		}
+
+		public void SetScale(float scale)
+		{
+			var uv = UVTools.ScaleUV(_startUV, _uvAxis, scale);
+			_decalInfo.MaskUV = uv;
+			_decal.ChangeMaskUV(_decalInfo.MaskUV);
+		}
+	}
+
     public class MaskTilingHandle : MonoBehaviour
     {
         public MaskTilingHandle Initialize(
@@ -18,10 +45,14 @@ namespace RuntimeHandle
             DecalInfo decalInfo,
             Decal decal)
         {
-            transform.SetParent(transformHandle.handleTransform, false);
+			var scaleHandleTransform = transform;
+            scaleHandleTransform.SetParent(transformHandle.handleTransform, false);
 
-            var axisX = new GameObject("MaskTilingAxis.X").AddComponent<MaskTilingAxis>().Initialize(transformHandle, this, Vector3.right, Color.red, handleShader, new(1, 0), decalInfo, decal);
-            var axisZ = new GameObject("MaskTilingAxis.Z").AddComponent<MaskTilingAxis>().Initialize(transformHandle, this, Vector3.forward, Color.blue, handleShader, new(0, 1), decalInfo, decal);
+            var scaleHandlerX = new ScaleAxisHandler_MaskTiling(decalInfo, decal, new(1, 0));
+            var scaleHandlerZ = new ScaleAxisHandler_MaskTiling(decalInfo, decal, new(0, 1));
+
+            var axisX = new GameObject("MaskTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, scaleHandleTransform, scaleHandlerX, Vector3.right, Color.red, handleShader);
+            var axisZ = new GameObject("MaskTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, scaleHandleTransform, scaleHandlerZ, Vector3.forward, Color.blue, handleShader);
             var planeXZ = new GameObject("MaskTilingPlane.XZ").AddComponent<MaskTilingPlane>().Initialize(transformHandle, this, axisX, axisZ, Vector3.up, Color.green, handleShader, new(1, 0), new(0, 1), decalInfo, decal);
 
             return this;

@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public interface IScaleAxisHandler
+	{
+		public void OnStartInteraction();
+		public void SetScale(float scale);
+	}
+
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
@@ -12,36 +18,31 @@ namespace RuntimeHandle
     {
         private const float SIZE = 2;
 
+		private IScaleAxisHandler _handler;
         private Vector3 _axis;
 		private Transform _arm;
 		private Transform _tip;
-		private DecalInfo _decalInfo;
-		private Decal _decal;
-
         private float _startOffsetLength;
-        private Vector3 _startLocalScale;
 
 		public Vector3 Axis => _axis;
 
         public ScaleAxis Initialize(
 			RuntimeTransformHandle transformHandle,
-			ScaleHandle scaleHandle,
+			Transform scaleHandle,
+			IScaleAxisHandler handler,
 			Vector3 axis,
 			Color color,
-			Shader handleShader,
-			DecalInfo decalInfo,
-            Decal decal)
+			Shader handleShader)
         {
             _transformHandle = transformHandle;
-            _axis = axis;
             _defaultColor = color.WithAlpha(0.5f);
 
-			_decalInfo = decalInfo;
-			_decal = decal;
+			_handler = handler;
+            _axis = axis;
 
             InitializeMaterial(handleShader);
 
-            transform.SetParent(scaleHandle.transform, false);
+            transform.SetParent(scaleHandle, false);
 
             {
                 var o = new GameObject("Arm");
@@ -82,9 +83,7 @@ namespace RuntimeHandle
         {
 			var scale = Interact_Scale_Axis(cameraRay, TransformHandle, _axis, _startOffsetLength);
 
-			var newLocalScale = ScaleHandle.CalculateScale(_startLocalScale, _axis, scale);
-			_decalInfo.LocalScale = newLocalScale;
-			_decal.ChangeLocalScale(newLocalScale);
+			_handler.SetScale(scale);
 
 			SetHandleVisualScale(scale);
         }
@@ -94,7 +93,7 @@ namespace RuntimeHandle
 			var offset = StartInteraction_Scale_Axis(cameraRay, TransformHandle, _axis);
 
             _startOffsetLength = offset.magnitude;
-            _startLocalScale = Target.localScale;
+			_handler.OnStartInteraction();
 
 			SetHandleVisualScale(1);
         }

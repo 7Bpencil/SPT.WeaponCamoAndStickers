@@ -19,8 +19,8 @@ namespace RuntimeHandle
         private Vector3 _axis2;
         private Vector3 _perp;
 
-        private TextureTilingAxis _axis1Handle;
-        private TextureTilingAxis _axis2Handle;
+        private ScaleAxis _axis1Handle;
+        private ScaleAxis _axis2Handle;
 
 		private Vector2 _uvAxis1;
 		private Vector2 _uvAxis2;
@@ -33,8 +33,8 @@ namespace RuntimeHandle
         public TextureTilingPlane Initialize(
 			RuntimeTransformHandle transformHandle,
 			TextureTilingHandle uvHandle,
-			TextureTilingAxis axis1,
-			TextureTilingAxis axis2,
+			ScaleAxis axis1,
+			ScaleAxis axis2,
 			Vector3 perp,
 			Color color,
 			Shader handleShader,
