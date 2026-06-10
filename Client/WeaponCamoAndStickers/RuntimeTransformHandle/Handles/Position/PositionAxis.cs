@@ -1,26 +1,42 @@
 using SevenBoldPencil.Common;
+using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public interface IPositionAxisHandler
+	{
+		public void OnStartInteraction();
+		public void SetPosition(Vector3 position);
+	}
+
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
     public class PositionAxis : HandleBase
     {
+		private IPositionAxisHandler _handler;
         private Vector3 _axis;
         private float _offsetLength;
 
-        public PositionAxis Initialize(RuntimeTransformHandle transformHandle, PositionHandle positionHandle, Vector3 axis, Color color, Shader handleShader)
+        public PositionAxis Initialize(
+			RuntimeTransformHandle transformHandle,
+			Transform positionHandle,
+			IPositionAxisHandler handler,
+			Vector3 axis,
+			Color color,
+			Shader handleShader)
         {
             _transformHandle = transformHandle;
-            _axis = axis;
             _defaultColor = color.WithAlpha(0.5f);
+
+			_handler = handler;
+            _axis = axis;
 
             InitializeMaterial(handleShader);
 
-            transform.SetParent(positionHandle.transform, false);
+            transform.SetParent(positionHandle, false);
 
             {
                 var o = new GameObject("Arm");
@@ -53,16 +69,16 @@ namespace RuntimeHandle
         {
 			var newPosition = Interact_Position_Axis(cameraRay, TransformHandle, _axis, _offsetLength);
 
-            Target.position = newPosition;
+			_handler.SetPosition(newPosition);
             TransformHandle.position = newPosition;
         }
-
 
         public override void StartInteraction(Ray cameraRay)
         {
 			var offset = StartInteraction_Position_Axis(cameraRay, TransformHandle, _axis);
 
             _offsetLength = offset.magnitude;
+			_handler.OnStartInteraction();
         }
 
         public override void EndInteraction()
