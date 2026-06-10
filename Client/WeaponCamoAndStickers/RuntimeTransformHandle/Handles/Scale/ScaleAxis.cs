@@ -81,7 +81,14 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-			var scale = Interact_Scale_Axis(cameraRay, TransformHandle, _axis, _startOffsetLength);
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
+            var ray = new Ray(position, raxis);
+            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
+            var hitPoint = ray.GetPoint(closestT);
+            var offset = hitPoint - position;
+			var offsetLength = offset.magnitude;
+            var scale = offsetLength / _startOffsetLength;
 
 			_handler.SetScale(scale);
 
@@ -90,7 +97,12 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-			var offset = StartInteraction_Scale_Axis(cameraRay, TransformHandle, _axis);
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
+            var ray = new Ray(position, raxis);
+            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
+            var hitPoint = ray.GetPoint(closestT);
+            var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
 			_handler.OnStartInteraction();

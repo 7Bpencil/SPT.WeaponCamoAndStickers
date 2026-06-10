@@ -67,7 +67,13 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-			var newPosition = Interact_Position_Axis(cameraRay, TransformHandle, _axis, _offsetLength);
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
+            var ray = new Ray(position, raxis);
+            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
+            var hitPoint = ray.GetPoint(closestT);
+            var offset = raxis * _offsetLength;
+            var newPosition = hitPoint - offset;
 
 			_handler.SetPosition(newPosition);
             TransformHandle.position = newPosition;
@@ -75,7 +81,12 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-			var offset = StartInteraction_Position_Axis(cameraRay, TransformHandle, _axis);
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
+            var ray = new Ray(position, raxis);
+            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
+            var hitPoint = ray.GetPoint(closestT);
+            var offset = hitPoint - position;
 
             _offsetLength = offset.magnitude;
 			_handler.OnStartInteraction();

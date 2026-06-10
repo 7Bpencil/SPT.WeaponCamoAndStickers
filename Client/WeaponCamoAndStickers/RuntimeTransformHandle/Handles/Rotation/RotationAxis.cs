@@ -61,7 +61,14 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-			var angle = Interact_Rotation_Axis(cameraRay, TransformHandle, _perp, _startOffsetLocalSpace);
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
+            var plane = new Plane(rperp, position);
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+			var offset = hitPoint - position;
+			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
 
 			_handler.SetAngle(angle);
 			_rotationHandle.rotation = _handler.GetRotation();
@@ -69,7 +76,10 @@ namespace RuntimeHandle
 
         public override bool CanInteract(Vector3 hitPoint)
         {
-			return CanInteract_Rotation_Axis(hitPoint, TransformHandle, _transformHandle.handleCamera);
+			var cameraPosition = _transformHandle.handleCamera.transform.position;
+            var cameraDistance = (TransformHandle.position - cameraPosition).magnitude;
+            var pointDistance = (hitPoint - cameraPosition).magnitude;
+            return pointDistance <= cameraDistance;
         }
 
         public override void StartInteraction(Ray cameraRay)
@@ -77,7 +87,12 @@ namespace RuntimeHandle
             TransformHandle.rotation = _handler.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
 
-			var offset = StartInteraction_Rotation_Axis(cameraRay, TransformHandle, _perp);
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
+            var plane = new Plane(rperp, position);
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+            var offset = hitPoint - position;
 
 			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			_handler.OnStartInteraction();
