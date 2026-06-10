@@ -37,6 +37,33 @@ namespace RuntimeHandle
 		}
 	}
 
+	public class ScalePlaneHandler_TextureTiling : IScalePlaneHandler
+	{
+		private readonly DecalInfo _decalInfo;
+		private readonly Decal _decal;
+		private readonly Vector2 _uvScaleMask;
+		private Vector4 _startUV;
+
+		public ScalePlaneHandler_TextureTiling(DecalInfo decalInfo, Decal decal, Vector2 uvScaleMask)
+		{
+			_decalInfo = decalInfo;
+			_decal = decal;
+			_uvScaleMask = uvScaleMask;
+		}
+
+		public void OnStartInteraction()
+		{
+			_startUV = _decalInfo.TextureUV;
+		}
+
+		public void SetScale(float scale)
+		{
+			var uv = UVTools.ScaleUV(_startUV, _uvScaleMask, scale);
+			_decalInfo.TextureUV = uv;
+			_decal.ChangeTextureUV(_decalInfo.TextureUV);
+		}
+	}
+
     public class TextureTilingHandle : MonoBehaviour
     {
         public TextureTilingHandle Initialize(
@@ -48,12 +75,13 @@ namespace RuntimeHandle
 			var scaleHandleTransform = transform;
             scaleHandleTransform.SetParent(transformHandle.handleTransform, false);
 
-            var scaleHandlerX = new ScaleAxisHandler_TextureTiling(decalInfo, decal, new(1, 0));
-            var scaleHandlerZ = new ScaleAxisHandler_TextureTiling(decalInfo, decal, new(0, 1));
+            var scaleHandlerX = new ScaleAxisHandler_TextureTiling(decalInfo, decal, Vector2.right);
+            var scaleHandlerZ = new ScaleAxisHandler_TextureTiling(decalInfo, decal, Vector2.up);
+			var scaleHandlerXZ = new ScalePlaneHandler_TextureTiling(decalInfo, decal, Vector2.right + Vector2.up);
 
             var axisX = new GameObject("TextureTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, scaleHandleTransform, scaleHandlerX, Vector3.right, Color.red, handleShader);
             var axisZ = new GameObject("TextureTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, scaleHandleTransform, scaleHandlerZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("TextureTilingPlane.XZ").AddComponent<TextureTilingPlane>().Initialize(transformHandle, this, axisX, axisZ, Vector3.up, Color.green, handleShader, new(1, 0), new(0, 1), decalInfo, decal);
+            var planeXZ = new GameObject("TextureTilingPlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, scaleHandleTransform, scaleHandlerXZ, axisX, axisZ, Vector3.up, Color.green, handleShader);
 
             return this;
         }

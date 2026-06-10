@@ -11,47 +11,49 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public interface IScalePlaneHandler
+	{
+		public void OnStartInteraction();
+		public void SetScale(float scale);
+	}
+
     public class ScalePlane : HandleBase
     {
         private const float SIZE = 2;
 
+		private IScalePlaneHandler _handler;
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
-		private DecalInfo _decalInfo;
-		private Decal _decal;
-
         private float _startOffsetLength;
-        private Vector3 _startLocalScale;
 
         private ScaleAxis _axis1Handle;
         private ScaleAxis _axis2Handle;
 
         public ScalePlane Initialize(
 			RuntimeTransformHandle transformHandle,
-			ScaleHandle scaleHandle,
+			Transform scaleHandle,
+			IScalePlaneHandler handler,
 			ScaleAxis axis1,
 			ScaleAxis axis2,
 			Vector3 perp,
 			Color color,
-			Shader handleShader,
-			DecalInfo decalInfo,
-            Decal decal)
+			Shader handleShader)
         {
             _transformHandle = transformHandle;
             _defaultColor = color.WithAlpha(0.5f);
+
+			_handler = handler;
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
             _perp = perp;
-			_decalInfo = decalInfo;
-			_decal = decal;
 
             _axis1Handle = axis1;
             _axis2Handle = axis2;
 
             InitializeMaterial(handleShader);
 
-            transform.SetParent(scaleHandle.transform, false);
+            transform.SetParent(scaleHandle, false);
 
 			{
 	            var o = new GameObject("Plane");
@@ -75,9 +77,7 @@ namespace RuntimeHandle
         {
 			var scale = Interact_Scale_Plane(cameraRay, TransformHandle, _perp, _startOffsetLength);
 
-			var newLocalScale = ScaleHandle.CalculateScale(_startLocalScale, _axis1 + _axis2, scale);
-			_decalInfo.LocalScale = newLocalScale;
-			_decal.ChangeLocalScale(newLocalScale);
+			_handler.SetScale(scale);
 
             SetHandlesVisualScale(scale);
         }
@@ -87,7 +87,7 @@ namespace RuntimeHandle
 			var offset = StartInteraction_Scale_Plane(cameraRay, TransformHandle, _perp);
 
             _startOffsetLength = offset.magnitude;
-            _startLocalScale = Target.localScale;
+			_handler.OnStartInteraction();
 
             SetHandlesVisualScale(1);
             SetHandlesInteractionColor();
