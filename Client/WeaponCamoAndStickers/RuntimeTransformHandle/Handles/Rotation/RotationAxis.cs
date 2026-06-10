@@ -61,11 +61,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
+			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
 			var offset = hitPoint - position;
 			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
@@ -87,11 +83,7 @@ namespace RuntimeHandle
             TransformHandle.rotation = _handler.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
 
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
+			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
             var offset = hitPoint - position;
 
 			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);

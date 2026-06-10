@@ -75,11 +75,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
             var offset = hitPoint - position;
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
@@ -91,11 +87,7 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var rperp = TransformHandle.TransformDirection(_perp);
-            var position = TransformHandle.position;
-            var plane = new Plane(rperp, position);
-            plane.Raycast(cameraRay, out var closestT);
-            var hitPoint = cameraRay.GetPoint(closestT);
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;

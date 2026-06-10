@@ -46,5 +46,26 @@ namespace RuntimeHandle
 				Destroy(_material);
 			}
 		}
+
+        public static (Vector3 position, Vector3 hitPoint, Vector3 raxis) GetAxisHitPoint(Ray cameraRay, Transform TransformHandle, Vector3 _axis)
+        {
+            var raxis = TransformHandle.TransformDirection(_axis);
+            var position = TransformHandle.position;
+            var ray = new Ray(position, raxis);
+            var closestT = HandleMathUtils.ClosestPointOnRay(ray, cameraRay);
+            var hitPoint = ray.GetPoint(closestT);
+            return (position, hitPoint, raxis);
+        }
+
+        public static (Vector3 position, Vector3 hitPoint) GetPlaneHitPoint(Ray cameraRay, Transform TransformHandle, Vector3 _perp)
+        {
+            var rperp = TransformHandle.TransformDirection(_perp);
+            var position = TransformHandle.position;
+            var plane = new Plane(rperp, position);
+            plane.Raycast(cameraRay, out var closestT);
+            var hitPoint = cameraRay.GetPoint(closestT);
+            return (position, hitPoint);
+        }
+
     }
 }
