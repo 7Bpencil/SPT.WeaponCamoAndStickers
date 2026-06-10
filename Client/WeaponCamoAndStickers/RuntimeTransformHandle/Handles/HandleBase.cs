@@ -1,3 +1,4 @@
+using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -9,14 +10,15 @@ namespace RuntimeHandle
     public abstract class HandleBase : MonoBehaviour
     {
         protected RuntimeTransformHandle _transformHandle;
-        protected Color _defaultColor;
+        private Color _defaultColor;
         protected Material _material;
 
-		public Transform Target => _transformHandle.targetTransform;
 		public Transform TransformHandle => _transformHandle.handleTransform;
 
-        protected void InitializeMaterial(Shader shader)
+        protected void Init(RuntimeTransformHandle transformHandle, Shader shader, Color defaultColor)
         {
+			_transformHandle = transformHandle;
+			_defaultColor = defaultColor.WithAlpha(0.5f);
             _material = new Material(shader);
             _material.color = _defaultColor;
         }

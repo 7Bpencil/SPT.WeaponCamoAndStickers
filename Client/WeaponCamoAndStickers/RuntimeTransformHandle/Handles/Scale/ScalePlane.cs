@@ -40,9 +40,6 @@ namespace RuntimeHandle
 			Color color,
 			Shader handleShader)
         {
-            _transformHandle = transformHandle;
-            _defaultColor = color.WithAlpha(0.5f);
-
 			_handler = handler;
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
@@ -51,7 +48,7 @@ namespace RuntimeHandle
             _axis1Handle = axis1;
             _axis2Handle = axis2;
 
-            InitializeMaterial(handleShader);
+            Init(transformHandle, handleShader, color);
 
             transform.SetParent(scaleHandle, false);
 

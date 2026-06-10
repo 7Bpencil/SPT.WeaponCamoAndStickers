@@ -28,13 +28,10 @@ namespace RuntimeHandle
 			Color color,
 			Shader handleShader)
         {
-            _transformHandle = transformHandle;
-            _defaultColor = color.WithAlpha(0.5f);
-
 			_handler = handler;
             _axis = axis;
 
-            InitializeMaterial(handleShader);
+            Init(transformHandle, handleShader, color);
 
             transform.SetParent(positionHandle, false);
 
