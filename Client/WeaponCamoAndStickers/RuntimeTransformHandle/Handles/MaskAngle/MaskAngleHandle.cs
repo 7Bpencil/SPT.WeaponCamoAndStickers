@@ -11,6 +11,38 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public class RotationAxisHandler_MaskAngle : IRotationAxisHandler
+	{
+		private readonly DecalInfo _decalInfo;
+		private readonly Decal _decal;
+		private readonly Vector3 _perp;
+		private float _startAngle;
+
+        public RotationAxisHandler_MaskAngle(DecalInfo decalInfo, Decal decal, Vector3 perp)
+        {
+    		_decalInfo = decalInfo;
+    		_decal = decal;
+			_perp = perp;
+        }
+
+		public Quaternion GetRotation()
+		{
+			var offset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.MaskAngle);
+            return _decal.DecalTransform.rotation * offset;
+		}
+
+		public void OnStartInteraction()
+		{
+			_startAngle = _decalInfo.MaskAngle;
+		}
+
+		public void SetAngle(float angle)
+		{
+			_decalInfo.MaskAngle = _startAngle + angle;
+			_decal.ChangeMaskAngle(_decalInfo.MaskAngle);
+		}
+	}
+
     public class MaskAngleHandle : MonoBehaviour
     {
         public MaskAngleHandle Initialize(
@@ -19,9 +51,12 @@ namespace RuntimeHandle
             DecalInfo decalInfo,
             Decal decal)
         {
-            transform.SetParent(transformHandle.transform, false);
+            var rotationHandleTransform = transform;
+            rotationHandleTransform.SetParent(transformHandle.transform, false);
 
-            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<MaskAngleAxis>().Initialize(transformHandle, this, Vector3.up, Color.green, handleShader, decalInfo, decal);
+            var rotationHandlerY = new RotationAxisHandler_MaskAngle(decalInfo, decal, Vector3.up);
+
+            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, rotationHandleTransform, rotationHandlerY, Vector3.up, Color.green, handleShader);
 
             return this;
         }
