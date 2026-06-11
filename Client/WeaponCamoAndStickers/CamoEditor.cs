@@ -1413,113 +1413,55 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (TransformHandle)
             {
-                if (TransformHandle.type == handleType)
-                {
-                    return;
-                }
-
                 ForceOnEndedDraggingHandle();
-                TransformHandle.DestroyHandles();
-            }
-            else
-            {
-                TransformHandle = RuntimeTransformHandle.Create
-                (
-                    decal.DecalTransform,
-                    Camera,
-                    CamoEditorResources.PositionHandleShader,
-                    CamoEditorResources.RotationHandleShader,
-                    CamoEditorResources.ScaleHandleShader,
-                    1 << LayerMaskClass.WeaponPreview
-                );
-
-                TransformHandle.OnEndedDraggingHandle += () => OnEndedDraggingHandle(decalIndex, decalInfo, decal);
+                DestroyTransformHandle();
             }
 
-			if (handleType == HandleType.Position)
-			{
-                TransformHandle.CreateHandlePosition();
-			}
-			if (handleType == HandleType.Rotation)
-			{
-                TransformHandle.CreateHandleRotation();
-			}
-			if (handleType == HandleType.Scale)
-			{
-                TransformHandle.CreateHandleScale(decalInfo, decal);
-			}
-            if (handleType == HandleType.TextureOffset)
-            {
-                TransformHandle.CreateHandleTextureOffset(decalInfo, decal);
-            }
-            if (handleType == HandleType.TextureAngle)
-            {
-                TransformHandle.CreateHandleTextureAngle(decalInfo, decal);
-            }
-            if (handleType == HandleType.TextureTiling)
-            {
-                TransformHandle.CreateHandleTextureTiling(decalInfo, decal);
-            }
-            if (handleType == HandleType.MaskOffset)
-            {
-                TransformHandle.CreateHandleMaskOffset(decalInfo, decal);
-            }
-            if (handleType == HandleType.MaskAngle)
-            {
-                TransformHandle.CreateHandleMaskAngle(decalInfo, decal);
-            }
-            if (handleType == HandleType.MaskTiling)
-            {
-                TransformHandle.CreateHandleMaskTiling(decalInfo, decal);
-            }
-
-            SyncTransformHandle();
+            var handle = CreateTransformHandle(handleType, decalIndex, decalInfo, decal);
+            TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalTransform.parent, Camera, 1 << LayerMaskClass.WeaponPreview);
 			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
 
-        private void OnEndedDraggingHandle(int decalIndex, DecalInfo decalInfo, Decal decal)
+        public ITransformHandle CreateTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
-            var handleType = TransformHandle.type;
-
-            if (handleType == HandleType.Position)
-            {
-                decalInfo.LocalPosition = decal.DecalTransform.localPosition;
-                Plugin.ApplyLocalPosition(ItemId, decalIndex);
-            }
-            if (handleType == HandleType.Rotation)
-            {
-                decalInfo.LocalEulerAngles = decal.DecalTransform.localEulerAngles;
-                Plugin.ApplyLocalEulerAngles(ItemId, decalIndex);
-            }
-            if (handleType == HandleType.Scale)
-            {
-                decalInfo.LocalScale = decal.DecalTransform.localScale;
-                Plugin.ApplyLocalScale(ItemId, decalIndex);
-            }
+     		if (handleType == HandleType.Position)
+			{
+                return new PositionHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.PositionHandleShader);
+			}
+			if (handleType == HandleType.Rotation)
+			{
+                return new RotationHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.RotationHandleShader);
+			}
+			if (handleType == HandleType.Scale)
+			{
+                return new ScaleHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.ScaleHandleShader);
+			}
             if (handleType == HandleType.TextureOffset)
             {
-                Plugin.ApplyTextureUV(ItemId, decalIndex);
+                return new TextureOffsetHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.PositionHandleShader);
             }
             if (handleType == HandleType.TextureAngle)
             {
-                Plugin.ApplyTextureAngle(ItemId, decalIndex);
+                return new TextureAngleHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.RotationHandleShader);
             }
             if (handleType == HandleType.TextureTiling)
             {
-                Plugin.ApplyTextureUV(ItemId, decalIndex);
+                return new TextureTilingHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.ScaleHandleShader);
             }
             if (handleType == HandleType.MaskOffset)
             {
-                Plugin.ApplyMaskUV(ItemId, decalIndex);
+                return new MaskOffsetHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.PositionHandleShader);
             }
             if (handleType == HandleType.MaskAngle)
             {
-                Plugin.ApplyMaskAngle(ItemId, decalIndex);
+                return new MaskAngleHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.RotationHandleShader);
             }
             if (handleType == HandleType.MaskTiling)
             {
-                Plugin.ApplyMaskUV(ItemId, decalIndex);
+                return new MaskTilingHandle(Plugin, ItemId, decalIndex, decalInfo, decal, CamoEditorResources.ScaleHandleShader);
             }
+
+            throw new ArgumentException($"unknown handleType: {handleType}");
         }
 
         private void SyncTransformHandle()
@@ -1534,7 +1476,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (TransformHandle && TransformHandle.IsDragging)
             {
-                TransformHandle.OnEndedDraggingHandle.Invoke();
+                TransformHandle.InvokeOnInteractionEnd();
             }
         }
 

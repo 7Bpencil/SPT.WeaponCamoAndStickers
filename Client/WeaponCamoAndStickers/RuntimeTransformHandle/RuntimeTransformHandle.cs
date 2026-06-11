@@ -1,13 +1,13 @@
-﻿using SevenBoldPencil.WeaponCamoAndStickers;
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace RuntimeHandle
 {
 	public interface ITransformHandle
 	{
-		public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root);
+		public void Init(Transform transformHandle, Camera transformHandleCamera, Transform root);
         public void Reset(Transform transformHandle);
+		public void OnInteractionEnd();
 	}
 
     /**
@@ -16,13 +16,16 @@ namespace RuntimeHandle
      */
     public class RuntimeTransformHandle : MonoBehaviour
     {
-        public HandleType type;
+        private const bool _autoScale = true;
+        private const float _autoScaleFactor = 1f / 30f;
 
-        public bool autoScale = true;
-        public float autoScaleFactor = 0.5f;
+		private Transform _transform;
+        private Camera _camera;
+		private RaycastHit[] _raycastHits;
+		private int _raycastLayerMask;
+		private Transform _root;
+        private ITransformHandle _handle;
 
-		private RaycastHit[] raycastHits;
-		private int raycastLayerMask;
         private Vector3 _previousMousePosition;
 		private bool _previousMouseDown;
         private HandleBase _previousHandle;
@@ -30,94 +33,41 @@ namespace RuntimeHandle
 
 		public bool IsDragging => _draggingHandle;
 
-		private Transform _root;
-        private ITransformHandle _handle;
-
-        public Transform targetTransform;
-		public Transform handleTransform;
-        public Camera handleCamera;
-
-        public Action OnStartedDraggingHandle;
-        public Action OnDraggingHandle;
-        public Action OnEndedDraggingHandle;
-
-        private Shader positionHandleShader;
-        private Shader rotationHandleShader;
-        private Shader scaleHandleShader;
-
-		private void CreateHandle(ITransformHandle handle, Shader handleShader, HandleType handleType)
-		{
-			type = handleType;
-			_root = CreateRoot();
-			_handle = handle;
-			_handle.Init(handleTransform, handleCamera, handleShader, _root);
-		}
-
-		private Transform CreateRoot()
-		{
-			var root = new GameObject("Root").transform;
-            root.SetParent(handleTransform, false);
-			return root;
-		}
-
-        public void CreateHandlePosition()
+        public static RuntimeTransformHandle Create(ITransformHandle handler, Transform parent, Camera handleCamera, int raycastLayerMask)
         {
-			CreateHandle(new PositionHandle(targetTransform), positionHandleShader, HandleType.Position);
-		}
+			var go = new GameObject("RuntimeTransformHandle");
+			var handle = go.AddComponent<RuntimeTransformHandle>();
+			var handleTransform = go.transform;
 
-        public void CreateHandleRotation()
-		{
-			CreateHandle(new RotationHandle(targetTransform), rotationHandleShader, HandleType.Rotation);
-		}
+			handleTransform.parent = parent;
 
-        public void CreateHandleScale(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new ScaleHandle(decalInfo, decal), scaleHandleShader, HandleType.Scale);
+			handle._transform = handleTransform;
+			handle._camera = handleCamera;
+
+			handle._raycastHits = new RaycastHit[5];
+			handle._raycastLayerMask = raycastLayerMask;
+
+			handle._root = new GameObject("Root").transform;
+            handle._root.SetParent(handleTransform, false);
+
+			handle._handle = handler;
+			handle._handle.Init(handleTransform, handleCamera, handle._root);
+			handle._handle.Reset(handleTransform);
+
+			handle.UpdateAutoScale();
+
+            return handle;
         }
-
-		public void CreateHandleTextureOffset(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new TextureOffsetHandle(decalInfo, decal), positionHandleShader, HandleType.TextureOffset);
-		}
-
-		public void CreateHandleTextureAngle(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new TextureAngleHandle(decalInfo, decal), rotationHandleShader, HandleType.TextureAngle);
-		}
-
-		public void CreateHandleTextureTiling(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new TextureTilingHandle(decalInfo, decal), scaleHandleShader, HandleType.TextureTiling);
-		}
-
-		public void CreateHandleMaskOffset(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new MaskOffsetHandle(decalInfo, decal), positionHandleShader, HandleType.MaskOffset);
-		}
-
-		public void CreateHandleMaskAngle(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new MaskAngleHandle(decalInfo, decal), rotationHandleShader, HandleType.MaskAngle);
-		}
-
-		public void CreateHandleMaskTiling(DecalInfo decalInfo, Decal decal)
-		{
-			CreateHandle(new MaskTilingHandle(decalInfo, decal), scaleHandleShader, HandleType.MaskTiling);
-		}
 
 		public void ResetHandleTransform()
 		{
-			_handle.Reset(handleTransform);
+			_handle.Reset(_transform);
 		}
 
-        public void DestroyHandles()
-        {
-            _draggingHandle = null;
-			_previousHandle = null;
-
-			Destroy(_root.gameObject);
-			_handle = null;
-        }
+		public void InvokeOnInteractionEnd()
+		{
+			_handle.OnInteractionEnd();
+		}
 
         private void Update()
         {
@@ -142,12 +92,11 @@ namespace RuntimeHandle
 	            {
 		            var cameraRay = GetCameraRay();
 	                _draggingHandle.Interact(cameraRay);
-	                OnDraggingHandle?.Invoke();
 	            }
 	            if (hasReleased)
 	            {
 	                _draggingHandle.EndInteraction();
-	                OnEndedDraggingHandle?.Invoke();
+					_handle.OnInteractionEnd();
 	                _draggingHandle = null;
 	            }
 			}
@@ -171,7 +120,6 @@ namespace RuntimeHandle
 				{
 	                _draggingHandle = handle;
 	                _draggingHandle.StartInteraction(cameraRay);
-	                OnStartedDraggingHandle?.Invoke();
 				}
 
 	            _previousHandle = handle;
@@ -181,27 +129,28 @@ namespace RuntimeHandle
 			_previousMouseDown = mouseDown;
         }
 
-		public void UpdateAutoScale()
+		private void UpdateAutoScale()
 		{
-            if (autoScale)
+            if (_autoScale)
 			{
-                handleTransform.localScale = Vector3.one * (Vector3.Distance(handleCamera.transform.position, handleTransform.position) * autoScaleFactor) / 15f;
+				var cameraDistance = Vector3.Distance(_camera.transform.position, _transform.position);
+                _transform.localScale = Vector3.one * (cameraDistance * _autoScaleFactor);
 			}
 		}
 
-		public Ray GetCameraRay()
+		private Ray GetCameraRay()
 		{
-            return handleCamera.ScreenPointToRay(Input.mousePosition);
+            return _camera.ScreenPointToRay(Input.mousePosition);
 		}
 
         private (HandleBase, Vector3) GetHandle(Ray cameraRay)
         {
-			var hitsCount = Physics.RaycastNonAlloc(cameraRay, raycastHits, maxDistance: 10, layerMask: raycastLayerMask);
+			var hitsCount = Physics.RaycastNonAlloc(cameraRay, _raycastHits, maxDistance: 10, layerMask: _raycastLayerMask);
             if (hitsCount != 0)
 			{
 				for (var i = 0; i < hitsCount; i++)
 				{
-					var hit = raycastHits[i];
+					var hit = _raycastHits[i];
 	                var p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
 	                if (p_handle)
 	                {
@@ -211,38 +160,6 @@ namespace RuntimeHandle
 			}
 
             return default;
-        }
-
-        public static RuntimeTransformHandle Create(
-			Transform target,
-			Camera handleCamera,
-			Shader positionHandleShader,
-			Shader rotationHandleShader,
-			Shader scaleHandleShader,
-			int raycastLayerMask)
-        {
-			var handleGO = new GameObject("RuntimeTransformHandle", typeof(RuntimeTransformHandle));
-			var handleTransform = handleGO.transform;
-            var handle = handleGO.GetComponent<RuntimeTransformHandle>();
-
-			handleTransform.parent = target.parent;
-			handleTransform.localPosition = target.localPosition;
-			handleTransform.localRotation = target.localRotation;
-
-            handle.targetTransform = target;
-			handle.handleTransform = handleTransform;
-			handle.handleCamera = handleCamera;
-
-	        handle.positionHandleShader = positionHandleShader;
-	        handle.rotationHandleShader = rotationHandleShader;
-	        handle.scaleHandleShader = scaleHandleShader;
-
-			handle.raycastHits = new RaycastHit[5];
-			handle.raycastLayerMask = raycastLayerMask;
-
-			handle.UpdateAutoScale();
-
-            return handle;
         }
 
     }

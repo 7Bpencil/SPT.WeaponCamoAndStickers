@@ -4,19 +4,12 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class ScaleAxisHandle_Transform : IScaleAxisHandle
+	public class ScaleAxisHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 axis) : IScaleAxisHandle
 	{
-		private readonly DecalInfo _decalInfo;
-		private readonly Decal _decal;
-		private readonly Vector3 _axis;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
+		private readonly Vector3 _axis = axis;
         private Vector3 _startLocalScale;
-
-		public ScaleAxisHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 axis)
-		{
-			_decalInfo = decalInfo;
-			_decal = decal;
-			_axis = axis;
-		}
 
 		public void OnStartInteraction()
 		{
@@ -31,19 +24,12 @@ namespace RuntimeHandle
 		}
 	}
 
-	public class ScalePlaneHandle_Transform : IScalePlaneHandle
+	public class ScalePlaneHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 scaleMask) : IScalePlaneHandle
 	{
-		private readonly DecalInfo _decalInfo;
-		private readonly Decal _decal;
-		private readonly Vector3 _scaleMask;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
+		private readonly Vector3 _scaleMask = scaleMask;
         private Vector3 _startLocalScale;
-
-		public ScalePlaneHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 scaleMask)
-		{
-			_decalInfo = decalInfo;
-			_decal = decal;
-			_scaleMask = scaleMask;
-		}
 
 		public void OnStartInteraction()
 		{
@@ -62,28 +48,26 @@ namespace RuntimeHandle
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
-    public class ScaleHandle : ITransformHandle
+    public class ScaleHandle(Plugin plugin, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal, Shader handleShader) : ITransformHandle
     {
-		private readonly DecalInfo _decalInfo;
-		private readonly Decal _decal;
+		private readonly Plugin _plugin = plugin;
+		private readonly string _itemId = itemId;
+		private readonly int _decalIndex = decalIndex;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
+		private readonly Shader _handleShader = handleShader;
 
-		public ScaleHandle(DecalInfo decalInfo, Decal decal)
-		{
-			_decalInfo = decalInfo;
-			_decal = decal;
-		}
-
-        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Transform root)
         {
 			var scaleHandleX = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.right);
 			var scaleHandleY = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.up);
 			var scaleHandleZ = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.forward);
 			var scaleHandleXZ = new ScalePlaneHandle_Transform(_decalInfo, _decal, Vector3.right + Vector3.forward);
 
-            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleY, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandleXZ, axisX, axisZ, Vector3.up, Color.green, handleShader);
+            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, _handleShader);
+            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleY, Vector3.up, Color.green, _handleShader);
+            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, _handleShader);
+            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandleXZ, axisX, axisZ, Vector3.up, Color.green, _handleShader);
         }
 
         public void Reset(Transform transformHandle)
@@ -95,6 +79,12 @@ namespace RuntimeHandle
 		public static Vector3 CalculateScale(Vector3 startScale, Vector3 mask, float scale)
 		{
 			return Vector3.Scale(startScale, Vector3.one + mask * (scale - 1));
+		}
+
+		public void OnInteractionEnd()
+		{
+            _decalInfo.LocalScale = _decal.DecalTransform.localScale;
+            _plugin.ApplyLocalScale(_itemId, _decalIndex);
 		}
     }
 }

@@ -1,18 +1,13 @@
+using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class RotationAxisHandle_Transform : IRotationAxisHandle
+	public class RotationAxisHandle_Transform(Transform target, Vector3 perp) : IRotationAxisHandle
 	{
-		private readonly Transform _target;
-		private readonly Vector3 _perp;
+		private readonly Transform _target = target;
+		private readonly Vector3 _perp = perp;
 		private Quaternion _startLocalRotation;
-
-		public RotationAxisHandle_Transform(Transform target, Vector3 perp)
-		{
-			_target = target;
-			_perp = perp;
-		}
 
 		public Vector3 GetPosition()
 		{
@@ -39,30 +34,36 @@ namespace RuntimeHandle
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
-    public class RotationHandle : ITransformHandle
+    public class RotationHandle(Plugin plugin, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal, Shader handleShader) : ITransformHandle
     {
-		private readonly Transform _target;
+		private readonly Plugin _plugin = plugin;
+		private readonly string _itemId = itemId;
+		private readonly int _decalIndex = decalIndex;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
+		private readonly Shader _handleShader = handleShader;
 
-		public RotationHandle(Transform target)
-		{
-			_target = target;
-		}
-
-        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Transform root)
         {
-			var rotationHandleX = new RotationAxisHandle_Transform(_target, Vector3.right);
-			var rotationHandleY = new RotationAxisHandle_Transform(_target, Vector3.up);
-			var rotationHandleZ = new RotationAxisHandle_Transform(_target, Vector3.forward);
+			var rotationHandleX = new RotationAxisHandle_Transform(_decal.DecalTransform, Vector3.right);
+			var rotationHandleY = new RotationAxisHandle_Transform(_decal.DecalTransform, Vector3.up);
+			var rotationHandleZ = new RotationAxisHandle_Transform(_decal.DecalTransform, Vector3.forward);
 
-            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleX, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleZ, Vector3.forward, Color.blue, handleShader);
+            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleX, Vector3.right, Color.red, _handleShader);
+            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, _handleShader);
+            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleZ, Vector3.forward, Color.blue, _handleShader);
         }
 
         public void Reset(Transform transformHandle)
 		{
-            transformHandle.localPosition = _target.localPosition;
-            transformHandle.localRotation = _target.localRotation;
+            transformHandle.localPosition = _decal.DecalTransform.localPosition;
+            transformHandle.localRotation = _decal.DecalTransform.localRotation;
+		}
+
+		public void OnInteractionEnd()
+		{
+            _decalInfo.LocalEulerAngles = _decal.DecalTransform.localEulerAngles;
+            _plugin.ApplyLocalEulerAngles(_itemId, _decalIndex);
 		}
     }
 }

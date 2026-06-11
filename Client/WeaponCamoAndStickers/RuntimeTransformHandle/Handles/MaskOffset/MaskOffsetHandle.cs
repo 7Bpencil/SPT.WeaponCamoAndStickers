@@ -11,26 +11,16 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class PositionAxisHandle_MaskOffset : IPositionAxisHandle
+	public class PositionAxisHandle_MaskOffset(Vector3 axis1, Vector3 axis2, Vector4 uvAxis1, Vector4 uvAxis2, DecalInfo decalInfo, Decal decal) : IPositionAxisHandle
 	{
-        private readonly Vector3 _axis1;
-        private readonly Vector3 _axis2;
-		private readonly Vector4 _uvAxis1;
-		private readonly Vector4 _uvAxis2;
-		private readonly DecalInfo _decalInfo;
-		private readonly Decal _decal;
+        private readonly Vector3 _axis1 = axis1;
+        private readonly Vector3 _axis2 = axis2;
+		private readonly Vector4 _uvAxis1 = uvAxis1;
+		private readonly Vector4 _uvAxis2 = uvAxis2;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
 		private Vector3 _startLocalPosition;
 		private Vector4 _startUV;
-
-		public PositionAxisHandle_MaskOffset(Vector3 axis1, Vector3 axis2, Vector4 uvAxis1, Vector4 uvAxis2, DecalInfo decalInfo, Decal decal)
-		{
-	        _axis1 = axis1;
-	        _axis2 = axis2;
-			_uvAxis1 = uvAxis1;
-			_uvAxis2 = uvAxis2;
-			_decalInfo = decalInfo;
-			_decal = decal;
-		}
 
 		public void OnStartInteraction()
 		{
@@ -53,25 +43,23 @@ namespace RuntimeHandle
 		}
 	}
 
-    public class MaskOffsetHandle : ITransformHandle
+    public class MaskOffsetHandle(Plugin plugin, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal, Shader handleShader) : ITransformHandle
     {
-		private readonly DecalInfo _decalInfo;
-		private readonly Decal _decal;
+		private readonly Plugin _plugin = plugin;
+		private readonly string _itemId = itemId;
+		private readonly int _decalIndex = decalIndex;
+		private readonly DecalInfo _decalInfo = decalInfo;
+		private readonly Decal _decal = decal;
+		private readonly Shader _handleShader = handleShader;
 
-		public MaskOffsetHandle(DecalInfo decalInfo, Decal decal)
-		{
-			_decalInfo = decalInfo;
-			_decal = decal;
-		}
-
-        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Transform root)
         {
             var positionHandleX = new PositionAxisHandle_MaskOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
             var positionHandleZ = new PositionAxisHandle_MaskOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);
 
-            var axisX = new GameObject("MaskOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Color.red, handleShader);
-            var axisZ = new GameObject("MaskOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
+            var axisX = new GameObject("MaskOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Color.red, _handleShader);
+            var axisZ = new GameObject("MaskOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleZ, Vector3.forward, Color.blue, _handleShader);
+            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Vector3.forward, Vector3.up, Color.green, _handleShader);
         }
 
         public void Reset(Transform transformHandle)
@@ -80,5 +68,10 @@ namespace RuntimeHandle
 			transformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
             transformHandle.localRotation = _decal.DecalTransform.localRotation * rotationOffset;
         }
+
+		public void OnInteractionEnd()
+		{
+            _plugin.ApplyMaskUV(_itemId, _decalIndex);
+		}
     }
 }
