@@ -5,8 +5,6 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -21,6 +19,7 @@ namespace RuntimeHandle
     {
         private const float SIZE = 2;
 
+		private Transform _transformHandle;
 		private IScalePlaneHandle _handle;
         private Vector3 _axis1;
         private Vector3 _axis2;
@@ -31,7 +30,7 @@ namespace RuntimeHandle
         private ScaleAxis _axis2Handle;
 
         public ScalePlane Initialize(
-			RuntimeTransformHandle transformHandle,
+			Transform transformHandle,
 			Transform scaleHandle,
 			IScalePlaneHandle handle,
 			ScaleAxis axis1,
@@ -40,6 +39,7 @@ namespace RuntimeHandle
 			Color color,
 			Shader handleShader)
         {
+			_transformHandle = transformHandle;
 			_handle = handle;
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
@@ -48,7 +48,7 @@ namespace RuntimeHandle
             _axis1Handle = axis1;
             _axis2Handle = axis2;
 
-            Init(transformHandle, handleShader, color);
+            Init(handleShader, color);
 
             transform.SetParent(scaleHandle, false);
 
@@ -72,7 +72,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
             var offset = hitPoint - position;
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
@@ -84,7 +84,7 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;

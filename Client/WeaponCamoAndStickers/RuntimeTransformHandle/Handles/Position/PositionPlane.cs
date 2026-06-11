@@ -1,4 +1,3 @@
-using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -9,12 +8,13 @@ namespace RuntimeHandle
      */
     public class PositionPlane : HandleBase
     {
+		private Transform _transformHandle;
 		private IPositionAxisHandle _handle;
         private Vector3 _perp;
         private Vector3 _offsetLocalSpace;
 
         public PositionPlane Initialize(
-			RuntimeTransformHandle transformHandle,
+			Transform transformHandle,
 			Transform positionHandle,
 			IPositionAxisHandle handle,
 			Vector3 axis1,
@@ -23,10 +23,11 @@ namespace RuntimeHandle
 			Color color,
 			Shader handleShader)
         {
+			_transformHandle = transformHandle;
 			_handle = handle;
             _perp = perp;
 
-            Init(transformHandle, handleShader, color);
+            Init(handleShader, color);
 
             transform.SetParent(positionHandle, false);
 
@@ -50,20 +51,20 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var (_, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
-            var offset = TransformHandle.TransformDirection(_offsetLocalSpace);
+            var (_, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
+            var offset = _transformHandle.TransformDirection(_offsetLocalSpace);
             var newPosition = hitPoint - offset;
 
 			_handle.SetPosition(newPosition);
-            TransformHandle.position = newPosition;
+            _transformHandle.position = newPosition;
         }
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
             var offset = hitPoint - position;
 
-            _offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+            _offsetLocalSpace = _transformHandle.InverseTransformDirection(offset);
 			_handle.OnStartInteraction();
         }
 

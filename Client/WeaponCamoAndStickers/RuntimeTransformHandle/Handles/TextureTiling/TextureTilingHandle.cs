@@ -73,7 +73,7 @@ namespace RuntimeHandle
 			_decal = decal;
 		}
 
-        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
         {
             var scaleHandleX = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.right);
             var scaleHandleZ = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.up);

@@ -1,5 +1,3 @@
-using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -16,22 +14,24 @@ namespace RuntimeHandle
      */
     public class PositionAxis : HandleBase
     {
+		private Transform _transformHandle;
 		private IPositionAxisHandle _handle;
         private Vector3 _axis;
         private float _offsetLength;
 
         public PositionAxis Initialize(
-			RuntimeTransformHandle transformHandle,
+			Transform transformHandle,
 			Transform positionHandle,
 			IPositionAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
+			_transformHandle = transformHandle;
 			_handle = handle;
             _axis = axis;
 
-            Init(transformHandle, handleShader, color);
+            Init(handleShader, color);
 
             transform.SetParent(positionHandle, false);
 
@@ -64,17 +64,17 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-			var (_, hitPoint, raxis) = GetAxisHitPoint(cameraRay, TransformHandle, _axis);
+			var (_, hitPoint, raxis) = GetAxisHitPoint(cameraRay, _transformHandle, _axis);
             var offset = raxis * _offsetLength;
             var newPosition = hitPoint - offset;
 
 			_handle.SetPosition(newPosition);
-            TransformHandle.position = newPosition;
+            _transformHandle.position = newPosition;
         }
 
         public override void StartInteraction(Ray cameraRay)
         {
-			var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, TransformHandle, _axis);
+			var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, _transformHandle, _axis);
             var offset = hitPoint - position;
 
             _offsetLength = offset.magnitude;

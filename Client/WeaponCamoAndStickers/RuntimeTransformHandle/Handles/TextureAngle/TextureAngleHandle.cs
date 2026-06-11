@@ -54,10 +54,10 @@ namespace RuntimeHandle
 			_decal = decal;
 		}
 
-        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
         {
             var rotationHandleY = new RotationAxisHandle_TextureAngle(_decalInfo, _decal, Vector3.up);
-            var axisY = new GameObject("TextureAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandleY, Vector3.up, Color.green, handleShader);
+            var axisY = new GameObject("TextureAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, handleShader);
         }
 
         public void Reset(Transform transformHandle)

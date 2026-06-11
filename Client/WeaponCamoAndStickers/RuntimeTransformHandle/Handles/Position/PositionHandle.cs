@@ -35,7 +35,7 @@ namespace RuntimeHandle
 			_target = target;
 		}
 
-        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
         {
 			var axisHandle = new PositionAxisHandle_Tranform(_target);
 

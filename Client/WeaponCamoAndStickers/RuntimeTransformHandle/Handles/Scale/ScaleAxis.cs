@@ -1,5 +1,3 @@
-using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -18,6 +16,7 @@ namespace RuntimeHandle
     {
         private const float SIZE = 2;
 
+		private Transform _transformHandle;
 		private IScaleAxisHandle _handle;
         private Vector3 _axis;
 		private Transform _arm;
@@ -27,17 +26,18 @@ namespace RuntimeHandle
 		public Vector3 Axis => _axis;
 
         public ScaleAxis Initialize(
-			RuntimeTransformHandle transformHandle,
+			Transform transformHandle,
 			Transform scaleHandle,
 			IScaleAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
+			_transformHandle = transformHandle;
 			_handle = handle;
             _axis = axis;
 
-            Init(transformHandle, handleShader, color);
+            Init(handleShader, color);
 
             transform.SetParent(scaleHandle, false);
 
@@ -78,7 +78,7 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
         {
-            var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, TransformHandle, _axis);
+            var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, _transformHandle, _axis);
             var offset = hitPoint - position;
 			var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
@@ -90,7 +90,7 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, TransformHandle, _axis);
+            var (position, hitPoint, _) = GetAxisHitPoint(cameraRay, _transformHandle, _axis);
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;

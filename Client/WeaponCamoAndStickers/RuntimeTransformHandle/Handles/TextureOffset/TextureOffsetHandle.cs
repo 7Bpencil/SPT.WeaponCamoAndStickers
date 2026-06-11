@@ -64,7 +64,7 @@ namespace RuntimeHandle
 			_decal = decal;
 		}
 
-        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
         {
             var positionHandleX = new PositionAxisHandle_TextureOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
             var positionHandleZ = new PositionAxisHandle_TextureOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);

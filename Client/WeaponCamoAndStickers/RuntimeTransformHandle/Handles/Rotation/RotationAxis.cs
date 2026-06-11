@@ -1,4 +1,3 @@
-using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -19,24 +18,29 @@ namespace RuntimeHandle
         public static readonly int _CameraPosition = Shader.PropertyToID("_CameraPosition");
         public static readonly int _CameraDistance = Shader.PropertyToID("_CameraDistance");
 
+		private Transform _transformHandle;
+		private Transform _transformHandleCamera;
 		private Transform _rotationHandle;
 		private IRotationAxisHandle _handle;
         private Vector3 _perp;
 		private Vector3 _startOffsetLocalSpace;
 
         public RotationAxis Initialize(
-			RuntimeTransformHandle transformHandle,
+			Transform transformHandle,
+			Camera transformHandleCamera,
 			Transform rotationHandle,
 			IRotationAxisHandle handle,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
         {
+			_transformHandle = transformHandle;
+			_transformHandleCamera = transformHandleCamera.transform;
 			_rotationHandle = rotationHandle;
 			_handle = handle;
             _perp = perp;
 
-            Init(transformHandle, handleShader, color);
+            Init(handleShader, color);
 
             transform.SetParent(_rotationHandle, false);
 
@@ -54,17 +58,17 @@ namespace RuntimeHandle
 
         public void Update()
         {
-			var cameraPosition = _transformHandle.handleCamera.transform.position;
-			var cameraDistance = (cameraPosition - TransformHandle.position).magnitude;
+			var cameraPosition = _transformHandleCamera.position;
+			var cameraDistance = (cameraPosition - _transformHandle.position).magnitude;
             _material.SetVector(_CameraPosition, cameraPosition);
             _material.SetFloat(_CameraDistance, cameraDistance);
         }
 
         public override void Interact(Ray cameraRay)
         {
-			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
+			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
 			var offset = hitPoint - position;
-			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			var offsetLocalSpace = _transformHandle.InverseTransformDirection(offset);
 			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
 
 			_handle.SetAngle(angle);
@@ -73,27 +77,27 @@ namespace RuntimeHandle
 
         public override bool CanInteract(Vector3 hitPoint)
         {
-			var cameraPosition = _transformHandle.handleCamera.transform.position;
-            var cameraDistance = (TransformHandle.position - cameraPosition).magnitude;
+			var cameraPosition = _transformHandleCamera.position;
+            var cameraDistance = (_transformHandle.position - cameraPosition).magnitude;
             var pointDistance = (hitPoint - cameraPosition).magnitude;
             return pointDistance <= cameraDistance;
         }
 
         public override void StartInteraction(Ray cameraRay)
         {
-            TransformHandle.rotation = _handle.GetRotation();
+            _transformHandle.rotation = _handle.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
 
-			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
+			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, _perp);
             var offset = hitPoint - position;
 
-			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
+			_startOffsetLocalSpace = _transformHandle.InverseTransformDirection(offset);
 			_handle.OnStartInteraction();
         }
 
         public override void EndInteraction()
         {
-            TransformHandle.rotation = _handle.GetRotation();
+            _transformHandle.rotation = _handle.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
         }
     }

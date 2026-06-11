@@ -48,15 +48,15 @@ namespace RuntimeHandle
 			_target = target;
 		}
 
-        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
+        public void Init(Transform transformHandle, Camera transformHandleCamera, Shader handleShader, Transform root)
         {
 			var rotationHandleX = new RotationAxisHandle_Transform(_target, Vector3.right);
 			var rotationHandleY = new RotationAxisHandle_Transform(_target, Vector3.up);
 			var rotationHandleZ = new RotationAxisHandle_Transform(_target, Vector3.forward);
 
-            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandleX, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandleY, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandleZ, Vector3.forward, Color.blue, handleShader);
+            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleX, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleZ, Vector3.forward, Color.blue, handleShader);
         }
 
         public void Reset(Transform transformHandle)
