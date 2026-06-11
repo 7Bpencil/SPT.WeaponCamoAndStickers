@@ -31,8 +31,7 @@ namespace RuntimeHandle
 
 		public void SetScale(float scale)
 		{
-			var uv = UVTools.ScaleUV(_startUV, _uvAxis, scale);
-			_decalInfo.MaskUV = uv;
+			_decalInfo.MaskUV = UVTools.ScaleUV(_startUV, _uvAxis, scale);
 			_decal.ChangeMaskUV(_decalInfo.MaskUV);
 		}
 	}
@@ -58,8 +57,7 @@ namespace RuntimeHandle
 
 		public void SetScale(float scale)
 		{
-			var uv = UVTools.ScaleUV(_startUV, _uvScaleMask, scale);
-			_decalInfo.MaskUV = uv;
+			_decalInfo.MaskUV = UVTools.ScaleUV(_startUV, _uvScaleMask, scale);
 			_decal.ChangeMaskUV(_decalInfo.MaskUV);
 		}
 	}
