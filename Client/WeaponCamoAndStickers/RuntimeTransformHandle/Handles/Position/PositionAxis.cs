@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public interface IPositionAxisHandler
+	public interface IPositionAxisHandle
 	{
 		public void OnStartInteraction();
 		public void SetPosition(Vector3 position);
@@ -16,19 +16,19 @@ namespace RuntimeHandle
      */
     public class PositionAxis : HandleBase
     {
-		private IPositionAxisHandler _handler;
+		private IPositionAxisHandle _handle;
         private Vector3 _axis;
         private float _offsetLength;
 
         public PositionAxis Initialize(
 			RuntimeTransformHandle transformHandle,
 			Transform positionHandle,
-			IPositionAxisHandler handler,
+			IPositionAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
-			_handler = handler;
+			_handle = handle;
             _axis = axis;
 
             Init(transformHandle, handleShader, color);
@@ -68,7 +68,7 @@ namespace RuntimeHandle
             var offset = raxis * _offsetLength;
             var newPosition = hitPoint - offset;
 
-			_handler.SetPosition(newPosition);
+			_handle.SetPosition(newPosition);
             TransformHandle.position = newPosition;
         }
 
@@ -78,7 +78,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _offsetLength = offset.magnitude;
-			_handler.OnStartInteraction();
+			_handle.OnStartInteraction();
         }
 
         public override void EndInteraction()

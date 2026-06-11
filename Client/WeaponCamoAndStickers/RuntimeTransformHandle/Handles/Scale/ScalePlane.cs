@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public interface IScalePlaneHandler
+	public interface IScalePlaneHandle
 	{
 		public void OnStartInteraction();
 		public void SetScale(float scale);
@@ -21,7 +21,7 @@ namespace RuntimeHandle
     {
         private const float SIZE = 2;
 
-		private IScalePlaneHandler _handler;
+		private IScalePlaneHandle _handle;
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
@@ -33,14 +33,14 @@ namespace RuntimeHandle
         public ScalePlane Initialize(
 			RuntimeTransformHandle transformHandle,
 			Transform scaleHandle,
-			IScalePlaneHandler handler,
+			IScalePlaneHandle handle,
 			ScaleAxis axis1,
 			ScaleAxis axis2,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
         {
-			_handler = handler;
+			_handle = handle;
             _axis1 = axis1.Axis;
             _axis2 = axis2.Axis;
             _perp = perp;
@@ -77,7 +77,7 @@ namespace RuntimeHandle
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-			_handler.SetScale(scale);
+			_handle.SetScale(scale);
 
             SetHandlesVisualScale(scale);
         }
@@ -88,7 +88,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-			_handler.OnStartInteraction();
+			_handle.OnStartInteraction();
 
             SetHandlesVisualScale(1);
             SetHandlesInteractionColor();

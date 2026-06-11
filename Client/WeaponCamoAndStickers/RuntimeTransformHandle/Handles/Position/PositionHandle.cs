@@ -2,11 +2,11 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class PositionAxisHandler_Tranform : IPositionAxisHandler
+	public class PositionAxisHandle_Tranform : IPositionAxisHandle
 	{
 		private readonly Transform _target;
 
-		public PositionAxisHandler_Tranform(Transform target)
+		public PositionAxisHandle_Tranform(Transform target)
 		{
 			_target = target;
 		}
@@ -37,15 +37,15 @@ namespace RuntimeHandle
 
         public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-			var axisHandler = new PositionAxisHandler_Tranform(_target);
+			var axisHandle = new PositionAxisHandle_Tranform(_target);
 
-            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.forward, Color.blue, handleShader);
+            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.forward, Color.blue, handleShader);
 
-            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
-            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
-            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
+            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
+            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
+            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
         }
 
         public void Reset(Transform transformHandle)

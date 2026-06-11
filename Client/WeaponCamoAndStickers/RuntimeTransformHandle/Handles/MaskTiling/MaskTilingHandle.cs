@@ -10,14 +10,14 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class ScaleAxisHandler_MaskTiling : IScaleAxisHandler
+	public class ScaleAxisHandle_MaskTiling : IScaleAxisHandle
 	{
 		private readonly DecalInfo _decalInfo;
 		private readonly Decal _decal;
 		private readonly Vector2 _uvAxis;
 		private Vector4 _startUV;
 
-        public ScaleAxisHandler_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvAxis)
+        public ScaleAxisHandle_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvAxis)
         {
             _decalInfo = decalInfo;
             _decal = decal;
@@ -36,14 +36,14 @@ namespace RuntimeHandle
 		}
 	}
 
-	public class ScalePlaneHandler_MaskTiling : IScalePlaneHandler
+	public class ScalePlaneHandle_MaskTiling : IScalePlaneHandle
 	{
 		private readonly DecalInfo _decalInfo;
 		private readonly Decal _decal;
 		private readonly Vector2 _uvScaleMask;
 		private Vector4 _startUV;
 
-		public ScalePlaneHandler_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvScaleMask)
+		public ScalePlaneHandle_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvScaleMask)
 		{
 			_decalInfo = decalInfo;
 			_decal = decal;
@@ -75,13 +75,13 @@ namespace RuntimeHandle
 
         public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-            var scaleHandlerX = new ScaleAxisHandler_MaskTiling(_decalInfo, _decal, Vector2.right);
-            var scaleHandlerZ = new ScaleAxisHandler_MaskTiling(_decalInfo, _decal, Vector2.up);
-			var scaleHandlerXZ = new ScalePlaneHandler_MaskTiling(_decalInfo, _decal, Vector2.right + Vector2.up);
+            var scaleHandleX = new ScaleAxisHandle_MaskTiling(_decalInfo, _decal, Vector2.right);
+            var scaleHandleZ = new ScaleAxisHandle_MaskTiling(_decalInfo, _decal, Vector2.up);
+			var scaleHandleXZ = new ScalePlaneHandle_MaskTiling(_decalInfo, _decal, Vector2.right + Vector2.up);
 
-            var axisX = new GameObject("MaskTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandlerX, Vector3.right, Color.red, handleShader);
-            var axisZ = new GameObject("MaskTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandlerZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("MaskTilingPlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandlerXZ, axisX, axisZ, Vector3.up, Color.green, handleShader);
+            var axisX = new GameObject("MaskTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, handleShader);
+            var axisZ = new GameObject("MaskTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, handleShader);
+            var planeXZ = new GameObject("MaskTilingPlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandleXZ, axisX, axisZ, Vector3.up, Color.green, handleShader);
         }
 
         public void Reset(Transform transformHandle)

@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class PositionAxisHandler_TextureOffset : IPositionAxisHandler
+	public class PositionAxisHandle_TextureOffset : IPositionAxisHandle
 	{
         private readonly Vector3 _axis1;
         private readonly Vector3 _axis2;
@@ -22,7 +22,7 @@ namespace RuntimeHandle
 		private Vector3 _startLocalPosition;
 		private Vector4 _startUV;
 
-		public PositionAxisHandler_TextureOffset(Vector3 axis1, Vector3 axis2, Vector4 uvAxis1, Vector4 uvAxis2, DecalInfo decalInfo, Decal decal)
+		public PositionAxisHandle_TextureOffset(Vector3 axis1, Vector3 axis2, Vector4 uvAxis1, Vector4 uvAxis2, DecalInfo decalInfo, Decal decal)
 		{
 	        _axis1 = axis1;
 	        _axis2 = axis2;
@@ -66,12 +66,12 @@ namespace RuntimeHandle
 
         public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-            var positionHandlerX = new PositionAxisHandler_TextureOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
-            var positionHandlerZ = new PositionAxisHandler_TextureOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);
+            var positionHandleX = new PositionAxisHandle_TextureOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
+            var positionHandleZ = new PositionAxisHandle_TextureOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);
 
-            var axisX = new GameObject("TextureOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandlerX, Vector3.right, Color.red, handleShader);
-            var axisZ = new GameObject("TextureOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandlerZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("TextureOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandlerX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
+            var axisX = new GameObject("TextureOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Color.red, handleShader);
+            var axisZ = new GameObject("TextureOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleZ, Vector3.forward, Color.blue, handleShader);
+            var planeXZ = new GameObject("TextureOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
         }
 
         public void Reset(Transform transformHandle)

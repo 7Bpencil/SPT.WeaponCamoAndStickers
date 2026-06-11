@@ -9,21 +9,21 @@ namespace RuntimeHandle
      */
     public class PositionPlane : HandleBase
     {
-		private IPositionAxisHandler _handler;
+		private IPositionAxisHandle _handle;
         private Vector3 _perp;
         private Vector3 _offsetLocalSpace;
 
         public PositionPlane Initialize(
 			RuntimeTransformHandle transformHandle,
 			Transform positionHandle,
-			IPositionAxisHandler handler,
+			IPositionAxisHandle handle,
 			Vector3 axis1,
 			Vector3 axis2,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
         {
-			_handler = handler;
+			_handle = handle;
             _perp = perp;
 
             Init(transformHandle, handleShader, color);
@@ -54,7 +54,7 @@ namespace RuntimeHandle
             var offset = TransformHandle.TransformDirection(_offsetLocalSpace);
             var newPosition = hitPoint - offset;
 
-			_handler.SetPosition(newPosition);
+			_handle.SetPosition(newPosition);
             TransformHandle.position = newPosition;
         }
 
@@ -64,7 +64,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
-			_handler.OnStartInteraction();
+			_handle.OnStartInteraction();
         }
 
         public override void EndInteraction()

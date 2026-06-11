@@ -11,14 +11,14 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public class RotationAxisHandler_MaskAngle : IRotationAxisHandler
+	public class RotationAxisHandle_MaskAngle : IRotationAxisHandle
 	{
 		private readonly DecalInfo _decalInfo;
 		private readonly Decal _decal;
 		private readonly Vector3 _perp;
 		private float _startAngle;
 
-        public RotationAxisHandler_MaskAngle(DecalInfo decalInfo, Decal decal, Vector3 perp)
+        public RotationAxisHandle_MaskAngle(DecalInfo decalInfo, Decal decal, Vector3 perp)
         {
     		_decalInfo = decalInfo;
     		_decal = decal;
@@ -56,8 +56,8 @@ namespace RuntimeHandle
 
         public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-            var rotationHandlerY = new RotationAxisHandler_MaskAngle(_decalInfo, _decal, Vector3.up);
-            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandlerY, Vector3.up, Color.green, handleShader);
+            var rotationHandleY = new RotationAxisHandle_MaskAngle(_decalInfo, _decal, Vector3.up);
+            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandleY, Vector3.up, Color.green, handleShader);
         }
 
         public void Reset(Transform transformHandle)

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public interface IRotationAxisHandler
+	public interface IRotationAxisHandle
 	{
 		public Quaternion GetRotation();
 		public void OnStartInteraction();
@@ -20,20 +20,20 @@ namespace RuntimeHandle
         public static readonly int _CameraDistance = Shader.PropertyToID("_CameraDistance");
 
 		private Transform _rotationHandle;
-		private IRotationAxisHandler _handler;
+		private IRotationAxisHandle _handle;
         private Vector3 _perp;
 		private Vector3 _startOffsetLocalSpace;
 
         public RotationAxis Initialize(
 			RuntimeTransformHandle transformHandle,
 			Transform rotationHandle,
-			IRotationAxisHandler handler,
+			IRotationAxisHandle handle,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
         {
 			_rotationHandle = rotationHandle;
-			_handler = handler;
+			_handle = handle;
             _perp = perp;
 
             Init(transformHandle, handleShader, color);
@@ -67,8 +67,8 @@ namespace RuntimeHandle
 			var offsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
 			var angle = Vector3.SignedAngle(_startOffsetLocalSpace, offsetLocalSpace, _perp);
 
-			_handler.SetAngle(angle);
-			_rotationHandle.rotation = _handler.GetRotation();
+			_handle.SetAngle(angle);
+			_rotationHandle.rotation = _handle.GetRotation();
         }
 
         public override bool CanInteract(Vector3 hitPoint)
@@ -81,19 +81,19 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
         {
-            TransformHandle.rotation = _handler.GetRotation();
+            TransformHandle.rotation = _handle.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
 
 			var (position, hitPoint) = GetPlaneHitPoint(cameraRay, TransformHandle, _perp);
             var offset = hitPoint - position;
 
 			_startOffsetLocalSpace = TransformHandle.InverseTransformDirection(offset);
-			_handler.OnStartInteraction();
+			_handle.OnStartInteraction();
         }
 
         public override void EndInteraction()
         {
-            TransformHandle.rotation = _handler.GetRotation();
+            TransformHandle.rotation = _handle.GetRotation();
 			_rotationHandle.localRotation = Quaternion.identity;
         }
     }

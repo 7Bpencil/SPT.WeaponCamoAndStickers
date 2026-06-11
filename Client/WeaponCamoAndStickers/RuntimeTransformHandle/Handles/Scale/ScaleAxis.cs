@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public interface IScaleAxisHandler
+	public interface IScaleAxisHandle
 	{
 		public void OnStartInteraction();
 		public void SetScale(float scale);
@@ -18,7 +18,7 @@ namespace RuntimeHandle
     {
         private const float SIZE = 2;
 
-		private IScaleAxisHandler _handler;
+		private IScaleAxisHandle _handle;
         private Vector3 _axis;
 		private Transform _arm;
 		private Transform _tip;
@@ -29,12 +29,12 @@ namespace RuntimeHandle
         public ScaleAxis Initialize(
 			RuntimeTransformHandle transformHandle,
 			Transform scaleHandle,
-			IScaleAxisHandler handler,
+			IScaleAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
-			_handler = handler;
+			_handle = handle;
             _axis = axis;
 
             Init(transformHandle, handleShader, color);
@@ -83,7 +83,7 @@ namespace RuntimeHandle
 			var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
-			_handler.SetScale(scale);
+			_handle.SetScale(scale);
 
 			SetHandleVisualScale(scale);
         }
@@ -94,7 +94,7 @@ namespace RuntimeHandle
             var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
-			_handler.OnStartInteraction();
+			_handle.OnStartInteraction();
 
 			SetHandleVisualScale(1);
         }
