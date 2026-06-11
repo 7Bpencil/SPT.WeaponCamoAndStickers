@@ -5,11 +5,11 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using RuntimeHandle;
 using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
-namespace RuntimeHandle
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class PositionAxisHandle_MaskOffset(Vector3 axis1, Vector3 axis2, Vector4 uvAxis1, Vector4 uvAxis2, DecalInfo decalInfo, Decal decal) : IPositionAxisHandle
 	{

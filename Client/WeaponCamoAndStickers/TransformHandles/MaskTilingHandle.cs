@@ -5,10 +5,10 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using SevenBoldPencil.WeaponCamoAndStickers;
+using RuntimeHandle;
 using UnityEngine;
 
-namespace RuntimeHandle
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class ScaleAxisHandle_MaskTiling(DecalInfo decalInfo, Decal decal, Vector2 uvAxis) : IScaleAxisHandle
 	{

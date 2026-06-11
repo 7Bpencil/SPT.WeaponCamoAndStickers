@@ -1,4 +1,4 @@
-namespace RuntimeHandle
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     /**
      * Created by Peter @sHTiF Stefcek 20.10.2020

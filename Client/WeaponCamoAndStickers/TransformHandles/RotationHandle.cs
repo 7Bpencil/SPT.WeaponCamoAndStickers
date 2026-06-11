@@ -1,7 +1,7 @@
-using SevenBoldPencil.WeaponCamoAndStickers;
+using RuntimeHandle;
 using UnityEngine;
 
-namespace RuntimeHandle
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class RotationAxisHandle_Transform(Transform target, Vector3 perp) : IRotationAxisHandle
 	{

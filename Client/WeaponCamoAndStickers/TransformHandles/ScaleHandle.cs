@@ -1,8 +1,8 @@
+using RuntimeHandle;
 using SevenBoldPencil.Common;
-using SevenBoldPencil.WeaponCamoAndStickers;
 using UnityEngine;
 
-namespace RuntimeHandle
+namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class ScaleAxisHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 axis) : IScaleAxisHandle
 	{
