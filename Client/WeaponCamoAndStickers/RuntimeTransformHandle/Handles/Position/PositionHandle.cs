@@ -26,24 +26,32 @@ namespace RuntimeHandle
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
-    public class PositionHandle : MonoBehaviour
+    public class PositionHandle : ITransformHandle
     {
-        public PositionHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
+		private readonly Transform _target;
+
+		public PositionHandle(Transform target)
+		{
+			_target = target;
+		}
+
+        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-			var positionHandleTransform = transform;
-            positionHandleTransform.SetParent(transformHandle.transform, false);
+			var axisHandler = new PositionAxisHandler_Tranform(_target);
 
-			var positionHandler = new PositionAxisHandler_Tranform(transformHandle.targetTransform);
+            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandler, Vector3.forward, Color.blue, handleShader);
 
-            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.forward, Color.blue, handleShader);
-
-            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
-            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
-            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandler, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
-
-            return this;
+            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.right, Vector3.up, Vector3.forward, Color.blue, handleShader);
+            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.up, Vector3.forward, Vector3.right, Color.red, handleShader);
+            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandler, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
         }
+
+        public void Reset(Transform transformHandle)
+		{
+            transformHandle.localPosition = _target.localPosition;
+            transformHandle.localRotation = _target.localRotation;
+		}
     }
 }

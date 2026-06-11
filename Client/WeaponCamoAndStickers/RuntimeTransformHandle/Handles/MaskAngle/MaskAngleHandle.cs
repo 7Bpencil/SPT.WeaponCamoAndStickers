@@ -27,8 +27,8 @@ namespace RuntimeHandle
 
 		public Quaternion GetRotation()
 		{
-			var offset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.MaskAngle);
-            return _decal.DecalTransform.rotation * offset;
+			var rotationOffset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.MaskAngle);
+            return _decal.DecalTransform.rotation * rotationOffset;
 		}
 
 		public void OnStartInteraction()
@@ -43,28 +43,28 @@ namespace RuntimeHandle
 		}
 	}
 
-    public class MaskAngleHandle : MonoBehaviour
+    public class MaskAngleHandle : ITransformHandle
     {
-        public MaskAngleHandle Initialize(
-            RuntimeTransformHandle transformHandle,
-            Shader handleShader,
-            DecalInfo decalInfo,
-            Decal decal)
+		private readonly DecalInfo _decalInfo;
+		private readonly Decal _decal;
+
+		public MaskAngleHandle(DecalInfo decalInfo, Decal decal)
+		{
+			_decalInfo = decalInfo;
+			_decal = decal;
+		}
+
+        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-            var rotationHandleTransform = transform;
-            rotationHandleTransform.SetParent(transformHandle.transform, false);
-
-            var rotationHandlerY = new RotationAxisHandler_MaskAngle(decalInfo, decal, Vector3.up);
-
-            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, rotationHandleTransform, rotationHandlerY, Vector3.up, Color.green, handleShader);
-
-            return this;
+            var rotationHandlerY = new RotationAxisHandler_MaskAngle(_decalInfo, _decal, Vector3.up);
+            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandlerY, Vector3.up, Color.green, handleShader);
         }
 
-        public void ResetHandleTransform(Transform transformHandle, DecalInfo decalInfo, Decal decal)
+        public void Reset(Transform transformHandle)
         {
-			transformHandle.position = UVTools.GetHandlePosition(decal, decalInfo.MaskUV);
-            transformHandle.localRotation *= UVTools.GetHandleLocalRotation(decalInfo.LocalScale, decalInfo.MaskAngle);
+			var rotationOffset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.MaskAngle);
+			transformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
+            transformHandle.localRotation = _decal.DecalTransform.localRotation * rotationOffset;
         }
     }
 }

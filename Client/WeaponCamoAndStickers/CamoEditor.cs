@@ -971,7 +971,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         if (CopiedDecalInfo.Some(out var copiedDecalInfo) && copiedDecalInfo.PaintMode == DecalPaintMode.Paint)
                         {
                             Plugin.ApplyPaintInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
-                            SyncTransformHandle(decalInfo, decal);
+                            SyncTransformHandle();
                         }
                     }
                     lineX += buttonHeight + smallMargin;
@@ -989,7 +989,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         if (CopiedDecalInfo.Some(out var copiedDecalInfo) && copiedDecalInfo.PaintMode == DecalPaintMode.Erase)
                         {
                             Plugin.ApplyEraserInfo(ItemId, decalIndex, decalInfo, copiedDecalInfo);
-                            SyncTransformHandle(decalInfo, decal);
+                            SyncTransformHandle();
                         }
                     }
                     lineX += buttonHeight + smallMargin;
@@ -1037,7 +1037,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "mirror left/right"))
             {
                 Plugin.MirrorLeftRight(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1060,12 +1060,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, sixthBoxWidthButton, buttonHeight), "round"))
             {
                 Plugin.RoundLocalEulerAnglesToDegree(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton + sixthBoxWidthButton + smallMargin, y, sixthBoxWidthButton, buttonHeight), "-90°Z"))
             {
                 Plugin.RotateZ(ItemId, decalIndex, decalInfo, -90);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1087,7 +1087,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - thirdBoxWidthButton, y, thirdBoxWidthButton, buttonHeight), "fix scale"))
             {
                 Plugin.FixScale(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1096,21 +1096,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip horz"))
                 {
                     Plugin.FlipHorizontally(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
                 lineX += thirdBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip vert"))
                 {
                     Plugin.FlipVertically(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
                 lineX += thirdBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip dir"))
                 {
                     Plugin.FlipDirection(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + bigMargin;
@@ -1135,7 +1135,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetTextureUVOffset(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1151,7 +1151,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetTextureAngle(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1172,14 +1172,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
                 {
                     Plugin.ResetTextureUVScale(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
                 valueX += fourthBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "fix UV"))
                 {
                     Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + mediumMargin;
@@ -1296,7 +1296,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1312,7 +1312,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1333,7 +1333,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
                 {
                     Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + mediumMargin;
@@ -1372,7 +1372,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetMaskUVOffset(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1388,7 +1388,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(x + boxWidth - halfBoxWidthButton, y, fourthBoxWidthButton, buttonHeight), "reset"))
             {
                 Plugin.ResetMaskAngle(ItemId, decalIndex, decalInfo);
-                SyncTransformHandle(decalInfo, decal);
+                SyncTransformHandle();
             }
             y += buttonHeight + smallMargin;
 
@@ -1409,7 +1409,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(valueX, y, fourthBoxWidthButton, buttonHeight), "reset"))
                 {
                     Plugin.ResetMaskUVScale(ItemId, decalIndex, decalInfo);
-                    SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + bigMargin;
@@ -1521,7 +1521,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 TransformHandle.CreateHandleMaskTiling(decalInfo, decal);
             }
 
-            SyncTransformHandle(decalInfo, decal);
+            SyncTransformHandle();
 			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
         }
 
@@ -1570,11 +1570,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        private void SyncTransformHandle(DecalInfo decalInfo, Decal decal)
+        private void SyncTransformHandle()
         {
             if (TransformHandle)
             {
-                TransformHandle.ResetHandleTransform(decalInfo, decal);
+                TransformHandle.ResetHandleTransform();
             }
         }
 
@@ -1670,13 +1670,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         {
                             Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
                             Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                            SyncTransformHandle(decalInfo, decal);
+                            SyncTransformHandle();
                         }
                         if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
                         {
                             Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
                             Plugin.FixScale(ItemId, decalIndex, decalInfo);
-                            SyncTransformHandle(decalInfo, decal);
+                            SyncTransformHandle();
                         }
                         if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
                         {

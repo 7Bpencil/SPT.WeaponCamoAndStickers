@@ -39,22 +39,30 @@ namespace RuntimeHandle
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
-    public class RotationHandle : MonoBehaviour
+    public class RotationHandle : ITransformHandle
     {
-        public RotationHandle Initialize(RuntimeTransformHandle transformHandle, Shader handleShader)
+		private readonly Transform _target;
+
+		public RotationHandle(Transform target)
+		{
+			_target = target;
+		}
+
+        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-			var rotationHandleTransform = transform;
-            rotationHandleTransform.SetParent(transformHandle.transform, false);
+			var rotationHandlerX = new RotationAxisHandler_Transform(_target, Vector3.right);
+			var rotationHandlerY = new RotationAxisHandler_Transform(_target, Vector3.up);
+			var rotationHandlerZ = new RotationAxisHandler_Transform(_target, Vector3.forward);
 
-			var rotationHandlerX = new RotationAxisHandler_Transform(transformHandle.targetTransform, Vector3.right);
-			var rotationHandlerY = new RotationAxisHandler_Transform(transformHandle.targetTransform, Vector3.up);
-			var rotationHandlerZ = new RotationAxisHandler_Transform(transformHandle.targetTransform, Vector3.forward);
-
-            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, rotationHandleTransform, rotationHandlerX, Vector3.right, Color.red, handleShader);
-            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, rotationHandleTransform, rotationHandlerY, Vector3.up, Color.green, handleShader);
-            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, rotationHandleTransform, rotationHandlerZ, Vector3.forward, Color.blue, handleShader);
-
-            return this;
+            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandlerX, Vector3.right, Color.red, handleShader);
+            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandlerY, Vector3.up, Color.green, handleShader);
+            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, root, rotationHandlerZ, Vector3.forward, Color.blue, handleShader);
         }
+
+        public void Reset(Transform transformHandle)
+		{
+            transformHandle.localPosition = _target.localPosition;
+            transformHandle.localRotation = _target.localRotation;
+		}
     }
 }

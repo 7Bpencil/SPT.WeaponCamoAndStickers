@@ -53,31 +53,32 @@ namespace RuntimeHandle
 		}
 	}
 
-    public class MaskOffsetHandle : MonoBehaviour
+    public class MaskOffsetHandle : ITransformHandle
     {
-        public MaskOffsetHandle Initialize(
-            RuntimeTransformHandle transformHandle,
-            Shader handleShader,
-            DecalInfo decalInfo,
-            Decal decal)
+		private readonly DecalInfo _decalInfo;
+		private readonly Decal _decal;
+
+		public MaskOffsetHandle(DecalInfo decalInfo, Decal decal)
+		{
+			_decalInfo = decalInfo;
+			_decal = decal;
+		}
+
+        public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root)
         {
-			var positionHandleTransform = transform;
-            positionHandleTransform.SetParent(transformHandle.handleTransform, false);
+            var positionHandlerX = new PositionAxisHandler_MaskOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
+            var positionHandlerZ = new PositionAxisHandler_MaskOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);
 
-            var positionHandlerX = new PositionAxisHandler_MaskOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), decalInfo, decal);
-            var positionHandlerZ = new PositionAxisHandler_MaskOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), decalInfo, decal);
-
-            var axisX = new GameObject("MaskOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandlerX, Vector3.right, Color.red, handleShader);
-            var axisZ = new GameObject("MaskOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, positionHandleTransform, positionHandlerZ, Vector3.forward, Color.blue, handleShader);
-            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, positionHandleTransform, positionHandlerX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
-
-            return this;
+            var axisX = new GameObject("MaskOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandlerX, Vector3.right, Color.red, handleShader);
+            var axisZ = new GameObject("MaskOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandlerZ, Vector3.forward, Color.blue, handleShader);
+            var planeXZ = new GameObject("MaskOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandlerX, Vector3.right, Vector3.forward, Vector3.up, Color.green, handleShader);
         }
 
-        public void ResetHandleTransform(Transform transformHandle, DecalInfo decalInfo, Decal decal)
+        public void Reset(Transform transformHandle)
         {
-			transformHandle.position = UVTools.GetHandlePosition(decal, decalInfo.MaskUV);
-            transformHandle.localRotation *= UVTools.GetHandleLocalRotation(decalInfo.LocalScale, decalInfo.MaskAngle);
+			var rotationOffset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.MaskAngle);
+			transformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.MaskUV);
+            transformHandle.localRotation = _decal.DecalTransform.localRotation * rotationOffset;
         }
     }
 }

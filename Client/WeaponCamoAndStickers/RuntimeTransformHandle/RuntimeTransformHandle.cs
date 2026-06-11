@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
+	public interface ITransformHandle
+	{
+		public void Init(RuntimeTransformHandle transformHandle, Shader handleShader, Transform root);
+        public void Reset(Transform transformHandle);
+	}
+
     /**
      * Created by Peter @sHTiF Stefcek 21.10.2020
      * Rewritten by 7Bpencil 22.03.2026
@@ -24,15 +30,8 @@ namespace RuntimeHandle
 
 		public bool IsDragging => _draggingHandle;
 
-        private PositionHandle _positionHandle;
-        private RotationHandle _rotationHandle;
-        private ScaleHandle _scaleHandle;
-        private TextureOffsetHandle _textureOffsetHandle;
-        private TextureAngleHandle _textureAngleHandle;
-        private TextureTilingHandle _textureTilingHandle;
-		private MaskOffsetHandle _maskOffsetHandle;
-        private MaskAngleHandle _maskAngleHandle;
-        private MaskTilingHandle _maskTilingHandle;
+		private Transform _root;
+        private ITransformHandle _handle;
 
         public Transform targetTransform;
 		public Transform handleTransform;
@@ -46,89 +45,88 @@ namespace RuntimeHandle
         private Shader rotationHandleShader;
         private Shader scaleHandleShader;
 
+		private Transform CreateRoot()
+		{
+			var root = new GameObject("Root").transform;
+            root.SetParent(handleTransform, false);
+			return root;
+		}
+
         public void CreateHandlePosition()
         {
 			type = HandleType.Position;
-			_positionHandle = new GameObject("PositionHandle").AddComponent<PositionHandle>().Initialize(this, positionHandleShader);
+			_root = CreateRoot();
+			_handle = new PositionHandle(targetTransform);
+			_handle.Init(this, positionHandleShader, _root);
 		}
 
         public void CreateHandleRotation()
 		{
 			type = HandleType.Rotation;
-			_rotationHandle = new GameObject("RotationHandle").AddComponent<RotationHandle>().Initialize(this, rotationHandleShader);
+			_root = CreateRoot();
+			_handle = new RotationHandle(targetTransform);
+			_handle.Init(this, rotationHandleShader, _root);
 		}
 
         public void CreateHandleScale(DecalInfo decalInfo, Decal decal)
 		{
 			type = HandleType.Scale;
-			_scaleHandle = new GameObject("ScaleHandle").AddComponent<ScaleHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new ScaleHandle(decalInfo, decal);
+			_handle.Init(this, scaleHandleShader, _root);
         }
 
 		public void CreateHandleTextureOffset(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.TextureOffset;
-			_textureOffsetHandle = new GameObject("TextureOffsetHandle").AddComponent<TextureOffsetHandle>().Initialize(this, positionHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new TextureOffsetHandle(decalInfo, decal);
+			_handle.Init(this, positionHandleShader, _root);
 		}
 
 		public void CreateHandleTextureAngle(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.TextureAngle;
-			_textureAngleHandle = new GameObject("TextureAngleHandle").AddComponent<TextureAngleHandle>().Initialize(this, rotationHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new TextureAngleHandle(decalInfo, decal);
+			_handle.Init(this, rotationHandleShader, _root);
 		}
 
 		public void CreateHandleTextureTiling(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.TextureTiling;
-			_textureTilingHandle = new GameObject("TextureTilingHandle").AddComponent<TextureTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new TextureTilingHandle(decalInfo, decal);
+			_handle.Init(this, scaleHandleShader, _root);
 		}
 
 		public void CreateHandleMaskOffset(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.MaskOffset;
-			_maskOffsetHandle = new GameObject("MaskOffsetHandle").AddComponent<MaskOffsetHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new MaskOffsetHandle(decalInfo, decal);
+			_handle.Init(this, positionHandleShader, _root);
 		}
 
 		public void CreateHandleMaskAngle(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.MaskAngle;
-			_maskAngleHandle = new GameObject("MaskAngleHandle").AddComponent<MaskAngleHandle>().Initialize(this, rotationHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new MaskAngleHandle(decalInfo, decal);
+			_handle.Init(this, rotationHandleShader, _root);
 		}
 
 		public void CreateHandleMaskTiling(DecalInfo decalInfo, Decal decal)
 		{
             type = HandleType.MaskTiling;
-			_maskTilingHandle = new GameObject("MaskTilingHandle").AddComponent<MaskTilingHandle>().Initialize(this, scaleHandleShader, decalInfo, decal);
+			_root = CreateRoot();
+			_handle = new MaskTilingHandle(decalInfo, decal);
+			_handle.Init(this, scaleHandleShader, _root);
 		}
 
-		public void ResetHandleTransform(DecalInfo decalInfo, Decal decal)
+		public void ResetHandleTransform()
 		{
-            handleTransform.position = targetTransform.position;
-            handleTransform.rotation = targetTransform.rotation;
-
-	        if (type == HandleType.TextureOffset)
-			{
-				_textureOffsetHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
-	        if (type == HandleType.TextureAngle)
-			{
-				_textureAngleHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
-	        if (type == HandleType.TextureTiling)
-			{
-				_textureTilingHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
-	        if (type == HandleType.MaskOffset)
-			{
-				_maskOffsetHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
-	        if (type == HandleType.MaskAngle)
-			{
-				_maskAngleHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
-	        if (type == HandleType.MaskTiling)
-			{
-				_maskTilingHandle.ResetHandleTransform(handleTransform, decalInfo, decal);
-			}
+			_handle.Reset(handleTransform);
 		}
 
         public void DestroyHandles()
@@ -136,18 +134,8 @@ namespace RuntimeHandle
             _draggingHandle = null;
 			_previousHandle = null;
 
-			switch (type)
-			{
-		        case HandleType.Position: Destroy(_positionHandle.gameObject); break;
-		        case HandleType.Rotation: Destroy(_rotationHandle.gameObject); break;
-		        case HandleType.Scale: Destroy(_scaleHandle.gameObject); break;
-		        case HandleType.TextureOffset: Destroy(_textureOffsetHandle.gameObject); break;
-		        case HandleType.TextureAngle: Destroy(_textureAngleHandle.gameObject); break;
-		        case HandleType.TextureTiling: Destroy(_textureTilingHandle.gameObject); break;
-		        case HandleType.MaskOffset: Destroy(_maskOffsetHandle.gameObject); break;
-		        case HandleType.MaskAngle: Destroy(_maskAngleHandle.gameObject); break;
-		        case HandleType.MaskTiling: Destroy(_maskTilingHandle.gameObject); break;
-			}
+			Destroy(_root.gameObject);
+			_handle = null;
         }
 
         private void Update()
@@ -244,7 +232,7 @@ namespace RuntimeHandle
             return default;
         }
 
-        static public RuntimeTransformHandle Create(
+        public static RuntimeTransformHandle Create(
 			Transform target,
 			Camera handleCamera,
 			Shader positionHandleShader,
