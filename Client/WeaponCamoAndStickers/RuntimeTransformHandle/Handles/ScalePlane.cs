@@ -24,6 +24,7 @@ namespace RuntimeHandle
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
+		private Transform _plane;
         private float _startOffsetLength;
 
         private ScaleAxis _axis1Handle;
@@ -60,6 +61,7 @@ namespace RuntimeHandle
 	            o.AddComponent<MeshRenderer>().material = _material;
 	            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
 	            o.AddComponent<MeshCollider>();
+				_plane = o.transform;
 			}
 
             return this;
@@ -102,6 +104,7 @@ namespace RuntimeHandle
 
         public void SetHandlesVisualScale(float scale)
         {
+            _plane.localPosition = (_axis1 + _axis2) * (0.5f * SIZE * scale);
             _axis1Handle.SetHandleVisualScale(scale);
             _axis2Handle.SetHandleVisualScale(scale);
         }
