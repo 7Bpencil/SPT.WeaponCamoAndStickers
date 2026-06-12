@@ -302,6 +302,7 @@ namespace SevenBoldPencil.Decorator
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
             {
                 CurrentlyEditedDecoratorIndex = default;
+                DestroyTransformHandle();
             }
             y += buttonHeight + mediumMargin;
 
