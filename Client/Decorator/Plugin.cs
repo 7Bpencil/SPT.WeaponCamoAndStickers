@@ -624,13 +624,19 @@ namespace SevenBoldPencil.Decorator
         }
 
         // its annoying to drag sliders
+        // or tune decorator placement
         // while gun is rotating on every mouse
         // movement, so disable rotation
-        public bool CanWeaponPreviewRotate()
+		public bool CanWeaponPreviewRotate()
         {
             if (CamoEditor.Some(out var camoEditor))
             {
                 if (GUIUtility.hotControl != 0)
+                {
+                    return false;
+                }
+                if (camoEditor.TransformHandle &&
+                    camoEditor.TransformHandle.IsDragging)
                 {
                     return false;
                 }
