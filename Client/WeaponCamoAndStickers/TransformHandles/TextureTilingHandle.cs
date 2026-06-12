@@ -10,26 +10,7 @@ using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
-    public class ScaleAxisHandle_TextureTiling(DecalInfo decalInfo, Decal decal, Vector2 uvAxis) : IScaleAxisHandle
-	{
-		private readonly DecalInfo _decalInfo = decalInfo;
-		private readonly Decal _decal = decal;
-		private readonly Vector2 _uvAxis = uvAxis;
-		private Vector4 _startUV;
-
-		public void OnStartInteraction()
-		{
-			_startUV = _decalInfo.TextureUV;
-		}
-
-		public void SetScale(float scale)
-		{
-			_decalInfo.TextureUV = UVTools.ScaleUV(_startUV, _uvAxis, scale);
-			_decal.ChangeTextureUV(_decalInfo.TextureUV);
-		}
-	}
-
-	public class ScalePlaneHandle_TextureTiling(DecalInfo decalInfo, Decal decal, Vector2 uvScaleMask) : IScalePlaneHandle
+	public class ScaleAxisHandle_TextureTiling(DecalInfo decalInfo, Decal decal, Vector2 uvScaleMask) : IScaleAxisHandle
 	{
 		private readonly DecalInfo _decalInfo = decalInfo;
 		private readonly Decal _decal = decal;
@@ -61,7 +42,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             var scaleHandleX = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.right);
             var scaleHandleZ = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.up);
-			var scaleHandleXZ = new ScalePlaneHandle_TextureTiling(_decalInfo, _decal, Vector2.right + Vector2.up);
+			var scaleHandleXZ = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.right + Vector2.up);
 
             var axisX = new GameObject("TextureTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, _handleShader);
             var axisZ = new GameObject("TextureTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, _handleShader);

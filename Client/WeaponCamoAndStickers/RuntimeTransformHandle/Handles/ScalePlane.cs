@@ -9,18 +9,12 @@ using UnityEngine;
 
 namespace RuntimeHandle
 {
-	public interface IScalePlaneHandle
-	{
-		public void OnStartInteraction();
-		public void SetScale(float scale);
-	}
-
     public class ScalePlane : HandleBase
     {
         private const float SIZE = 2;
 
 		private Transform _transformHandle;
-		private IScalePlaneHandle _handle;
+		private IScaleAxisHandle _handle;
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
@@ -33,7 +27,7 @@ namespace RuntimeHandle
         public ScalePlane Initialize(
 			Transform transformHandle,
 			Transform scaleHandle,
-			IScalePlaneHandle handle,
+			IScaleAxisHandle handle,
 			ScaleAxis axis1,
 			ScaleAxis axis2,
 			Vector3 perp,

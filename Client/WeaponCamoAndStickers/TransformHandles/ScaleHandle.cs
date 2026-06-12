@@ -4,27 +4,7 @@ using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
-	public class ScaleAxisHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 axis) : IScaleAxisHandle
-	{
-		private readonly DecalInfo _decalInfo = decalInfo;
-		private readonly Decal _decal = decal;
-		private readonly Vector3 _axis = axis;
-        private Vector3 _startLocalScale;
-
-		public void OnStartInteraction()
-		{
-            _startLocalScale = _decal.DecalTransform.localScale;
-		}
-
-		public void SetScale(float scale)
-		{
-			var newLocalScale = ScaleHandle.CalculateScale(_startLocalScale, _axis, scale);
-			_decalInfo.LocalScale = newLocalScale;
-			_decal.ChangeLocalScale(newLocalScale);
-		}
-	}
-
-	public class ScalePlaneHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 scaleMask) : IScalePlaneHandle
+	public class ScaleAxisHandle_Transform(DecalInfo decalInfo, Decal decal, Vector3 scaleMask) : IScaleAxisHandle
 	{
 		private readonly DecalInfo _decalInfo = decalInfo;
 		private readonly Decal _decal = decal;
@@ -62,7 +42,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var scaleHandleX = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.right);
 			var scaleHandleY = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.up);
 			var scaleHandleZ = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.forward);
-			var scaleHandleXZ = new ScalePlaneHandle_Transform(_decalInfo, _decal, Vector3.right + Vector3.forward);
+			var scaleHandleXZ = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.right + Vector3.forward);
 
             var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, _handleShader);
             var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleY, Vector3.up, Color.green, _handleShader);
