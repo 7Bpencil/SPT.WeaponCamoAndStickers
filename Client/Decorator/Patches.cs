@@ -187,7 +187,8 @@ namespace SevenBoldPencil.Decorator
 			}
 			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject))
 			{
-				Plugin.Instance.OnWeaponPreviewOpened(item, assetPoolObject);
+				var camera = weaponPreview.WeaponPreviewCamera;
+				Plugin.Instance.OnWeaponPreviewOpened(camera, item, assetPoolObject);
 			}
 		}
 

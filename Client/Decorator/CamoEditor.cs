@@ -10,6 +10,7 @@ using EFT.AssetsManager;
 using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
+using RuntimeHandle;
 using UnityEngine;
 
 // TODO we need presets both for item template and different color swatches
@@ -46,6 +47,7 @@ namespace SevenBoldPencil.Decorator
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
 		public DecoratorStringCache Strings = new();
+        public Camera Camera;
         public string ItemId;
         public int InstanceID;
 		public AssetPoolObject AssetPoolObject;
@@ -53,6 +55,7 @@ namespace SevenBoldPencil.Decorator
 		public Vector2 DecoratorsScrollPosition;
         public Option<int> CurrentlyEditedDecoratorIndex;
         public Vector2 PrefabsScrollPosition;
+        public RuntimeTransformHandle TransformHandle;
 		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
@@ -315,7 +318,7 @@ namespace SevenBoldPencil.Decorator
 		{
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
             {
-                // SetupTransformHandle(HandleType.Position, decalIndex, decalInfo, decal);
+                SetupTransformHandle(HandleType.Position, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -332,7 +335,7 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditRotationIcon))
             {
-                // SetupTransformHandle(HandleType.Rotation, decalIndex, decalInfo, decal);
+                SetupTransformHandle(HandleType.Rotation, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -349,7 +352,7 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditScaleIcon))
             {
-                // SetupTransformHandle(HandleType.Scale, decalIndex, decalInfo, decal);
+                SetupTransformHandle(HandleType.Scale, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -369,21 +372,21 @@ namespace SevenBoldPencil.Decorator
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip X"))
                 {
                     // Plugin.FlipHorizontally(ItemId, decalIndex, decalInfo);
-                    // SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
                 lineX += thirdBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip Y"))
                 {
                     // Plugin.FlipVertically(ItemId, decalIndex, decalInfo);
-                    // SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
                 lineX += thirdBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, thirdBoxWidthButton, buttonHeight), "flip Z"))
                 {
                     // Plugin.FlipDirection(ItemId, decalIndex, decalInfo);
-                    // SyncTransformHandle(decalInfo, decal);
+                    SyncTransformHandle();
                 }
             }
             y += buttonHeight + bigMargin;
@@ -484,9 +487,64 @@ namespace SevenBoldPencil.Decorator
             }
         }
 
+        private void SetupTransformHandle(HandleType handleType, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		{
+            if (TransformHandle)
+            {
+                ForceOnEndedDraggingHandle();
+                DestroyTransformHandle();
+            }
+
+            var handle = CreateTransformHandle(handleType, decoratorIndex, decoratorInfo, decorator);
+            TransformHandle = RuntimeTransformHandle.Create(handle, decorator.DecoratorTransform.parent, Camera, 1 << LayerMaskClass.WeaponPreview);
+			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
+		}
+
+        public ITransformHandle CreateTransformHandle(HandleType handleType, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		{
+     		if (handleType == HandleType.Position)
+			{
+                return new PositionHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.PositionHandleShader);
+			}
+			if (handleType == HandleType.Rotation)
+			{
+                return new RotationHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.RotationHandleShader);
+			}
+			if (handleType == HandleType.Scale)
+			{
+                return new ScaleHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.ScaleHandleShader);
+			}
+
+            throw new ArgumentException($"unknown handleType: {handleType}");
+		}
+
+        private void SyncTransformHandle()
+        {
+            if (TransformHandle)
+            {
+                TransformHandle.ResetHandleTransform();
+            }
+        }
+
+        public void ForceOnEndedDraggingHandle()
+        {
+            if (TransformHandle && TransformHandle.IsDragging)
+            {
+                TransformHandle.InvokeOnInteractionEnd();
+            }
+        }
+
+        private void DestroyTransformHandle()
+        {
+            if (TransformHandle)
+            {
+                GameObject.Destroy(TransformHandle.gameObject);
+            }
+        }
+
         public void Destroy()
         {
-
+            DestroyTransformHandle();
         }
 
     }

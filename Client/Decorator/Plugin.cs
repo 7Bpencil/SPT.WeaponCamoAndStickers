@@ -381,17 +381,17 @@ namespace SevenBoldPencil.Decorator
 			Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
         }
 
-        public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject)
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, Item item, AssetPoolObject assetPoolObject)
         {
             var itemId = GetOriginalItemId(item.Id);
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(item, assetPoolObject);
+				SetupCamoEditor(weaponPreviewCamera, item, assetPoolObject);
 			}
         }
 
-        public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject)
+        public void SetupCamoEditor(Camera editorCamera, Item item, AssetPoolObject assetPoolObject)
         {
             var itemId = GetOriginalItemId(item.Id);
 			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
@@ -402,6 +402,7 @@ namespace SevenBoldPencil.Decorator
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
+                Camera = editorCamera,
                 ItemId = itemId,
                 InstanceID = instanceID,
                 AssetPoolObject = assetPoolObject,
@@ -558,6 +559,30 @@ namespace SevenBoldPencil.Decorator
             });
         }
 
+        public void ApplyLocalPosition(string itemId, int decoratorIndex)
+        {
+            ModifyDecoratorOnItems(itemId, decoratorIndex, static (decorator, decoratorInfo) =>
+            {
+                decorator.DecoratorTransform.localPosition = decoratorInfo.LocalPosition;
+            });
+        }
+
+        public void ApplyLocalEulerAngles(string itemId, int decoratorIndex)
+        {
+            ModifyDecoratorOnItems(itemId, decoratorIndex, static (decorator, decoratorInfo) =>
+            {
+                decorator.DecoratorTransform.localEulerAngles = decoratorInfo.LocalEulerAngles;
+            });
+        }
+
+        public void ApplyLocalScale(string itemId, int decoratorIndex)
+        {
+            ModifyDecoratorOnItems(itemId, decoratorIndex, static (decorator, decoratorInfo) =>
+            {
+                decorator.DecoratorTransform.localScale = decoratorInfo.LocalScale;
+            });
+        }
+
         // notice that we modify decorator on all items
         public void ModifyDecoratorOnItems(string itemId, int decoratorIndex, Action<Decorator, DecoratorInfo> changeDecorator)
         {
@@ -630,6 +655,8 @@ namespace SevenBoldPencil.Decorator
                 Logger.Log(LogLevel.Info, "CamoEditor", "Potential warning. Tried to close uninitialized decal editor");
                 return;
             }
+
+            camoEditor.ForceOnEndedDraggingHandle();
 
             if (GetDecoratorsInfo(camoEditor.ItemId).Some(out var decoratorsInfo))
             {

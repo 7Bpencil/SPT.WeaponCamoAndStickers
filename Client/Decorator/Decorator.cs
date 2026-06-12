@@ -39,7 +39,7 @@ namespace SevenBoldPencil.Decorator
 
 			Prefab = prefab;
 
-			// ReplaceShadersToNative(prefab);
+			ReplaceShadersToNative(prefab);
 		}
 
         private static void ReplaceShadersToNative(GameObject obj)
