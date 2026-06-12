@@ -51,6 +51,7 @@ namespace SevenBoldPencil.Decorator
         public string ItemId;
         public int InstanceID;
 		public AssetPoolObject AssetPoolObject;
+		public PreviewPivot PreviewPivot;
         public bool IsOpened;
 		public Vector2 DecoratorsScrollPosition;
         public Option<int> CurrentlyEditedDecoratorIndex;
@@ -226,7 +227,7 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add Decorator"))
             {
-				var newDecoratorIndex = Plugin.AddNewDecorator(ItemId, InstanceID, AssetPoolObject);
+				var newDecoratorIndex = Plugin.AddNewDecorator(ItemId, InstanceID, AssetPoolObject, PreviewPivot);
                 SetCurrentlyEditedDecorator(newDecoratorIndex);
             }
 

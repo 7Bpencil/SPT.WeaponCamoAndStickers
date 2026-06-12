@@ -381,17 +381,17 @@ namespace SevenBoldPencil.Decorator
 			Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
         }
 
-        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, Item item, AssetPoolObject assetPoolObject)
+        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, Item item, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
         {
             var itemId = GetOriginalItemId(item.Id);
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(weaponPreviewCamera, item, assetPoolObject);
+				SetupCamoEditor(weaponPreviewCamera, item, assetPoolObject, previewPivot);
 			}
         }
 
-        public void SetupCamoEditor(Camera editorCamera, Item item, AssetPoolObject assetPoolObject)
+        public void SetupCamoEditor(Camera editorCamera, Item item, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
         {
             var itemId = GetOriginalItemId(item.Id);
 			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
@@ -406,17 +406,18 @@ namespace SevenBoldPencil.Decorator
                 ItemId = itemId,
                 InstanceID = instanceID,
                 AssetPoolObject = assetPoolObject,
+                PreviewPivot = previewPivot,
             });
         }
 
-        public int AddNewDecorator(string itemId, int instanceID, AssetPoolObject assetPoolObject)
+        public int AddNewDecorator(string itemId, int instanceID, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
         {
             var decoratorInfo = new DecoratorInfo()
             {
                 SchemaVersion = DecoratorInfo.CurrentSchemaVersion,
                 Name = "",
                 Prefab = "7Bpencil/cube", // TODO make default cube, which user cannot delete
-                LocalPosition = Vector3.zero, // TODO choose better position near preview rotation point
+                LocalPosition = previewPivot.pivotPosition, // TODO this doesnt work for weapons, because their decorator root is multiple levels deep
                 LocalEulerAngles = Vector3.zero,
                 LocalScale = Vector3.one,
                 IsVisible = true,

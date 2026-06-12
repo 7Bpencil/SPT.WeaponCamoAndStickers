@@ -185,24 +185,27 @@ namespace SevenBoldPencil.Decorator
 			{
 				return;
 			}
-			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject))
+			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject, out var previewPivot))
 			{
 				var camera = weaponPreview.WeaponPreviewCamera;
-				Plugin.Instance.OnWeaponPreviewOpened(camera, item, assetPoolObject);
+				Plugin.Instance.OnWeaponPreviewOpened(camera, item, assetPoolObject, previewPivot);
 			}
 		}
 
-		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject)
+		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject, out PreviewPivot previewPivot)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview.gameObject_0;
 
-			if (itemGO && itemGO.TryGetComponent<AssetPoolObject>(out assetPoolObject))
+			if (itemGO &&
+				itemGO.TryGetComponent<AssetPoolObject>(out assetPoolObject) &&
+				itemGO.TryGetComponent<PreviewPivot>(out previewPivot))
 			{
 				return true;
 			}
 
 			assetPoolObject = default;
+			previewPivot = default;
 			return false;
 		}
 	}
