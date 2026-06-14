@@ -452,16 +452,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(PlayerModelView __instance)
 		{
+			if (TryGetCamera(__instance).Some(out var camera))
+			{
+				Plugin.Instance.OnPlayerModelViewShown(camera);
+			}
+		}
+
+		public static Option<Camera> TryGetCamera(PlayerModelView __instance)
+		{
 			var instanceTransform = __instance.transform;
 			for (var i = 0; i < instanceTransform.childCount; i++)
 			{
 				var child = instanceTransform.GetChild(i);
 				if (child.TryGetComponent<Camera>(out var camera))
 				{
-					Plugin.Instance.OnPlayerModelViewShown(camera);
-					break;
+					return new(camera);
 				}
 			}
+
+			return default;
 		}
 	}
 
@@ -476,15 +485,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
         public static void Prefix(PlayerModelView __instance)
 		{
-			var instanceTransform = __instance.transform;
-			for (var i = 0; i < instanceTransform.childCount; i++)
+			if (Patch_PlayerModelView_method_0.TryGetCamera(__instance).Some(out var camera))
 			{
-				var child = instanceTransform.GetChild(i);
-				if (child.TryGetComponent<Camera>(out var camera))
-				{
-					Plugin.Instance.OnPlayerModelViewClosed(camera);
-					break;
-				}
+				Plugin.Instance.OnPlayerModelViewClosed(camera);
 			}
 		}
 	}
