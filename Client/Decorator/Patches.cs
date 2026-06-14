@@ -289,6 +289,8 @@ namespace SevenBoldPencil.Decorator
 
 	public struct InventoryPlayerModelWithStatsWindow_Proxy(InventoryPlayerModelWithStatsWindow instance)
 	{
+        private readonly InventoryPlayerModelWithStatsWindow __instance = instance;
+
 		private static TypedFieldInfo<InventoryPlayerModelWithStatsWindow, PlayerModelView> __playerModelView = new("_playerModelView");
 		private static TypedFieldInfo<InventoryPlayerModelWithStatsWindow, XCoordRotation> __rotator = new("_rotator");
 		private static TypedFieldInfo<InventoryPlayerModelWithStatsWindow, DragTrigger> __dragTrigger = new("_dragTrigger");
@@ -298,26 +300,24 @@ namespace SevenBoldPencil.Decorator
 		public XCoordRotation _rotator { get { return __rotator.Get(__instance); } set { __rotator.Set(__instance, value); } }
 		public DragTrigger _dragTrigger { get { return __dragTrigger.Get(__instance); } set { __dragTrigger.Set(__instance, value); } }
 		public AddViewListClass UI { get { return _UI.Get(__instance); } set { _UI.Set(__instance, value); } }
-
-        private readonly InventoryPlayerModelWithStatsWindow __instance = instance;
 	}
 
 	public struct ScrollTrigger_Proxy(ScrollTrigger instance)
 	{
+        private readonly ScrollTrigger __instance = instance;
+
 		private static TypedFieldInfo<ScrollTrigger, Action<PointerEventData>> _action_0 = new("action_0");
 
 		public Action<PointerEventData> action_0 { get { return _action_0.Get(__instance); } set { _action_0.Set(__instance, value); } }
-
-        private readonly ScrollTrigger __instance = instance;
 	}
 
 	public struct DragTrigger_Proxy(DragTrigger instance)
 	{
+        private readonly DragTrigger __instance = instance;
+
 		private static TypedFieldInfo<DragTrigger, Action<PointerEventData>> _onDrag = new("onDrag");
 
 		public Action<PointerEventData> onDrag { get { return _onDrag.Get(__instance); } set { _onDrag.Set(__instance, value); } }
-
-        private readonly DragTrigger __instance = instance;
 	}
 
 	// this method is called when PlayerModelView is loaded

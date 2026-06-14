@@ -30,78 +30,53 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	// I know that harmony can pass instance fields with three underscores,
 	// but these proxies are more general solution and can be used everywhere
 
-	public struct WeaponPreview_Proxy
+	public struct WeaponPreview_Proxy(WeaponPreview instance)
 	{
+        private readonly WeaponPreview __instance = instance;
+
 		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
 		private static TypedFieldInfo<WeaponPreview, Item> __item_0 = new("item_0");
 
 		public GameObject gameObject_0 { get { return __gameObject_0.Get(__instance); } set { __gameObject_0.Set(__instance, value); } }
 		public Item item_0 { get { return __item_0.Get(__instance); } set { __item_0.Set(__instance, value); } }
-
-        private WeaponPreview __instance;
-
-        public WeaponPreview_Proxy(WeaponPreview instance)
-        {
-            __instance = instance;
-        }
 	}
 
-	public struct WeaponPrefab_Proxy
+	public struct WeaponPrefab_Proxy(WeaponPrefab instance)
 	{
+        private readonly WeaponPrefab __instance = instance;
+
 		private static TypedFieldInfo<WeaponPrefab, Weapon> __weapon_0 = new("weapon_0");
 
 		public Weapon weapon_0 { get { return __weapon_0.Get(__instance); } set { __weapon_0.Set(__instance, value); } }
-
-        private WeaponPrefab __instance;
-
-        public WeaponPrefab_Proxy(WeaponPrefab instance)
-        {
-            __instance = instance;
-        }
 	}
 
-	public struct LoddedSkin_Proxy
+	public struct LoddedSkin_Proxy(LoddedSkin instance)
 	{
+        private readonly LoddedSkin __instance = instance;
+
 		private static TypedFieldInfo<LoddedSkin, AbstractSkin[]> __lods = new("_lods");
 
 		public AbstractSkin[] _lods { get { return __lods.Get(__instance); } set { __lods.Set(__instance, value); } }
-
-        private LoddedSkin __instance;
-
-        public LoddedSkin_Proxy(LoddedSkin instance)
-        {
-            __instance = instance;
-        }
 	}
 
-	public struct ItemInfoInteractionsAbstractClass_Proxy<T> where T : struct, Enum
+	public struct ItemInfoInteractionsAbstractClass_Proxy<T>(ItemInfoInteractionsAbstractClass<T> instance) where T : struct, Enum
 	{
+        private readonly ItemInfoInteractionsAbstractClass<T> __instance = instance;
+
 		private static TypedFieldInfo<ItemInfoInteractionsAbstractClass<T>, Dictionary<string, DynamicInteractionClass>> __Dictionary_0 = new("Dictionary_0");
 
 		public Dictionary<string, DynamicInteractionClass> Dictionary_0 { get { return __Dictionary_0.Get(__instance); } set { __Dictionary_0.Set(__instance, value); } }
-
-        private ItemInfoInteractionsAbstractClass<T> __instance;
-
-        public ItemInfoInteractionsAbstractClass_Proxy(ItemInfoInteractionsAbstractClass<T> instance)
-        {
-            __instance = instance;
-        }
 	}
 
-	public struct InteractionButtonsContainer_Proxy
+	public struct InteractionButtonsContainer_Proxy(InteractionButtonsContainer instance)
 	{
+        private readonly InteractionButtonsContainer __instance = instance;
+
 		private static TypedFieldInfo<InteractionButtonsContainer, SimpleContextMenuButton> __buttonTemplate = new("_buttonTemplate");
 		private static TypedFieldInfo<InteractionButtonsContainer, RectTransform> __buttonsContainer = new("_buttonsContainer");
 
 		public SimpleContextMenuButton _buttonTemplate { get { return __buttonTemplate.Get(__instance); } set { __buttonTemplate.Set(__instance, value); } }
 		public RectTransform _buttonsContainer { get { return __buttonsContainer.Get(__instance); } set { __buttonsContainer.Set(__instance, value); } }
-
-        private InteractionButtonsContainer __instance;
-
-        public InteractionButtonsContainer_Proxy(InteractionButtonsContainer instance)
-        {
-            __instance = instance;
-        }
 	}
 
 	// this method tries to initialize gui for all slots in weapon,
