@@ -7,6 +7,7 @@
 
 using BepInEx;
 using BepInEx.Bootstrap;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
 using EFT.AssetsManager;
@@ -156,6 +157,7 @@ namespace SevenBoldPencil.Decorator
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
+            new Patch_InventoryPlayerModelWithStatsWindow_method_5().Enable();
         }
 
         public string[] LoadDecorators(string directoryPath)
