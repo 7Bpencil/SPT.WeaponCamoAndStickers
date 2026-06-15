@@ -25,9 +25,10 @@ using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 using WeaponPreview_Proxy = SevenBoldPencil.WeaponCamoAndStickers.WeaponPreview_Proxy;
-using Patch_PlayerModelView_method_0 = SevenBoldPencil.WeaponCamoAndStickers.Patch_PlayerModelView_method_0;
+using WCAS_Patch_PlayerModelView_method_0 = SevenBoldPencil.WeaponCamoAndStickers.Patch_PlayerModelView_method_0;
 
 namespace SevenBoldPencil.Decorator
 {
@@ -85,68 +86,6 @@ namespace SevenBoldPencil.Decorator
         public static void Prefix(AssetPoolObject __instance)
 		{
 			Plugin.Instance.OnItemDestroyed(__instance);
-		}
-	}
-
-	public class Patch_ItemUiContext_GetItemContextInteractions : ModulePatch
-	{
-	    protected override MethodBase GetTargetMethod()
-	    {
-	        return AccessTools.Method(typeof(ItemUiContext), nameof(ItemUiContext.GetItemContextInteractions));
-	    }
-
-	    [PatchPostfix]
-	    private static void Postfix(ItemInfoInteractionsAbstractClass<EItemInfoButton> __result, ItemUiContext __instance, ItemContextClass itemContext)
-	    {
-			if (itemContext.ViewType != EItemViewType.Inventory)
-			{
-				return;
-			}
-			if (WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
-			{
-				return;
-			}
-
-			var __result__ = new WeaponCamoAndStickers.ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
-			var interactions = __result__.Dictionary_0;
-			var item = itemContext.Item;
-
-			var key = "DECORATE";
-			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
-	        interactions[key] = new WeaponCamoAndStickers.Custom_DynamicInteractionClass(item.Id, key, () => OpenDecorateWindow(__result), icon)
-			{
-				NonInteractiveTooltip = WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.GetRequiresBenchTooltip(),
-			};
-	    }
-
-		public static void OpenDecorateWindow(ItemInfoInteractionsAbstractClass<EItemInfoButton> result)
-		{
-			if (result is ContextInteractionsAbstractClass gclass)
-			{
-				Plugin.Instance.WaitForWeaponPreview();
-				gclass.method_28();
-			}
-		}
-	}
-
-	// this method tries to initialize gui for all slots in weapon,
-	// if item is not compound item there are no slots, so safeguard it
-	public class Patch_WeaponModdingScreen_method_6 : ModulePatch
-	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.method_6));
-        }
-
-        [PatchPrefix]
-        public static bool Prefix(WeaponModdingScreen __instance, CompoundItem weapon)
-		{
-			if (Plugin.Instance.IsWaitingForWeaponPreview())
-			{
-				return false;
-			}
-
-			return weapon is CompoundItem;
 		}
 	}
 
@@ -349,7 +288,7 @@ namespace SevenBoldPencil.Decorator
 			{
 				return false;
 			}
-			if (!Patch_PlayerModelView_method_0.TryGetCamera(_playerModelView).Some(out var camera))
+			if (!WCAS_Patch_PlayerModelView_method_0.TryGetCamera(_playerModelView).Some(out var camera))
 			{
 				return false;
 			}
@@ -386,6 +325,11 @@ namespace SevenBoldPencil.Decorator
 
 		public static void ZoomCamera(PointerEventData pointerData, Transform cameraTransform)
 		{
+			if (!Plugin.Instance.CanWeaponPreviewRotate())
+			{
+				return;
+			}
+
 			var zoom = pointerData.scrollDelta.y * 0.12f;
 
             cameraTransform.Translate(Vector3.forward * zoom);
@@ -397,6 +341,10 @@ namespace SevenBoldPencil.Decorator
 
 		public static void RotatePanCamera(PointerEventData pointerData, InventoryPlayerModelWithStatsWindow __instance, Transform cameraTransform)
 		{
+			if (!Plugin.Instance.CanWeaponPreviewRotate())
+			{
+				return;
+			}
 			if (pointerData.button == PointerEventData.InputButton.Left)
 			{
 				// rotate
@@ -429,4 +377,83 @@ namespace SevenBoldPencil.Decorator
 		}
 	}
 
+	public class Patch_OverallScreen_Show : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(OverallScreen), nameof(OverallScreen.Show));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, SessionCountersClass overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
+		{
+			Plugin.Instance.WaitForWeaponPreview();
+		}
+	}
+
+	public struct CameraImage_Proxy(CameraImage instance)
+	{
+        private readonly CameraImage __instance = instance;
+
+		private static TypedFieldInfo<CameraImage, RawImage> _rawImage_0 = new("rawImage_0");
+
+		public RawImage rawImage_0 { get { return _rawImage_0.Get(__instance); } set { _rawImage_0.Set(__instance, value); } }
+	}
+
+	// this method is called when PlayerModelView is opened and finishes loading
+	public class Patch_PlayerModelView_method_0 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_0));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerModelView __instance)
+		{
+			if (WeaponCamoAndStickers.Patch_ItemUiContext_GetItemContextInteractions.InRaid())
+			{
+				return;
+			}
+			// profile is null in character creation screen
+    		if (TarkovApplication.Exist(out var tarkovApplication) &&
+				tarkovApplication.Session != null &&
+				tarkovApplication.Session.Profile != null &&
+				Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification) &&
+				TryGetCameraImage(__instance, out var camera, out var rawImage))
+            {
+	            var profileId = tarkovApplication.Session.Profile.Id;
+				Plugin.Instance.OnClothesReloaded(profileId, __instance, camera, rawImage);
+            }
+		}
+
+		public static bool TryGetCameraImage(PlayerModelView __instance, out Camera camera, out RawImage rawImage)
+		{
+			if (__instance.transform.parent.TryGetComponent<CameraImage>(out var cameraImage))
+			{
+				var _cameraImage = new CameraImage_Proxy(cameraImage);
+				camera = cameraImage.targetCamera;
+				rawImage = _cameraImage.rawImage_0;
+				return true;
+			}
+
+			camera = default;
+			rawImage = default;
+			return false;
+		}
+	}
+
+	public class Patch_OverallScreen_Close : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(OverallScreen), nameof(OverallScreen.Close));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(OverallScreen __instance)
+		{
+			Plugin.Instance.CloseCamoEditor();
+		}
+	}
 }

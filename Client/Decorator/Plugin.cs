@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 // TODO
 // plan mostly patches, but for that I have to make full editor anyway,
@@ -29,6 +30,7 @@ using UnityEngine;
 // all bones are inside PlayerBones class, it can be found:
 // Player.PlayerBones
 // PlayerBody.PlayerBones
+// TODO when editor is open prevent character from going into weapon animations
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
@@ -49,7 +51,7 @@ namespace SevenBoldPencil.Decorator
 
     public class ItemWithDecorators
     {
-        public Transform DecoratorsRoot;
+        public Option<PlayerBody> PlayerBody; // None until item gets dressed
         public List<Decorator> Decorators;
     }
 
@@ -67,6 +69,7 @@ namespace SevenBoldPencil.Decorator
         public const int CurrentSchemaVersion = 0;
 
         public int SchemaVersion;
+        public string Bone;
         public string Name;
         public string Prefab;
         public Vector3 LocalPosition;
@@ -115,11 +118,21 @@ namespace SevenBoldPencil.Decorator
         private Dictionary<string, DecoratorPrefabData> DecoratorPrefabs;
         private Dictionary<string, DecoratorPrefabAsset> DecoratorPrefabAssets;
         private string[] Decorators;
+        private string[] Bones =
+        [
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1",
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2",
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3",
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage",
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanRCollarbone/Base HumanRUpperarm",
+            "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanLCollarbone/Base HumanLUpperarm",
+        ];
 
         private Dictionary<string, ItemsWithDecorators> ItemsWithDecorators;
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, string> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
+        private Dictionary<Dress, string> DressToItemId;
 
         private Option<CamoEditor> CamoEditor;
         private bool IsCamoEditorWaitingForWeaponPreview;
@@ -144,13 +157,12 @@ namespace SevenBoldPencil.Decorator
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
+            DressToItemId = new();
 
             new Patch_PoolManagerClass_CreateItemAsync().Enable();
             new Patch_PoolManagerClass_method_2().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
-            new Patch_ItemUiContext_GetItemContextInteractions().Enable();
-            new Patch_WeaponModdingScreen_method_6().Enable();
             new Patch_GClass2304_smethod_0().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
@@ -158,6 +170,9 @@ namespace SevenBoldPencil.Decorator
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass928_GetItemHash().Enable();
             new Patch_InventoryPlayerModelWithStatsWindow_method_5().Enable();
+            new Patch_OverallScreen_Show().Enable();
+            new Patch_PlayerModelView_method_0().Enable();
+            new Patch_OverallScreen_Close().Enable();
         }
 
         public string[] LoadDecorators(string directoryPath)
@@ -304,12 +319,22 @@ namespace SevenBoldPencil.Decorator
             			Logger.Log(LogLevel.Error, "Item", "Already added", itemId, itemPrefab.path, instanceID);
                         return;
                     }
-                    if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
+                    if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject) &&
+                        itemGameObject.TryGetComponent<DressItem>(out var dressItem) &&
+                        dressItem.DressPrefab)
                     {
-                        var itemWithDecorators = BuildDecorators(assetPoolObject, itemsWithDecorators.DecoratorsInfo);
-                        itemsWithDecorators.Items.Add(instanceID, itemWithDecorators);
-                        InstanceIdToItemId.Add(instanceID, itemId);
-            			Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, itemPrefab.path, instanceID);
+    					var dresses = dressItem.DressPrefab.GetComponentsInChildren<Dress>(includeInactive: true);
+                        foreach (var dress in dresses)
+                        {
+                            DressToItemId.Add(dress, itemId);
+                        }
+
+                        // TODO record item to the dict, but wait until item gets dressed, only then spawn decorators
+
+               //          var itemWithDecorators = BuildDecorators(assetPoolObject, itemsWithDecorators.DecoratorsInfo);
+               //          itemsWithDecorators.Items.Add(instanceID, itemWithDecorators);
+               //          InstanceIdToItemId.Add(instanceID, itemId);
+            			// Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, itemPrefab.path, instanceID);
                     }
                     else
                     {
@@ -322,36 +347,46 @@ namespace SevenBoldPencil.Decorator
         public ItemWithDecorators BuildDecorators(AssetPoolObject assetPoolObject, DecoratorsInfo decoratorsInfo)
         {
             var decorators = new List<Decorator>(decoratorsInfo.Decorators.Count);
-            var decoratorsRoot = GetDecoratorsRoot(assetPoolObject);
             foreach (var decoratorInfo in decoratorsInfo.Decorators)
             {
-                var decorator = CreateDecorator(decoratorInfo, decoratorsRoot);
-                decorators.Add(decorator);
+                // var decorator = CreateDecorator(decoratorInfo, playerBody);
+                // decorators.Add(decorator);
             }
 
             var itemWithDecorators = new ItemWithDecorators()
             {
-                DecoratorsRoot = decoratorsRoot,
+                PlayerBody = default,
                 Decorators = decorators,
             };
 
             return itemWithDecorators;
         }
 
-        public Transform GetDecoratorsRoot(AssetPoolObject assetPoolObject)
+        public Transform GetDecoratorRoot(string bone, PlayerBody playerBody)
         {
-            if (assetPoolObject is WeaponPrefab weaponPrefab)
+			if (playerBody.SkeletonRootJoint.Bones.TryGetValue(bone, out var boneTransform))
             {
-                return WeaponCamoAndStickers.Plugin.GetWeaponRoot(weaponPrefab);
+                return boneTransform;
             }
 
-            return assetPoolObject.transform;
+            throw new ArgumentException($"nonexistent bone: {bone}");
         }
 
         public void OnItemDestroyed(AssetPoolObject assetPoolObject)
         {
-            var instanceID = assetPoolObject.gameObject.GetInstanceID();
-            OnItemDestroyed(instanceID);
+            var itemGameObject = assetPoolObject.gameObject;
+            if (itemGameObject.TryGetComponent<DressItem>(out var dressItem) &&
+                dressItem.DressPrefab)
+            {
+                var instanceID = itemGameObject.GetInstanceID();
+				var dresses = dressItem.DressPrefab.GetComponentsInChildren<Dress>(includeInactive: true);
+                foreach (var dress in dresses)
+                {
+                    DressToItemId.Remove(dress);
+                }
+                Logger.LogWarning($"DressItem despawned: {instanceID}");
+                OnItemDestroyed(instanceID);
+            }
         }
 
         public void OnItemDestroyed(int instanceID)
@@ -389,37 +424,122 @@ namespace SevenBoldPencil.Decorator
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(weaponPreviewCamera, item, assetPoolObject, previewPivot);
+				// SetupCamoEditor(weaponPreviewCamera, item, assetPoolObject, previewPivot);
 			}
         }
 
-        public void SetupCamoEditor(Camera editorCamera, Item item, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
+        public void OnClothesReloaded(string profileId, PlayerModelView playerModelView, Camera editorCamera, RawImage rawImage)
         {
-            var itemId = GetOriginalItemId(item.Id);
-			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
-            IsCamoEditorWaitingForWeaponPreview = false;
-            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            // closing camo editor puts IsCamoEditorWaitingForWeaponPreview to false,
+            // so check CamoEditor.HasValue for proper behaviour
+            if (IsCamoEditorWaitingForWeaponPreview || CamoEditor.HasValue)
+            {
+                SetupCamoEditor(profileId, playerModelView, editorCamera, rawImage);
+            }
+        }
+
+        public void SetupCamoEditor(string profileId, PlayerModelView playerModelView, Camera editorCamera, RawImage rawImage)
+        {
+            // SetupCamoEditorClothes is called when:
+            // 1) player opens Overall screen and PlayerModelView gets loaded
+            // 2) player switches cloth piece in overall screen, in which case we must properly close previous editor
+
+            // save editor position
+            var isOpened = false;
+            var windowRect = SevenBoldPencil.Decorator.CamoEditor.GetDefaultWindowRect();
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                isOpened = camoEditor.IsOpened;
+                windowRect = camoEditor.WindowRect;
+                CloseCamoEditor();
+            }
+
+            var items = GetOrBuildItemsOnBody(profileId, playerModelView);
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
+                Items = items,
+                PlayerBody = playerModelView.PlayerBody,
+                Bones = Bones,
                 Camera = editorCamera,
-                ItemId = itemId,
-                InstanceID = instanceID,
-                AssetPoolObject = assetPoolObject,
-                PreviewPivot = previewPivot,
+                RawImage = rawImage,
+                IsOpened = isOpened,
+                WindowRect = windowRect
             });
         }
 
-        public int AddNewDecorator(string itemId, int instanceID, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
+        public List<CamoEditorItem> GetOrBuildItemsOnBody(string profileId, PlayerModelView playerModelView)
+        {
+            var result = new List<CamoEditorItem>(2);
+            var playerBody = playerModelView.PlayerBody;
+            var slotViews = playerBody.SlotViews;
+            if (slotViews.TryGetByKey(EquipmentSlot.ArmorVest, out var armorSlot) &&
+                TryGetItem(armorSlot).Some(out var armor))
+            {
+                result.Add(armor);
+            }
+            if (slotViews.TryGetByKey(EquipmentSlot.TacticalVest, out var rigSlot) &&
+                TryGetItem(rigSlot).Some(out var rig))
+            {
+                result.Add(rig);
+            }
+            // TODO also need to decide how to do helmets
+            // TODO do people need to paint backpack?
+            // TODO attach to clothes?
+            return result;
+        }
+
+        public Option<CamoEditorItem> TryGetItem(PlayerBody.EquipmentSlotClass slot)
+        {
+            var go = slot.GameObject_0;
+            if (!go)
+            {
+                return default;
+            }
+            if (!go.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
+            {
+                return default;
+            }
+            var item = slot.Item_0;
+            return new(new CamoEditorItem()
+            {
+                Name = GClass2348.Localized(item.Name),
+                ItemId = item.Id,
+                InstanceID = go.GetInstanceID(),
+                AssetPoolObject = assetPoolObject,
+            });
+        }
+
+   //      public void SetupCamoEditor(Camera editorCamera, Item item, AssetPoolObject assetPoolObject, PreviewPivot previewPivot)
+   //      {
+   //          var itemId = GetOriginalItemId(item.Id);
+			// Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
+   //          IsCamoEditorWaitingForWeaponPreview = false;
+   //          var instanceID = assetPoolObject.gameObject.GetInstanceID();
+   //          CamoEditor = new(new CamoEditor()
+   //          {
+   //              Plugin = this,
+   //              BigPlugin = BigPlugin.Instance,
+   //              CamoEditorResources = CamoEditorResources,
+   //              Camera = editorCamera,
+   //              ItemId = itemId,
+   //              InstanceID = instanceID,
+   //              AssetPoolObject = assetPoolObject,
+   //              PreviewPivot = previewPivot,
+   //          });
+   //      }
+
+        public int AddNewDecorator(string itemId, int instanceID, AssetPoolObject assetPoolObject, PlayerBody playerBody)
         {
             var decoratorInfo = new DecoratorInfo()
             {
                 SchemaVersion = DecoratorInfo.CurrentSchemaVersion,
+                Bone = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage", // right below collarbones
                 Name = "",
                 Prefab = "7Bpencil/cube", // TODO make default cube, which user cannot delete
-                LocalPosition = previewPivot.pivotPosition, // TODO this doesnt work for weapons, because their decorator root is multiple levels deep
+                LocalPosition = Vector3.zero, // TODO we need some predefined list of bone + transform
                 LocalEulerAngles = Vector3.zero,
                 LocalScale = Vector3.one,
                 IsVisible = true,
@@ -433,7 +553,7 @@ namespace SevenBoldPencil.Decorator
             }
             else
             {
-                CreateNewItemsWithDecorators(itemId, instanceID, assetPoolObject, decoratorInfo);
+                CreateNewItemsWithDecorators(itemId, instanceID, assetPoolObject, decoratorInfo, playerBody);
                 return 0;
             }
         }
@@ -444,13 +564,17 @@ namespace SevenBoldPencil.Decorator
             itemsWithDecorators.DecoratorsInfo.Decorators.Insert(decoratorIndex, decoratorInfo);
             foreach (var itemWithDecorators in itemsWithDecorators.Items.Values)
             {
-                var decorator = CreateDecorator(decoratorInfo, itemWithDecorators.DecoratorsRoot);
-                itemWithDecorators.Decorators.Insert(decoratorIndex, decorator);
+                if (itemWithDecorators.PlayerBody.Some(out var playerBody))
+                {
+                    var decorator = CreateDecorator(decoratorInfo, playerBody);
+                    itemWithDecorators.Decorators.Insert(decoratorIndex, decorator);
+                }
             }
         }
 
-        public Decorator CreateDecorator(DecoratorInfo decoratorInfo, Transform decoratorRoot)
+        public Decorator CreateDecorator(DecoratorInfo decoratorInfo, PlayerBody playerBody)
         {
+            var decoratorRoot = GetDecoratorRoot(decoratorInfo.Bone, playerBody);
             var decorator = new GameObject("Decorator", typeof(Decorator)).GetComponent<Decorator>();
             decorator.Init(decoratorInfo, decoratorRoot);
             StartCoroutine(LoadPrefabAsset(decorator, decoratorInfo.Prefab));
@@ -498,11 +622,10 @@ namespace SevenBoldPencil.Decorator
             // loadedAssetBundle.Unload(false);
         }
 
-        public void CreateNewItemsWithDecorators(string itemId, int instanceID, AssetPoolObject assetPoolObject, DecoratorInfo decoratorInfo)
+        public void CreateNewItemsWithDecorators(string itemId, int instanceID, AssetPoolObject assetPoolObject, DecoratorInfo decoratorInfo, PlayerBody playerBody)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var decoratorsRoot = GetDecoratorsRoot(assetPoolObject);
-            var decorator = CreateDecorator(decoratorInfo, decoratorsRoot);
+            var decorator = CreateDecorator(decoratorInfo, playerBody);
             var decorators = new List<Decorator>() { decorator };
             var decoratorsInfo = new DecoratorsInfo()
             {
@@ -518,7 +641,7 @@ namespace SevenBoldPencil.Decorator
                         instanceID,
                         new ItemWithDecorators()
                         {
-                            DecoratorsRoot = decoratorsRoot,
+                            PlayerBody = new(playerBody),
                             Decorators = decorators,
                         }
                     }
@@ -667,20 +790,23 @@ namespace SevenBoldPencil.Decorator
 
             camoEditor.ForceOnEndedDraggingHandle();
 
-            if (GetDecoratorsInfo(camoEditor.ItemId).Some(out var decoratorsInfo))
+            foreach (var item in camoEditor.Items)
             {
-                if (decoratorsInfo.Decorators.Count == 0)
+                if (GetDecoratorsInfo(item.ItemId).Some(out var decoratorsInfo))
                 {
-                    ItemsWithDecorators.Remove(camoEditor.ItemId);
-                    InstanceIdToItemId.Remove(camoEditor.InstanceID);
-                    RemoveDecoratorsFile(camoEditor.ItemId);
-                    Logger.Log(LogLevel.Info, "CamoEditor", "Remove decorators", camoEditor.ItemId);
-                }
-                else
-                {
-                    decoratorsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                    WriteDecoratorsToFile(camoEditor.ItemId, decoratorsInfo);
-                    Logger.Log(LogLevel.Info, "CamoEditor", "Rewrite decorators", camoEditor.ItemId);
+                    if (decoratorsInfo.Decorators.Count == 0)
+                    {
+                        ItemsWithDecorators.Remove(item.ItemId);
+                        InstanceIdToItemId.Remove(item.InstanceID);
+                        RemoveDecoratorsFile(item.ItemId);
+                        Logger.Log(LogLevel.Info, "CamoEditor", "Remove decorators", item.ItemId);
+                    }
+                    else
+                    {
+                        decoratorsInfo.SaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                        // WriteDecoratorsToFile(item.ItemId, decoratorsInfo);
+                        Logger.Log(LogLevel.Info, "CamoEditor", "Rewrite decorators", item.ItemId);
+                    }
                 }
             }
 

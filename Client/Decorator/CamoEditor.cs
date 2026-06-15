@@ -7,11 +7,14 @@
 
 using EFT;
 using EFT.AssetsManager;
+using EFT.UI;
+using EFT.UI.Settings;
 using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using UnityEngine.UI;
 
 // TODO we need presets both for item template and different color swatches
 
@@ -25,6 +28,31 @@ using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFor
 
 namespace SevenBoldPencil.Decorator
 {
+	public class RawImageCameraProvider(Camera camera, RawImage rawImage) : ICameraProvider
+	{
+		private readonly Camera _camera = camera;
+		private readonly Transform _cameraTransform = camera.transform;
+		private readonly RawImage _rawImage = rawImage;
+		private readonly RectTransform _rawImageRectTransform = rawImage.rectTransform;
+
+		public Camera GetCamera() => _camera;
+		public Transform GetCameraTransform() => _cameraTransform;
+
+		public Ray GetCameraRay()
+		{
+		    if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(_rawImageRectTransform, Input.mousePosition, null, out var localPoint))
+		    {
+				// not really possible, I think
+		        return new Ray(Vector3.zero, Vector3.forward * -1);
+		    }
+
+		    var rect = _rawImageRectTransform.rect;
+		    var u = Mathf.InverseLerp(rect.xMin, rect.xMax, localPoint.x);
+		    var v = Mathf.InverseLerp(rect.yMin, rect.yMax, localPoint.y);
+		    return _camera.ViewportPointToRay(new Vector2(u, v));
+		}
+	}
+
     public class DecoratorStringCache
     {
         public StringCache<float> LocalPositionX = new(v => $"X: {v:F3}");
@@ -40,6 +68,14 @@ namespace SevenBoldPencil.Decorator
         public StringCache<float> LocalScaleZ = new(v => $"Z: {v:F3}");
     }
 
+    public class CamoEditorItem
+	{
+        public string Name;
+        public string ItemId;
+        public int InstanceID;
+		public AssetPoolObject AssetPoolObject;
+	}
+
     public class CamoEditor
     {
         public Plugin Plugin;
@@ -47,12 +83,13 @@ namespace SevenBoldPencil.Decorator
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
 		public DecoratorStringCache Strings = new();
+        public List<CamoEditorItem> Items;
+		public PlayerBody PlayerBody;
+		public string[] Bones;
         public Camera Camera;
-        public string ItemId;
-        public int InstanceID;
-		public AssetPoolObject AssetPoolObject;
-		public PreviewPivot PreviewPivot;
+		public RawImage RawImage;
         public bool IsOpened;
+		public Option<int> CurrentlyEditedItemIndex;
 		public Vector2 DecoratorsScrollPosition;
         public Option<int> CurrentlyEditedDecoratorIndex;
         public Vector2 PrefabsScrollPosition;
@@ -107,7 +144,7 @@ namespace SevenBoldPencil.Decorator
 
         public static Rect GetDefaultWindowRect()
         {
-            return new(startX, startY, mainIconWidth, openCloseButtonHeight);
+            return new(startX, startY + bigMargin + openCloseButtonHeight, mainIconWidth, openCloseButtonHeight);
         }
 
         public static void DrawColor(Rect rect, Color color)
@@ -130,48 +167,82 @@ namespace SevenBoldPencil.Decorator
 
             if (IsOpened)
             {
-				if (CurrentlyEditedDecoratorIndex.Some(out var decoratorIndex))
+				if (CurrentlyEditedItemIndex.Some(out var itemIndex))
 				{
-	                WindowRect.height = CalculateDecoratorEditWindowHeight();
-	                WindowRect = GUI.Window(1, WindowRect, DrawDecoratorEditUI, GUIContent.none);
+					if (CurrentlyEditedDecoratorIndex.Some(out var decoratorIndex))
+					{
+		                WindowRect.height = CalculateEditDecoratorWindowHeight(itemIndex, decoratorIndex);
+		                WindowRect = GUI.Window(11, WindowRect, DrawOpenedEditDecoratorWindow, GUIContent.none);
 
-	                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-	                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+		                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+		                GUI.Window(12, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+					}
+					else
+					{
+		                WindowRect.height = CalculateDecoratorsWindowHeight(itemIndex);
+		                WindowRect = GUI.Window(11, WindowRect, DrawOpenedDecoratorsWindow, GUIContent.none);
+
+		                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+		                GUI.Window(12, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+					}
 				}
 				else
 				{
-	                WindowRect.height = CalculateWindowHeight();
-	                WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+	                WindowRect.height = CalculateItemsWindowHeight();
+	                WindowRect = GUI.Window(11, WindowRect, DrawOpenedItemsWindow, GUIContent.none);
 
 	                var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-	                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+	                GUI.Window(12, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
 				}
             }
             else
             {
-                WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
+                WindowRect = GUI.Window(11, WindowRect, DrawClosedWindow, GUIContent.none);
 
                 var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openColorPickerWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                GUI.Window(12, openColorPickerWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
             }
 
             GUI.matrix = originalMatrix;
         }
 
-		private int CalculateWindowHeight()
+		private int CalculateItemsWindowHeight()
 		{
-            var totalDecoratorsCount = Plugin.GetDecoratorsCount(ItemId);
+			// TODO if we decide to attach patches to outfits,
+			// there always will be at least 1 item
+			if (Items.Count == 0)
+			{
+				return
+					bigMargin + buttonHeight + bigMargin; // no items text
+			}
+			else
+			{
+				return
+					bigMargin +
+					Items.Count * (buttonHeight + mediumMargin) - mediumMargin + // items
+					bigMargin;
+			}
+		}
+
+		private int CalculateDecoratorsWindowHeight(int itemIndex)
+		{
+			// we do not limit how many decorators item can take,
+			// what if someone wants to go nuts and intricately paint it?
+			var item = Items[itemIndex];
+            var totalDecoratorsCount = Plugin.GetDecoratorsCount(item.ItemId);
             var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalDecoratorsCount, maxDecalsVisible, boxHeight, mediumMargin);
             return
-                bigMargin +
-                buttonHeight + bigMargin + // show presets button
+                smallMargin + buttonHeight + smallMargin + // item name
+                buttonHeight + mediumMargin + // back button
+                buttonHeight + bigMargin + // show/hide presets button
                 smallMargin + bigMargin + // separator
                 visibleHeight + mediumMargin + // decorators
                 buttonHeight + bigMargin; // add new decorator button
 		}
 
-		private int CalculateDecoratorEditWindowHeight()
+		private int CalculateEditDecoratorWindowHeight(int itemIndex, int decoratorIndex)
 		{
+			// TODO add bone selector
             var decoratorsCount = Plugin.GetTotalDecoratorsCount();
             var totalRows = BigCamoEditor.DivideIntCeil(decoratorsCount, iconColumns);
 			var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
@@ -186,23 +257,98 @@ namespace SevenBoldPencil.Decorator
                 visibleHeight + bigMargin; // icons grid
 		}
 
-        private void DrawOpenedWindow(int windowID)
+		// private int CalculateWindowHeight()
+		// {
+  //           var totalDecoratorsCount = Plugin.GetDecoratorsCount(ItemId);
+  //           var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalDecoratorsCount, maxDecalsVisible, boxHeight, mediumMargin);
+  //           return
+  //               bigMargin +
+  //               buttonHeight + bigMargin + // show presets button
+  //               smallMargin + bigMargin + // separator
+  //               visibleHeight + mediumMargin + // decorators
+  //               buttonHeight + bigMargin; // add new decorator button
+		// }
+
+		// private int CalculateDecoratorEditWindowHeight()
+		// {
+  //           var decoratorsCount = Plugin.GetTotalDecoratorsCount();
+  //           var totalRows = BigCamoEditor.DivideIntCeil(decoratorsCount, iconColumns);
+		// 	var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
+		// 	return
+		// 		bigMargin +
+  //               buttonHeight + mediumMargin + // back button
+  //               buttonHeight + mediumMargin + // decal name
+  //               4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
+  //               smallMargin + bigMargin + // separator
+  //               iconSize + bigMargin + // icon
+  //               smallMargin + bigMargin + // separator
+  //               visibleHeight + bigMargin; // icons grid
+		// }
+
+		private void DrawOpenedItemsWindow(int windowID)
 		{
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var x = bigMargin;
             var y = bigMargin;
 
+			if (Items.Count == 0)
+			{
+                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Suitable Items", CamoEditorStyle.LabelStyleValue);
+			}
+			else
+			{
+				for (var i = 0; i < Items.Count; i++)
+				{
+					var item = Items[i];
+					if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), item.Name))
+					{
+						SetCurrentlyEditedItem(i);
+					}
+					y += buttonHeight + mediumMargin;
+				}
+			}
+
+			GUI.DragWindow();
+		}
+
+        private void SetCurrentlyEditedItem(int itemIndex)
+		{
+            CurrentlyEditedItemIndex = new(itemIndex);
+			DecoratorsScrollPosition = Vector2.zero;
+			CurrentlyEditedDecoratorIndex = default;
+		}
+
+		private void DrawOpenedDecoratorsWindow(int windowID)
+		{
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+			var itemIndex = CurrentlyEditedItemIndex.Value;
+			var item = Items[itemIndex];
+
+            var x = bigMargin;
+            var y = smallMargin;
+
+            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), item.Name, CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
+            {
+                CurrentlyEditedItemIndex = default;
+            }
+            y += buttonHeight + mediumMargin;
+
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
             {
-                // TODO ArePresetsOpened = true;
+                // ArePresetsOpened = true;
             }
             y += buttonHeight + bigMargin;
 
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            if (Plugin.GetDecoratorsInfo(ItemId).Some(out var decoratorsInfo))
+
+            if (Plugin.GetDecoratorsInfo(item.ItemId).Some(out var decoratorsInfo))
 			{
                 var decoratorsY = y;
 
@@ -227,12 +373,60 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add Decorator"))
             {
-				var newDecoratorIndex = Plugin.AddNewDecorator(ItemId, InstanceID, AssetPoolObject, PreviewPivot);
+				var newDecoratorIndex = Plugin.AddNewDecorator(item.ItemId, item.InstanceID, item.AssetPoolObject, PlayerBody);
                 SetCurrentlyEditedDecorator(newDecoratorIndex);
             }
 
 			GUI.DragWindow();
-        }
+		}
+
+  //       private void DrawOpenedWindow(int windowID)
+		// {
+  //           DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+  //           var x = bigMargin;
+  //           var y = bigMargin;
+
+  //           if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
+  //           {
+  //               // TODO ArePresetsOpened = true;
+  //           }
+  //           y += buttonHeight + bigMargin;
+
+  //           DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+  //           y += smallMargin + bigMargin;
+
+  //           if (Plugin.GetDecoratorsInfo(ItemId).Some(out var decoratorsInfo))
+		// 	{
+  //               var decoratorsY = y;
+
+		// 		var decoratorsCount = decoratorsInfo.Decorators.Count;
+  //               var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(decoratorsCount, maxDecalsVisible, boxHeight, mediumMargin);
+  //               var totalRect = new Rect(x, decoratorsY, boxWidth, totalHeight);
+  //               var visibleRect = new Rect(x, decoratorsY, boxWidth + 16, visibleHeight);
+
+  //               BigCamoEditor.DrawScrollBar(x + boxWidth + 5, decoratorsY, totalHeight, visibleHeight, DecoratorsScrollPosition);
+  //               DecoratorsScrollPosition = GUI.BeginScrollView(visibleRect, DecoratorsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+  //               for (var i = 0; i < decoratorsCount; i++)
+  //               {
+  //                   var decoratorInfo = decoratorsInfo.Decorators[i];
+  //                   DrawDecoratorElementUI(x, decoratorsY, i, decoratorInfo);
+  //                   decoratorsY += boxHeight + mediumMargin;
+  //               }
+  //               y += visibleHeight + mediumMargin;
+
+  //               GUI.EndScrollView();
+		// 	}
+
+  //           if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add Decorator"))
+  //           {
+		// 		var newDecoratorIndex = Plugin.AddNewDecorator(ItemId, InstanceID, AssetPoolObject, PreviewPivot);
+  //               SetCurrentlyEditedDecorator(newDecoratorIndex);
+  //           }
+
+		// 	GUI.DragWindow();
+  //       }
 
         private void SetCurrentlyEditedDecorator(int decoratorIndex)
 		{
@@ -260,7 +454,7 @@ namespace SevenBoldPencil.Decorator
             var lineX = x + boxWidth - (smallMargin + buttonHeight) * 3;
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
             {
-                Plugin.Delete(ItemId, decoratorIndex);
+                // Plugin.Delete(ItemId, decoratorIndex);
             }
             lineX += buttonHeight + smallMargin;
 
@@ -281,19 +475,21 @@ namespace SevenBoldPencil.Decorator
             lineX += buttonHeight + smallMargin;
 		}
 
-        private void DrawDecoratorEditUI(int windowID)
+        private void DrawOpenedEditDecoratorWindow(int windowID)
 		{
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
+			var itemIndex = CurrentlyEditedItemIndex.Value;
+			var item = Items[itemIndex];
             var decoratorIndex = CurrentlyEditedDecoratorIndex.Value;
-            var (decoratorInfo, decorator) = Plugin.GetDecorator(ItemId, InstanceID, decoratorIndex);
+            var (decoratorInfo, decorator) = Plugin.GetDecorator(item.ItemId, item.InstanceID, decoratorIndex);
 
             var x = bigMargin;
             var y = bigMargin;
 
 			DrawDecoratorEditUI_Header(x, ref y, decoratorIndex, decoratorInfo, decorator);
-			DrawDecoratorEditUI_Transform(x, ref y, decoratorIndex, decoratorInfo, decorator);
-			DrawDecoratorEditUI_Icons(x, ref y, decoratorIndex, decoratorInfo, decorator);
+			DrawDecoratorEditUI_Transform(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
+			DrawDecoratorEditUI_Icons(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
 
 			GUI.DragWindow();
 		}
@@ -316,11 +512,11 @@ namespace SevenBoldPencil.Decorator
             y += buttonHeight + mediumMargin;
 		}
 
-		private void DrawDecoratorEditUI_Transform(int x, ref int y, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		private void DrawDecoratorEditUI_Transform(int x, ref int y, string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
 		{
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
             {
-                SetupTransformHandle(HandleType.Position, decoratorIndex, decoratorInfo, decorator);
+                SetupTransformHandle(HandleType.Position, itemId, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -337,7 +533,7 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditRotationIcon))
             {
-                SetupTransformHandle(HandleType.Rotation, decoratorIndex, decoratorInfo, decorator);
+                SetupTransformHandle(HandleType.Rotation, itemId, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -354,7 +550,7 @@ namespace SevenBoldPencil.Decorator
 
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditScaleIcon))
             {
-                SetupTransformHandle(HandleType.Scale, decoratorIndex, decoratorInfo, decorator);
+                SetupTransformHandle(HandleType.Scale, itemId, decoratorIndex, decoratorInfo, decorator);
             }
             {
                 var valueX = x + buttonHeight + smallMargin + 7;
@@ -394,7 +590,7 @@ namespace SevenBoldPencil.Decorator
             y += buttonHeight + bigMargin;
 		}
 
-		private void DrawDecoratorEditUI_Icons(int x, ref int y, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+		private void DrawDecoratorEditUI_Icons(int x, ref int y, string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
 		{
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
@@ -444,7 +640,7 @@ namespace SevenBoldPencil.Decorator
 	                    {
 							if (decoratorInfo.Prefab != prefabName)
 							{
-								Plugin.ChangePrefab(ItemId, decoratorIndex, decoratorInfo, prefabName);
+								Plugin.ChangePrefab(itemId, decoratorIndex, decoratorInfo, prefabName);
 							}
 	                    }
 	                    if (e.button == 1) // right click
@@ -489,7 +685,8 @@ namespace SevenBoldPencil.Decorator
             }
         }
 
-        private void SetupTransformHandle(HandleType handleType, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+
+        private void SetupTransformHandle(HandleType handleType, string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
 		{
             if (TransformHandle)
             {
@@ -497,24 +694,25 @@ namespace SevenBoldPencil.Decorator
                 DestroyTransformHandle();
             }
 
-            var handle = CreateTransformHandle(handleType, decoratorIndex, decoratorInfo, decorator);
-            TransformHandle = RuntimeTransformHandle.Create(handle, decorator.DecoratorTransform.parent, Camera, 1 << LayerMaskClass.WeaponPreview);
+            var handle = CreateTransformHandle(handleType, itemId, decoratorIndex, decoratorInfo, decorator);
+            var cameraProvider = new RawImageCameraProvider(Camera, RawImage);
+            TransformHandle = RuntimeTransformHandle.Create(handle, decorator.DecoratorTransform.parent, cameraProvider, 1 << LayerMaskClass.WeaponPreview);
 			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
 		}
 
-        public ITransformHandle CreateTransformHandle(HandleType handleType, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
+        public ITransformHandle CreateTransformHandle(HandleType handleType, string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
 		{
      		if (handleType == HandleType.Position)
 			{
-                return new PositionHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.PositionHandleShader);
+                return new PositionHandle(Plugin, itemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.PositionHandleShader);
 			}
 			if (handleType == HandleType.Rotation)
 			{
-                return new RotationHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.RotationHandleShader);
+                return new RotationHandle(Plugin, itemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.RotationHandleShader);
 			}
 			if (handleType == HandleType.Scale)
 			{
-                return new ScaleHandle(Plugin, ItemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.ScaleHandleShader);
+                return new ScaleHandle(Plugin, itemId, decoratorIndex, decoratorInfo, decorator, CamoEditorResources.ScaleHandleShader);
 			}
 
             throw new ArgumentException($"unknown handleType: {handleType}");
