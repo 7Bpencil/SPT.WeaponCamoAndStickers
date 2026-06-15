@@ -460,6 +460,7 @@ namespace SevenBoldPencil.Decorator
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
+                Strings = new(Bones),
                 Items = items,
                 PlayerBody = playerModelView.PlayerBody,
                 Bones = Bones,
@@ -664,6 +665,23 @@ namespace SevenBoldPencil.Decorator
                 var decorator = itemWithDecorators.Decorators[decoratorIndex];
                 itemWithDecorators.Decorators.RemoveAt(decoratorIndex);
                 DestroyDecorator(decorator, decoratorInfo);
+            }
+        }
+
+        public void SwitchBone(string itemId, int decoratorIndex, string boneName)
+        {
+            // TODO make it with ModifyDecoratorOnItems
+            var itemsWithDecorators = ItemsWithDecorators[itemId];
+            var decoratorInfo = itemsWithDecorators.DecoratorsInfo.Decorators[decoratorIndex];
+            decoratorInfo.Bone = boneName;
+            foreach (var itemWithDecorators in itemsWithDecorators.Items.Values)
+            {
+                if (itemWithDecorators.PlayerBody.Some(out var playerBody))
+                {
+                    var decoratorRoot = GetDecoratorRoot(boneName, playerBody);
+                    var decorator = itemWithDecorators.Decorators[decoratorIndex];
+                    decorator.ChangeRoot(decoratorInfo, decoratorRoot);
+                }
             }
         }
 

@@ -53,7 +53,7 @@ namespace SevenBoldPencil.Decorator
 		}
 	}
 
-    public class DecoratorStringCache
+    public class DecoratorStringCache(string[] bones)
     {
         public StringCache<float> LocalPositionX = new(v => $"X: {v:F3}");
         public StringCache<float> LocalPositionY = new(v => $"Y: {v:F3}");
@@ -66,6 +66,26 @@ namespace SevenBoldPencil.Decorator
         public StringCache<float> LocalScaleX = new(v => $"X: {v:F3}");
         public StringCache<float> LocalScaleY = new(v => $"Y: {v:F3}");
         public StringCache<float> LocalScaleZ = new(v => $"Z: {v:F3}");
+
+		public StringCache<string> SelectedBone = new(v => $"Select Bone | {GetBoneName(v)}");
+		public StringCache<string>[] Bones = GetBones(bones);
+
+		public static StringCache<string>[] GetBones(string[] bones)
+		{
+			var result = new StringCache<string>[bones.Length];
+			for (var i = 0; i < bones.Length; i++)
+			{
+				// TODO we need better names, since it will be not bones, but bone+transform
+				result[i] = new(v => GetBoneName(v));
+			}
+			return result;
+		}
+
+		public static string GetBoneName(string bonePath)
+		{
+			var bones = bonePath.Split("/");
+			return bones[^1];
+		}
     }
 
     public class CamoEditorItem
@@ -82,7 +102,7 @@ namespace SevenBoldPencil.Decorator
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
-		public DecoratorStringCache Strings = new();
+		public DecoratorStringCache Strings;
         public List<CamoEditorItem> Items;
 		public PlayerBody PlayerBody;
 		public string[] Bones;
@@ -92,6 +112,7 @@ namespace SevenBoldPencil.Decorator
 		public Option<int> CurrentlyEditedItemIndex;
 		public Vector2 DecoratorsScrollPosition;
         public Option<int> CurrentlyEditedDecoratorIndex;
+		public bool IsBonesListOpened;
         public Vector2 PrefabsScrollPosition;
         public RuntimeTransformHandle TransformHandle;
 		public Rect WindowRect = GetDefaultWindowRect();
@@ -242,19 +263,32 @@ namespace SevenBoldPencil.Decorator
 
 		private int CalculateEditDecoratorWindowHeight(int itemIndex, int decoratorIndex)
 		{
-			// TODO add bone selector
-            var decoratorsCount = Plugin.GetTotalDecoratorsCount();
-            var totalRows = BigCamoEditor.DivideIntCeil(decoratorsCount, iconColumns);
-			var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
-			return
-				bigMargin +
-                buttonHeight + mediumMargin + // back button
-                buttonHeight + mediumMargin + // decal name
-                4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // position, rotation, scale, flip
-                smallMargin + bigMargin + // separator
-                iconSize + bigMargin + // icon
-                smallMargin + bigMargin + // separator
-                visibleHeight + bigMargin; // icons grid
+			if (IsBonesListOpened)
+			{
+				return
+					bigMargin +
+	                buttonHeight + mediumMargin + // back button
+	                buttonHeight + mediumMargin + // decal name
+					buttonHeight + bigMargin + // select bone
+	                smallMargin + bigMargin + // separator
+					Bones.Length * (buttonHeight + smallMargin) - smallMargin + bigMargin; // bones
+			}
+			else
+			{
+	            var decoratorsCount = Plugin.GetTotalDecoratorsCount();
+	            var totalRows = BigCamoEditor.DivideIntCeil(decoratorsCount, iconColumns);
+				var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalRows, 5, iconSize, smallMargin);
+				return
+					bigMargin +
+	                buttonHeight + mediumMargin + // back button
+	                buttonHeight + mediumMargin + // decal name
+					buttonHeight + mediumMargin + // select bone
+	                4 * (buttonHeight + smallMargin) - smallMargin + bigMargin + // bone, position, rotation, scale, flip
+	                smallMargin + bigMargin + // separator
+	                iconSize + bigMargin + // icon
+	                smallMargin + bigMargin + // separator
+	                visibleHeight + bigMargin; // icons grid
+			}
 		}
 
 		// private int CalculateWindowHeight()
@@ -488,8 +522,35 @@ namespace SevenBoldPencil.Decorator
             var y = bigMargin;
 
 			DrawDecoratorEditUI_Header(x, ref y, decoratorIndex, decoratorInfo, decorator);
-			DrawDecoratorEditUI_Transform(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
-			DrawDecoratorEditUI_Icons(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
+
+			if (IsBonesListOpened)
+			{
+	            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Close"))
+				{
+					IsBonesListOpened = false;
+				}
+	            y += buttonHeight + bigMargin;
+
+	            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+	            y += smallMargin + bigMargin;
+
+				for (var i = 0; i < Bones.Length; i++)
+				{
+					// TODO add checkmark right to selected bone
+					var bone = Bones[i];
+					var boneString = Strings.Bones[i];
+		            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), boneString.Get(bone)))
+					{
+						Plugin.SwitchBone(item.ItemId, decoratorIndex, bone);
+					}
+		            y += buttonHeight + smallMargin;
+				}
+			}
+			else
+			{
+				DrawDecoratorEditUI_Transform(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
+				DrawDecoratorEditUI_Icons(x, ref y, item.ItemId, decoratorIndex, decoratorInfo, decorator);
+			}
 
 			GUI.DragWindow();
 		}
@@ -514,6 +575,12 @@ namespace SevenBoldPencil.Decorator
 
 		private void DrawDecoratorEditUI_Transform(int x, ref int y, string itemId, int decoratorIndex, DecoratorInfo decoratorInfo, Decorator decorator)
 		{
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), Strings.SelectedBone.Get(decoratorInfo.Bone)))
+			{
+				IsBonesListOpened = true;
+			}
+            y += buttonHeight + mediumMargin;
+
             if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
             {
                 SetupTransformHandle(HandleType.Position, itemId, decoratorIndex, decoratorInfo, decorator);

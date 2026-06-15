@@ -21,6 +21,11 @@ namespace SevenBoldPencil.Decorator
 			gameObject.layer = root.gameObject.layer;
 
 			DecoratorTransform = transform;
+			ChangeRoot(info, root);
+		}
+
+		public void ChangeRoot(DecoratorInfo info, Transform root)
+		{
             DecoratorTransform.parent = root;
 			DecoratorTransform.localPosition = info.LocalPosition;
 			DecoratorTransform.localEulerAngles = info.LocalEulerAngles;
