@@ -12,7 +12,6 @@ namespace RuntimeHandle
 	public class ScaleGlobal : HandleBase
 	{
 		private Transform _transformHandle;
-		private Camera _transformHandleCamera;
 		private Transform _transformHandleCameraTransform;
 		private IScaleAxisHandle _handle;
 		private Transform _arc;
@@ -27,7 +26,6 @@ namespace RuntimeHandle
 			Shader handleShader)
 		{
 			_transformHandle = transformHandle;
-			_transformHandleCamera = transformHandleCamera;
 			_transformHandleCameraTransform = transformHandleCamera.transform;
 			_handle = handle;
 
@@ -60,8 +58,9 @@ namespace RuntimeHandle
 
         public override void Interact(Ray cameraRay)
 		{
-            var startPosition = _transformHandleCamera.WorldToScreenPoint(_transformHandle.position);
-            var offset = Input.mousePosition - startPosition;
+			var perp = (_transformHandleCameraTransform.position - _transformHandle.position).normalized;
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, perp);
+            var offset = hitPoint - position;
             var offsetLength = offset.magnitude;
             var scale = offsetLength / _startOffsetLength;
 
@@ -70,8 +69,9 @@ namespace RuntimeHandle
 
         public override void StartInteraction(Ray cameraRay)
 		{
-            var startPosition = _transformHandleCamera.WorldToScreenPoint(_transformHandle.position);
-            var offset = Input.mousePosition - startPosition;
+			var perp = (_transformHandleCameraTransform.position - _transformHandle.position).normalized;
+            var (position, hitPoint) = GetPlaneHitPoint(cameraRay, _transformHandle, perp);
+            var offset = hitPoint - position;
 
             _startOffsetLength = offset.magnitude;
 			_handle.OnStartInteraction();

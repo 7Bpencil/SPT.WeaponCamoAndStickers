@@ -10,6 +10,23 @@ namespace RuntimeHandle
 		public void OnInteractionEnd();
 	}
 
+	public interface ICameraProvider
+	{
+		public Camera GetCamera();
+		public Transform GetCameraTransform();
+		public Ray GetCameraRay();
+	}
+
+	public class DefaultCameraProvider(Camera camera) : ICameraProvider
+	{
+		private readonly Camera _camera = camera;
+		private readonly Transform _cameraTransform = camera.transform;
+
+		public Camera GetCamera() => _camera;
+		public Transform GetCameraTransform() => _cameraTransform;
+		public Ray GetCameraRay() => _camera.ScreenPointToRay(Input.mousePosition);
+	}
+
     /**
      * Created by Peter @sHTiF Stefcek 21.10.2020
      * Rewritten by 7Bpencil 22.03.2026
@@ -20,7 +37,7 @@ namespace RuntimeHandle
         private const float _autoScaleFactor = 1f / 30f;
 
 		private Transform _transform;
-        private Camera _camera;
+		private ICameraProvider _cameraProvider;
 		private RaycastHit[] _raycastHits;
 		private int _raycastLayerMask;
 		private Transform _root;
@@ -33,7 +50,7 @@ namespace RuntimeHandle
 
 		public bool IsDragging => _draggingHandle;
 
-        public static RuntimeTransformHandle Create(ITransformHandle handler, Transform parent, Camera handleCamera, int raycastLayerMask)
+        public static RuntimeTransformHandle Create(ITransformHandle handler, Transform parent, ICameraProvider cameraProvider, int raycastLayerMask)
         {
 			var go = new GameObject("RuntimeTransformHandle");
 			var handle = go.AddComponent<RuntimeTransformHandle>();
@@ -42,7 +59,7 @@ namespace RuntimeHandle
 			handleTransform.parent = parent;
 
 			handle._transform = handleTransform;
-			handle._camera = handleCamera;
+			handle._cameraProvider = cameraProvider;
 
 			handle._raycastHits = new RaycastHit[5];
 			handle._raycastLayerMask = raycastLayerMask;
@@ -51,7 +68,7 @@ namespace RuntimeHandle
             handle._root.SetParent(handleTransform, false);
 
 			handle._handle = handler;
-			handle._handle.Init(handleTransform, handleCamera, handle._root);
+			handle._handle.Init(handleTransform, cameraProvider.GetCamera(), handle._root);
 			handle._handle.Reset(handleTransform);
 
 			handle.UpdateAutoScale();
@@ -90,7 +107,7 @@ namespace RuntimeHandle
 			{
 	            if (mouseDown)
 	            {
-		            var cameraRay = GetCameraRay();
+		            var cameraRay = _cameraProvider.GetCameraRay();
 	                _draggingHandle.Interact(cameraRay);
 	            }
 	            if (hasReleased)
@@ -102,7 +119,7 @@ namespace RuntimeHandle
 			}
 			else
 			{
-	            var cameraRay = GetCameraRay();
+	            var cameraRay = _cameraProvider.GetCameraRay();
 	            var (handle, hitPoint) = GetHandle(cameraRay);
 				var canInteract = handle && handle.CanInteract(hitPoint);
 				if (handle != _previousHandle)
@@ -133,14 +150,10 @@ namespace RuntimeHandle
 		{
             if (_autoScale)
 			{
-				var cameraDistance = Vector3.Distance(_camera.transform.position, _transform.position);
+				var cameraTransform = _cameraProvider.GetCameraTransform();
+				var cameraDistance = Vector3.Distance(cameraTransform.position, _transform.position);
                 _transform.localScale = Vector3.one * (cameraDistance * _autoScaleFactor);
 			}
-		}
-
-		private Ray GetCameraRay()
-		{
-            return _camera.ScreenPointToRay(Input.mousePosition);
 		}
 
         private (HandleBase, Vector3) GetHandle(Ray cameraRay)
