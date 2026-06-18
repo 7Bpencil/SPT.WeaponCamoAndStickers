@@ -175,7 +175,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             IsValid = true;
         }
 
-        public bool SetValue(string value, out Option<T> valueOption)
+        public bool TrySetValue(string value, out Option<T> valueOption)
         {
             if (Value != value)
             {
@@ -1167,7 +1167,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
                     GUI.backgroundColor = previousBackgroundColor;
 
-                    if (ColorTextField.SetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
+                    if (ColorTextField.TrySetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
                     {
                         decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
                         Plugin.ApplyColor(ItemId, decalIndex);

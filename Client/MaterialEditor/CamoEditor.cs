@@ -579,7 +579,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), textField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
                 GUI.backgroundColor = previousBackgroundColor;
 
-                if (textField.SetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
+                if (textField.TrySetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
                 {
                     colorHSV = newColor;
                     ForEveryLinkedItem(action, colorHSV);
