@@ -38,7 +38,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class ItemWithDecals
     {
-        public WeaponPrefab WeaponPrefab;
         public Transform DecalsRoot;
         public List<Decal> Decals;
     }
@@ -1626,7 +1625,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         instanceID,
                         new ItemWithDecals()
                         {
-                            WeaponPrefab = weaponPrefab,
                             DecalsRoot = decalsRoot,
                             Decals = decals,
                         }
@@ -1842,7 +1840,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var itemWithDecals = new ItemWithDecals()
             {
-                WeaponPrefab = weaponPrefab,
                 DecalsRoot = decalsRoot,
                 Decals = decals,
             };
@@ -2148,7 +2145,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             instanceID,
                             new ItemWithDecals()
                             {
-                                WeaponPrefab = weaponPrefab,
                                 DecalsRoot = decalsRoot,
                                 Decals = decals,
                             }
