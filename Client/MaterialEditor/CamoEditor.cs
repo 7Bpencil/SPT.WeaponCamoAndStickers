@@ -477,76 +477,22 @@ namespace SevenBoldPencil.MaterialEditor
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            // save button turns green only if there is valid input,
-            // text field goes red only if there is actual invalid input, stays default if no input
-            var previousBackgroundColor = GUI.backgroundColor;
-            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName.Value) && !CurrentPresetName.IsValid;
-            var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
 
-            GUI.backgroundColor = buttonBackgroundColor;
-            var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName.Value, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
-            GUI.backgroundColor = previousBackgroundColor;
-
-            CurrentPresetName.TrySetValue(newPresetName, out _);
-            if (string.IsNullOrWhiteSpace(CurrentPresetName.Value))
-            {
-                GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoEditorStyle.LabelStyleName);
-            }
-
-            var saveX = x + boxWidth - buttonHeight;
-            var saveIcon = CurrentPresetName.IsValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
-            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
-            {
-                if (CurrentPresetName.IsValid)
-                {
-                    Plugin.SaveMaterialIntoPreset(item.ItemId, materialName, CurrentPresetName.Value);
-                }
-            }
-            y += buttonHeight + mediumMargin;
-
-            var presetsCount = Plugin.GetMaterialPresetsCount();
-            if (presetsCount > 0)
-            {
-                var decalsY = y;
-
-                var (totalHeight, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
-                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
-                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
-
-                BigCamoEditor.DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
-                PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-                Option<string> deletedPresetNameOption = default;
-                foreach (var presetName in Plugin.GetMaterialPresetNames())
-                {
-                    if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
-                    {
-                        CurrentPresetName.SetValue(presetName);
-                        ForEveryLinkedItem(Plugin.SwitchToMaterialPreset, presetName);
-                    }
-                    if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
-                    {
-                        // theres no way user will click on multiple buttons in one frame, right?
-                        deletedPresetNameOption = new(presetName);
-                    }
-                    decalsY += buttonHeight + smallMargin;
-                }
-                if (deletedPresetNameOption.Some(out var deletedPresetName))
-                {
-                    Plugin.DeleteMaterialPreset(deletedPresetName);
-                }
-                y += visibleHeight + bigMargin;
-
-                GUI.EndScrollView();
-            }
-            else
-            {
-                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoEditorStyle.LabelStyleValue);
-                y += buttonHeight + bigMargin;
-            }
+            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentPresetName, SaveMaterialIntoPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentPresetName, Plugin.GetMaterialPresetNames(), ref PresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle);
 
 			GUI.DragWindow();
+        }
+
+        private void SaveMaterialIntoPreset(string presetName)
+        {
+            var (item, materialName, _, _) = GetEditedMaterialInfo();
+            Plugin.SaveMaterialIntoPreset(item.ItemId, materialName, presetName);
+        }
+
+        private void SwitchToMaterialPreset(string presetName)
+        {
+            ForEveryLinkedItem(Plugin.SwitchToMaterialPreset, presetName);
         }
 
         private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, string name, ColorStringCache strings, Action<string, string, Vector3> action)

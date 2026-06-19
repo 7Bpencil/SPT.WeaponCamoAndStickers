@@ -7,6 +7,7 @@
 
 using SevenBoldPencil.Common;
 using System;
+using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
 
@@ -534,33 +535,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            // save button turns green only if there is valid input,
-            // text field goes red only if there is actual invalid input, stays default if no input
-            var previousBackgroundColor = GUI.backgroundColor;
-            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName.Value) && !CurrentPresetName.IsValid;
-            var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
-
-            GUI.backgroundColor = buttonBackgroundColor;
-            var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName.Value, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
-            GUI.backgroundColor = previousBackgroundColor;
-
-            CurrentPresetName.TrySetValue(newPresetName, out _);
-            if (string.IsNullOrWhiteSpace(CurrentPresetName.Value))
-            {
-                GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoEditorStyle.LabelStyleName);
-            }
-
-            var saveX = x + boxWidth - buttonHeight;
-            var saveIcon = CurrentPresetName.IsValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
-            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
-            {
-                if (CurrentPresetName.IsValid)
-                {
-                    Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName.Value);
-                }
-            }
-            y += buttonHeight + mediumMargin;
+            DrawPresetNameTextField(ref x, ref y, ref CurrentPresetName, SaveDecalsIntoPreset, CamoEditorResources, CamoEditorStyle);
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
             {
@@ -568,48 +543,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             y += buttonHeight + mediumMargin;
 
-            var presetsCount = Plugin.GetPresetsCount();
-            if (presetsCount > 0)
-            {
-                var decalsY = y;
-
-                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
-                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
-                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
-
-                DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, PresetsScrollPosition);
-                PresetsScrollPosition = GUI.BeginScrollView(visibleRect, PresetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-                Option<string> deletedPresetNameOption = default;
-                foreach (var presetName in Plugin.GetPresetNames())
-                {
-                    if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
-                    {
-                        CurrentPresetName.SetValue(presetName);
-                        Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
-                    }
-                    if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
-                    {
-                        // theres no way user will click on multiple buttons in one frame, right?
-                        deletedPresetNameOption = new(presetName);
-                    }
-                    decalsY += buttonHeight + smallMargin;
-                }
-                if (deletedPresetNameOption.Some(out var deletedPresetName))
-                {
-                    Plugin.DeletePreset(deletedPresetName);
-                }
-                y += visibleHeight + bigMargin;
-
-                GUI.EndScrollView();
-            }
-            else
-            {
-                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", CamoEditorStyle.LabelStyleValue);
-                y += buttonHeight + bigMargin;
-            }
+            DrawPresets(ref x, ref y, ref CurrentPresetName, Plugin.GetPresetNames(), ref PresetsScrollPosition, SwitchToPreset, Plugin.DeletePreset, CamoEditorResources, CamoEditorStyle);
 
 			GUI.DragWindow();
+        }
+
+        private void SaveDecalsIntoPreset(string presetName)
+        {
+            Plugin.SaveDecalsIntoPreset(ItemId, presetName);
+        }
+
+        private void SwitchToPreset(string presetName)
+        {
+            Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
         }
 
         private void DrawDecalsListUI(int windowID)
@@ -1640,6 +1586,98 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     DrawColor(new Rect(x, y, scrollBarWidth, visibleHeight), separatorColor);
                 }
                 DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
+            }
+        }
+
+        public static void DrawPresetNameTextField(
+            ref int x,
+            ref int y,
+            ref TextField<string> textField,
+            Action<string> savePreset,
+            CamoEditorResources camoEditorResources,
+            CamoEditorStyle camoEditorStyle)
+        {
+            // save button turns green only if there is valid input,
+            // text field goes red only if there is actual invalid input, stays default if no input
+            var previousBackgroundColor = GUI.backgroundColor;
+            var hasInvalidInput = !string.IsNullOrWhiteSpace(textField.Value) && !textField.IsValid;
+            var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
+
+            GUI.backgroundColor = buttonBackgroundColor;
+            var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
+            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), textField.Value, maxPresetNameLength, camoEditorStyle.TextFieldStyle);
+            GUI.backgroundColor = previousBackgroundColor;
+
+            textField.TrySetValue(newPresetName, out _);
+            if (string.IsNullOrWhiteSpace(textField.Value))
+            {
+                GUI.Label(new Rect(x + camoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", camoEditorStyle.LabelStyleName);
+            }
+
+            var saveX = x + boxWidth - buttonHeight;
+            var saveIcon = textField.IsValid ? camoEditorResources.SaveIcon : camoEditorResources.SaveErrorIcon;
+            if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
+            {
+                if (textField.IsValid)
+                {
+                    savePreset(textField.Value);
+                }
+            }
+            y += buttonHeight + mediumMargin;
+        }
+
+        public static void DrawPresets<T>(
+            ref int x,
+            ref int y,
+            ref TextField<string> textField,
+            Dictionary<string, T>.KeyCollection presetNames,
+            ref Vector2 presetsScrollPosition,
+            Action<string> switchToPreset,
+            Action<string> deletePreset,
+            CamoEditorResources camoEditorResources,
+            CamoEditorStyle camoEditorStyle)
+        {
+            var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
+
+            var presetsCount = presetNames.Count;
+            if (presetsCount > 0)
+            {
+                var decalsY = y;
+
+                var (totalHeight, visibleHeight) = CalculateScrollViewTotalAndVisibleHeight(presetsCount, maxPresetsVisible, buttonHeight, smallMargin);
+                var totalRect = new Rect(x, decalsY, boxWidth, totalHeight);
+                var visibleRect = new Rect(x, decalsY, boxWidth + 16, visibleHeight);
+
+                DrawScrollBar(x + boxWidth + 5, decalsY, totalHeight, visibleHeight, presetsScrollPosition);
+                presetsScrollPosition = GUI.BeginScrollView(visibleRect, presetsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+                Option<string> deletedPresetNameOption = default;
+                foreach (var presetName in presetNames)
+                {
+                    if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
+                    {
+                        textField.SetValue(presetName);
+                        switchToPreset(presetName);
+                    }
+                    if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), camoEditorResources.DeleteIcon))
+                    {
+                        // theres no way user will click on multiple buttons in one frame, right?
+                        deletedPresetNameOption = new(presetName);
+                    }
+                    decalsY += buttonHeight + smallMargin;
+                }
+                if (deletedPresetNameOption.Some(out var deletedPresetName))
+                {
+                    deletePreset(deletedPresetName);
+                }
+                y += visibleHeight + bigMargin;
+
+                GUI.EndScrollView();
+            }
+            else
+            {
+                GUI.Label(new Rect(x, y, boxWidth, buttonHeight), "No Presets Available", camoEditorStyle.LabelStyleValue);
+                y += buttonHeight + bigMargin;
             }
         }
 
