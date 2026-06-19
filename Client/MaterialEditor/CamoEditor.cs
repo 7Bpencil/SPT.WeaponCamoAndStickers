@@ -412,7 +412,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void SaveItemsIntoPreset(string presetName)
         {
-            // TODO
+            Plugin.SaveItemMaterialsIntoPreset(Items, ItemsDict, presetName);
         }
 
         private void SwitchToItemPreset(string presetName)

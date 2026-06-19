@@ -129,10 +129,12 @@ namespace SevenBoldPencil.MaterialEditor
         public const int CurrentSchemaVersion = 0;
 
         public int SchemaVersion;
-        // templateId -> [materialName -> materialInfo]
-        // we can have multiple items with same template id (like multiple small rails)
-        // each of them can have multiple different materials
-        public Dictionary<string, List<Dictionary<string, MaterialInfo>>> Materials;
+        // templateId -> { index -> { materialName -> materialInfo } }
+        // we can have multiple items with same template id
+        // (like multiple small rails, or meme kit with big 2U flashlights),
+        // also save their indices (local to their template group) to at least try to keep correct order,
+        // each item can have multiple different materials ofc
+        public Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> Materials;
     }
 
     public class MaterialPreset
@@ -274,7 +276,7 @@ namespace SevenBoldPencil.MaterialEditor
         {
             foreach (var items in itemPreset.Materials.Values)
             {
-                foreach (var item in items)
+                foreach (var item in items.Values)
                 {
                     foreach (var material in item.Values)
                     {
@@ -956,9 +958,27 @@ namespace SevenBoldPencil.MaterialEditor
             return filePath;
         }
 
+        public string GetItemPresetFilePath(string presetName)
+        {
+            var fileName = $"{presetName}.json";
+            var filePath = Path.Combine(ItemPresetsDir, fileName);
+            return filePath;
+        }
+
+        public void WriteItemPresetToFile(string presetName, ItemPreset preset)
+        {
+            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            var filePath = GetItemPresetFilePath(presetName);
+            SafeIO.WriteAllTextAsync(filePath, json);
+        }
+
         public void DeleteItemPreset(string presetName)
         {
-            // TODO
+            if (ItemPresets.Remove(presetName))
+            {
+                var filePath = GetItemPresetFilePath(presetName);
+                SafeIO.DeleteFile(filePath);
+            }
         }
 
         public void OnGUI()
@@ -1344,20 +1364,20 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 return;
             }
-            if (MaterialPresets.TryGetValue(presetName, out var oldPresetMaterialInfo))
+            if (MaterialPresets.TryGetValue(presetName, out var oldPreset))
             {
-                oldPresetMaterialInfo.Material = materialInfo.GetCopy();
-                WriteMaterialPresetToFile(presetName, oldPresetMaterialInfo);
+                oldPreset.Material = materialInfo.GetCopy();
+                WriteMaterialPresetToFile(presetName, oldPreset);
             }
             else
             {
-                var newPresetMaterialInfo = new MaterialPreset()
+                var newPreset = new MaterialPreset()
                 {
                     SchemaVersion = MaterialPreset.CurrentSchemaVersion,
                     Material = materialInfo.GetCopy(),
                 };
-                MaterialPresets.Add(presetName, newPresetMaterialInfo);
-                WriteMaterialPresetToFile(presetName, newPresetMaterialInfo);
+                MaterialPresets.Add(presetName, newPreset);
+                WriteMaterialPresetToFile(presetName, newPreset);
             }
         }
 
@@ -1401,6 +1421,64 @@ namespace SevenBoldPencil.MaterialEditor
                 itemId, materialName,
                 (targetMaterial, materialInfo) => ApplyAllOverrides(targetMaterial, materialInfo)
             );
+        }
+
+        public void SaveItemMaterialsIntoPreset(List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict, string presetName)
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                return;
+            }
+            if (ItemPresets.TryGetValue(presetName, out var oldPreset))
+            {
+                CopyAllMaterials(items, itemsDict, oldPreset.Materials);
+                WriteItemPresetToFile(presetName, oldPreset);
+            }
+            else
+            {
+                var newMaterials = new Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>>(itemsDict.Count);
+                CopyAllMaterials(items, itemsDict, newMaterials);
+                var newPreset = new ItemPreset()
+                {
+                    SchemaVersion = ItemPreset.CurrentSchemaVersion,
+                    Materials = newMaterials,
+                };
+                ItemPresets.Add(presetName, newPreset);
+                WriteItemPresetToFile(presetName, newPreset);
+            }
+        }
+
+        public void CopyAllMaterials(
+            List<CamoEditorItem> items,
+            Dictionary<string, List<int>> itemsDict,
+            Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> allMaterials)
+        {
+            allMaterials.Clear();
+            foreach (var (templateId, itemIndices) in itemsDict)
+            {
+                Dictionary<int, Dictionary<string, MaterialInfo>> itemsInfo = null;
+                for (var i = 0; i < itemIndices.Count; i++)
+                {
+                    var item = items[itemIndices[i]];
+                    if (GetMaterialsInfo(item.ItemId).Some(out var materialsInfo))
+                    {
+                        var materials = new Dictionary<string, MaterialInfo>(materialsInfo.Materials.Count);
+                        foreach (var (materialName, materialInfo) in materialsInfo.Materials)
+                        {
+                            materials.Add(materialName, materialInfo.GetCopy());
+                        }
+                        if (itemsInfo == null)
+                        {
+                            itemsInfo = new(itemIndices.Count);
+                        }
+                        itemsInfo.Add(i, materials);
+                    }
+                }
+                if (itemsInfo != null)
+                {
+                    allMaterials.Add(templateId, itemsInfo);
+                }
+            }
         }
 
         public void ForEveryMaterialOnItem(string itemId, string materialName, Action<TargetMaterial, MaterialInfo> changeMaterial)
