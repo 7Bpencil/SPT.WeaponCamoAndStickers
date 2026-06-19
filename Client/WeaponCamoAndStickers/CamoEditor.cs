@@ -163,10 +163,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public string Value;
         public bool IsValid;
 
-        public TextField(Func<T, string> format, Func<string, Option<T>> tryParse)
+        public TextField(Func<T, string> format, Func<string, Option<T>> tryParse, string startValue = "")
         {
             String = new(format);
             TryParse = tryParse;
+            Value = startValue;
+            IsValid = TryParse(startValue).HasValue;
         }
 
         public void SetValue(T value)
@@ -211,8 +213,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public float PreviewPivotZ;
         public bool IsOpened;
         public bool ArePresetsOpened;
-        public string CurrentPresetName = "";
-        public bool IsCurrentPresetNameValid;
+        public TextField<string> CurrentPresetName = new(v => v, TryParsePresetName);
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedDecalIndex;
@@ -536,31 +537,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // save button turns green only if there is valid input,
             // text field goes red only if there is actual invalid input, stays default if no input
             var previousBackgroundColor = GUI.backgroundColor;
-            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName) && !IsCurrentPresetNameValid;
+            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName.Value) && !CurrentPresetName.IsValid;
             var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
 
             GUI.backgroundColor = buttonBackgroundColor;
             var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
+            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName.Value, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
             GUI.backgroundColor = previousBackgroundColor;
 
-            if (newPresetName != CurrentPresetName)
-            {
-                CurrentPresetName = newPresetName;
-                IsCurrentPresetNameValid = SafeIO.IsValidFileName(newPresetName);
-            }
-            if (string.IsNullOrWhiteSpace(CurrentPresetName))
+            CurrentPresetName.TrySetValue(newPresetName, out _);
+            if (string.IsNullOrWhiteSpace(CurrentPresetName.Value))
             {
                 GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoEditorStyle.LabelStyleName);
             }
 
             var saveX = x + boxWidth - buttonHeight;
-            var saveIcon = IsCurrentPresetNameValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
+            var saveIcon = CurrentPresetName.IsValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
             if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
             {
-                if (IsCurrentPresetNameValid)
+                if (CurrentPresetName.IsValid)
                 {
-                    Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName);
+                    Plugin.SaveDecalsIntoPreset(ItemId, CurrentPresetName.Value);
                 }
             }
             y += buttonHeight + mediumMargin;
@@ -588,8 +585,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                     {
-                        CurrentPresetName = presetName;
-                        IsCurrentPresetNameValid = true;
+                        CurrentPresetName.SetValue(presetName);
                         Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
                     }
                     if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
@@ -1645,6 +1641,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 DrawColor(new Rect(x, y + handlePosition, scrollBarWidth, handleHeight), scrollBarHandleColor);
             }
+        }
+
+        public static Option<string> TryParsePresetName(string presetName)
+        {
+            if (SafeIO.IsValidFileName(presetName))
+            {
+                return new(presetName);
+            }
+
+            return default;
         }
 
         public void DrawDecalProjectionBox()

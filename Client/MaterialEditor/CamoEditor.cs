@@ -88,8 +88,7 @@ namespace SevenBoldPencil.MaterialEditor
         public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
-        public string CurrentPresetName = "";
-        public bool IsCurrentPresetNameValid;
+        public WeaponCamoAndStickers.TextField<string> CurrentPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
         public Vector2 PresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
         public Option<EditedOverride> CurrentlyEditedOverride;
@@ -481,31 +480,27 @@ namespace SevenBoldPencil.MaterialEditor
             // save button turns green only if there is valid input,
             // text field goes red only if there is actual invalid input, stays default if no input
             var previousBackgroundColor = GUI.backgroundColor;
-            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName) && !IsCurrentPresetNameValid;
+            var hasInvalidInput = !string.IsNullOrWhiteSpace(CurrentPresetName.Value) && !CurrentPresetName.IsValid;
             var buttonBackgroundColor = hasInvalidInput ? Color.red : previousBackgroundColor;
 
             GUI.backgroundColor = buttonBackgroundColor;
             var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
-            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
+            var newPresetName = GUI.TextField(new Rect(x, y, presetButtonWidth, buttonHeight), CurrentPresetName.Value, maxPresetNameLength, CamoEditorStyle.TextFieldStyle);
             GUI.backgroundColor = previousBackgroundColor;
 
-            if (newPresetName != CurrentPresetName)
-            {
-                CurrentPresetName = newPresetName;
-                IsCurrentPresetNameValid = SafeIO.IsValidFileName(newPresetName);
-            }
-            if (string.IsNullOrWhiteSpace(CurrentPresetName))
+            CurrentPresetName.TrySetValue(newPresetName, out _);
+            if (string.IsNullOrWhiteSpace(CurrentPresetName.Value))
             {
                 GUI.Label(new Rect(x + CamoEditorStyle.TextFieldStyle.contentOffset.x + 3, y, presetButtonWidth, buttonHeight), "enter new preset name", CamoEditorStyle.LabelStyleName);
             }
 
             var saveX = x + boxWidth - buttonHeight;
-            var saveIcon = IsCurrentPresetNameValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
+            var saveIcon = CurrentPresetName.IsValid ? CamoEditorResources.SaveIcon : CamoEditorResources.SaveErrorIcon;
             if (GUI.Button(new Rect(saveX, y, buttonHeight, buttonHeight), saveIcon))
             {
-                if (IsCurrentPresetNameValid)
+                if (CurrentPresetName.IsValid)
                 {
-                    Plugin.SaveMaterialIntoPreset(item.ItemId, materialName, CurrentPresetName);
+                    Plugin.SaveMaterialIntoPreset(item.ItemId, materialName, CurrentPresetName.Value);
                 }
             }
             y += buttonHeight + mediumMargin;
@@ -527,8 +522,7 @@ namespace SevenBoldPencil.MaterialEditor
                 {
                     if (GUI.Button(new Rect(x, decalsY, presetButtonWidth, buttonHeight), presetName))
                     {
-                        CurrentPresetName = presetName;
-                        IsCurrentPresetNameValid = true;
+                        CurrentPresetName.SetValue(presetName);
                         ForEveryLinkedItem(Plugin.SwitchToMaterialPreset, presetName);
                     }
                     if (GUI.Button(new Rect(x + presetButtonWidth + smallMargin, decalsY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
