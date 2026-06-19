@@ -71,7 +71,7 @@ namespace SevenBoldPencil.MaterialEditor
         public int ItemIndex;
         public string MaterialName;
 
-        public override bool Equals(object? obj) => obj is EditedOverride other && this.Equals(other);
+        public override bool Equals(object obj) => obj is EditedOverride other && this.Equals(other);
         public bool Equals(EditedOverride p) => ItemIndex == p.ItemIndex && MaterialName == p.MaterialName;
         public override int GetHashCode() => (ItemIndex, MaterialName).GetHashCode();
         public static bool operator ==(EditedOverride lhs, EditedOverride rhs) => lhs.Equals(rhs);
@@ -86,10 +86,14 @@ namespace SevenBoldPencil.MaterialEditor
         public CamoEditorStyle CamoEditorStyle;
         public MaterialStringCache Strings = new();
         public List<CamoEditorItem> Items;
+        public Dictionary<string, List<int>> ItemsDict;
         public bool IsOpened;
-        public bool ArePresetsOpened;
-        public WeaponCamoAndStickers.TextField<string> CurrentPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
-        public Vector2 PresetsScrollPosition;
+        public bool AreItemPresetsOpened;
+        public bool AreMaterialPresetsOpened;
+        public WeaponCamoAndStickers.TextField<string> CurrentItemPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
+        public WeaponCamoAndStickers.TextField<string> CurrentMaterialPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
+        public Vector2 ItemPresetsScrollPosition;
+        public Vector2 MaterialPresetsScrollPosition;
         public Vector2 MaterialsScrollPosition;
         public Option<EditedOverride> CurrentlyEditedOverride;
         public HashSet<EditedOverride> LinkedOverrides = new();
@@ -127,7 +131,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxEraseMaskIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxMaterialsVisibleHeight = 27 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxMaterialsVisibleHeight = 25 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
@@ -175,57 +179,68 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (IsOpened)
             {
-                if (CurrentlyEditedOverride.HasValue)
+                if (AreItemPresetsOpened)
                 {
-                    if (ArePresetsOpened)
-                    {
-                        WindowRect.height = CalculateMaterialEditWindowHeight_Presets();
-                        WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Presets, GUIContent.none);
-
-                        var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
-                    }
-                    else
-                    {
-                        WindowRect.height = CalculateMaterialEditWindowHeight_Material();
-                        WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Material, GUIContent.none);
-
-                        var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
-
-                        void DrawColorPicker(int windowID, bool isOpened, int y, UnityEngine.GUI.WindowFunction colorPickerWindow, UnityEngine.GUI.WindowFunction openColorPickerWindow, UnityEngine.GUI.WindowFunction closeColorPickerWindow)
-                        {
-                            if (isOpened)
-                            {
-                                var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + y, colorPickerSize, colorPickerSize);
-                                GUI.Window(windowID, colorPickerWindowRect, colorPickerWindow, GUIContent.none);
-
-                                var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(windowID + 1, closeColorPickerWindowRect, closeColorPickerWindow, GUIContent.none);
-                            }
-                            else
-                            {
-                                var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(windowID, openColorPickerWindowRect, openColorPickerWindow, GUIContent.none);
-                            }
-
-                        }
-
-                        if (AreAdvancedSettingsOpened)
-                        {
-                            DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
-                            DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DrawColorPickerWindow_SpecColor, DrawColorPickerWindowOpenButton_SpecColor, DrawColorPickerWindowCloseButton_SpecColor);
-                            DrawColorPicker(7, IsColorPickerOpened_ReflectColor, colorPickerY_ReflectColor, DrawColorPickerWindow_ReflectColor, DrawColorPickerWindowOpenButton_ReflectColor, DrawColorPickerWindowCloseButton_ReflectColor);
-                        }
-                    }
-                }
-                else
-                {
-                    WindowRect.height = CalculateMaterialsWindowHeight();
-                    WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+                    WindowRect.height = CalculateMaterialsWindowHeight_Presets();
+                    WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow_Presets, GUIContent.none);
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                     GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                }
+                else
+                {
+                    if (CurrentlyEditedOverride.HasValue)
+                    {
+                        if (AreMaterialPresetsOpened)
+                        {
+                            WindowRect.height = CalculateMaterialEditWindowHeight_Presets();
+                            WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Presets, GUIContent.none);
+
+                            var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                            GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                        }
+                        else
+                        {
+                            WindowRect.height = CalculateMaterialEditWindowHeight_Material();
+                            WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Material, GUIContent.none);
+
+                            var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                            GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+
+                            void DrawColorPicker(int windowID, bool isOpened, int y, UnityEngine.GUI.WindowFunction colorPickerWindow, UnityEngine.GUI.WindowFunction openColorPickerWindow, UnityEngine.GUI.WindowFunction closeColorPickerWindow)
+                            {
+                                if (isOpened)
+                                {
+                                    var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + y, colorPickerSize, colorPickerSize);
+                                    GUI.Window(windowID, colorPickerWindowRect, colorPickerWindow, GUIContent.none);
+
+                                    var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                                    GUI.Window(windowID + 1, closeColorPickerWindowRect, closeColorPickerWindow, GUIContent.none);
+                                }
+                                else
+                                {
+                                    var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + y, openCloseButtonWidth, openCloseButtonHeight);
+                                    GUI.Window(windowID, openColorPickerWindowRect, openColorPickerWindow, GUIContent.none);
+                                }
+
+                            }
+
+                            if (AreAdvancedSettingsOpened)
+                            {
+                                DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
+                                DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DrawColorPickerWindow_SpecColor, DrawColorPickerWindowOpenButton_SpecColor, DrawColorPickerWindowCloseButton_SpecColor);
+                                DrawColorPicker(7, IsColorPickerOpened_ReflectColor, colorPickerY_ReflectColor, DrawColorPickerWindow_ReflectColor, DrawColorPickerWindowOpenButton_ReflectColor, DrawColorPickerWindowCloseButton_ReflectColor);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        WindowRect.height = CalculateMaterialsWindowHeight();
+                        WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+
+                        var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    }
                 }
             }
             else
@@ -239,25 +254,52 @@ namespace SevenBoldPencil.MaterialEditor
             GUI.matrix = originalMatrix;
         }
 
+        private int CalculateMaterialsWindowHeight_Presets()
+        {
+            var header =
+                bigMargin + buttonHeight + bigMargin + // hide presets button
+                smallMargin + bigMargin + // separator
+                buttonHeight + mediumMargin; // preset name
+
+            var totalPresets = Plugin.GetItemPresetsCount();
+            if (totalPresets > 0)
+            {
+                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                return
+                    header +
+                    visibleHeight + bigMargin; // presets
+            }
+            else
+            {
+                return
+                    header +
+                    buttonHeight + bigMargin; // no presets text
+            }
+        }
+
         private int CalculateMaterialsWindowHeight()
         {
             var materialsHeight = CalculateItemsWithMaterialsWindowHeight();
             var visibleHeight = Math.Min(maxMaterialsVisibleHeight, materialsHeight);
-            return smallMargin + visibleHeight + bigMargin;
+            return
+                bigMargin + buttonHeight + bigMargin + // show presets button
+                smallMargin + bigMargin + // separator
+                visibleHeight + bigMargin; // materials
         }
 
         private int CalculateItemsWithMaterialsWindowHeight()
         {
             var totalMaterialsHeight = 0;
+
             foreach (var item in Items)
             {
                 totalMaterialsHeight += CalculateItemWithMaterialsWindowHeight(item.ItemWithMaterials.Materials.Count);
             }
 
-            var separatorHeight = (Items.Count - 1) * smallMargin;
+            totalMaterialsHeight += (Items.Count - 1) * smallMargin; // add height from all separators
 
-            // we subtract top margin and bottom margin so scroll rect is nicely bound
-            return -smallMargin + totalMaterialsHeight + separatorHeight - bigMargin;
+            // we subtract top margin and bottom margin so scroll rect is nicely bound and not touching edges
+            return -bigMargin + totalMaterialsHeight + -bigMargin;
         }
 
         private int CalculateItemWithMaterialsWindowHeight(int materialsCount)
@@ -346,21 +388,62 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
+        private void DrawOpenedWindow_Presets(int windowID)
+        {
+            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var x = bigMargin;
+            var y = bigMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
+            {
+                AreItemPresetsOpened = false;
+            }
+            y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentItemPresetName, SaveItemsIntoPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentItemPresetName, Plugin.GetItemPresetNames(), ref ItemPresetsScrollPosition, SwitchToItemPreset, Plugin.DeleteItemPreset, CamoEditorResources, CamoEditorStyle);
+
+			GUI.DragWindow();
+        }
+
+        private void SaveItemsIntoPreset(string presetName)
+        {
+            // TODO
+        }
+
+        private void SwitchToItemPreset(string presetName)
+        {
+            // TODO
+        }
+
         private void DrawOpenedWindow(int windowID)
 		{
             DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var x = bigMargin;
+            var y = bigMargin;
 
-            var scrollRectY = smallMargin;
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
+            {
+                AreItemPresetsOpened = true;
+            }
+            y += buttonHeight + bigMargin;
+
+            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin;
+
+            var scrollRectY = y + bigMargin;
             var totalHeight = CalculateItemsWithMaterialsWindowHeight();
-            var visibleHeight = maxMaterialsVisibleHeight;
+            var visibleHeight = Math.Min(maxMaterialsVisibleHeight, totalHeight);
             var totalRect = new Rect(0, scrollRectY, boxWidth + bigMargin, totalHeight);
             var visibleRect = new Rect(0, scrollRectY, boxWidth + bigMargin + 16, visibleHeight);
 
             MaterialsScrollPosition = GUI.BeginScrollView(visibleRect, MaterialsScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            var y = 0;
             for (var i = 0; i < Items.Count - 1; i++)
             {
                 var item = Items[i];
@@ -470,7 +553,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
             {
-                ArePresetsOpened = false;
+                AreMaterialPresetsOpened = false;
             }
             y += buttonHeight + bigMargin;
 
@@ -478,8 +561,8 @@ namespace SevenBoldPencil.MaterialEditor
             y += smallMargin + bigMargin;
 
 
-            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentPresetName, SaveMaterialIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentPresetName, Plugin.GetMaterialPresetNames(), ref PresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentMaterialPresetName, SaveMaterialIntoPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentMaterialPresetName, Plugin.GetMaterialPresetNames(), ref MaterialPresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle);
 
 			GUI.DragWindow();
         }
@@ -644,7 +727,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Show Presets"))
             {
-                ArePresetsOpened = true;
+                AreMaterialPresetsOpened = true;
             }
             y += buttonHeight + bigMargin;
 

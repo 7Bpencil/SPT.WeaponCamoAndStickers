@@ -124,6 +124,17 @@ namespace SevenBoldPencil.MaterialEditor
         public MaterialInfo GetCopy() => (MaterialInfo)MemberwiseClone();
     }
 
+    public class ItemPreset
+    {
+        public const int CurrentSchemaVersion = 0;
+
+        public int SchemaVersion;
+        // templateId -> [materialName -> materialInfo]
+        // we can have multiple items with same template id (like multiple small rails)
+        // each of them can have multiple different materials
+        public Dictionary<string, List<Dictionary<string, MaterialInfo>>> Materials;
+    }
+
     public class MaterialPreset
     {
         public const int CurrentSchemaVersion = 0;
@@ -152,10 +163,12 @@ namespace SevenBoldPencil.MaterialEditor
 
 		public ManualLogSource LoggerInstance;
 
+        private string ItemPresetsDir;
         private string MaterialPresetsDir;
         private string ItemsDir;
         private CamoEditorResources CamoEditorResources;
 
+        private Dictionary<string, ItemPreset> ItemPresets;
         private Dictionary<string, MaterialPreset> MaterialPresets;
         private Dictionary<string, ItemsWithMaterials> ItemsWithMaterials;
         private HashSet<Renderer> PatchedRenderers;
@@ -175,10 +188,12 @@ namespace SevenBoldPencil.MaterialEditor
 			LoggerInstance = Logger;
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            ItemPresetsDir = Path.Combine(assemblyDir, "presets-item-materials");
             MaterialPresetsDir = Path.Combine(assemblyDir, "presets-materials");
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
 
+            ItemPresets = LoadItemPresets();
             MaterialPresets = LoadMaterialPresets();
             ItemsWithMaterials = LoadItemsWithMaterials();
             PatchedRenderers = new();
@@ -232,6 +247,43 @@ namespace SevenBoldPencil.MaterialEditor
             fikaPluginAwake.Invoke(fikaPlugin, null);
         }
 
+        public Dictionary<string, ItemPreset> LoadItemPresets()
+        {
+            var filePaths = SafeIO.GetFiles(ItemPresetsDir, "*.json");
+            var result = new Dictionary<string, ItemPreset>();
+
+            foreach (var filePath in filePaths)
+            {
+                var presetName = Path.GetFileNameWithoutExtension(filePath);
+                if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
+                {
+                    var preset = JsonConvert.DeserializeObject<ItemPreset>(json);
+                    UpgradeOldVersionsOfItemPreset(preset);
+                    result.Add(presetName, preset);
+                }
+                else
+                {
+                    Logger.Log(LogLevel.Error, "Item Preset", "Failed to load from disk", presetName, e);
+                }
+            }
+
+            return result;
+        }
+
+        public static void UpgradeOldVersionsOfItemPreset(ItemPreset itemPreset)
+        {
+            foreach (var items in itemPreset.Materials.Values)
+            {
+                foreach (var item in items)
+                {
+                    foreach (var material in item.Values)
+                    {
+                        UpgradeOldVersionsOfMaterialInfo(material);
+                    }
+                }
+            }
+        }
+
         public Dictionary<string, MaterialPreset> LoadMaterialPresets()
         {
             var filePaths = SafeIO.GetFiles(MaterialPresetsDir, "*.json");
@@ -248,7 +300,7 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, "Preset", "Failed to load from disk", presetName, e);
+                    Logger.Log(LogLevel.Error, "Material Preset", "Failed to load from disk", presetName, e);
                 }
             }
 
@@ -572,25 +624,28 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject)
         {
-            var items = GetOrBuildItemWithAllItSlots(item, assetPoolObject);
+            var (items, itemsDict) = GetOrBuildItemWithAllItSlots(item, assetPoolObject);
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
                 Items = items,
+                ItemsDict = itemsDict,
             });
         }
 
-        public List<CamoEditorItem> GetOrBuildItemWithAllItSlots(Item item, AssetPoolObject assetPoolObject)
+        public (List<CamoEditorItem>, Dictionary<string, List<int>>) GetOrBuildItemWithAllItSlots(Item item, AssetPoolObject assetPoolObject)
         {
             List<CamoEditorItem> result;
+            Dictionary<string, List<int>> resultDict;
 
             if (assetPoolObject.ContainerCollectionView != null)
             {
                 var containerBones = assetPoolObject.ContainerCollectionView.ContainerBones;
                 result = new(containerBones.Count + 1);
-                result.Add(GetOrBuildItem(item, assetPoolObject));
+                resultDict = new(containerBones.Count + 1);
+                AddCamoEditorItem(item, assetPoolObject, result, resultDict);
                 foreach (var (container, containerData) in containerBones)
                 {
                     // empty slots or slots with invisible items have nulls (soft armor, helmet plates, etc)
@@ -604,17 +659,38 @@ namespace SevenBoldPencil.MaterialEditor
                     }
                     if (containerData.ItemView.TryGetComponent<AssetPoolObject>(out var subItemAssetPoolObject))
                     {
-                        result.Add(GetOrBuildItem(containerData.Item, subItemAssetPoolObject));
+                        AddCamoEditorItem(containerData.Item, subItemAssetPoolObject, result, resultDict);
                     }
                 }
             }
             else
             {
                 result = new(1);
-                result.Add(GetOrBuildItem(item, assetPoolObject));
+                resultDict = new(1);
+                AddCamoEditorItem(item, assetPoolObject, result, resultDict);
             }
 
-            return result;
+            return (result, resultDict);
+        }
+
+        public void AddCamoEditorItem(Item item, AssetPoolObject assetPoolObject, List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict)
+        {
+            var editorItem = GetOrBuildItem(item, assetPoolObject);
+
+            items.Add(editorItem);
+
+            var itemIndex = items.Count - 1;
+            var templateId = item.StringTemplateId;
+            if (itemsDict.TryGetValue(templateId, out var sameItems))
+            {
+                sameItems.Add(itemIndex);
+            }
+            else
+            {
+                sameItems = new List<int>();
+                sameItems.Add(itemIndex);
+                itemsDict.Add(templateId, sameItems);
+            }
         }
 
         public CamoEditorItem GetOrBuildItem(Item item, AssetPoolObject assetPoolObject)
@@ -880,6 +956,11 @@ namespace SevenBoldPencil.MaterialEditor
             return filePath;
         }
 
+        public void DeleteItemPreset(string presetName)
+        {
+            // TODO
+        }
+
         public void OnGUI()
         {
             if (CamoEditor.Some(out var camoEditor))
@@ -912,9 +993,19 @@ namespace SevenBoldPencil.MaterialEditor
             return new(materialInfo);
         }
 
+        public int GetItemPresetsCount()
+        {
+            return ItemPresets.Count;
+        }
+
         public int GetMaterialPresetsCount()
         {
             return MaterialPresets.Count;
+        }
+
+        public Dictionary<string, ItemPreset>.KeyCollection GetItemPresetNames()
+        {
+            return ItemPresets.Keys;
         }
 
         public Dictionary<string, MaterialPreset>.KeyCollection GetMaterialPresetNames()
