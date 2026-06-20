@@ -1425,7 +1425,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void SaveItemMaterialsIntoPreset(List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict, string presetName)
         {
-            if (string.IsNullOrWhiteSpace(presetName))
+            if (!SafeIO.IsValidFileName(presetName))
             {
                 return;
             }

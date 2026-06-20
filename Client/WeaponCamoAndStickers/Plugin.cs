@@ -2160,7 +2160,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void SaveDecalsIntoPreset(string itemId, string presetName)
         {
-            if (string.IsNullOrWhiteSpace(presetName))
+            if (!SafeIO.IsValidFileName(presetName))
             {
                 return;
             }
