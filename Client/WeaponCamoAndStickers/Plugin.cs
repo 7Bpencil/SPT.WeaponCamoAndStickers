@@ -2100,6 +2100,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var itemsWithDecals = ItemsWithDecals[itemId];
 
+                // TODO we dont need to destroy existing decals,
+                // we can simply add ones from preset to the end of the list,
+                // no idea which approach is better
+
                 var decalsInfo = itemsWithDecals.DecalsInfo;
                 foreach (var itemWithDecals in itemsWithDecals.Items.Values)
                 {

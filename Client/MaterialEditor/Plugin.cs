@@ -133,7 +133,7 @@ namespace SevenBoldPencil.MaterialEditor
         // we can have multiple items with same template id
         // (like multiple small rails, or meme kit with big 2U flashlights),
         // also save their indices (local to their template group) to at least try to keep correct order,
-        // each item can have multiple different materials ofc
+        // and each item can have multiple different materials of course
         public Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> Materials;
     }
 
@@ -1390,11 +1390,17 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 return;
             }
-            if (!GetMaterialInfo(itemId, materialName).Some(out var target))
+            if (!MaterialPresets.TryGetValue(presetName, out var preset))
             {
                 return;
             }
-            if (!MaterialPresets.TryGetValue(presetName, out var preset))
+
+            SwitchToMaterialPreset(itemId, materialName, preset.Material);
+        }
+
+        public void SwitchToMaterialPreset(string itemId, string materialName, MaterialInfo source)
+        {
+            if (!GetMaterialInfo(itemId, materialName).Some(out var target))
             {
                 return;
             }
@@ -1404,8 +1410,6 @@ namespace SevenBoldPencil.MaterialEditor
                 itemId, materialName,
                 (targetMaterial, materialInfo) => ResetMaterial(targetMaterial, materialInfo)
             );
-
-            var source = preset.Material;
 
             target.ColorHSV = source.ColorHSV;
             target.SpecColorHSV = source.SpecColorHSV;
@@ -1480,6 +1484,55 @@ namespace SevenBoldPencil.MaterialEditor
                 if (itemsInfo != null)
                 {
                     allMaterials.Add(templateId, itemsInfo);
+                }
+            }
+        }
+
+        public void SwitchToItemPreset(List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict, string presetName)
+        {
+            if (string.IsNullOrWhiteSpace(presetName))
+            {
+                return;
+            }
+            if (!ItemPresets.TryGetValue(presetName, out var preset))
+            {
+                return;
+            }
+
+            // TODO we dont need to reset all materials,
+            // we can just apply overrides from preset and do not touch others,
+            // no idea which approach is better
+
+            // this will try to reset all materials on all items,
+            // some items do not have overrides at all, but thats fine,
+            // ResetMaterial will just skip them
+            foreach (var item in items)
+            {
+                foreach (var materialName in item.ItemWithMaterials.Materials.Keys)
+                {
+                    ResetMaterial(item.ItemId, materialName);
+                }
+            }
+
+            // we reset all materials, so now we have to override them again,
+            // and then switch to material from preset
+            foreach (var (templateId, presetItems) in preset.Materials)
+            {
+                if (itemsDict.TryGetValue(templateId, out var templateItems))
+                {
+                    foreach (var (localItemIndex, presetItem) in presetItems)
+                    {
+                        if (localItemIndex < templateItems.Count)
+                        {
+                            var itemIndex = templateItems[localItemIndex];
+                            var item = items[itemIndex];
+                            foreach (var (materialName, materialInfo) in presetItem)
+                            {
+                                OverrideMaterial(item.ItemWithMaterials, item.OriginalMaterials, item.ItemId, item.InstanceID, materialName);
+                                SwitchToMaterialPreset(item.ItemId, materialName, materialInfo);
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -417,7 +417,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void SwitchToItemPreset(string presetName)
         {
-            // TODO
+            Plugin.SwitchToItemPreset(Items, ItemsDict, presetName);
         }
 
         private void DrawOpenedWindow(int windowID)
