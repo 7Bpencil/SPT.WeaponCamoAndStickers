@@ -1072,6 +1072,9 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
+        // this version is user-faced,
+        // it actually cleans up material on all items and removes record from dict,
+        // other versions are for internal use
         public void ResetMaterial(string itemId, string materialName)
         {
             if (!ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
@@ -1088,7 +1091,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        public void ResetMaterial(ItemWithMaterials itemWithMaterials, string materialName, MaterialInfo materialInfo)
+        private void ResetMaterial(ItemWithMaterials itemWithMaterials, string materialName, MaterialInfo materialInfo)
         {
             if (itemWithMaterials.Materials.TryGetValue(materialName, out var targetMaterial))
             {
@@ -1096,7 +1099,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        public void ResetMaterial(TargetMaterial targetMaterial, MaterialInfo materialInfo)
+        private void ResetMaterial(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
             targetMaterial.PropertyBlock.Clear();
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
