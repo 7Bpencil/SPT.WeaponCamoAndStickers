@@ -183,6 +183,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string ClosedDirectoriesPath;
         private string FavouriteTexturesPath;
         private Shader DecalShader;
+        private Shader CombineTexturesShader; // used by MaterialEditor
         private Texture2D ErrorTexture;
         private DecalTextureData ErrorTextureData;
         private CamoEditorResources CamoEditorResources;
@@ -242,6 +243,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
             DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
+            CombineTexturesShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/CombineTextures.shader");
             ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             ErrorTextureData = new()
             {

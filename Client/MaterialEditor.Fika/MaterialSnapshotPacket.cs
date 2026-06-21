@@ -52,7 +52,6 @@ namespace SevenBoldPencil.MaterialEditor.Fika
             writer.PutUnmanaged<Vector2>(d.SpecVals);
             writer.PutUnmanaged<Vector2>(d.DefVals);
             writer.Put(d.CompensateSpecular);
-            writer.Put(d.SpecularCompensationMultiplier);
         }
 
         public void Deserialize(NetDataReader reader)
@@ -106,7 +105,6 @@ namespace SevenBoldPencil.MaterialEditor.Fika
                 SpecVals = reader.GetUnmanaged<Vector2>(),
                 DefVals = reader.GetUnmanaged<Vector2>(),
                 CompensateSpecular = reader.GetBool(),
-                SpecularCompensationMultiplier = reader.GetFloat(),
             };
         }
 

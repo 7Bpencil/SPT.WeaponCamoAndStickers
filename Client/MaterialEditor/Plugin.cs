@@ -27,6 +27,7 @@ using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using LoddedSkin_Proxy = SevenBoldPencil.WeaponCamoAndStickers.LoddedSkin_Proxy;
+using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
 using SystemObject = System.Object;
 
 namespace SevenBoldPencil.MaterialEditor
@@ -49,6 +50,18 @@ namespace SevenBoldPencil.MaterialEditor
     {
         public MaterialPropertyBlock PropertyBlock;
         public List<(Renderer, int)> Renderers;
+        // TODO putting it here feels wrong, but I don't have better ideas
+        // TODO fuck it, just do it the simple way, in most cases theres only one instance of item anyway
+        // TODO there can be all sorts of sync issues, like user toggles SpecularCompensation while texture is still loading...
+        public Texture OriginalTexture;
+        public Option<CustomTexture> CustomTexture;
+    }
+
+    public readonly record struct CustomTexture(Texture Color, Option<RenderTexture> Combined, bool IsVideo);
+
+    public class VideoData
+    {
+        public MaterialInfo MaterialInfo;
     }
 
     public class MaterialsInfo
@@ -75,7 +88,6 @@ namespace SevenBoldPencil.MaterialEditor
         public Vector2 SpecVals; // defined as float3 in shader, but only x and y are used
         public Vector2 DefVals; // defined as float3 in shader, but only x and y are used
         public bool CompensateSpecular;
-        public float SpecularCompensationMultiplier;
 
         public Color GetColor()
         {
@@ -87,38 +99,9 @@ namespace SevenBoldPencil.MaterialEditor
             return SpecColorHSV.HSVtoRGBA();
         }
 
-        public float GetSpecularCompensationMultiplier()
-        {
-            // BSG puts specular map into main tex alpha channel,
-            // but all custom textures have flat alpha 1,
-            // so we have to compensate it by multiplying all values
-            // affected by alpha by some compensation value,
-            // most specular maps have average value of 0.2, so choose that.
-            if (CompensateSpecular && !string.IsNullOrWhiteSpace(Texture))
-            {
-                return SpecularCompensationMultiplier;
-            }
-
-            return 1;
-        }
-
         public Color GetReflectColor()
         {
-            // If we simply multiply srgb color, it wont look correct,
-            // yes, it does look different, yes, it does look better, I checked
-            var specularCompensationMultiplier = GetSpecularCompensationMultiplier();
-            return (ReflectColorHSV.HSVtoRGBA().linear * specularCompensationMultiplier).gamma;
-        }
-
-        public float GetSpecularness()
-        {
-            var specularCompensationMultiplier = GetSpecularCompensationMultiplier();
-            return Specularness * specularCompensationMultiplier;
-        }
-
-        public float GetBumpTiling()
-        {
-            return 1f / TextureUV.x;
+            return ReflectColorHSV.HSVtoRGBA();
         }
 
         public MaterialInfo GetCopy() => (MaterialInfo)MemberwiseClone();
@@ -157,9 +140,11 @@ namespace SevenBoldPencil.MaterialEditor
         public static readonly int _ReflectColor = Shader.PropertyToID("_ReflectColor");
         public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
         public static readonly int _MainTex_ST = Shader.PropertyToID("_MainTex_ST");
-        public static readonly int _BumpTiling = Shader.PropertyToID("_BumpTiling"); // this is used to tile main texture without tiling normals
         public static readonly int _SpecVals = Shader.PropertyToID("_SpecVals");
         public static readonly int _DefVals = Shader.PropertyToID("_DefVals");
+        public static readonly int _ColorTex = Shader.PropertyToID("_ColorTex");
+        public static readonly int _ColorTex_ST = Shader.PropertyToID("_ColorTex_ST");
+        public static readonly int _AlphaTex = Shader.PropertyToID("_AlphaTex");
 
         public static Plugin Instance;
 
@@ -168,7 +153,9 @@ namespace SevenBoldPencil.MaterialEditor
         private string ItemPresetsDir;
         private string MaterialPresetsDir;
         private string ItemsDir;
+        private Material CombineTexturesMaterial;
         private CamoEditorResources CamoEditorResources;
+        private Dictionary<TargetMaterial, VideoData> Videos;
 
         private Dictionary<string, ItemPreset> ItemPresets;
         private Dictionary<string, MaterialPreset> MaterialPresets;
@@ -193,7 +180,10 @@ namespace SevenBoldPencil.MaterialEditor
             ItemPresetsDir = Path.Combine(assemblyDir, "presets-item-materials");
             MaterialPresetsDir = Path.Combine(assemblyDir, "presets-materials");
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
+            var combineTexturesShader = new TypedFieldInfo<BigPlugin, Shader>("CombineTexturesShader").Get(BigPlugin.Instance);
+            CombineTexturesMaterial = new Material(combineTexturesShader);
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
+            Videos = new();
 
             ItemPresets = LoadItemPresets();
             MaterialPresets = LoadMaterialPresets();
@@ -364,7 +354,6 @@ namespace SevenBoldPencil.MaterialEditor
                 materialInfo.SpecVals = new(1, 1);
                 materialInfo.DefVals = new(1, 1);
                 materialInfo.CompensateSpecular = true;
-                materialInfo.SpecularCompensationMultiplier = 0.2f;
             }
         }
 
@@ -469,6 +458,8 @@ namespace SevenBoldPencil.MaterialEditor
                         {
                             PropertyBlock = new MaterialPropertyBlock(),
                             Renderers = new() { pair },
+                            OriginalTexture = material.GetTexture(_MainTex), // we assume that original texture comes from first encountered material, in most cases its lod 0, so we are fine...
+                            CustomTexture = default,
                         });
                     }
                 }
@@ -556,7 +547,6 @@ namespace SevenBoldPencil.MaterialEditor
                 SpecVals = material.GetVector(_SpecVals),
                 DefVals = material.GetVector(_DefVals),
                 CompensateSpecular = true,
-                SpecularCompensationMultiplier = 0.2f,
             };
         }
 
@@ -981,6 +971,23 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
+        public void LateUpdate()
+        {
+            // we combine color channel from custom texture
+            // with alpha channel (specular map) from original texture,
+            // videos change texture every frame, so we have to rerender
+            // combined texture every frame too
+
+            foreach (var (targetMaterial, videoData) in Videos)
+            {
+                if (targetMaterial.CustomTexture.Some(out var customTexture) &&
+                    customTexture.Combined.Some(out var combined))
+                {
+                    RenderCombinedTexture(combined, customTexture.Color, videoData.MaterialInfo.TextureUV, targetMaterial.OriginalTexture);
+                }
+            }
+        }
+
         public void OnGUI()
         {
             if (CamoEditor.Some(out var camoEditor))
@@ -1104,12 +1111,29 @@ namespace SevenBoldPencil.MaterialEditor
             targetMaterial.PropertyBlock.Clear();
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
             {
+                TryDestroyCombinedTexture(targetMaterial);
                 BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, materialInfo.Texture);
             }
             foreach (var (renderer, index) in targetMaterial.Renderers)
             {
                 renderer.SetPropertyBlock(null, index);
                 PatchedRenderers.Remove(renderer);
+            }
+        }
+
+        public void TryDestroyCombinedTexture(TargetMaterial targetMaterial)
+        {
+            if (targetMaterial.CustomTexture.Some(out var customTexture))
+            {
+                targetMaterial.CustomTexture = default;
+                if (customTexture.IsVideo)
+                {
+                    Videos.Remove(targetMaterial);
+                }
+                if (customTexture.Combined.Some(out var combined))
+                {
+                    Destroy(combined);
+                }
             }
         }
 
@@ -1120,17 +1144,19 @@ namespace SevenBoldPencil.MaterialEditor
             propertyBlock.SetColor(_Color, materialInfo.GetColor());
             propertyBlock.SetColor(_SpecColor, materialInfo.GetSpecColor());
             propertyBlock.SetFloat(_Glossness, materialInfo.Glossness);
-            propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
+            propertyBlock.SetFloat(_Specularness, materialInfo.Specularness);
             propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
-            propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-            propertyBlock.SetFloat(_BumpTiling, materialInfo.GetBumpTiling());
             propertyBlock.SetVector(_SpecVals, materialInfo.SpecVals);
             propertyBlock.SetVector(_DefVals, materialInfo.DefVals);
 
             if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
             {
                 // MaterialChangeTexture will call ApplyPropertyBlock for us
-                BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                BigPlugin.Instance.AcquireDecalTextureAsset(
+                    targetMaterial, materialInfo.Texture,
+                    (key, texture) => MaterialChangeTexture(key, texture, materialInfo),
+                    (key, texture) => MaterialChangeTexture(key, texture, materialInfo)
+                );
             }
             else
             {
@@ -1155,7 +1181,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.ColorHSV = colorHSV,
-                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_Color, materialInfo.GetColor())
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetColor(_Color, materialInfo.GetColor())
             );
         }
 
@@ -1165,7 +1191,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.SpecColorHSV = specColorHSV,
-                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_SpecColor, materialInfo.GetSpecColor())
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetColor(_SpecColor, materialInfo.GetSpecColor())
             );
         }
 
@@ -1175,7 +1201,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.ReflectColorHSV = reflectColorHSV,
-                static (propertyBlock, materialInfo) => propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor())
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor())
             );
         }
 
@@ -1185,28 +1211,47 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.CompensateSpecular = compensateSpecular,
-                static (propertyBlock, materialInfo) =>
-                {
-                    // update all values that are affected by CompensateSpecular
-                    propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
-                    propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
-                }
+                ChangeSpecularCompensation
             );
         }
 
-        public void ChangeSpecularCompensationMultiplier(string itemId, string materialName, float specularCompensationMultiplier)
+        private void ChangeSpecularCompensation(TargetMaterial targetMaterial, MaterialInfo materialInfo)
         {
-            ModifyMaterialOnItems
-            (
-                itemId, materialName,
-                (materialInfo) => materialInfo.SpecularCompensationMultiplier = specularCompensationMultiplier,
-                static (propertyBlock, materialInfo) =>
+            if (!targetMaterial.CustomTexture.Some(out var customTexture))
+            {
+                // SpecularCompensation does nothing when original texture is set
+                return;
+            }
+            if (customTexture.Combined.Some(out var combined))
+            {
+                if (!materialInfo.CompensateSpecular)
                 {
-                    // update all values that are affected by SpecularCompensationMultiplier
-                    propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness());
-                    propertyBlock.SetColor(_ReflectColor, materialInfo.GetReflectColor());
+                    // our goal is to go from combined texture back to Color texture, so
+                    // set Color texture to propertyBlock and destroy render texture
+
+                    targetMaterial.CustomTexture = new(customTexture with { Combined = default });
+                    targetMaterial.PropertyBlock.SetTexture(_MainTex, customTexture.Color);
+                    Destroy(combined);
                 }
-            );
+            }
+            else
+            {
+                if (materialInfo.CompensateSpecular)
+                {
+                    // our goal is to compensate specular via combining original specular map
+                    // with custom color texture, do nothing if there is already combined texture
+
+                    var alpha = targetMaterial.OriginalTexture;
+                    var renderTexture = CreateCombinedTexture(alpha);
+                    if (!customTexture.IsVideo)
+                    {
+                        // video will get rerendered in LateUpdate anyway
+                        RenderCombinedTexture(renderTexture, customTexture.Color, materialInfo.TextureUV, alpha);
+                    }
+                    targetMaterial.CustomTexture = new(customTexture with { Combined = new(renderTexture) });
+                    targetMaterial.PropertyBlock.SetTexture(_MainTex, renderTexture);
+                }
+            }
         }
 
         public void ChangeGlossness(string itemId, string materialName, float glossness)
@@ -1215,7 +1260,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.Glossness = glossness,
-                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Glossness, materialInfo.Glossness)
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetFloat(_Glossness, materialInfo.Glossness)
             );
         }
 
@@ -1225,7 +1270,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.Specularness = specularness,
-                static (propertyBlock, materialInfo) => propertyBlock.SetFloat(_Specularness, materialInfo.GetSpecularness())
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetFloat(_Specularness, materialInfo.Specularness)
             );
         }
 
@@ -1235,7 +1280,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.SpecVals = specVals,
-                static (propertyBlock, materialInfo) => propertyBlock.SetVector(_SpecVals, materialInfo.SpecVals)
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetVector(_SpecVals, materialInfo.SpecVals)
             );
         }
 
@@ -1245,7 +1290,7 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.DefVals = defVals,
-                static (propertyBlock, materialInfo) => propertyBlock.SetVector(_DefVals, materialInfo.DefVals)
+                static (targetMaterial, materialInfo) => targetMaterial.PropertyBlock.SetVector(_DefVals, materialInfo.DefVals)
             );
         }
 
@@ -1255,10 +1300,20 @@ namespace SevenBoldPencil.MaterialEditor
             (
                 itemId, materialName,
                 (materialInfo) => materialInfo.TextureUV = textureUV,
-                static (propertyBlock, materialInfo) =>
+                (targetMaterial, materialInfo) =>
                 {
-                    propertyBlock.SetVector(_MainTex_ST, materialInfo.TextureUV);
-                    propertyBlock.SetFloat(_BumpTiling, materialInfo.GetBumpTiling());
+                    // texture tiling and offset is valid option only
+                    // if user has custom texture without proper specular map
+                    // (custom texture + specular compensation = combined texture),
+                    // people wont like ugly tiling/offset anyway
+
+                    if (targetMaterial.CustomTexture.Some(out var customTexture) &&
+                        customTexture.Combined.Some(out var combined) &&
+                        !customTexture.IsVideo)
+                    {
+                        // no need to rerender video, it will get rerendered in LateUpdate anyway,
+                        RenderCombinedTexture(combined, customTexture.Color, materialInfo.TextureUV, targetMaterial.OriginalTexture);
+                    }
                 }
             );
         }
@@ -1267,7 +1322,7 @@ namespace SevenBoldPencil.MaterialEditor
         public void ModifyMaterialOnItems(
             string itemId, string materialName,
             Action<MaterialInfo> changeMaterial,
-            Action<MaterialPropertyBlock, MaterialInfo> changePropertyBlock)
+            Action<TargetMaterial, MaterialInfo> changeTargetMaterial)
         {
             var itemsWithMaterials = ItemsWithMaterials[itemId];
             var materialInfo = itemsWithMaterials.MaterialsInfo.Materials[materialName];
@@ -1275,7 +1330,7 @@ namespace SevenBoldPencil.MaterialEditor
             foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
                 var targetMaterial = itemWithMaterials.Materials[materialName];
-                changePropertyBlock(targetMaterial.PropertyBlock, materialInfo);
+                changeTargetMaterial(targetMaterial, materialInfo);
                 ApplyPropertyBlock(targetMaterial);
             }
         }
@@ -1289,36 +1344,120 @@ namespace SevenBoldPencil.MaterialEditor
             var oldTextureName = materialInfo.Texture;
             materialInfo.Texture = textureName;
 
-            // changing texture to non default one turns specular compensation on
-            var specularness = materialInfo.GetSpecularness();
-            var reflectColor = materialInfo.GetReflectColor();
-
             foreach (var itemWithMaterials in itemsWithMaterials.Items.Values)
             {
                 var targetMaterial = itemWithMaterials.Materials[materialName];
-                var propertyBlock = targetMaterial.PropertyBlock;
-                propertyBlock.SetFloat(_Specularness, specularness);
-                propertyBlock.SetColor(_ReflectColor, reflectColor);
 
                 if (!string.IsNullOrWhiteSpace(oldTextureName))
                 {
+                    TryDestroyCombinedTexture(targetMaterial);
                     BigPlugin.Instance.ReleaseDecalTextureAsset(targetMaterial, oldTextureName);
                 }
                 if (!string.IsNullOrWhiteSpace(materialInfo.Texture))
                 {
-                    BigPlugin.Instance.AcquireDecalTextureAsset(targetMaterial, materialInfo.Texture, MaterialChangeTexture, MaterialChangeTexture);
+                    BigPlugin.Instance.AcquireDecalTextureAsset(
+                        targetMaterial, materialInfo.Texture,
+                        (key, texture) => MaterialChangeTexture(key, texture, materialInfo),
+                        (key, texture) => MaterialChangeTexture(key, texture, materialInfo)
+                    );
                 }
             }
         }
 
-        public void MaterialChangeTexture(SystemObject key, Texture texture)
+        public void MaterialChangeTexture(SystemObject key, Texture texture, MaterialInfo materialInfo)
         {
-            if (key is TargetMaterial targetMaterial)
+            if (key is not TargetMaterial targetMaterial)
             {
-                var propertyBlock = targetMaterial.PropertyBlock;
-                propertyBlock.SetTexture(_MainTex, texture);
-                ApplyPropertyBlock(targetMaterial);
+                return;
             }
+
+            var customTexture = GetCustomTexture(targetMaterial, texture, materialInfo);
+            targetMaterial.CustomTexture = new(customTexture);
+
+            if (customTexture.Combined.Some(out var combined))
+            {
+                targetMaterial.PropertyBlock.SetTexture(_MainTex, combined);
+            }
+            else
+            {
+                targetMaterial.PropertyBlock.SetTexture(_MainTex, customTexture.Color);
+            }
+
+            if (customTexture.IsVideo && !Videos.ContainsKey(targetMaterial))
+            {
+                // I am pretty sure if Videos contains targetMaterial, it has already been setuped
+                // with exactly this materialInfo when low res preview was set
+                Videos.Add(targetMaterial, new VideoData() { MaterialInfo = materialInfo });
+            }
+
+            ApplyPropertyBlock(targetMaterial);
+        }
+
+        public CustomTexture GetCustomTexture(TargetMaterial targetMaterial, Texture texture, MaterialInfo materialInfo)
+        {
+            var textureData = BigPlugin.Instance.GetTextureData(materialInfo.Texture);
+            var isVideo = textureData.Format == DecalTextureFormat.Video;
+
+            if (materialInfo.CompensateSpecular)
+            {
+                // this version is for average users whose textures
+                // dont have valid specular map in alpha channel
+                RenderTexture renderTexture;
+
+                var alpha = targetMaterial.OriginalTexture;
+
+                if (targetMaterial.CustomTexture.Some(out var customTexture) &&
+                    customTexture.Combined.Some(out var combined))
+                {
+                    // this happens because low res preview is combined first,
+                    // also since render texture is created with dimensions
+                    // and settings from original texture, we can simply reuse it
+                    renderTexture = combined;
+                }
+                else
+                {
+                    renderTexture = CreateCombinedTexture(alpha);
+                }
+
+                if (!isVideo)
+                {
+                    // video will get rerendered in LateUpdate anyway
+                    RenderCombinedTexture(renderTexture, texture, materialInfo.TextureUV, alpha);
+                }
+
+                return new CustomTexture(texture, new(renderTexture), isVideo);
+            }
+            else
+            {
+                // this version is for folks who do proper retexture
+                // with valid specular map in alpha channel,
+                // I assume they dont care about texture UV setting,
+                // so no need to render combined texture
+                return new CustomTexture(texture, default, isVideo);
+            }
+        }
+
+        public static RenderTexture CreateCombinedTexture(Texture alpha)
+        {
+            // use parameters of original texture
+            var renderTexture = new RenderTexture(alpha.width, alpha.height, 0);
+            renderTexture.anisoLevel = alpha.anisoLevel;
+            renderTexture.filterMode = alpha.filterMode;
+            renderTexture.wrapMode = alpha.wrapMode;
+            return renderTexture;
+        }
+
+        public void RenderCombinedTexture(RenderTexture renderTexture, Texture color, Vector4 colorUV, Texture alpha)
+        {
+            // we dont plug texture uv into _MainTex_ST of item material,
+            // otherwise it will show repetition and offset in specular and gloss maps,
+            // which looks ugly, so we sample color texture with that UV instead
+            CombineTexturesMaterial.SetVector(_ColorTex_ST, colorUV);
+            CombineTexturesMaterial.SetTexture(_ColorTex, color);
+            CombineTexturesMaterial.SetTexture(_AlphaTex, alpha);
+            Graphics.Blit(null, renderTexture, CombineTexturesMaterial);
+            CombineTexturesMaterial.SetTexture(_ColorTex, null);
+            CombineTexturesMaterial.SetTexture(_AlphaTex, null);
         }
 
         // TODO I forget to clean clone dict in OnItemDestroy...
@@ -1417,7 +1556,6 @@ namespace SevenBoldPencil.MaterialEditor
             target.SpecVals = source.SpecVals;
             target.DefVals = source.DefVals;
             target.CompensateSpecular = source.CompensateSpecular;
-            target.SpecularCompensationMultiplier = source.SpecularCompensationMultiplier;
 
             ForEveryMaterialOnItem(itemId, materialName, ApplyAllOverrides);
         }

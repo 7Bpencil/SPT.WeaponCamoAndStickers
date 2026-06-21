@@ -64,19 +64,7 @@ namespace SevenBoldPencil.MaterialEditor
         public Dictionary<string, MaterialInfo> OriginalMaterials;
     }
 
-    // would be nice to use record structs to avoid boilerplate,
-    // but I am afraid C# 10 will break on some people
-    public struct EditedOverride : IEquatable<EditedOverride>
-    {
-        public int ItemIndex;
-        public string MaterialName;
-
-        public override bool Equals(object obj) => obj is EditedOverride other && this.Equals(other);
-        public bool Equals(EditedOverride p) => ItemIndex == p.ItemIndex && MaterialName == p.MaterialName;
-        public override int GetHashCode() => (ItemIndex, MaterialName).GetHashCode();
-        public static bool operator ==(EditedOverride lhs, EditedOverride rhs) => lhs.Equals(rhs);
-        public static bool operator !=(EditedOverride lhs, EditedOverride rhs) => !(lhs == rhs);
-    }
+    public readonly record struct EditedOverride(int ItemIndex, string MaterialName);
 
     public class CamoEditor
     {
@@ -143,9 +131,9 @@ namespace SevenBoldPencil.MaterialEditor
         public const int openCloseButtonWidth = 22;
         public const int openCloseButtonHeight = 66;
         public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
-        public static readonly int colorPickerY_Color = 253;
-        public static readonly int colorPickerY_SpecColor = 505;
-        public static readonly int colorPickerY_ReflectColor = 757;
+        public static readonly int colorPickerY_Color = 217;
+        public static readonly int colorPickerY_SpecColor = 469;
+        public static readonly int colorPickerY_ReflectColor = 721;
         public static readonly int colorPickerSize = hsCircleDiameter + bigMargin * 2;
         public const int hsCircleDiameter = 174;
         public const int mainIconWidth = 62;
@@ -349,7 +337,6 @@ namespace SevenBoldPencil.MaterialEditor
                 return
                     header +
                     buttonHeight + smallMargin + // compensate specular
-                    buttonHeight + smallMargin + // specular compensation multiplier
                     buttonHeight + smallMargin + // color
                     buttonHeight + smallMargin + // color hue
                     buttonHeight + smallMargin + // color saturation
@@ -379,7 +366,6 @@ namespace SevenBoldPencil.MaterialEditor
                 return
                     header +
                     buttonHeight + smallMargin + // compensate specular
-                    buttonHeight + smallMargin + // specular compensation multiplier
                     buttonHeight + mediumMargin + // texture uv scale
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
@@ -482,11 +468,7 @@ namespace SevenBoldPencil.MaterialEditor
             foreach (var materialName in item.ItemWithMaterials.Materials.Keys)
             {
                 var isOverridenMaterial = materialsInfoOption.Some(out var materialsInfo) && materialsInfo.Materials.ContainsKey(materialName);
-                var thisOverride = new EditedOverride()
-                {
-                    ItemIndex = itemIndex,
-                    MaterialName = materialName,
-                };
+                var thisOverride = new EditedOverride(itemIndex, materialName);
 
                 var materialButtonWidth = isOverridenMaterial ? overridenMaterialButtonWidth : defaultMaterialButtonWidth;
                 if (GUI.Button(new Rect(materialButtonX, y, materialButtonWidth, buttonHeight), materialName, CamoEditorStyle.DirectoryButtonStyle))
@@ -711,7 +693,6 @@ namespace SevenBoldPencil.MaterialEditor
             var defVals = materialInfo.DefVals;
             var textureUV = materialInfo.TextureUV;
             var compensateSpecular = materialInfo.CompensateSpecular;
-            var specularCompensationMultiplier = materialInfo.SpecularCompensationMultiplier;
 
             var x = bigMargin;
             var y = smallMargin;
@@ -759,9 +740,6 @@ namespace SevenBoldPencil.MaterialEditor
                     GUI.Label(new Rect(buttonLabelX, y, boxWidth, buttonHeight), "Compensate missing specular map in alpha channel", CamoEditorStyle.LabelStyleName);
                 }
                 y += buttonHeight + smallMargin;
-
-
-                DrawSliderFloat(ref x, ref y, ref specularCompensationMultiplier, 0.01f, 1, "Compensation:", 96, Strings.SpecularCompensation, Plugin.ChangeSpecularCompensationMultiplier);
             }
 
             if (AreAdvancedSettingsOpened)
