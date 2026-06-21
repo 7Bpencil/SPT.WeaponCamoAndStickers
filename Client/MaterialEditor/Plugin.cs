@@ -1405,11 +1405,7 @@ namespace SevenBoldPencil.MaterialEditor
                 return;
             }
 
-            ForEveryMaterialOnItem
-            (
-                itemId, materialName,
-                (targetMaterial, materialInfo) => ResetMaterial(targetMaterial, materialInfo)
-            );
+            ForEveryMaterialOnItem(itemId, materialName, ResetMaterial);
 
             target.ColorHSV = source.ColorHSV;
             target.SpecColorHSV = source.SpecColorHSV;
@@ -1423,11 +1419,7 @@ namespace SevenBoldPencil.MaterialEditor
             target.CompensateSpecular = source.CompensateSpecular;
             target.SpecularCompensationMultiplier = source.SpecularCompensationMultiplier;
 
-            ForEveryMaterialOnItem
-            (
-                itemId, materialName,
-                (targetMaterial, materialInfo) => ApplyAllOverrides(targetMaterial, materialInfo)
-            );
+            ForEveryMaterialOnItem(itemId, materialName, ApplyAllOverrides);
         }
 
         public void SaveItemMaterialsIntoPreset(List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict, string presetName)
