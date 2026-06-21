@@ -128,7 +128,7 @@ namespace SevenBoldPencil.MaterialEditor
         public MaterialInfo Material;
     }
 
-    [BepInPlugin("7Bpencil.MaterialEditor", "7Bpencil.MaterialEditor", "1.14.1")]
+    [BepInPlugin("7Bpencil.MaterialEditor", "7Bpencil.MaterialEditor", "1.15.0")]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
