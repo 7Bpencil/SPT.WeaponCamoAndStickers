@@ -23,10 +23,6 @@ https://www.youtube.com/watch?v=54NjlThfFv0
 
 https://www.youtube.com/watch?v=hJcIlx6UV9A
 
-## EVEN ON CLOTHES
-
-![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/clothes.png)
-
 ## FAQ
 
 1) Download Addon "Essential Texture Pack" (or all of them, really)
