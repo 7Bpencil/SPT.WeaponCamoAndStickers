@@ -1,0 +1,77 @@
+# Tabs {.tabset}
+
+## APPLY PAINT
+One video speaks louder than thousand words: (also READ FAQ)
+
+https://www.youtube.com/watch?v=54NjlThfFv0
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/m700-edit.png)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/m700-live.png)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/ash-animated.gif)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/mp7-live.png)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/pkm-live.png)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/g36.png)
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/glock-live.png)
+
+## CHANGE MATERIAL
+
+https://www.youtube.com/watch?v=hJcIlx6UV9A
+
+## EVEN ON CLOTHES
+
+![Preview](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/clothes.png)
+
+## FAQ
+
+1) Download Addon "Essential Texture Pack" (or all of them, really)
+2) But why are textures in the separate addon?
+    - this way updating code won't force you to redownload 100+ MB of textures
+    - this allows everyone to make their own texture packs and share them on Forge
+3) How can I make my own texture pack?
+    - Essential Texture Pack page describes it in detail
+4) What formats are supported?
+    - png, mp4 (H.264, H.265), webm (VP8), for more details check [Unity docs](https://docs.unity3d.com/2022.3/Documentation/Manual/VideoSources-FileCompatibility.html)
+5) gif support?
+    - Convert your gifs to videos. If you dont need transparent background, use mp4. Otherwise - webm, just dont forget to set codec to VP8 (VP9 is not supported by Unity). Also compare quality after conversion, some converter websites absolutely destroy gifs on their default settings, so set bitrate high, it will still come out smaller than original gif.
+6) Videos don't play audio?
+    - Check Play Audio setting in F12/7Bpencil.WeaponCamoAndStickers menu, but it won't work as you expect because of technical challenges
+7) I don't see camo editor
+    - Click APPLY PAINT or CHANGE MATERIAL button in item interaction menu (they are located after DISCARD button and require Workbench Level 1)
+8) I managed to paint left and right side, but how do I paint top?
+    - There are multiple tools to do it:
+        1) Try MaxAngle slider, get a feeling how it works, setting MaxAngle to 0 will cover everything at the expense of stretching (but it may look fine in your case)
+        2) Select Move tool, look at green arrow, decal is projected in direction opposite to it. This means you can rotate decal to face any surface you want to paint. Left/Right is just handy shortcuts to set decal position/rotation/scale certain way
+        3) Use Mask, it will break up pattern and make cutoff line less noticable
+        4) Try Material Editor, in some cases it can give much better results
+9) Stickers on armor/backpack/rig/helmet?
+    - Nope, equipment is entirely different, much more complicated beast, and I don't want to torture myself any further.
+10) Keep some weapon parts completely clean from paint?
+    - Maybe in the future
+11) Keep paint attached to moving weapon parts (magazine, pistol slide, folding stock, etc)? Apply paint on part-by-part basis?
+    - Not happening. I have a working prototype, but it tanks fps and can break other mods, and sadly those issues can not be solved. If you really want it, you can compile part-by-part branch from source.
+12) Any keybinds to speed up edit process?
+    - Check F12/7Bpencil.WeaponCamoAndStickers
+13) Undo system?
+    - 😭
+14) I changed something and camo is now looking weird and its sliding across weapon surface
+    - You made decal box too big. Try to scale it down (especially in green axis)
+15) Editor UI is too small / too big
+    - Check UI Scale setting in F12/7Bpencil.WeaponCamoAndStickers menu
+16) Do items returned by insurance retain their paint/material changes?
+    - Nope, they are technically copies with different ids. Haven't worked on synchronizing it
+17) Material changes on clothes are not visible in first person?
+    - First person hands are technically completely different model with separate set of materials and meshes
+18) I noticed some items cannot be edited with material editor, why?
+    - Material Editor works only on standard BSG opaque materials, so transparent materials and some others are not supported, the same with modded items that use custom shaders (like some Epics guns). Reason: supporting even one material type is complicated enough
+18) Fika Headless compatibility?
+    - Headless client requires bundles folder and all dlls, but addons are not necessary. Keep in mind, camos on AI guns are randomly generated by host from available textures, which means if headless client has no textures, there won't be camos on AI guns.
+19) What mods have you used in the video?
+    - Brighter Interiors
+    - CloudSix - Volumetric Clouds
+    - Smajlec's Lights
