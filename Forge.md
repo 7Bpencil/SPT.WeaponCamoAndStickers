@@ -25,6 +25,11 @@ https://www.youtube.com/watch?v=54NjlThfFv0
 
 https://www.youtube.com/watch?v=hJcIlx6UV9A
 
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/material/equipment.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/material/deagle.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/material/spear.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/material/clothes.png)
+
 ## FAQ
 
 1) Download Addon "Essential Texture Pack" (or all of them, really)

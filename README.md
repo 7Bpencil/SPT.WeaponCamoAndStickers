@@ -23,3 +23,10 @@ Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.Wea
 ![](previews/paint/sks.png)
 ![](previews/paint/mpx.png)
 ![](previews/paint/ak50.png)
+
+## CHANGE MATERIAL
+
+![](previews/material/equipment.png)
+![](previews/material/deagle.png)
+![](previews/material/spear.png)
+![](previews/material/clothes.png)
