@@ -8,6 +8,8 @@ Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.Wea
 
 ## APPLY PAINT
 
+Video: <https://www.youtube.com/watch?v=54NjlThfFv0>
+
 ![](previews/paint/m700-edit.png)
 ![](previews/paint/m700-live.png)
 ![](previews/paint/ash-animated.gif)
@@ -25,6 +27,8 @@ Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.Wea
 ![](previews/paint/ak50.png)
 
 ## CHANGE MATERIAL
+
+Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 
 ![](previews/material/equipment.png)
 ![](previews/material/deagle.png)
