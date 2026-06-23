@@ -41,6 +41,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/summary.gif)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/dawn.gif)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/cyberpunk.png)
 
 ### DocTahFrek
 

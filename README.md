@@ -42,6 +42,7 @@ Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.Wea
 ![](previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
 ![](previews/community/Bandoot/summary.gif)
 ![](previews/community/Bandoot/dawn.gif)
+![](previews/community/Bandoot/cyberpunk.png)
 
 ### DocTahFrek
 
