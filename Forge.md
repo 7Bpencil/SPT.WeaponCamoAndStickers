@@ -87,6 +87,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 7) I don't see camo editor
     - Click APPLY PAINT or CHANGE MATERIAL button in item interaction menu (they are located after DISCARD button and require Workbench Level 1)
 8) I managed to paint left and right side, but how do I paint top?
+    - ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/faq/how-to-paint-top.png)
     - There are multiple tools to do it:
         1) Try MaxAngle slider, get a feeling how it works, setting MaxAngle to 0 will cover everything at the expense of stretching (but it may look fine in your case)
         2) Select Move tool, look at green arrow, decal is projected in direction opposite to it. This means you can rotate decal to face any surface you want to paint. Left/Right is just handy shortcuts to set decal position/rotation/scale certain way
