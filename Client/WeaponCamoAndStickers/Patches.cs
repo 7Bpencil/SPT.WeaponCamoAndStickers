@@ -114,7 +114,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
-			if (item is not Weapon)
+			if (!Plugin.CanItemHaveDecals(item))
 			{
 				return;
 			}
@@ -218,7 +218,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
 	        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
 			{
-				NonInteractiveTooltip = item is Weapon ? GetRequiresBenchTooltip() : new(new FailedResult("Only weapons can be painted")),
+				NonInteractiveTooltip = Plugin.CanItemHaveDecals(item) ? GetRequiresBenchTooltip() : new(new FailedResult("Only weapons can be painted")),
 			};
 	    }
 
@@ -388,10 +388,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(GClass3380 __instance, Item __result, Item originalItem, IIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
 		{
-			// only weapons support for now
-			if (originalItem is Weapon weapon)
+			if (Plugin.CanItemHaveDecals(originalItem))
 			{
-				Plugin.Instance.OnCloneItem(weapon.Id, __result.Id);
+				Plugin.Instance.OnCloneItem(originalItem.Id, __result.Id);
 			}
 		}
 	}
@@ -520,6 +519,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
             foreach (var item in equipmentItems)
             {
+				// only weapons get randomized camos
                 if (item is Weapon)
                 {
 					Plugin.Instance.QueueItemForRandomCamoGeneration(item.Id, spawnChance);
@@ -538,8 +538,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
 		public static bool Prefix(GClass926 __instance, ref GClass929 __result, Item item, in XYCellSizeStruct size, bool forcedGeneration = false)
 		{
-			// only weapons with decals go through custom route
-			if (item is Weapon && Plugin.Instance.GetDecalsCount(item.Id) > 0)
+			// only items with decals go through custom route
+			if (Plugin.CanItemHaveDecals(item) &&
+				Plugin.Instance.GetDecalsCount(item.Id) > 0)
 			{
 				__result = GetItemIcon(__instance, item, size);
 				return false;
@@ -732,7 +733,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(Item item, ref int __result)
 		{
-			if (item is Weapon && Plugin.Instance.GetDecalsInfo(item.Id).Some(out var decalsInfo) && decalsInfo.Count > 0)
+			if (Plugin.CanItemHaveDecals(item) &&
+				Plugin.Instance.GetDecalsInfo(item.Id).Some(out var decalsInfo) &&
+				decalsInfo.Count > 0)
 			{
 				__result ^= GetSaveTimeInt(decalsInfo[0].SaveTime);
 			}

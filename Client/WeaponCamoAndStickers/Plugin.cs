@@ -2308,7 +2308,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             foreach (var item in equipmentItems)
             {
-                if (item is Weapon && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
+                if (CanItemHaveDecals(item) && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
                 {
                     snapshot[item.Id] = CopyDecalsInfo(itemsWithDecals.DecalsInfo);
                 }
@@ -2564,5 +2564,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 PaintMode = DecalPaintMode.Paint,
             };
         }
+
+        public static bool CanItemHaveDecals(Item item)
+        {
+            return item is Weapon;
+        }
+
     }
 }
