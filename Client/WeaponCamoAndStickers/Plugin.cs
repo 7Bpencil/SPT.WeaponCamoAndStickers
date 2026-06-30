@@ -2535,10 +2535,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public Option<List<DecalInfo>> GenerateRandomCamo(WeaponPrefab weaponPrefab)
         {
-            if (!weaponPrefab.TryGetComponent<PreviewPivot>(out var previewPivot))
-            {
-                return default;
-            }
             if (!GetRandomTexture(Camos).Some(out var camo))
             {
                 return default;
