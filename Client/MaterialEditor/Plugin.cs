@@ -1629,9 +1629,10 @@ namespace SevenBoldPencil.MaterialEditor
                 return;
             }
 
-            // TODO we dont need to reset all materials,
+            // technically we dont need to reset all materials,
             // we can just apply overrides from preset and do not touch others,
-            // no idea which approach is better
+            // but its easier to check presets when they are applied
+            // cleanly and look exactly how preset author intended
 
             // this will try to reset all materials on all items,
             // some items do not have overrides at all, but thats fine,
