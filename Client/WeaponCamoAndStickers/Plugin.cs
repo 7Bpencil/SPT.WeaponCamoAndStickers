@@ -1799,7 +1799,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
-            var instanceID = weaponPrefab.GetInstanceID();
+            var instanceID = weaponPrefab.gameObject.GetInstanceID();
 
             if (ItemsWaitingForRandomCamo.Remove(itemId))
             {
@@ -1892,7 +1892,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemId = GetOriginalItemId(itemId);
             if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
-                var instanceID = weaponPrefab.GetInstanceID();
+                var instanceID = weaponPrefab.gameObject.GetInstanceID();
                 var decalsInfo = itemsWithDecals.DecalsInfo;
                 if (itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
                 {
@@ -2029,7 +2029,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemId = GetOriginalItemId(itemId);
 			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
             IsCamoEditorWaitingForWeaponPreview = false;
-            var instanceID = weaponPrefab.GetInstanceID();
+            var instanceID = weaponPrefab.gameObject.GetInstanceID();
             var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
             CamoEditor = new(new CamoEditor()
             {
