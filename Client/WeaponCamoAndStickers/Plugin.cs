@@ -204,7 +204,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, string> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
-        private HashSet<string> ItemsWaitingForRandomCamo;
+        private HashSet<string> WeaponsWaitingForRandomCamo;
         private Dictionary<Camera, string> WeaponPreviewCameras;
         private Dictionary<Camera, string> InventoryIconCameras;
         private HashSet<Camera> PlayerModelViewCameras;
@@ -274,7 +274,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
-            ItemsWaitingForRandomCamo = new();
+            WeaponsWaitingForRandomCamo = new();
             WeaponPreviewCameras = new();
             InventoryIconCameras = new();
             PlayerModelViewCameras = new();
@@ -1844,9 +1844,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemId = GetOriginalItemId(itemId);
             var instanceID = weaponPrefab.gameObject.GetInstanceID();
 
-            if (ItemsWaitingForRandomCamo.Remove(itemId))
+            if (WeaponsWaitingForRandomCamo.Remove(itemId))
             {
-                GenerateRandomCamoForWeapon(itemId, weaponPrefab);
+                GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
             }
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
@@ -2137,7 +2137,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void SwitchToRandomPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera)
         {
-            if (GenerateRandomCamo(weaponPrefab).Some(out var presetDecalsInfo))
+            if (GenerateRandomCamoForWeapon(weaponPrefab).Some(out var presetDecalsInfo))
             {
                 SwitchToPreset(itemId, instanceID, weaponPrefab, weaponPreviewCamera, presetDecalsInfo);
             }
@@ -2459,11 +2459,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return 0;
         }
 
-        public void QueueItemForRandomCamoGeneration(string itemId, float spawnChance)
+        public void QueueWeaponForRandomCamoGeneration(string itemId, float spawnChance)
         {
             if (ItemsWithDecals.ContainsKey(itemId))
             {
-                Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue item for camo generation, but item already has one", itemId);
+                Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue weapon for camo generation, but weapon already has one", itemId);
                 return;
             }
 
@@ -2473,11 +2473,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // which requires spawned GameObject, so
             // we have to wait until weapon is constructed
 
-            void queueItemForCamoGeneraion(string itemId)
+            void queueWeaponForCamoGeneraion(string itemId)
             {
     			if (UnityEngine.Random.value <= spawnChance / 100f)
     			{
-                    ItemsWaitingForRandomCamo.Add(itemId);
+                    WeaponsWaitingForRandomCamo.Add(itemId);
                     Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
     			}
             }
@@ -2486,16 +2486,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (IsFikaServer.Some(out var isFikaServer) && isFikaServer)
                 {
-                    queueItemForCamoGeneraion(itemId);
+                    queueWeaponForCamoGeneraion(itemId);
                 }
             }
             else
             {
-                queueItemForCamoGeneraion(itemId);
+                queueWeaponForCamoGeneraion(itemId);
             }
         }
 
-        public void GenerateRandomCamoForWeapon(string itemId, WeaponPrefab weaponPrefab)
+        public void GenerateAndRecordRandomCamoForWeapon(string itemId, WeaponPrefab weaponPrefab)
         {
             if (ItemsWithDecals.ContainsKey(itemId))
             {
@@ -2504,7 +2504,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             // this method gets called only on non fika clients or fika host, so we can omit checks
-            if (!GenerateRandomCamo(weaponPrefab).Some(out var decalsInfo))
+            if (!GenerateRandomCamoForWeapon(weaponPrefab).Some(out var decalsInfo))
             {
                 Logger.Log(LogLevel.Warning, "RandomCamo", "Generated empty camo", itemId);
                 return;
@@ -2533,7 +2533,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public Option<List<DecalInfo>> GenerateRandomCamo(WeaponPrefab weaponPrefab)
+        public Option<List<DecalInfo>> GenerateRandomCamoForWeapon(WeaponPrefab weaponPrefab)
         {
             if (!GetRandomTexture(Camos).Some(out var camo))
             {

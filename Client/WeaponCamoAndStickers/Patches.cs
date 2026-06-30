@@ -516,7 +516,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				// only weapons get randomized camos
                 if (item is Weapon)
                 {
-					Plugin.Instance.QueueItemForRandomCamoGeneration(item.Id, spawnChance);
+					Plugin.Instance.QueueWeaponForRandomCamoGeneration(item.Id, spawnChance);
 				}
             }
 		}
