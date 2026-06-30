@@ -2046,13 +2046,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			}
         }
 
-        public void OnWeaponPreviewClosed(Camera weaponPreviewCamera, string itemId)
+        public void OnWeaponPreviewClosed(string itemId, Camera weaponPreviewCamera)
         {
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Closed", itemId);
             WeaponPreviewCameras.Remove(weaponPreviewCamera);
         }
 
-        public void BeforeInventoryIconRecorded(Camera inventoryIconCamera, string itemId)
+        public void BeforeInventoryIconRecorded(string itemId, Camera inventoryIconCamera)
         {
             itemId = GetOriginalItemId(itemId);
 			Logger.Log(LogLevel.Info, "InventoryIcon", "Before recorded", itemId);
@@ -2065,7 +2065,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void AfterInventoryIconRecorded(Camera inventoryIconCamera, string itemId)
+        public void AfterInventoryIconRecorded(string itemId, Camera inventoryIconCamera)
         {
 			Logger.Log(LogLevel.Info, "InventoryIcon", "After recorded", itemId);
             InventoryIconCameras.Remove(inventoryIconCamera);

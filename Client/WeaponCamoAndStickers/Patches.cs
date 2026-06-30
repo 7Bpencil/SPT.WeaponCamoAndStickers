@@ -184,7 +184,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				var camera = __instance.WeaponPreviewCamera;
 				if (camera)
 				{
-					Plugin.Instance.OnWeaponPreviewClosed(camera, item.Id);
+					Plugin.Instance.OnWeaponPreviewClosed(item.Id, camera);
 				}
 			}
 
@@ -582,9 +582,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				__instance.Bool_0 = true;
 				await JobScheduler.Yield();
 
-				Plugin.Instance.BeforeInventoryIconRecorded(__instance.Camera_0, item.Id); // we need to know which camera renders which item
+				Plugin.Instance.BeforeInventoryIconRecorded(item.Id, __instance.Camera_0); // we need to know which camera renders which item
 				Sprite result = method_4(__instance, model, in size, pivot); // use our method_4
-				Plugin.Instance.AfterInventoryIconRecorded(__instance.Camera_0, item.Id); // clear info about that camera
+				Plugin.Instance.AfterInventoryIconRecorded(item.Id, __instance.Camera_0); // clear info about that camera
 
 				await JobScheduler.Yield();
 				__instance.Bool_0 = false;
