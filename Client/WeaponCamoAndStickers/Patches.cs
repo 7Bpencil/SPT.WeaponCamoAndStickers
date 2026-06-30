@@ -12,6 +12,7 @@ using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.Visual;
+using EFT.CameraControl;
 using EFT.UI;
 using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
@@ -22,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
+using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
 
@@ -306,44 +308,46 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_WeaponPrefab_InitHotObjects : ModulePatch
+	public class Patch_PoolManagerClass_CreateItemAsync : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponPrefab), nameof(WeaponPrefab.InitHotObjects));
-        }
-
-        [PatchPostfix]
-        public static void Postfix(WeaponPrefab __instance)
-		{
-			// believe it or not, but InitHotObjects is THE method,
-			// that actually sets up weapon model and shit,
-			// just keep in mind that it can be called on already init WeaponPrefab
-			var __instance__ = new WeaponPrefab_Proxy(__instance);
-			var item = __instance__.weapon_0;
-			if (item != null)
-			{
-				Plugin.Instance.OnWeaponPrefabCreated(item.Id, __instance);
-			}
-		}
-	}
-
-	public class Patch_WeaponPrefab_ReturnToPool : ModulePatch
-	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(WeaponPrefab), nameof(WeaponPrefab.ReturnToPool));
+			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(GDelegate62), typeof(CancellationToken)];
+            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.CreateItemAsync), parameters);
         }
 
         [PatchPrefix]
-        public static void Prefix(WeaponPrefab __instance)
+        public static void Prefix(PoolManagerClass __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, GDelegate62 yield, CancellationToken ct = default(CancellationToken))
 		{
-			var __instance__ = new WeaponPrefab_Proxy(__instance);
-			var item = __instance__.weapon_0;
-			if (item != null)
-			{
-				Plugin.Instance.OnWeaponPrefabDestroyed(item.Id, __instance);
-			}
+			Plugin.Instance.OnCreateItemAsync(item);
+		}
+	}
+
+	public class Patch_PoolManagerClass_method_2 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.method_2));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PoolManagerClass __instance, GameObject __result, ResourceKey resourceKey, PoolManagerClass.PoolsCategory poolCategory)
+		{
+			Plugin.Instance.OnCreatedItemGameObject(resourceKey, __result);
+		}
+	}
+
+	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(AssetPoolObject), nameof(AssetPoolObject.ReturnToPool));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(AssetPoolObject __instance)
+		{
+			Plugin.Instance.OnItemDestroyed(__instance);
 		}
 	}
 
@@ -357,17 +361,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
         public static void Prefix(AssetPoolObject __instance)
 		{
-			// Some WeaponPrefabs return to pools, others simply get destroyed,
-			// notice WeaponPrefab doesn't override OnDestroy, so we have to do it this way
-			if (__instance is WeaponPrefab weaponPrefab)
-			{
-				var _weaponPrefab = new WeaponPrefab_Proxy(weaponPrefab);
-				var item = _weaponPrefab.weapon_0;
-				if (item != null)
-				{
-					Plugin.Instance.OnWeaponPrefabDestroyed(item.Id, weaponPrefab);
-				}
-			}
+			Plugin.Instance.OnItemDestroyed(__instance);
 		}
 	}
 

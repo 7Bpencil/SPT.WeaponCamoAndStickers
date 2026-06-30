@@ -10,6 +10,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using EFT;
+using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
@@ -201,6 +202,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
+        private Dictionary<ResourceKey, string> ResourceKeyToItem;
+        private Dictionary<int, string> InstanceIdToItemId;
         private HashSet<string> ItemsWaitingForRandomCamo;
         private Dictionary<Camera, string> WeaponPreviewCameras;
         private Dictionary<Camera, string> InventoryIconCameras;
@@ -269,6 +272,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalPresets = LoadDecalPresets();
             ItemsWithDecals = LoadItemsWithDecals();
             Clones = new();
+            ResourceKeyToItem = new();
+            InstanceIdToItemId = new();
             ItemsWaitingForRandomCamo = new();
             WeaponPreviewCameras = new();
             InventoryIconCameras = new();
@@ -285,8 +290,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
             new Patch_InteractionButtonsContainer_method_3().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
-            new Patch_WeaponPrefab_InitHotObjects().Enable();
-            new Patch_WeaponPrefab_ReturnToPool().Enable();
+            new Patch_PoolManagerClass_CreateItemAsync().Enable();
+            new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass2304_smethod_0().Enable();
@@ -1636,6 +1642,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
 
             ItemsWithDecals.Add(itemId, itemsWithDecals);
+            InstanceIdToItemId.Add(instanceID, itemId);
             WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
         }
 
@@ -1796,6 +1803,42 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return FavouriteTextures.Contains(textureName);
         }
 
+        public void OnCreateItemAsync(Item item)
+        {
+            var itemId = GetOriginalItemId(item.Id);
+            if (!ItemsWithDecals.ContainsKey(itemId))
+            {
+                return;
+            }
+            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItemId))
+            {
+                if (existingItemId == itemId)
+                {
+                    Logger.Log(LogLevel.Info, "Item", "Potential warning, already loading (ignore if happened on weapon reload)", itemId, item.Prefab.path);
+                }
+                else
+                {
+                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItemId, item.Prefab.path);
+                }
+            }
+            else
+            {
+                ResourceKeyToItem.Add(item.Prefab, itemId);
+                Logger.Log(LogLevel.Info, "Item", "Loading", itemId, item.Prefab.path);
+            }
+        }
+
+        public void OnCreatedItemGameObject(ResourceKey itemPrefab, GameObject itemGameObject)
+        {
+            if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
+            {
+                if (itemGameObject.TryGetComponent<WeaponPrefab>(out var weaponPrefab))
+                {
+                    OnWeaponPrefabCreated(itemId, weaponPrefab);
+                }
+            }
+        }
+
         public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
@@ -1847,6 +1890,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
 
             itemsWithDecals.Items.Add(instanceID, itemWithDecals);
+            InstanceIdToItemId.Add(instanceID, itemId);
 
             Logger.Log(LogLevel.Info, "Item", "Created, with decals", itemId, instanceID);
         }
@@ -1887,30 +1931,45 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         //     return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
         // }
 
-        public void OnWeaponPrefabDestroyed(string itemId, WeaponPrefab weaponPrefab)
+        public void OnItemDestroyed(AssetPoolObject assetPoolObject)
         {
-            itemId = GetOriginalItemId(itemId);
-            if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
-            {
-                var instanceID = weaponPrefab.gameObject.GetInstanceID();
-                var decalsInfo = itemsWithDecals.DecalsInfo;
-                if (itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
-                {
-                    Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
-                    var decals = itemWithDecals.Decals;
-                    for (var i = 0; i < itemWithDecals.Decals.Count; i++)
-                    {
-                        // WeaponPrefab game object is not necessary destroyed,
-                        // it can be returned back to pool and then used later
-                        // with different id, so we have to destroy decals manually
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            OnItemDestroyed(instanceID);
+        }
 
-                        var decal = decals[i];
-                        var decalInfo = decalsInfo[i];
-                        DestroyDecal(decal, decalInfo);
-                    }
-                    decals.Clear();
-                }
+        public void OnItemDestroyed(int instanceID)
+        {
+            if (!InstanceIdToItemId.Remove(instanceID, out var itemId))
+            {
+                return;
             }
+
+            itemId = GetOriginalItemId(itemId);
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                return;
+            }
+
+            if (!itemsWithDecals.Items.Remove(instanceID, out var itemWithDecals))
+            {
+                return;
+            }
+
+            Logger.Log(LogLevel.Info, "Item", "Destroyed", itemId, instanceID);
+
+            var decals = itemWithDecals.Decals;
+            var decalsInfo = itemsWithDecals.DecalsInfo;
+            for (var i = 0; i < itemWithDecals.Decals.Count; i++)
+            {
+                // Host game object is not necessary destroyed,
+                // it can be returned back to pool and then used later
+                // with different id, so we have to destroy decals manually
+
+                var decal = decals[i];
+                var decalInfo = decalsInfo[i];
+                DestroyDecal(decal, decalInfo);
+            }
+            decals.Clear();
         }
 
         public void DestroyDecal(Decal decal, DecalInfo decalInfo)
@@ -2160,6 +2219,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 };
 
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
+                InstanceIdToItemId.Add(instanceID, itemId);
                 WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
             }
         }
@@ -2246,11 +2306,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             camoEditor.ForceOnEndedDraggingHandle();
 
             var itemId = camoEditor.ItemId;
+            var instanceID = camoEditor.InstanceID;
             if (GetDecalsInfo(itemId).Some(out var decalsInfo))
             {
                 if (decalsInfo.Count == 0)
                 {
                     ItemsWithDecals.Remove(itemId);
+                    InstanceIdToItemId.Remove(instanceID);
                     RemoveDecalsFile(itemId);
                     Logger.Log(LogLevel.Info, "CamoEditor", "Remove decals", itemId);
                 }
