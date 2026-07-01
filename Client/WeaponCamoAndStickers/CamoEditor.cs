@@ -290,6 +290,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, color, 0, 0);
         }
 
+        public static Matrix4x4 CalculateUIScale()
+        {
+            var baseUIScale = Math.Max(Screen.height / 1080, 1);
+            var uiScale = baseUIScale * Plugin.UIScale.Value;
+            return Matrix4x4.Scale(new(uiScale, uiScale, 1f));
+        }
+
         public void DrawWindow()
         {
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
@@ -299,9 +306,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var originalMatrix = GUI.matrix;
-            var baseUIScale = Math.Max(Screen.height / 1080, 1);
-            var uiScale = baseUIScale * Plugin.UIScale.Value;
-            GUI.matrix = Matrix4x4.Scale(new(uiScale, uiScale, 1f));
+            GUI.matrix = CalculateUIScale();
 
             if (IsOpened)
             {
