@@ -299,6 +299,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_WeaponModdingScreen_method_6().Enable();
             new Patch_WeaponPreview_Class3271_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
+            new Patch_ScrollTrigger_OnScroll().Enable();
             new Patch_WeaponPreview_Hide().Enable();
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
             new Patch_InteractionButtonsContainer_method_3().Enable();
@@ -2292,6 +2293,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (CamoEditorError.Some(out var camoEditorError))
             {
                 if (GUIUtility.hotControl != 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        public bool CanScroll()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                if (camoEditor.WindowRect.Contains(Event.current.mousePosition))
+                {
+                    return false;
+                }
+            }
+            if (CamoEditorError.Some(out var camoEditorError))
+            {
+                if (camoEditorError.WindowRect.Contains(Event.current.mousePosition))
                 {
                     return false;
                 }

@@ -227,6 +227,20 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
+	public class Patch_ScrollTrigger_OnScroll : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ScrollTrigger), nameof(ScrollTrigger.OnScroll));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix()
+		{
+			return Plugin.Instance.CanScroll();
+		}
+	}
+
 	public class Patch_WeaponModdingScreen_Close : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
