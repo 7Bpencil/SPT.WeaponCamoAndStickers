@@ -1533,7 +1533,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public readonly record struct StartDecalTransform(Vector3 LocalPosition, Vector3 LocalEulerAngles, Vector3 LocalScale);
 
-        public StartDecalTransform GetStartDecalTransform(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot)
+        public static StartDecalTransform GetStartDecalTransform(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot)
         {
             if (itemType == ItemType.Weapon)
             {
@@ -1555,7 +1555,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return GetStartDecalTransform_Other(weaponPreviewRotator, previewPivot);
         }
 
-        public StartDecalTransform GetStartDecalTransform_Weapon(Transform weaponPreviewRotator, Vector3 previewPivot)
+        public static StartDecalTransform GetStartDecalTransform_Weapon(Transform weaponPreviewRotator, Vector3 previewPivot)
         {
             var weaponLocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize);
             var rotatorY = weaponPreviewRotator.localEulerAngles.y;
@@ -1581,7 +1581,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public StartDecalTransform GetStartDecalTransform_Knife(Transform weaponPreviewRotator)
+        public static StartDecalTransform GetStartDecalTransform_Knife(Transform weaponPreviewRotator)
         {
             // knives are weirdly angled, so back and front are not accurate and confusing, so provide only left and right
 
@@ -1599,7 +1599,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public StartDecalTransform GetStartDecalTransform_Headwear(Transform weaponPreviewRotator, Vector3 previewPivot)
+        public static StartDecalTransform GetStartDecalTransform_Headwear(Transform weaponPreviewRotator, Vector3 previewPivot)
         {
             const float helmetDecalDepth = 0.1f;
             var helmetLocalScale = new Vector3(defaultDecalSize, helmetDecalDepth, defaultDecalSize);
@@ -1626,7 +1626,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public StartDecalTransform GetStartDecalTransform_Other(Transform weaponPreviewRotator, Vector3 previewPivot)
+        public static StartDecalTransform GetStartDecalTransform_Other(Transform weaponPreviewRotator, Vector3 previewPivot)
         {
             // TODO get bounds to place decal on correct item face and not inside object?
             var weaponLocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize);
