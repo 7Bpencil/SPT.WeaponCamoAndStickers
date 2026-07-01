@@ -28,6 +28,17 @@ using SystemObject = System.Object;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
+    public readonly record struct ItemData(string Id, ItemType Type);
+
+    public enum ItemType
+    {
+        Weapon,
+        Knife,
+        Headwear,
+        FaceCover,
+        Container,
+    }
+
     public class ItemsWithDecals
     {
         // yes, there can be multiple items with same Id,
@@ -45,7 +56,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 7;
+        public const int CurrentSchemaVersion = 8;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -64,6 +75,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public bool IsVisible;
         public DecalMirrorMode MirrorMode;
         public DecalPaintMode PaintMode;
+        public byte StencilType;
 
         // this is enough for now
         public DecalInfo GetCopy() => (DecalInfo)MemberwiseClone();
@@ -202,7 +214,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
-        private Dictionary<ResourceKey, string> ResourceKeyToItem;
+        private Dictionary<ResourceKey, ItemData> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
         private HashSet<string> WeaponsWaitingForRandomCamo;
         private Dictionary<Camera, string> WeaponPreviewCameras;
@@ -211,6 +223,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private DecalRenderer DecalRenderer;
         private Option<CamoEditor> CamoEditor;
+        private Option<CamoEditorError> CamoEditorError;
         private bool IsCamoEditorWaitingForWeaponPreview;
 
         public bool IsFikaSupportEnabled;
@@ -927,6 +940,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 7;
                     decalInfo.PaintMode = DecalPaintMode.Paint;
                 }
+                if (decalInfo.SchemaVersion == 7)
+                {
+                    decalInfo.SchemaVersion = 8;
+                    decalInfo.StencilType = 2;
+                }
             }
         }
 
@@ -975,6 +993,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (CamoEditor.Some(out var camoEditor))
             {
                 camoEditor.DrawWindow();
+            }
+            if (CamoEditorError.Some(out var camoEditorError))
+            {
+                camoEditorError.DrawWindow();
             }
         }
 
@@ -1508,35 +1530,112 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private const float defaultDecalDepth = 0.04f;
         private const float defaultDecalSize = 0.2f;
 
-        public (Vector3 localPosition, Vector3 localEulerAngles) GetStartPositionAndRotation(Transform weaponPreviewRotator, float previewPivotZ)
+        public readonly record struct StartDecalTransform(Vector3 LocalPosition, Vector3 LocalEulerAngles, Vector3 LocalScale);
+
+        public StartDecalTransform GetStartDecalTransform(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot)
         {
+            if (itemType == ItemType.Weapon)
+            {
+                return GetStartDecalTransform_Weapon(weaponPreviewRotator, previewPivot);
+            }
+            if (itemType == ItemType.Knife)
+            {
+                return GetStartDecalTransform_Knife(weaponPreviewRotator);
+            }
+            if (itemType == ItemType.Headwear)
+            {
+                return GetStartDecalTransform_Headwear(weaponPreviewRotator, previewPivot);
+            }
+            if (itemType == ItemType.FaceCover)
+            {
+                return GetStartDecalTransform_Headwear(weaponPreviewRotator, previewPivot);
+            }
+
+            return GetStartDecalTransform_Other(weaponPreviewRotator, previewPivot);
+        }
+
+        public StartDecalTransform GetStartDecalTransform_Weapon(Transform weaponPreviewRotator, Vector3 previewPivot)
+        {
+            var weaponLocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize);
             var rotatorY = weaponPreviewRotator.localEulerAngles.y;
             if (Math.Abs(rotatorY - 90) < 10)
             {
                 // back
-                return (new Vector3(0, -previewPivotZ, 0), new(0, 0, 0));
+                return new(new(0, -previewPivot.z, 0), new(0, 0, 0), weaponLocalScale);
             }
             if (Math.Abs(rotatorY - 270) < 10)
             {
                 // front
-                return (new Vector3(0, -previewPivotZ, 0), new(0, 0, 180));
+                return new(new(0, -previewPivot.z, 0), new(0, 0, 180), weaponLocalScale);
             }
             if (Math.Cos(rotatorY * Mathf.Deg2Rad) > 0)
             {
                 // left
-                return (new Vector3(-defaultDecalDepth, -previewPivotZ, 0), new(0, 0, 90));
+                return new(new(-defaultDecalDepth, -previewPivot.z, 0), new(0, 0, 90), weaponLocalScale);
             }
             else
             {
                 // right
-                return (new Vector3(defaultDecalDepth, -previewPivotZ, 0), new(0, 0, 270));
+                return new(new(defaultDecalDepth, -previewPivot.z, 0), new(0, 0, 270), weaponLocalScale);
             }
         }
 
-        public int AddNewEraserDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        public StartDecalTransform GetStartDecalTransform_Knife(Transform weaponPreviewRotator)
+        {
+            // knives are weirdly angled, so back and front are not accurate and confusing, so provide only left and right
+
+            var weaponLocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize);
+            var rotatorY = weaponPreviewRotator.localEulerAngles.y;
+            if (Math.Cos(rotatorY * Mathf.Deg2Rad) > 0)
+            {
+                // left
+                return new(new(-defaultDecalDepth, 0, 0), new(0, 0, 90), weaponLocalScale);
+            }
+            else
+            {
+                // right
+                return new(new(defaultDecalDepth, 0, 0), new(0, 0, 270), weaponLocalScale);
+            }
+        }
+
+        public StartDecalTransform GetStartDecalTransform_Headwear(Transform weaponPreviewRotator, Vector3 previewPivot)
+        {
+            const float helmetDecalDepth = 0.1f;
+            var helmetLocalScale = new Vector3(defaultDecalSize, helmetDecalDepth, defaultDecalSize);
+            var rotatorY = weaponPreviewRotator.localEulerAngles.y;
+            if (Math.Abs(rotatorY - 90) < 10)
+            {
+                // back
+                return new(new(0, previewPivot.y, -0.12f), new(270, 0, 0), helmetLocalScale);
+            }
+            if (Math.Abs(rotatorY - 270) < 10)
+            {
+                // front
+                return new(new(0, previewPivot.y, 0.18f), new(270, 180, 0), helmetLocalScale);
+            }
+            if (Math.Cos(rotatorY * Mathf.Deg2Rad) > 0)
+            {
+                // left
+                return new(new(-0.135f, previewPivot.y, previewPivot.z), new(270, 90, 0), helmetLocalScale);
+            }
+            else
+            {
+                // right
+                return new(new(0.135f, previewPivot.y, previewPivot.z), new(270, 270, 0), helmetLocalScale);
+            }
+        }
+
+        public StartDecalTransform GetStartDecalTransform_Other(Transform weaponPreviewRotator, Vector3 previewPivot)
+        {
+            // TODO get bounds to place decal on correct item face and not inside object?
+            var weaponLocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize);
+            return new(previewPivot, Vector3.zero, weaponLocalScale);
+        }
+
+        public int AddNewEraserDecal(string itemId, int instanceID, ItemType itemType, AssetPoolObject assetPoolObject, Transform decalsRoot, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType, Camera weaponPreviewCamera)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
+            var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
@@ -1551,11 +1650,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaskAngle = 0,
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
-                LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
+                LocalScale = startLocalScale,
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Erase,
+                StencilType = stencilType,
             };
 
             if (ItemsWithDecals.ContainsKey(itemId))
@@ -1564,16 +1664,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, decalsRoot, weaponPreviewCamera, decalInfo);
             }
 
             return 0;
         }
 
-        public int AddNewPaintDecal(string itemId, int instanceID, WeaponPrefab weaponPrefab, Transform weaponPreviewRotator, float previewPivotZ, Camera weaponPreviewCamera)
+        public int AddNewPaintDecal(string itemId, int instanceID, ItemType itemType, AssetPoolObject assetPoolObject, Transform decalsRoot, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType, Camera weaponPreviewCamera)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var (startLocalPosition, startLocalEulerAngles) = GetStartPositionAndRotation(weaponPreviewRotator, previewPivotZ);
+            var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
@@ -1588,11 +1688,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaskAngle = 0,
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
-                LocalScale = new Vector3(defaultDecalSize, defaultDecalDepth, defaultDecalSize),
+                LocalScale = startLocalScale,
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
+                StencilType = stencilType,
             };
 
             if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
@@ -1603,7 +1704,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                CreateNewItemsWithDecals(itemId, instanceID, weaponPrefab, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, decalsRoot, weaponPreviewCamera, decalInfo);
                 return 0;
             }
         }
@@ -1619,9 +1720,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void CreateNewItemsWithDecals(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, DecalInfo decalInfo)
+        public void CreateNewItemsWithDecals(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, DecalInfo decalInfo)
         {
-            var decalsRoot = GetWeaponRoot(weaponPrefab);
             var decal = CreateDecal(decalInfo, decalsRoot);
             var decals = new List<Decal>() { decal };
             var decalsInfo = new List<DecalInfo>() { decalInfo };
@@ -1805,48 +1905,57 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void OnCreateItemAsync(Item item)
         {
+            if (!GetItemType(item).Some(out var itemType))
+            {
+                return;
+            }
+
             var itemId = GetOriginalItemId(item.Id);
             if (!ItemsWithDecals.ContainsKey(itemId))
             {
                 return;
             }
-            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItemId))
+
+            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItem))
             {
-                if (existingItemId == itemId)
+                if (existingItem.Id == itemId)
                 {
                     Logger.Log(LogLevel.Info, "Item", "Potential warning, already loading (ignore if happened on weapon reload)", itemId, item.Prefab.path);
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItemId, item.Prefab.path);
+                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItem.Id, item.Prefab.path);
                 }
             }
             else
             {
-                ResourceKeyToItem.Add(item.Prefab, itemId);
+                ResourceKeyToItem.Add(item.Prefab, new(itemId, itemType));
                 Logger.Log(LogLevel.Info, "Item", "Loading", itemId, item.Prefab.path);
             }
         }
 
         public void OnCreatedItemGameObject(ResourceKey itemPrefab, GameObject itemGameObject)
         {
-            if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
+            if (ResourceKeyToItem.Remove(itemPrefab, out var item))
             {
-                if (itemGameObject.TryGetComponent<WeaponPrefab>(out var weaponPrefab))
+                if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                 {
-                    OnWeaponPrefabCreated(itemId, weaponPrefab);
+                    OnItemPrefabCreated(item.Id, item.Type, assetPoolObject);
                 }
             }
         }
 
-        public void OnWeaponPrefabCreated(string itemId, WeaponPrefab weaponPrefab)
+        public void OnItemPrefabCreated(string itemId, ItemType itemType, AssetPoolObject assetPoolObject)
         {
             itemId = GetOriginalItemId(itemId);
-            var instanceID = weaponPrefab.gameObject.GetInstanceID();
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
 
             if (WeaponsWaitingForRandomCamo.Remove(itemId))
             {
-                GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
+                if (assetPoolObject is WeaponPrefab weaponPrefab)
+                {
+                    GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
+                }
             }
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
@@ -1855,7 +1964,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 // only non fika client and fika host can decide if camo will be spawned,
                 // in some cases client can spawn weapon earlier than
                 // host sends info about its camo, so save weapon for future
-                if (IsFikaSupportEnabled && IsFikaServer.Some(out var isFikaServer) && !isFikaServer)
+                if (IsFikaSupportEnabled && IsFikaServer.Some(out var isFikaServer) && !isFikaServer && assetPoolObject is WeaponPrefab weaponPrefab)
                 {
                     WeaponsWaitingForRemoteCamo.TryAdd(itemId, weaponPrefab);
                     Logger.Log(LogLevel.Info, "Item", "Created, cache for possible future camo", itemId, instanceID);
@@ -1876,7 +1985,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
-            var decalsRoot = GetWeaponRoot(weaponPrefab);
+            var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
             foreach (var decalInfo in decalsInfo)
             {
                 var decal = CreateDecal(decalInfo, decalsRoot);
@@ -1919,6 +2028,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 decal.ChangeMask(mask);
             }
         }
+
+		public static Transform GetDecalsRoot(ItemType itemType, AssetPoolObject assetPoolObject)
+		{
+            if (assetPoolObject is WeaponPrefab weaponPrefab)
+            {
+                var weaponRoot = GetWeaponRoot(weaponPrefab);
+                if (itemType == ItemType.Weapon)
+                {
+                    return weaponRoot;
+                }
+                if (itemType == ItemType.Knife)
+                {
+                    var knifeRoot = weaponRoot.Find("bone_mele");
+                    if (knifeRoot)
+                    {
+                        return knifeRoot;
+                    }
+                }
+            }
+
+            return assetPoolObject.transform;
+		}
 
 		public static Transform GetWeaponRoot(WeaponPrefab weaponPrefab)
 		{
@@ -2029,9 +2160,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return IsCamoEditorWaitingForWeaponPreview;
         }
 
-        public void OnWeaponPreviewOpened(Camera weaponPreviewCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
+        public void OnWeaponPreviewOpened(Item item, AssetPoolObject assetPoolObject, Transform rotator, PreviewPivot previewPivot, Camera weaponPreviewCamera)
         {
-            itemId = GetOriginalItemId(itemId);
+            var itemId = GetOriginalItemId(item.Id);
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
             if (ItemsWithDecals.ContainsKey(itemId))
             {
@@ -2042,7 +2173,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
-				SetupCamoEditor(weaponPreviewCamera, itemId, weaponPrefab, rotator, previewPivot);
+				SetupCamoEditor(item, assetPoolObject, rotator, previewPivot, weaponPreviewCamera);
 			}
         }
 
@@ -2083,25 +2214,61 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PlayerModelViewCameras.Remove(playerModelViewCamera);
         }
 
-        public void SetupCamoEditor(Camera editorCamera, string itemId, WeaponPrefab weaponPrefab, Transform rotator, PreviewPivot previewPivot)
+        public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject, Transform rotator, PreviewPivot previewPivot, Camera editorCamera)
         {
-            itemId = GetOriginalItemId(itemId);
-			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
             IsCamoEditorWaitingForWeaponPreview = false;
-            var instanceID = weaponPrefab.gameObject.GetInstanceID();
-            var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
-            CamoEditor = new(new CamoEditor()
+
+            if (GetItemType(item).Some(out var itemType) && !assetPoolObject.TryGetComponent<DressItem>(out _))
             {
-                Plugin = this,
-                CamoEditorResources = CamoEditorResources,
-                Camera = editorCamera,
-                RuntimeGizmos = runtimeGizmos,
-                ItemId = itemId,
-                InstanceID = instanceID,
-                WeaponPrefab = weaponPrefab,
-                WeaponPreviewRotator = rotator,
-                PreviewPivotZ = previewPivot.pivotPosition.z,
-            });
+                var runtimeGizmos = editorCamera.gameObject.AddComponent<RuntimeGizmos>();
+                var itemId = GetOriginalItemId(item.Id);
+                var instanceID = assetPoolObject.gameObject.GetInstanceID();
+                var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
+                var stencilType = GetItemStencilType(itemType);
+
+                CamoEditor = new(new CamoEditor()
+                {
+                    Plugin = this,
+                    CamoEditorResources = CamoEditorResources,
+                    Camera = editorCamera,
+                    RuntimeGizmos = runtimeGizmos,
+                    ItemId = itemId,
+                    InstanceID = instanceID,
+                    ItemType = itemType,
+                    AssetPoolObject = assetPoolObject,
+                    DecalsRoot = decalsRoot,
+                    WeaponPreviewRotator = rotator,
+                    PreviewPivot = previewPivot.pivotPosition,
+                    StencilType = stencilType,
+                });
+
+    			Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId, itemType);
+            }
+            else
+            {
+                // unsupported item type or skeletal mesh
+                CamoEditorError = new(new CamoEditorError()
+                {
+                    Plugin = this,
+                    CamoEditorResources = CamoEditorResources,
+                    ErrorMessage = "This item cannot be painted, use change material",
+                });
+
+    			Logger.Log(LogLevel.Info, "CamoEditorError", "Setup");
+            }
+        }
+
+        public static byte GetItemStencilType(ItemType itemType)
+        {
+            return itemType switch
+            {
+                ItemType.Weapon => 2,
+                ItemType.Knife => 2,
+                ItemType.Headwear => 1,
+                ItemType.FaceCover => 1,
+                ItemType.Container => 0,
+                _ => throw new ArgumentException($"Unknown item type: {itemType}"),
+            };
         }
 
         // its annoying to drag sliders
@@ -2122,6 +2289,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     return false;
                 }
             }
+            if (CamoEditorError.Some(out var camoEditorError))
+            {
+                if (GUIUtility.hotControl != 0)
+                {
+                    return false;
+                }
+            }
 
             return true;
         }
@@ -2132,26 +2306,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // so keep cursor visible
         public bool CanHideCursor()
         {
-            return !CamoEditor.HasValue;
+            return !CamoEditor.HasValue && CamoEditorError.HasValue;
         }
 
-        public void SwitchToRandomPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera)
+        public void SwitchToRandomPreset(string itemId, int instanceID, AssetPoolObject assetPoolObject, Transform decalsRoot, Camera weaponPreviewCamera)
         {
-            if (GenerateRandomCamoForWeapon(weaponPrefab).Some(out var presetDecalsInfo))
+            if (assetPoolObject is WeaponPrefab weaponPrefab && GenerateRandomCamoForWeapon(weaponPrefab).Some(out var presetDecalsInfo))
             {
-                SwitchToPreset(itemId, instanceID, weaponPrefab, weaponPreviewCamera, presetDecalsInfo);
+                SwitchToPreset(itemId, instanceID, decalsRoot, weaponPreviewCamera, presetDecalsInfo);
             }
         }
 
-        public void SwitchToPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, string presetName)
+        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, string presetName)
         {
             if (DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
             {
-                SwitchToPreset(itemId, instanceID, weaponPrefab, weaponPreviewCamera, presetDecalsInfo);
+                SwitchToPreset(itemId, instanceID, decalsRoot, weaponPreviewCamera, presetDecalsInfo);
             }
         }
 
-        public void SwitchToPreset(string itemId, int instanceID, WeaponPrefab weaponPrefab, Camera weaponPreviewCamera, List<DecalInfo> presetDecalsInfo)
+        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, List<DecalInfo> presetDecalsInfo)
         {
             if (presetDecalsInfo.Count == 0)
             {
@@ -2196,7 +2370,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var decalsInfo = CopyDecalsInfo(presetDecalsInfo);
                 var decals = new List<Decal>(decalsInfo.Count);
-                var decalsRoot = GetWeaponRoot(weaponPrefab);
                 foreach (var decalInfo in decalsInfo)
                 {
                     var decal = CreateDecal(decalInfo, decalsRoot);
@@ -2297,6 +2470,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// which means weapon preview won't be fully loaded,
 			// 2) WeaponModdingScreen.Close is called even if user
 			// entered customization window on trader guns
+
+			if (CamoEditorError.Some(out var camoEditorError))
+            {
+                CamoEditorError = default;
+                return;
+            }
 
             if (!CamoEditor.Some(out var camoEditor))
             {
@@ -2430,7 +2609,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (WeaponsWaitingForRemoteCamo.Remove(itemId, out var weaponPrefab))
             {
                 Logger.Log(LogLevel.Info, "RemoteDecals", "Was waiting for remote", itemId);
-                OnWeaponPrefabCreated(itemId, weaponPrefab);
+                OnItemPrefabCreated(itemId, ItemType.Weapon, weaponPrefab);
             }
         }
 
@@ -2621,12 +2800,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
+                StencilType = 2,
             };
         }
 
         public static bool CanItemHaveDecals(Item item)
         {
-            return item is Weapon;
+            return GetItemType(item).HasValue;
+        }
+
+        public static Option<ItemType> GetItemType(Item item)
+        {
+            return item switch
+            {
+                Weapon => new(ItemType.Weapon),
+                KnifeItemClass => new(ItemType.Knife),
+                HeadwearItemClass => new(ItemType.Headwear),
+                FaceCoverItemClass => new(ItemType.FaceCover),
+                SimpleContainerItemClass => new(ItemType.Container),
+                _ => default,
+            };
         }
 
     }

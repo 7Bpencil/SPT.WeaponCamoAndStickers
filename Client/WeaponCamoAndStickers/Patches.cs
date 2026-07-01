@@ -120,27 +120,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
-			if (TryGetWeaponPrefab(_weaponPreview, out var weaponPrefab, out var previewPivot))
+			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject, out var previewPivot))
 			{
-				var itemId = item.Id;
-				var camera = weaponPreview.WeaponPreviewCamera;
-				Plugin.Instance.OnWeaponPreviewOpened(camera, itemId, weaponPrefab, weaponPreview.Rotator, previewPivot);
+				Plugin.Instance.OnWeaponPreviewOpened(item, assetPoolObject, weaponPreview.Rotator, previewPivot, weaponPreview.WeaponPreviewCamera);
 			}
 		}
 
-		public static bool TryGetWeaponPrefab(WeaponPreview_Proxy weaponPreview, out WeaponPrefab weaponPrefab, out PreviewPivot previewPivot)
+		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject, out PreviewPivot previewPivot)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview.gameObject_0;
 
 			if (itemGO &&
-				itemGO.TryGetComponent<WeaponPrefab>(out weaponPrefab) &&
+				itemGO.TryGetComponent<AssetPoolObject>(out assetPoolObject) &&
 				itemGO.TryGetComponent<PreviewPivot>(out previewPivot))
 			{
 				return true;
 			}
 
-			weaponPrefab = default;
+			assetPoolObject = default;
 			previewPivot = default;
 			return false;
 		}
@@ -220,7 +218,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
 	        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
 			{
-				NonInteractiveTooltip = Plugin.CanItemHaveDecals(item) ? GetRequiresBenchTooltip() : new(new FailedResult("Only weapons can be painted")),
+				NonInteractiveTooltip = Plugin.CanItemHaveDecals(item) ? GetRequiresBenchTooltip() : new(new FailedResult("Only following items can be painted: Weapons, Knives, Helmets, Facemasks, Containers")),
 			};
 	    }
 
@@ -483,9 +481,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 					if (shaderName == "p0/Reflective/Bumped Specular SMap" ||
 						shaderName == "p0/Reflective/Bumped Specular SMap_Decal")
 					{
-						// decal shader works only on fragments with _StencilType = 2
-						// so set everything on player body to 1, to keept it clean from decals
-						material.SetFloat(_StencilType, 1);
+						// weapons and mods have _StencilType = 2,
+						// equipment (including helmets) have _StencilType = 1,
+						// cases have _StencilType = 0,
+						// map environment decals and bullet holes target _StencilType = 0,
+						// which means to keep head clean from helmet decals, we should set it stencil to 0,
+						// which means to keep hands and body clean from weapon decals, we should set it stencil to 1
+
+						if (part.Key == EBodyModelPart.Head)
+						{
+							material.SetFloat(_StencilType, 0);
+						}
+						else
+						{
+							material.SetFloat(_StencilType, 1);
+						}
 					}
                 }
 			}

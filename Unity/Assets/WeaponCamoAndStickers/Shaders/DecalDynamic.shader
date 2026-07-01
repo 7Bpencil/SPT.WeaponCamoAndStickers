@@ -1,6 +1,7 @@
 Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
-		_StencilPassOperation ("Stencil Pass Operation", Float) = 0 // this has to be float, integer doesn't work
+        [MaterialEnum(Static, 0, Characters, 1, Hands, 2)] _StencilType ("_StencilType", Float) = 2
+		[MaterialEnum(Keep, 0, DecrementWrap, 7)] _StencilPassOperation ("Stencil Pass Operation", Float) = 0
         _MainTex ("Diffuse", 2D) = "white" {}
         _MainTexUV ("Diffuse UV", Vector) = (0, 0, 1, 1)
         _MaskTex ("Mask", 2D) = "white" {}
@@ -31,7 +32,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
             // 0: everything else
 
             Stencil {
-                Ref 2
+                Ref [_StencilType]
                 ReadMask 3
                 WriteMask 3
                 Comp Equal

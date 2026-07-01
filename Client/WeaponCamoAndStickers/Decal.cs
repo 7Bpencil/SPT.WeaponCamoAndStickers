@@ -13,6 +13,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	public class Decal : MonoBehaviour
 	{
+		public static readonly int _StencilType = Shader.PropertyToID("_StencilType");
 		public static readonly int _StencilPassOperation = Shader.PropertyToID("_StencilPassOperation");
 		public static readonly int _MainTex = Shader.PropertyToID("_MainTex");
 		public static readonly int _MainTexUV = Shader.PropertyToID("_MainTexUV");
@@ -46,6 +47,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			ChangeColor(info.ColorHSVA);
 			ChangeMaxAngle(info.MaxAngle);
 			ChangePaintMode(info.PaintMode);
+			ChangeStencilType(info.StencilType);
 
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 		}
@@ -112,9 +114,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				// erase downs that number to 1 (same as hands),
 				// preventing other decals from rendering
 
-	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.DecrementSaturate);
+	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.DecrementWrap);
 				DecalMaterial.EnableKeyword(DecalMaterialKeywordErase);
 			}
+		}
+
+		public void ChangeStencilType(byte stencilType)
+		{
+            DecalMaterial.SetFloat(_StencilType, stencilType);
 		}
 
 		public void OnDestroy()

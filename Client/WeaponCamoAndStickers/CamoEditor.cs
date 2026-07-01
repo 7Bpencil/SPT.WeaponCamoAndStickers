@@ -5,6 +5,8 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using EFT.AssetsManager;
+using EFT.InventoryLogic;
 using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
@@ -209,9 +211,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public RuntimeGizmos RuntimeGizmos;
         public string ItemId;
         public int InstanceID;
-        public WeaponPrefab WeaponPrefab;
+        public ItemType ItemType;
+        public AssetPoolObject AssetPoolObject;
+        public Transform DecalsRoot;
         public Transform WeaponPreviewRotator;
-        public float PreviewPivotZ;
+        public Vector3 PreviewPivot;
+        public byte StencilType;
         public bool IsOpened;
         public bool ArePresetsOpened;
         public TextField<string> CurrentPresetName = new(v => v, TryParsePresetName);
@@ -539,7 +544,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
             {
-                Plugin.SwitchToRandomPreset(ItemId, InstanceID, WeaponPrefab, Camera);
+                Plugin.SwitchToRandomPreset(ItemId, InstanceID, AssetPoolObject, DecalsRoot, Camera);
             }
             y += buttonHeight + mediumMargin;
 
@@ -555,7 +560,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private void SwitchToPreset(string presetName)
         {
-            Plugin.SwitchToPreset(ItemId, InstanceID, WeaponPrefab, Camera, presetName);
+            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, presetName);
         }
 
         private void DrawDecalsListUI(int windowID)
@@ -600,14 +605,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var lineX = x;
                 if (GUI.Button(new Rect(x, y, halfBoxWidthButton, buttonHeight), "Add Eraser"))
                 {
-                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
+                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, ItemType, AssetPoolObject, DecalsRoot, WeaponPreviewRotator, PreviewPivot, StencilType, Camera);
                     SetCurrentlyEditedDecal(newDecalIndex, DecalTextureType.Mask); // technicaly eraser doesnt have texture type, but whatever...
                 }
                 lineX += halfBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, halfBoxWidthButton, buttonHeight), "Add Paint"))
                 {
-                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, WeaponPrefab, WeaponPreviewRotator, PreviewPivotZ, Camera);
+                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, ItemType, AssetPoolObject, DecalsRoot, WeaponPreviewRotator, PreviewPivot, StencilType, Camera);
                     var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
                     var textureData = Plugin.GetTextureData(decalInfo.Texture);
                     SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);

@@ -69,6 +69,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.Put(d.IsVisible);
             writer.PutEnum<DecalMirrorMode>(d.MirrorMode);
             writer.PutEnum<DecalPaintMode>(d.PaintMode);
+            writer.Put(d.StencilType);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -92,6 +93,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 IsVisible = reader.GetBool(),
                 MirrorMode = reader.GetEnum<DecalMirrorMode>(),
                 PaintMode = reader.GetEnum<DecalPaintMode>(),
+                StencilType = reader.GetByte(),
             };
         }
     }
