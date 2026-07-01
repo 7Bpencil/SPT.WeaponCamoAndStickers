@@ -292,7 +292,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             InventoryIconCameras = new();
             PlayerModelViewCameras = new();
 
-            DecalRenderer = new(ItemsWithDecals, WeaponPreviewCameras, InventoryIconCameras, PlayerModelViewCameras);
+            DecalRenderer = new(ItemsWithDecals, InstanceIdToItemId, WeaponPreviewCameras, InventoryIconCameras, PlayerModelViewCameras);
 
             WeaponsWaitingForRemoteCamo = new();
 

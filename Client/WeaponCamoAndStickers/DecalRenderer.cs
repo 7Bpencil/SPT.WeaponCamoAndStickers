@@ -17,6 +17,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private Mesh Cube;
 		private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
+        private Dictionary<int, string> InstanceIdToItemId;
         private Dictionary<Camera, string> WeaponPreviewCameras;
         private Dictionary<Camera, string> InventoryIconCameras;
         private HashSet<Camera> PlayerModelViewCameras;
@@ -24,12 +25,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public DecalRenderer(
 			Dictionary<string, ItemsWithDecals> itemsWithDecals,
+	        Dictionary<int, string> instanceIdToItemId,
 			Dictionary<Camera, string> weaponPreviewCameras,
 	        Dictionary<Camera, string> inventoryIconCameras,
 			HashSet<Camera> playerModelViewCameras)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 			ItemsWithDecals = itemsWithDecals;
+			InstanceIdToItemId = instanceIdToItemId;
 			WeaponPreviewCameras = weaponPreviewCameras;
 	        InventoryIconCameras = inventoryIconCameras;
 			PlayerModelViewCameras = playerModelViewCameras;
@@ -128,10 +131,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawAllDecals(Camera currentCamera, CommandBuffer buffer)
 		{
-			// TODO some simple culling
-			foreach (var itemsWithDecals in ItemsWithDecals.Values)
+			// ItemsWithDecals is a global database, that can have thousands of items,
+			// but often only a dozen are in the world at once.
+			// InstanceIdToItemId lists only actually spawned instances,
+			// so iterating over it is more optimal
+
+			foreach (var (instanceID, itemId) in InstanceIdToItemId)
 			{
-				DrawDecalsOnItem(itemsWithDecals, currentCamera, buffer);
+				if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals) &&
+					itemsWithDecals.Items.TryGetValue(instanceID, out var itemWithDecals))
+				{
+					// TODO some simple culling
+					var decalsInfo = itemsWithDecals.DecalsInfo;
+					DrawDecalsOnItem(itemWithDecals, decalsInfo, currentCamera, buffer);
+				}
 			}
 		}
 
@@ -139,42 +152,42 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
 			if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
 			{
-				DrawDecalsOnItem(itemsWithDecals, currentCamera, buffer);
+				var decalsInfo = itemsWithDecals.DecalsInfo;
+				foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+				{
+					DrawDecalsOnItem(itemWithDecals, decalsInfo, currentCamera, buffer);
+				}
 			}
 		}
 
-		private void DrawDecalsOnItem(ItemsWithDecals itemsWithDecals, Camera currentCamera, CommandBuffer buffer)
+		private void DrawDecalsOnItem(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
 		{
-			var decalsInfo = itemsWithDecals.DecalsInfo;
-			foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+			var decals = itemWithDecals.Decals;
+			var decalsRoot = itemWithDecals.DecalsRoot;
+			for (var i = 0; i < decals.Count; i++)
 			{
-				var decals = itemWithDecals.Decals;
-				var decalsRoot = itemWithDecals.DecalsRoot;
-				for (var i = 0; i < decals.Count; i++)
+				var decalInfo = decalsInfo[i];
+				var decal = decals[i];
+				if (decalInfo.IsVisible && decal)
 				{
-					var decalInfo = decalsInfo[i];
-					var decal = decals[i];
-					if (decalInfo.IsVisible && decal)
+					switch (decalInfo.MirrorMode)
 					{
-						switch (decalInfo.MirrorMode)
+						case DecalMirrorMode.Disabled:
 						{
-							case DecalMirrorMode.Disabled:
-							{
-								DrawDecal(decal, buffer);
-								break;
-							}
-							case DecalMirrorMode.Enabled:
-							{
-								DrawDecal(decal, buffer);
-								DrawDecalMirrored(decal, true, decalsRoot, buffer);
-								break;
-							}
-							case DecalMirrorMode.EnabledNoFlip:
-							{
-								DrawDecal(decal, buffer);
-								DrawDecalMirrored(decal, false, decalsRoot, buffer);
-								break;
-							}
+							DrawDecal(decal, buffer);
+							break;
+						}
+						case DecalMirrorMode.Enabled:
+						{
+							DrawDecal(decal, buffer);
+							DrawDecalMirrored(decal, true, decalsRoot, buffer);
+							break;
+						}
+						case DecalMirrorMode.EnabledNoFlip:
+						{
+							DrawDecal(decal, buffer);
+							DrawDecalMirrored(decal, false, decalsRoot, buffer);
+							break;
 						}
 					}
 				}
