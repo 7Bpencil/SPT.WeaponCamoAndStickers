@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -24,14 +25,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public Rect WindowRect = CamoEditor.GetDefaultWindowRect();
 
 		public const int errorMargin = (openCloseButtonHeight - buttonHeight) / 2;
-        public const int windowWidth = CamoEditor.windowWidth;
-        public const int buttonHeight = CamoEditor.buttonHeight;
-        public const int boxWidth = CamoEditor.boxWidth;
-        public const int openCloseButtonWidth = CamoEditor.openCloseButtonWidth;
-        public const int openCloseButtonHeight = CamoEditor.openCloseButtonHeight;
-        public static readonly Rect openCloseButtonIconRect = CamoEditor.openCloseButtonIconRect;
-        public const int mainIconWidth = CamoEditor.mainIconWidth;
-        public static readonly Color backgroundColor = CamoEditor.backgroundColor;
 
         public void DrawWindow()
 		{

@@ -19,6 +19,7 @@ using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorReso
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
 using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
+using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.MaterialEditor
 {
@@ -95,62 +96,21 @@ namespace SevenBoldPencil.MaterialEditor
         public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
-		public Rect WindowRect = GetDefaultWindowRect();
+		public Rect WindowRect = BigCamoEditor.GetDefaultWindowRect();
 
         // brace for imGUI shitshow
 
-        public const int iconColumns = 5;
         public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
         public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
         public const int maxPresetsVisible = 24;
-        public const int maxPresetNameLength = 25;
-        public const int maxDecalNameLength = 30;
 
-        public const int smallMargin = 4;
-        public const int mediumMargin = 8;
-        public const int bigMargin = 14;
-
-        public const int startX = 10;
-        public const int startY = 10;
-        public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
-        public const int buttonHeight = 32;
-        public const int smallIconSize = 16;
-        public const int iconSize = buttonHeight * 2 + smallMargin;
-        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxEraseMaskIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 25 * (buttonHeight + smallMargin) - smallMargin;
-        public const int boxWidth = windowWidth - bigMargin * 2;
-        public const int boxHeight = iconSize + smallMargin * 2;
-        public const int nameWidth = 120;
-        public const int longFieldWidth = 60;
-        public const int halfBoxWidthButton = (boxWidth - smallMargin) / 2;
-        public const int thirdBoxWidthButton = (boxWidth - smallMargin * 2) / 3;
-        public const int fourthBoxWidthButton = (halfBoxWidthButton - smallMargin) / 2;
-        public const int sixthBoxWidthButton = (thirdBoxWidthButton - smallMargin) / 2;
-        public const int openCloseButtonWidth = 22;
-        public const int openCloseButtonHeight = 66;
-        public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
+
         public static readonly int colorPickerY_Color = 217;
         public static readonly int colorPickerY_SpecColor = 469;
         public static readonly int colorPickerY_ReflectColor = 721;
         public static readonly int colorPickerSize = hsCircleDiameter + bigMargin * 2;
-        public const int hsCircleDiameter = 174;
-        public const int mainIconWidth = 62;
-        public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
-        public static readonly Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
-        public static readonly Color scrollBarHandleColor = new(183, 195, 202, 255);
-        public const int scrollBarWidth = 4;
-
-        public static Rect GetDefaultWindowRect()
-        {
-            return new(startX, startY, mainIconWidth, openCloseButtonHeight);
-        }
-
-        public static void DrawColor(Rect rect, Color color)
-        {
-            GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, color, 0, 0);
-        }
 
         public void DrawWindow()
         {
@@ -376,7 +336,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawOpenedWindow_Presets(int windowID)
         {
-            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var x = bigMargin;
             var y = bigMargin;
@@ -387,7 +347,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
             y += buttonHeight + bigMargin;
 
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
             BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentItemPresetName, SaveItemsIntoPreset, CamoEditorResources, CamoEditorStyle);
@@ -408,7 +368,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawOpenedWindow(int windowID)
 		{
-            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var x = bigMargin;
             var y = bigMargin;
@@ -419,7 +379,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
             y += buttonHeight + bigMargin;
 
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin;
 
             var scrollRectY = y + bigMargin;
@@ -434,7 +394,7 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 var item = Items[i];
                 DrawItemMaterials(ref x, ref y, i, item);
-                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+                BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
                 y += smallMargin;
             }
             {
@@ -517,7 +477,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawMaterialEditUI_Presets(int windowID)
         {
-            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var (item, materialName, _, _) = GetEditedMaterialInfo();
 
@@ -539,7 +499,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
             y += buttonHeight + bigMargin;
 
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
 
@@ -569,7 +529,7 @@ namespace SevenBoldPencil.MaterialEditor
             var sliderX = labelX + labelWidth + smallMargin;
             var valueX = sliderX + sliderWidth + smallMargin;
 
-            DrawColor(new Rect(labelX, y + 8, buttonHeight, buttonHeight / 2), colorHSV.HSVtoRGBA());
+            BigCamoEditor.DrawColor(new Rect(labelX, y + 8, buttonHeight, buttonHeight / 2), colorHSV.HSVtoRGBA());
             GUI.Label(new Rect(labelX + buttonHeight + mediumMargin, y, boxWidth, buttonHeight), name, CamoEditorStyle.LabelStyleName);
 
 
@@ -681,7 +641,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawMaterialEditUI_Material(int windowID)
         {
-            DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var (_, materialName, materialInfo, _) = GetEditedMaterialInfo();
             var colorHSV = materialInfo.ColorHSV;
@@ -712,7 +672,7 @@ namespace SevenBoldPencil.MaterialEditor
             }
             y += buttonHeight + bigMargin;
 
-            DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
             var advancedSettingsLabel = AreAdvancedSettingsOpened ? "Hide Advanced Settings" : "Show Advanced Settings";
@@ -805,7 +765,7 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 y += iconSize + bigMargin;
 
-                DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+                BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
                 y += smallMargin + bigMargin;
 
                 DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
@@ -925,7 +885,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawOpenedWindowCloseButton(int windowID)
         {
-            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
             GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIcon, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
@@ -937,7 +897,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawClosedWindow(int windowID)
         {
-            DrawColor(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), backgroundColor);
             GUI.DrawTexture(new Rect(0, 0, mainIconWidth, openCloseButtonHeight), CamoEditorResources.MainIconMaterial, ScaleMode.StretchToFill);
 
 			GUI.DragWindow();
@@ -945,7 +905,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawClosedWindowOpenButton(int windowID)
         {
-            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
             GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.ClosedIcon, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
@@ -971,7 +931,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawColorPickerWindowCloseButton_Common(ref bool isColorPickerOpened)
         {
-            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
             GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.OpenedIconColorWheel, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
@@ -996,7 +956,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawColorPickerWindowOpenButton(ref bool isColorPickerOpened)
         {
-            DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), backgroundColor);
             GUI.DrawTexture(openCloseButtonIconRect, CamoEditorResources.ClosedIconColorWheel, ScaleMode.StretchToFill);
             if (GUI.Button(new Rect(0, 0, openCloseButtonWidth, openCloseButtonHeight), GUIContent.none, GUIStyle.none))
             {
@@ -1034,7 +994,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, Action<string, string, Vector3> changeColorAction)
         {
-            DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
+            BigCamoEditor.DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
 
             var x = bigMargin;
             var y = bigMargin;

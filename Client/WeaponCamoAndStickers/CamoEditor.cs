@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -97,7 +98,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             TextFieldStyle = new(currentSkin.textField)
             {
                 alignment = TextAnchor.MiddleLeft,
-                contentOffset = new Vector2(CamoEditor.mediumMargin, 0)
+                contentOffset = new Vector2(mediumMargin, 0)
             };
 
             RGBHexTextFieldStyle = new(currentSkin.textField)
@@ -201,6 +202,44 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Mask
     }
 
+    public static class CamoEditorConstants
+    {
+        public const int iconColumns = 5;
+        public const int maxPresetNameLength = 25;
+        public const int maxDecalNameLength = 30;
+
+        public const int smallMargin = 4;
+        public const int mediumMargin = 8;
+        public const int bigMargin = 14;
+
+        public const int startX = 10;
+        public const int startY = 10;
+
+        public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
+        public const int buttonHeight = 32;
+        public const int smallIconSize = 16;
+        public const int iconSize = buttonHeight * 2 + smallMargin;
+        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
+        public const int boxWidth = windowWidth - bigMargin * 2;
+        public const int boxHeight = iconSize + smallMargin * 2;
+        public const int nameWidth = 120;
+        public const int longFieldWidth = 60;
+        public const int halfBoxWidthButton = (boxWidth - smallMargin) / 2;
+        public const int thirdBoxWidthButton = (boxWidth - smallMargin * 2) / 3;
+        public const int fourthBoxWidthButton = (halfBoxWidthButton - smallMargin) / 2;
+        public const int sixthBoxWidthButton = (thirdBoxWidthButton - smallMargin) / 2;
+        public const int openCloseButtonWidth = 22;
+        public const int openCloseButtonHeight = 66;
+        public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
+        public const int hsCircleDiameter = 174;
+        public const int mainIconWidth = 62;
+        public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
+        public static readonly Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
+        public static readonly Color scrollBarHandleColor = new(183, 195, 202, 255);
+        public const int scrollBarWidth = 4;
+    }
+
     public class CamoEditor
     {
         public Plugin Plugin;
@@ -236,43 +275,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         // brace for imGUI shitshow
 
-        public const int iconColumns = 5;
         public const int maxDecalsVisible = 10;
         public const int maxPresetsVisible = 22;
-        public const int maxPresetNameLength = 25;
-        public const int maxDecalNameLength = 30;
-
-        public const int smallMargin = 4;
-        public const int mediumMargin = 8;
-        public const int bigMargin = 14;
-
-        public const int startX = 10;
-        public const int startY = 10;
-        public const int windowWidth = bigMargin + (iconSize + smallMargin) * iconColumns - smallMargin + bigMargin;
-        public const int buttonHeight = 32;
-        public const int smallIconSize = 16;
-        public const int iconSize = buttonHeight * 2 + smallMargin;
-        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxEraseMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
-        public const int boxWidth = windowWidth - bigMargin * 2;
-        public const int boxHeight = iconSize + smallMargin * 2;
-        public const int nameWidth = 120;
-        public const int longFieldWidth = 60;
-        public const int halfBoxWidthButton = (boxWidth - smallMargin) / 2;
-        public const int thirdBoxWidthButton = (boxWidth - smallMargin * 2) / 3;
-        public const int fourthBoxWidthButton = (halfBoxWidthButton - smallMargin) / 2;
-        public const int sixthBoxWidthButton = (thirdBoxWidthButton - smallMargin) / 2;
-        public const int openCloseButtonWidth = 22;
-        public const int openCloseButtonHeight = 66;
-        public static readonly Rect openCloseButtonIconRect = new(2, 3, 18, 61);
         public static readonly Rect colorPickerRect = new(0, 252, 230, 304);
-        public const int hsCircleDiameter = 174;
-        public const int mainIconWidth = 62;
-        public static readonly Color backgroundColor = new(0.15f, 0.15f, 0.15f, 1f);
-        public static readonly Color separatorColor = new(0.1f, 0.1f, 0.1f, 1f);
-        public static readonly Color scrollBarHandleColor = new(183, 195, 202, 255);
-        public const int scrollBarWidth = 4;
 
         public static Rect GetDefaultWindowRect()
         {
