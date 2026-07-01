@@ -2327,7 +2327,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // so keep cursor visible
         public bool CanHideCursor()
         {
-            return !CamoEditor.HasValue && CamoEditorError.HasValue;
+            return !CamoEditor.HasValue && !CamoEditorError.HasValue;
         }
 
         public void SwitchToRandomPreset(string itemId, int instanceID, AssetPoolObject assetPoolObject, Transform decalsRoot, Camera weaponPreviewCamera)
