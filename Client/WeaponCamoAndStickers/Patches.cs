@@ -296,6 +296,29 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
+	public class Patch_WeaponPrefab_InitHotObjects : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(WeaponPrefab), nameof(WeaponPrefab.InitHotObjects));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(WeaponPrefab __instance)
+		{
+			// this is the old way of tracking when weapon spawns (when decals were only for weapons),
+			// but for some reason new way doesn't work for bots, so reintroduce it back,
+			// OnItemPrefabCreated safely catches multiple inits anyway
+
+			var __instance__ = new WeaponPrefab_Proxy(__instance);
+			var item = __instance__.weapon_0;
+			if (item != null)
+			{
+				Plugin.Instance.OnItemPrefabCreated(item.Id, ItemType.Weapon, __instance);
+			}
+		}
+	}
+
 	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()

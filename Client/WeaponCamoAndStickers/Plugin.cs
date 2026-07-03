@@ -305,6 +305,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_PoolManagerClass_CreateItemAsync().Enable();
             new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_WeaponPrefab_InitHotObjects().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_GClass3380_smethod_2().Enable();
