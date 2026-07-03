@@ -6,7 +6,6 @@
 //
 
 using RuntimeHandle;
-using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers

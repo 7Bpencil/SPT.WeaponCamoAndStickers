@@ -11,7 +11,6 @@ using Diz.Jobs;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
-using EFT.Visual;
 using EFT.CameraControl;
 using EFT.UI;
 using EFT.UI.WeaponModding;

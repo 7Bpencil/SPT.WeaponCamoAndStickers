@@ -5,11 +5,6 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using EFT.AssetsManager;
-using SevenBoldPencil.Common;
-using System;
-using System.Collections.Generic;
-using RuntimeHandle;
 using UnityEngine;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 

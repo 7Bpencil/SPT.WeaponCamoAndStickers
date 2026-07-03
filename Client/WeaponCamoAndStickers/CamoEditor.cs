@@ -6,7 +6,6 @@
 //
 
 using EFT.AssetsManager;
-using EFT.InventoryLogic;
 using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
