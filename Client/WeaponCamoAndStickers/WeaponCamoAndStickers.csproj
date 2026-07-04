@@ -97,4 +97,14 @@
     <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(OutDir)\bundles&quot;" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
   </Target>
+
+  <Target Name="CopyToSPT" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+    <PropertyGroup>
+      <OutDir>$(ProjectDir)..\..\Stage\BepInEx\plugins\$(TargetName)</OutDir>
+    </PropertyGroup>
+    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
+    <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(OutDir)\bundles&quot;" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
+  </Target>
+
 </Project>

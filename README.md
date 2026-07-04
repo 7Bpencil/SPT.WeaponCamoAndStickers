@@ -3,8 +3,9 @@
 Clone into `Escape from Tarkov/Development/SPT.WeaponCamoAndStickers`<br>
 `dotnet build ./Client` will compile all projects including Fika support<br>
 `dotnet build ./Client/MaterialEditor` will skip Fika support<br>
-add `-c Release` at the end to get optimized build<br>
 Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.WeaponCamoAndStickers`<br>
+add `-c Release` to get optimized build and copy artifacts into `Escape from Tarkov/Development/7Bpencil.WeaponCamoAndStickers/Stage`<br>
+add `-p:DefineConstants=LOG_ALL` to print info messages into BepInEx console<br>
 
 ## APPLY PAINT
 
