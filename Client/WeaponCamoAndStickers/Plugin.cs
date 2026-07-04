@@ -2839,6 +2839,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 HeadwearItemClass => new(ItemType.Headwear),
                 FaceCoverItemClass => new(ItemType.FaceCover),
                 SimpleContainerItemClass => new(ItemType.Container),
+                MobContainerItemClass => new(ItemType.Container),
                 _ => default,
             };
         }
