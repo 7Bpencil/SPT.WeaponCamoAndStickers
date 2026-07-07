@@ -33,22 +33,12 @@
     <Reference Include="UnityEngine.VideoModule" />
   </ItemGroup>
 
-  <Target Name="CopyToSPT" AfterTargets="AfterBuild">
-    <PropertyGroup>
-      <OutDir>$(ProjectDir)..\..\..\..\BepInEx\plugins\$(TargetName)</OutDir>
-    </PropertyGroup>
-    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
-    <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(OutDir)\bundles&quot;" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
+  <Target Name="CopyBundlesToSPT" AfterTargets="AfterBuild">
+    <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(OutPath)\bundles&quot;" />
   </Target>
 
-  <Target Name="CopyToSPT" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
-    <PropertyGroup>
-      <OutDir>$(ProjectDir)..\..\Stage\BepInEx\plugins\$(TargetName)</OutDir>
-    </PropertyGroup>
-    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
-    <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(OutDir)\bundles&quot;" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
+  <Target Name="CopyBundlesToStage" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+    <Exec Command="xcopy /hievry &quot;$(ProjectDir)bundles&quot; &quot;$(StagePath)\bundles&quot;" />
   </Target>
 
 </Project>

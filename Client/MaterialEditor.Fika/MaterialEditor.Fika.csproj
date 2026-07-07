@@ -19,20 +19,5 @@
     <Reference Include="UnityEngine.CoreModule" />
   </ItemGroup>
 
-  <Target Name="CopyToSPT" AfterTargets="AfterBuild">
-    <PropertyGroup>
-      <OutDir>$(ProjectDir)..\..\..\..\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</OutDir>
-    </PropertyGroup>
-    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
-  </Target>
-
-  <Target Name="CopyToSPT" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
-    <PropertyGroup>
-      <OutDir>$(ProjectDir)..\..\Stage\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</OutDir>
-    </PropertyGroup>
-    <Exec Command="mkdir &quot;$(OutDir)&quot;" ContinueOnError="true" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutDir)" />
-  </Target>
 
 </Project>

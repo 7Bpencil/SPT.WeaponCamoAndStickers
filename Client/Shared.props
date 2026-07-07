@@ -10,6 +10,8 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <SPTPath>..\..\..\..</SPTPath>
+    <OutPath>$(SPTPath)\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</OutPath>
+    <StagePath>$(ProjectDir)..\..\Stage\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</StagePath>
     <AssemblySearchPaths>
       $(AssemblySearchPaths);
       $(SPTPath)\EscapeFromTarkov_Data\Managed;
@@ -18,4 +20,15 @@
       $(SPTPath)\BepInEx\plugins\Fika;
     </AssemblySearchPaths>
   </PropertyGroup>
+
+  <Target Name="CopyToSPT" AfterTargets="AfterBuild">
+    <Exec Command="mkdir &quot;$(OutPath)&quot;" ContinueOnError="true" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(OutPath)" />
+  </Target>
+
+  <Target Name="CopyToStage" AfterTargets="AfterBuild" Condition="'$(Configuration)'=='Release'">
+    <Exec Command="mkdir &quot;$(StagePath)&quot;" ContinueOnError="true" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(StagePath)" />
+  </Target>
+
 </Project>
