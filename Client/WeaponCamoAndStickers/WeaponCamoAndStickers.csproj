@@ -1,17 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\Shared.props" />
+
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>SevenBoldPencil.WeaponCamoAndStickers</RootNamespace>
-    <Nullable>disable</Nullable>
-    <Authors>7Bpencil</Authors>
-    <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
     <AssemblyName>7Bpencil.WeaponCamoAndStickers</AssemblyName>
-    <AssemblyVersion>1.16.1</AssemblyVersion>
-    <FileVersion>$(AssemblyVersion)</FileVersion>
-    <Version>$(AssemblyVersion)</Version>
-    <LangVersion>latest</LangVersion>
-    <Deterministic>true</Deterministic>
   </PropertyGroup>
 
   <ItemGroup>
