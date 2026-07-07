@@ -9,5 +9,13 @@
     <Version>$(AssemblyVersion)</Version>
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
+    <SPTPath>..\..\..\..</SPTPath>
+    <AssemblySearchPaths>
+      $(AssemblySearchPaths);
+      $(SPTPath)\EscapeFromTarkov_Data\Managed;
+      $(SPTPath)\BepInEx\core;
+      $(SPTPath)\BepInEx\plugins\spt;
+      $(SPTPath)\BepInEx\plugins\Fika;
+    </AssemblySearchPaths>
   </PropertyGroup>
 </Project>
