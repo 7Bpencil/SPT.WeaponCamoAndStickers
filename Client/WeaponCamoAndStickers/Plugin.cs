@@ -1001,11 +1001,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public Transform GetDecalsRoot(string itemId, int instanceID)
-        {
-            return ItemsWithDecals[itemId].Items[instanceID].DecalsRoot;
-        }
-
         // TODO this sometimes panics, no idea why
         public (DecalInfo, Decal) GetDecal(string itemId, int instanceID, int decalIndex)
         {

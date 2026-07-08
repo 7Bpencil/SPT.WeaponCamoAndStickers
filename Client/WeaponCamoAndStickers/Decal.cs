@@ -28,14 +28,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public Material DecalMaterial;
 		public LocalKeyword DecalMaterialKeywordErase;
 		public Transform DecalTransform;
+		public Transform DecalRoot;
 
 		public void Init(DecalInfo info, Transform root, Shader shader)
 		{
-			DecalTransform = transform;
 			DecalMaterial = new Material(shader);
 			DecalMaterialKeywordErase = new LocalKeyword(shader, "ERASE");
+			DecalTransform = transform;
+			DecalRoot = root;
 
-            DecalTransform.parent = root;
+            DecalTransform.parent = DecalRoot;
 			DecalTransform.localPosition = info.LocalPosition;
 			DecalTransform.localEulerAngles = info.LocalEulerAngles;
 			ChangeLocalScale(info.LocalScale);
