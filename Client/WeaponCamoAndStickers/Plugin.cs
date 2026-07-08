@@ -38,6 +38,52 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Container,
     }
 
+    public interface IDecalsHost
+    {
+        public Transform GetDecalRoot(string bone);
+    }
+
+    public class SimpleDecalsHost : IDecalsHost
+    {
+        public readonly Transform DecalsRoot;
+
+        public SimpleDecalsHost(Transform decalsRoot)
+        {
+            DecalsRoot = decalsRoot;
+        }
+
+        public Transform GetDecalRoot(string bone)
+        {
+            return DecalsRoot;
+        }
+    }
+
+    public class SkinnedDecalsHost : IDecalsHost
+    {
+        public readonly Transform DefaultDecalsRoot;
+        public readonly PlayerBody PlayerBody;
+
+        public SkinnedDecalsHost(Transform defaultDecalsRoot, PlayerBody playerBody)
+        {
+            DefaultDecalsRoot = defaultDecalsRoot;
+            PlayerBody = playerBody;
+        }
+
+        public Transform GetDecalRoot(string bone)
+        {
+		    if (string.IsNullOrWhiteSpace(bone))
+            {
+                return DefaultDecalsRoot;
+            }
+			if (PlayerBody.SkeletonRootJoint.Bones.TryGetValue(bone, out var boneTransform))
+            {
+                return boneTransform;
+            }
+
+            return DefaultDecalsRoot;
+        }
+    }
+
     public class ItemsWithDecals
     {
         // yes, there can be multiple items with same Id,
@@ -49,7 +95,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class ItemWithDecals
     {
-        public Transform DecalsRoot;
+        public IDecalsHost DecalsHost;
         public List<Decal> Decals;
     }
 
@@ -1719,14 +1765,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemsWithDecals.DecalsInfo.Insert(decalIndex, decalInfo);
             foreach (var itemWithDecals in itemsWithDecals.Items.Values)
             {
-                var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                var decal = CreateDecal(decalInfo, itemWithDecals.DecalsHost);
                 itemWithDecals.Decals.Insert(decalIndex, decal);
             }
         }
 
         public void CreateNewItemsWithDecals(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, DecalInfo decalInfo)
         {
-            var decal = CreateDecal(decalInfo, decalsRoot);
+            var decalsHost = new SimpleDecalsHost(decalsRoot);
+            var decal = CreateDecal(decalInfo, decalsHost);
             var decals = new List<Decal>() { decal };
             var decalsInfo = new List<DecalInfo>() { decalInfo };
             var itemsWithDecals = new ItemsWithDecals()
@@ -1737,7 +1784,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                         instanceID,
                         new ItemWithDecals()
                         {
-                            DecalsRoot = decalsRoot,
+                            DecalsHost = decalsHost,
                             Decals = decals,
                         }
                     }
@@ -1990,15 +2037,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalsInfo = itemsWithDecals.DecalsInfo;
             var decals = new List<Decal>(decalsInfo.Count);
             var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
+            var decalsHost = new SimpleDecalsHost(decalsRoot);
             foreach (var decalInfo in decalsInfo)
             {
-                var decal = CreateDecal(decalInfo, decalsRoot);
+                var decal = CreateDecal(decalInfo, decalsHost);
                 decals.Add(decal);
             }
 
             var itemWithDecals = new ItemWithDecals()
             {
-                DecalsRoot = decalsRoot,
+                DecalsHost = decalsHost,
                 Decals = decals,
             };
 
@@ -2008,9 +2056,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Logger.Log(LogLevel.Info, "Item", "Created, with decals", itemId, instanceID);
         }
 
-		public Decal CreateDecal(DecalInfo decalInfo, Transform decalRoot)
+		public Decal CreateDecal(DecalInfo decalInfo, IDecalsHost decalsHost)
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
+            var decalRoot = decalsHost.GetDecalRoot(decalInfo.Bone);
 			decal.Init(decalInfo, decalRoot, DecalShader);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
             AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
@@ -2385,7 +2434,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var decals = itemWithDecals.Decals;
                     foreach (var decalInfo in decalsInfo)
                     {
-                        var decal = CreateDecal(decalInfo, itemWithDecals.DecalsRoot);
+                        var decal = CreateDecal(decalInfo, itemWithDecals.DecalsHost);
                         decals.Add(decal);
                     }
                 }
@@ -2394,9 +2443,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var decalsInfo = CopyDecalsInfo(presetDecalsInfo);
                 var decals = new List<Decal>(decalsInfo.Count);
+                var decalsHost = new SimpleDecalsHost(decalsRoot);
                 foreach (var decalInfo in decalsInfo)
                 {
-                    var decal = CreateDecal(decalInfo, decalsRoot);
+                    var decal = CreateDecal(decalInfo, decalsHost);
                     decals.Add(decal);
                 }
 
@@ -2408,7 +2458,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             instanceID,
                             new ItemWithDecals()
                             {
-                                DecalsRoot = decalsRoot,
+                                DecalsHost = decalsHost,
                                 Decals = decals,
                             }
                         }
