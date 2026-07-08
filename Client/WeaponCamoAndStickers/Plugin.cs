@@ -55,7 +55,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 8;
+        public const int CurrentSchemaVersion = 9;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -67,6 +67,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public string Mask;
         public Vector4 MaskUV;
         public float MaskAngle;
+        public string Bone;
         public Vector3 LocalPosition;
         public Vector3 LocalEulerAngles;
         public Vector3 LocalScale;
@@ -946,6 +947,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 8;
                     decalInfo.StencilType = 2;
                 }
+                if (decalInfo.SchemaVersion == 8)
+                {
+                    decalInfo.SchemaVersion = 9;
+                    decalInfo.Bone = "";
+                }
             }
         }
 
@@ -1644,6 +1650,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Mask = DefaultMaskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
                 MaskAngle = 0,
+                Bone = "",
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = startLocalScale,
@@ -1682,6 +1689,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Mask = DefaultMaskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
                 MaskAngle = 0,
+                Bone = "",
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = startLocalScale,
@@ -2809,6 +2817,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Mask = maskName,
                 MaskUV = new Vector4(0, 0, 1, 1),
                 MaskAngle = 0,
+                Bone = "",
                 LocalPosition = startLocalPosition,
                 LocalEulerAngles = startLocalEulerAngles,
                 LocalScale = startLocalScale,

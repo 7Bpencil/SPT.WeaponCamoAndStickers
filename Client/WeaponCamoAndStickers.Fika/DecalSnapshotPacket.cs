@@ -62,6 +62,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.Put(d.Mask);
             writer.PutUnmanaged<Vector4>(d.MaskUV);
             writer.Put(d.MaskAngle);
+            writer.Put(d.Bone);
             writer.PutUnmanaged<Vector3>(d.LocalPosition);
             writer.PutUnmanaged<Vector3>(d.LocalEulerAngles);
             writer.PutUnmanaged<Vector3>(d.LocalScale);
@@ -86,6 +87,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 Mask = reader.GetString(),
                 MaskUV = reader.GetUnmanaged<Vector4>(),
                 MaskAngle = reader.GetFloat(),
+                Bone = reader.GetString(),
                 LocalPosition = reader.GetUnmanaged<Vector3>(),
                 LocalEulerAngles = reader.GetUnmanaged<Vector3>(),
                 LocalScale = reader.GetUnmanaged<Vector3>(),
