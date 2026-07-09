@@ -251,7 +251,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public int InstanceID;
         public ItemType ItemType;
         public AssetPoolObject AssetPoolObject;
-        public Transform DecalsRoot;
+        public SimpleDecalsHost DecalsHost; // this editor supports only simple decals hosts (so no skinned meshes)
         public Transform WeaponPreviewRotator;
         public Vector3 PreviewPivot;
         public byte StencilType;
@@ -554,7 +554,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Generate Random Camo"))
             {
-                Plugin.SwitchToRandomPreset(ItemId, InstanceID, AssetPoolObject, DecalsRoot, Camera);
+                Plugin.SwitchToRandomPreset(ItemId, InstanceID, AssetPoolObject, DecalsHost, Camera);
             }
             y += buttonHeight + mediumMargin;
 
@@ -570,7 +570,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         private void SwitchToPreset(string presetName)
         {
-            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsRoot, Camera, presetName);
+            Plugin.SwitchToPreset(ItemId, InstanceID, DecalsHost, Camera, presetName);
         }
 
         private void DrawDecalsListUI(int windowID)
@@ -616,7 +616,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(x, y, halfBoxWidthButton, buttonHeight), "Add Eraser"))
                 {
                     var newDecalInfo = Plugin.GetNewEraserDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
-                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, newDecalInfo, DecalsRoot, Camera);
+                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
                     SetCurrentlyEditedDecal(newDecalIndex, DecalTextureType.Mask); // technicaly eraser doesnt have texture type, but whatever...
                 }
                 lineX += halfBoxWidthButton + smallMargin;
@@ -624,7 +624,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (GUI.Button(new Rect(lineX, y, halfBoxWidthButton, buttonHeight), "Add Paint"))
                 {
                     var newDecalInfo = Plugin.GetNewPaintDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
-                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, newDecalInfo, DecalsRoot, Camera);
+                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
                     var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
                     var textureData = Plugin.GetTextureData(decalInfo.Texture);
                     SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);

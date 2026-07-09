@@ -1710,7 +1710,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return decalInfo;
         }
 
-        public int AddNewEraserDecal(string itemId, int instanceID, DecalInfo decalInfo, Transform decalsRoot, Camera weaponPreviewCamera)
+        public int AddNewEraserDecal(string itemId, int instanceID, DecalInfo decalInfo, IDecalsHost decalsHost, Camera weaponPreviewCamera)
         {
             if (ItemsWithDecals.ContainsKey(itemId))
             {
@@ -1718,7 +1718,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                CreateNewItemsWithDecals(itemId, instanceID, decalsRoot, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, decalsHost, weaponPreviewCamera, decalInfo);
             }
 
             return 0;
@@ -1754,7 +1754,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return decalInfo;
         }
 
-        public int AddNewPaintDecal(string itemId, int instanceID, DecalInfo decalInfo, Transform decalsRoot, Camera weaponPreviewCamera)
+        public int AddNewPaintDecal(string itemId, int instanceID, DecalInfo decalInfo, IDecalsHost decalsHost, Camera weaponPreviewCamera)
         {
             if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
@@ -1764,7 +1764,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             else
             {
-                CreateNewItemsWithDecals(itemId, instanceID, decalsRoot, weaponPreviewCamera, decalInfo);
+                CreateNewItemsWithDecals(itemId, instanceID, decalsHost, weaponPreviewCamera, decalInfo);
                 return 0;
             }
         }
@@ -1780,9 +1780,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void CreateNewItemsWithDecals(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, DecalInfo decalInfo)
+        public void CreateNewItemsWithDecals(string itemId, int instanceID, IDecalsHost decalsHost, Camera weaponPreviewCamera, DecalInfo decalInfo)
         {
-            var decalsHost = new SimpleDecalsHost(decalsRoot);
             var decal = CreateDecal(decalInfo, decalsHost);
             var decals = new List<Decal>() { decal };
             var decalsInfo = new List<DecalInfo>() { decalInfo };
@@ -2334,6 +2333,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var itemId = GetOriginalItemId(item.Id);
                 var instanceID = assetPoolObject.gameObject.GetInstanceID();
                 var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
+                var decalsHost = new SimpleDecalsHost(decalsRoot);
                 var stencilType = GetItemStencilType(itemType);
 
                 CamoEditor = new(new CamoEditor()
@@ -2346,7 +2346,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     InstanceID = instanceID,
                     ItemType = itemType,
                     AssetPoolObject = assetPoolObject,
-                    DecalsRoot = decalsRoot,
+                    DecalsHost = decalsHost,
                     WeaponPreviewRotator = rotator,
                     PreviewPivot = previewPivot.pivotPosition,
                     StencilType = stencilType,
@@ -2439,23 +2439,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return !CamoEditor.HasValue && !CamoEditorError.HasValue;
         }
 
-        public void SwitchToRandomPreset(string itemId, int instanceID, AssetPoolObject assetPoolObject, Transform decalsRoot, Camera weaponPreviewCamera)
+        public void SwitchToRandomPreset(string itemId, int instanceID, AssetPoolObject assetPoolObject, IDecalsHost decalsHost, Camera weaponPreviewCamera)
         {
             if (assetPoolObject is WeaponPrefab weaponPrefab && GenerateRandomCamoForWeapon(weaponPrefab).Some(out var presetDecalsInfo))
             {
-                SwitchToPreset(itemId, instanceID, decalsRoot, weaponPreviewCamera, presetDecalsInfo);
+                SwitchToPreset(itemId, instanceID, decalsHost, weaponPreviewCamera, presetDecalsInfo);
             }
         }
 
-        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, string presetName)
+        public void SwitchToPreset(string itemId, int instanceID, IDecalsHost decalsHost, Camera weaponPreviewCamera, string presetName)
         {
             if (DecalPresets.TryGetValue(presetName, out var presetDecalsInfo))
             {
-                SwitchToPreset(itemId, instanceID, decalsRoot, weaponPreviewCamera, presetDecalsInfo);
+                SwitchToPreset(itemId, instanceID, decalsHost, weaponPreviewCamera, presetDecalsInfo);
             }
         }
 
-        public void SwitchToPreset(string itemId, int instanceID, Transform decalsRoot, Camera weaponPreviewCamera, List<DecalInfo> presetDecalsInfo)
+        public void SwitchToPreset(string itemId, int instanceID, IDecalsHost decalsHost, Camera weaponPreviewCamera, List<DecalInfo> presetDecalsInfo)
         {
             if (presetDecalsInfo.Count == 0)
             {
@@ -2500,7 +2500,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 var decalsInfo = CopyDecalsInfo(presetDecalsInfo);
                 var decals = new List<Decal>(decalsInfo.Count);
-                var decalsHost = new SimpleDecalsHost(decalsRoot);
                 foreach (var decalInfo in decalsInfo)
                 {
                     var decal = CreateDecal(decalInfo, decalsHost);
