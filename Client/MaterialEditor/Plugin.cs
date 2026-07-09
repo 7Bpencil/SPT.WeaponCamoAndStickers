@@ -695,14 +695,14 @@ namespace SevenBoldPencil.MaterialEditor
 
             Logger.Log(LogLevel.Info, "CamoEditor", "Setup", itemId);
 
-            return new()
-            {
-                Name = GClass2348.Localized(item.Name),
-                ItemId = itemId,
-                InstanceID = instanceID,
-                ItemWithMaterials = itemWithMaterials,
-                OriginalMaterials = originalMaterials,
-            };
+            return new CamoEditorItem
+            (
+                Name: GClass2348.Localized(item.Name),
+                ItemId: itemId,
+                InstanceID: instanceID,
+                ItemWithMaterials: itemWithMaterials,
+                OriginalMaterials: originalMaterials
+            );
         }
 
         public ItemWithMaterials GetOrBuildItemWithMaterials(string itemId, int instanceID, AssetPoolObject assetPoolObject)
@@ -806,14 +806,14 @@ namespace SevenBoldPencil.MaterialEditor
 
             Logger.Log(LogLevel.Info, "CamoEditor", "Setup item", itemId);
 
-            return new()
-            {
-                Name = skin.gameObject.name, // getting the same name as in Overall or Ragfair screens is unreasonably annoying
-                ItemId = itemId,
-                InstanceID = instanceID,
-                ItemWithMaterials = itemWithMaterials,
-                OriginalMaterials = originalMaterials,
-            };
+            return new CamoEditorItem
+            (
+                Name: skin.gameObject.name, // getting the same name as in Overall or Ragfair screens is unreasonably annoying
+                ItemId: itemId,
+                InstanceID: instanceID,
+                ItemWithMaterials: itemWithMaterials,
+                OriginalMaterials: originalMaterials
+            );
         }
 
         public ItemWithMaterials GetOrBuildItemWithMaterials(string itemId, int instanceID, LoddedSkin skin)

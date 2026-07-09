@@ -56,14 +56,14 @@ namespace SevenBoldPencil.MaterialEditor
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
     }
 
-    public class CamoEditorItem
-    {
-        public string Name;
-        public string ItemId;
-        public int InstanceID;
-        public ItemWithMaterials ItemWithMaterials;
-        public Dictionary<string, MaterialInfo> OriginalMaterials;
-    }
+    public record CamoEditorItem
+    (
+        string Name,
+        string ItemId,
+        int InstanceID,
+        ItemWithMaterials ItemWithMaterials,
+        Dictionary<string, MaterialInfo> OriginalMaterials
+    );
 
     public readonly record struct EditedOverride(int ItemIndex, string MaterialName);
 
