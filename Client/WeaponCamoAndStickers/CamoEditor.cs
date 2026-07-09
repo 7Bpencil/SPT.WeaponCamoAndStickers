@@ -615,14 +615,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var lineX = x;
                 if (GUI.Button(new Rect(x, y, halfBoxWidthButton, buttonHeight), "Add Eraser"))
                 {
-                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, ItemType, AssetPoolObject, DecalsRoot, WeaponPreviewRotator, PreviewPivot, StencilType, Camera);
+                    var newDecalInfo = Plugin.GetNewEraserDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
+                    var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, newDecalInfo, DecalsRoot, Camera);
                     SetCurrentlyEditedDecal(newDecalIndex, DecalTextureType.Mask); // technicaly eraser doesnt have texture type, but whatever...
                 }
                 lineX += halfBoxWidthButton + smallMargin;
 
                 if (GUI.Button(new Rect(lineX, y, halfBoxWidthButton, buttonHeight), "Add Paint"))
                 {
-                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, ItemType, AssetPoolObject, DecalsRoot, WeaponPreviewRotator, PreviewPivot, StencilType, Camera);
+                    var newDecalInfo = Plugin.GetNewPaintDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
+                    var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, newDecalInfo, DecalsRoot, Camera);
                     var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
                     var textureData = Plugin.GetTextureData(decalInfo.Texture);
                     SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);

@@ -1680,7 +1680,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return new(previewPivot, Vector3.zero, weaponLocalScale);
         }
 
-        public int AddNewEraserDecal(string itemId, int instanceID, ItemType itemType, AssetPoolObject assetPoolObject, Transform decalsRoot, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType, Camera weaponPreviewCamera)
+        public DecalInfo GetNewEraserDecalInfo(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
@@ -1707,6 +1707,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 StencilType = stencilType,
             };
 
+            return decalInfo;
+        }
+
+        public int AddNewEraserDecal(string itemId, int instanceID, DecalInfo decalInfo, Transform decalsRoot, Camera weaponPreviewCamera)
+        {
             if (ItemsWithDecals.ContainsKey(itemId))
             {
                 SpawnNewDecalOnItems(itemId, 0, decalInfo);
@@ -1719,7 +1724,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return 0;
         }
 
-        public int AddNewPaintDecal(string itemId, int instanceID, ItemType itemType, AssetPoolObject assetPoolObject, Transform decalsRoot, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType, Camera weaponPreviewCamera)
+        public DecalInfo GetNewPaintDecalInfo(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
@@ -1746,6 +1751,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 StencilType = stencilType,
             };
 
+            return decalInfo;
+        }
+
+        public int AddNewPaintDecal(string itemId, int instanceID, DecalInfo decalInfo, Transform decalsRoot, Camera weaponPreviewCamera)
+        {
             if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
                 var decalIndex = itemsWithDecals.DecalsInfo.Count;
