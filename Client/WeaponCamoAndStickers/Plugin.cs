@@ -1991,22 +1991,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
                 {
-                    OnItemPrefabCreated(item.Id, item.Type, assetPoolObject);
+                    if (assetPoolObject is WeaponPrefab weaponPrefab)
+                    {
+                        OnDecalsHostCreated_Weapon(item.Id, item.Type, weaponPrefab);
+                    }
+                    else
+                    {
+                        OnDecalsHostCreated_Item(item.Id, item.Type, assetPoolObject);
+                    }
                 }
             }
         }
 
-        public void OnItemPrefabCreated(string itemId, ItemType itemType, AssetPoolObject assetPoolObject)
+        public void OnDecalsHostCreated_Weapon(string itemId, ItemType itemType, WeaponPrefab weaponPrefab)
         {
             itemId = GetOriginalItemId(itemId);
-            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+            var instanceID = weaponPrefab.gameObject.GetInstanceID();
 
             if (WeaponsWaitingForRandomCamo.Remove(itemId))
             {
-                if (assetPoolObject is WeaponPrefab weaponPrefab)
-                {
-                    GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
-                }
+                GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
             }
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
@@ -2015,7 +2019,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 // only non fika client and fika host can decide if camo will be spawned,
                 // in some cases client can spawn weapon earlier than
                 // host sends info about its camo, so save weapon for future
-                if (IsFikaSupportEnabled && IsFikaServer.Some(out var isFikaServer) && !isFikaServer && assetPoolObject is WeaponPrefab weaponPrefab)
+                if (IsFikaSupportEnabled && IsFikaServer.Some(out var isFikaServer) && !isFikaServer)
                 {
                     WeaponsWaitingForRemoteCamo.TryAdd(itemId, weaponPrefab);
                     Logger.Log(LogLevel.Info, "Item", "Created, cache for possible future camo", itemId, instanceID);
@@ -2024,7 +2028,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 else
                 {
                     Logger.Log(LogLevel.Info, "Item", "Created, no decals", itemId, instanceID);
+                    return;
                 }
+            }
+
+            if (itemsWithDecals.Items.ContainsKey(instanceID))
+            {
+                Logger.Log(LogLevel.Info, "Item", "Potential error. Created, tried to init multiple times (ignore if happened on weapon reload)", itemId, instanceID);
+                return;
+            }
+
+            if (weaponPrefab.TryGetComponent<DressItem>(out _))
+            {
+                // I doubt there are skinned mesh weapons, even if there are, lets not support them
+                return;
+            }
+
+            var decalsRoot = GetDecalsRoot(itemType, weaponPrefab);
+            var decalsHost = new SimpleDecalsHost(decalsRoot);
+            OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
+        }
+
+        public void OnDecalsHostCreated_Item(string itemId, ItemType itemType, AssetPoolObject assetPoolObject)
+        {
+            itemId = GetOriginalItemId(itemId);
+            var instanceID = assetPoolObject.gameObject.GetInstanceID();
+
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                Logger.Log(LogLevel.Info, "Item", "Created, no decals", itemId, instanceID);
                 return;
             }
 
@@ -2034,10 +2066,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
-            var decalsInfo = itemsWithDecals.DecalsInfo;
-            var decals = new List<Decal>(decalsInfo.Count);
+            if (assetPoolObject.TryGetComponent<DressItem>(out _))
+            {
+                // TODO (if its loose loot, just destroy)
+                // we support some skinned mesh items, but they have to be dressed on PlayerBody
+                // to spawn decals properly, at this moment there is only static loot model,
+                // so keep record of this item for future, when it gets put on character,
+                // or gets destroyed (in case it was on floor as loose loot all this time)
+                return;
+            }
+
             var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
             var decalsHost = new SimpleDecalsHost(decalsRoot);
+            OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
+        }
+
+        public void OnDecalsHostCreated(string itemId, int instanceID, IDecalsHost decalsHost, ItemsWithDecals itemsWithDecals)
+        {
+            var decalsInfo = itemsWithDecals.DecalsInfo;
+            var decals = new List<Decal>(decalsInfo.Count);
             foreach (var decalInfo in decalsInfo)
             {
                 var decal = CreateDecal(decalInfo, decalsHost);
@@ -2683,7 +2730,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (WeaponsWaitingForRemoteCamo.Remove(itemId, out var weaponPrefab))
             {
                 Logger.Log(LogLevel.Info, "RemoteDecals", "Was waiting for remote", itemId);
-                OnItemPrefabCreated(itemId, ItemType.Weapon, weaponPrefab);
+                OnDecalsHostCreated_Weapon(itemId, ItemType.Weapon, weaponPrefab);
             }
         }
 

@@ -314,7 +314,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var item = __instance__.weapon_0;
 			if (item != null)
 			{
-				Plugin.Instance.OnItemPrefabCreated(item.Id, ItemType.Weapon, __instance);
+				Plugin.Instance.OnDecalsHostCreated_Weapon(item.Id, ItemType.Weapon, __instance);
 			}
 		}
 	}
