@@ -764,7 +764,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             // save editor position
             var isOpened = false;
-            var windowRect = WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect();
+            var windowRect = MaterialEditor.CamoEditor.GetDefaultWindowRect();
             if (CamoEditor.Some(out var camoEditor))
             {
                 isOpened = camoEditor.IsOpened;

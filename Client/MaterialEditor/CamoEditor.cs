@@ -96,7 +96,7 @@ namespace SevenBoldPencil.MaterialEditor
         public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public Vector2 CamosScrollPosition;
         public Vector2 StickersScrollPosition;
-		public Rect WindowRect = BigCamoEditor.GetDefaultWindowRect();
+		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
 
@@ -111,6 +111,11 @@ namespace SevenBoldPencil.MaterialEditor
         public static readonly int colorPickerY_SpecColor = 469;
         public static readonly int colorPickerY_ReflectColor = 721;
         public static readonly int colorPickerSize = hsCircleDiameter + bigMargin * 2;
+
+        public static Rect GetDefaultWindowRect()
+        {
+            return new(startX, 53, mainIconWidth, openCloseButtonHeight);
+        }
 
         public void DrawWindow()
         {

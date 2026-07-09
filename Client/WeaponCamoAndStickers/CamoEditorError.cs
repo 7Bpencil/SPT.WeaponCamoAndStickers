@@ -17,7 +17,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public CamoEditorStyle CamoEditorStyle;
 		public string ErrorMessage;
         public bool IsOpened;
-		public Rect WindowRect = CamoEditor.GetDefaultWindowRect();
+		public Rect WindowRect = WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect();
 
 		public const int errorMargin = (openCloseButtonHeight - buttonHeight) / 2;
 
