@@ -617,7 +617,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     var newDecalInfo = Plugin.GetNewEraserDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
                     var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
-                    SetCurrentlyEditedDecal(newDecalIndex, DecalTextureType.Mask); // technicaly eraser doesnt have texture type, but whatever...
+                    SetCurrentlyEditedDecal(newDecalIndex);
                 }
                 lineX += halfBoxWidthButton + smallMargin;
 
@@ -625,25 +625,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     var newDecalInfo = Plugin.GetNewPaintDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
                     var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
-                    var (decalInfo, _) = Plugin.GetDecal(ItemId, InstanceID, newDecalIndex);
-                    var textureData = Plugin.GetTextureData(decalInfo.Texture);
-                    SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
+                    SetCurrentlyEditedDecal(newDecalIndex);
                 }
             }
 
 			GUI.DragWindow();
         }
 
-        private void SetCurrentlyEditedDecal(int decalIndex, DecalTextureType decalTextureType)
+        private void SetCurrentlyEditedDecal(int decalIndex)
         {
             var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+            var textureData = Plugin.GetTextureData(decalInfo.Texture);
 
             // TODO
             // these should be grouped together with decal index,
             // so we dont forget to correctly init/clean those fields
 
             CurrentlyEditedDecalIndex = new(decalIndex);
-            DecalTypeMenu = decalTextureType;
+            DecalTypeMenu = decalInfo.PaintMode == DecalPaintMode.Paint ? textureData.Type : DecalTextureType.Mask; // eraser doesnt care about texture type, but whatever...
             ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
@@ -674,7 +673,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalIcon = getDecalIcon();
             if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon))
             {
-                SetCurrentlyEditedDecal(decalIndex, textureData.Type);
+                SetCurrentlyEditedDecal(decalIndex);
             }
 
             static string getDecalName(DecalInfo decalInfo)
@@ -708,7 +707,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DuplicateIcon))
             {
                 var newDecalIndex = Plugin.Duplicate(ItemId, decalIndex);
-                SetCurrentlyEditedDecal(newDecalIndex, textureData.Type);
+                SetCurrentlyEditedDecal(newDecalIndex);
             }
             lineX += buttonHeight + smallMargin;
 
