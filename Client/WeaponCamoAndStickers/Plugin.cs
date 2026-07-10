@@ -1683,7 +1683,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalInfo GetNewEraserDecalInfo(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
+            var startTransform = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
@@ -1697,9 +1697,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaskUV = new Vector4(0, 0, 1, 1),
                 MaskAngle = 0,
                 Bone = "",
-                LocalPosition = startLocalPosition,
-                LocalEulerAngles = startLocalEulerAngles,
-                LocalScale = startLocalScale,
+                LocalPosition = startTransform.LocalPosition,
+                LocalEulerAngles = startTransform.LocalEulerAngles,
+                LocalScale = startTransform.LocalScale,
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
@@ -1727,7 +1727,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalInfo GetNewPaintDecalInfo(ItemType itemType, Transform weaponPreviewRotator, Vector3 previewPivot, byte stencilType)
         {
             var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var (startLocalPosition, startLocalEulerAngles, startLocalScale) = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
+            var startTransform = GetStartDecalTransform(itemType, weaponPreviewRotator, previewPivot);
             var decalInfo = new DecalInfo()
             {
                 SchemaVersion = DecalInfo.CurrentSchemaVersion,
@@ -1741,9 +1741,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MaskUV = new Vector4(0, 0, 1, 1),
                 MaskAngle = 0,
                 Bone = "",
-                LocalPosition = startLocalPosition,
-                LocalEulerAngles = startLocalEulerAngles,
-                LocalScale = startLocalScale,
+                LocalPosition = startTransform.LocalPosition,
+                LocalEulerAngles = startTransform.LocalEulerAngles,
+                LocalScale = startTransform.LocalScale,
                 MaxAngle = 0.4f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
