@@ -54,6 +54,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
 		}
 
+		public void ChangeRoot(Transform root)
+		{
+			DecalRoot = root;
+            DecalTransform.parent = DecalRoot;
+		}
+
 		public void ChangeLocalScale(Vector3 localScale)
 		{
 			var aspectRatio = Mathf.Abs(localScale.x / localScale.z);
