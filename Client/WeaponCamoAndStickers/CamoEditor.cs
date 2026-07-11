@@ -392,7 +392,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (DecalSettingType == DecalSettingType.Texture)
                 {
-                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTypeMenu, maxTextureIconsVisibleHeight);
+                    var texturesDirectory = Plugin.GetTexturesDirectory(DecalTypeMenu);
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxTextureIconsVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + mediumMargin + // back button
@@ -413,7 +414,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 else
                 {
-                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxMaskIconsVisibleHeight);
+                    var texturesDirectory = Plugin.GetTexturesDirectory(DecalTextureType.Mask);
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxMaskIconsVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + mediumMargin + // back button
@@ -431,7 +433,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             if (decalInfo.PaintMode == DecalPaintMode.Erase)
             {
-                var (_, visibleHeight) = CalculateTexturesDirectoryHeight(DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
+                var texturesDirectory = Plugin.GetTexturesDirectory(DecalTextureType.Mask);
+                var (_, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
                 return
                     bigMargin +
                     buttonHeight + mediumMargin + // back button
@@ -447,12 +450,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     visibleHeight + bigMargin; // icons grid
             }
             throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
-        }
-
-        private (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(DecalTextureType decalTextureType, int maxIconsVisibleHeight)
-        {
-            var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
-            return CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
         }
 
         public static (int totalHeight, int visibleHeight) CalculateTexturesDirectoryHeight(TexturesDirectory texturesDirectory, int maxIconsVisibleHeight)
