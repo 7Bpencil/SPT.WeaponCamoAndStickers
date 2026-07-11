@@ -263,9 +263,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<ResourceKey, ItemData> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
         private HashSet<string> WeaponsWaitingForRandomCamo;
-        private Dictionary<Camera, string> WeaponPreviewCameras;
-        private Dictionary<Camera, string> InventoryIconCameras;
-        private HashSet<Camera> PlayerModelViewCameras;
+        private Dictionary<Camera, HashSet<string>> DecalCameras;
 
         private DecalRenderer DecalRenderer;
         private Option<CamoEditor> CamoEditor;
@@ -334,11 +332,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
             WeaponsWaitingForRandomCamo = new();
-            WeaponPreviewCameras = new();
-            InventoryIconCameras = new();
-            PlayerModelViewCameras = new();
+            DecalCameras = new();
 
-            DecalRenderer = new(ItemsWithDecals, InstanceIdToItemId, WeaponPreviewCameras, InventoryIconCameras, PlayerModelViewCameras);
+            DecalRenderer = new(ItemsWithDecals, InstanceIdToItemId, DecalCameras);
 
             WeaponsWaitingForRemoteCamo = new();
 
@@ -1803,7 +1799,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             ItemsWithDecals.Add(itemId, itemsWithDecals);
             InstanceIdToItemId.Add(instanceID, itemId);
-            WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+            AddItemToDecalCamera(weaponPreviewCamera, itemId);
+        }
+
+        public void AddItemToDecalCamera(Camera camera, string itemId)
+        {
+            if (DecalCameras.TryGetValue(camera, out var items))
+            {
+                items.Add(itemId);
+            }
+            else
+            {
+                DecalCameras.Add(camera, new() { itemId });
+            }
         }
 
         // mirror around YZ plane
@@ -2275,10 +2283,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Opened", itemId);
             if (ItemsWithDecals.ContainsKey(itemId))
             {
-                if (!WeaponPreviewCameras.TryAdd(weaponPreviewCamera, itemId))
-                {
-        			Logger.Log(LogLevel.Warning, "WeaponPreview", "Already added camera", itemId);
-                }
+                AddItemToDecalCamera(weaponPreviewCamera, itemId);
             }
 			if (IsCamoEditorWaitingForWeaponPreview)
 			{
@@ -2289,7 +2294,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void OnWeaponPreviewClosed(string itemId, Camera weaponPreviewCamera)
         {
 			Logger.Log(LogLevel.Info, "WeaponPreview", "Closed", itemId);
-            WeaponPreviewCameras.Remove(weaponPreviewCamera);
+            DecalCameras.Remove(weaponPreviewCamera);
         }
 
         public void BeforeInventoryIconRecorded(string itemId, Camera inventoryIconCamera)
@@ -2298,29 +2303,47 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			Logger.Log(LogLevel.Info, "InventoryIcon", "Before recorded", itemId);
             if (ItemsWithDecals.ContainsKey(itemId))
             {
-                if (!InventoryIconCameras.TryAdd(inventoryIconCamera, itemId))
-                {
-        			Logger.Log(LogLevel.Warning, "InventoryIcon", "Already added camera", itemId);
-                }
+                AddItemToDecalCamera(inventoryIconCamera, itemId);
             }
         }
 
         public void AfterInventoryIconRecorded(string itemId, Camera inventoryIconCamera)
         {
 			Logger.Log(LogLevel.Info, "InventoryIcon", "After recorded", itemId);
-            InventoryIconCameras.Remove(inventoryIconCamera);
+            DecalCameras.Remove(inventoryIconCamera);
         }
 
-		public void OnPlayerModelViewShown(Camera playerModelViewCamera)
+		public void OnPlayerModelViewShown(Profile profile, Camera playerModelViewCamera)
         {
 			Logger.Log(LogLevel.Info, "PlayerModelView", "Shown");
-            PlayerModelViewCameras.Add(playerModelViewCamera);
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+
+            // gets all items with decals
+            foreach (var item in equipmentItems)
+            {
+                if (ItemsWithDecals.ContainsKey(item.Id))
+                {
+                    AddItemToDecalCamera(playerModelViewCamera, item.Id);
+                }
+            }
+
+            // gets all clothes with decals
+            var profileId = profile.Id;
+            foreach (var skinId in profile.Customization.Values)
+            {
+                var itemId = profileId + skinId;
+                if (ItemsWithDecals.ContainsKey(itemId))
+                {
+                    AddItemToDecalCamera(playerModelViewCamera, itemId);
+                }
+            }
         }
 
 		public void OnPlayerModelViewClosed(Camera playerModelViewCamera)
         {
 			Logger.Log(LogLevel.Info, "PlayerModelView", "Closed");
-            PlayerModelViewCameras.Remove(playerModelViewCamera);
+            DecalCameras.Remove(playerModelViewCamera);
         }
 
         public void SetupCamoEditor(Item item, AssetPoolObject assetPoolObject, Transform rotator, PreviewPivot previewPivot, Camera editorCamera)
@@ -2524,7 +2547,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 InstanceIdToItemId.Add(instanceID, itemId);
-                WeaponPreviewCameras.Add(weaponPreviewCamera, itemId);
+                AddItemToDecalCamera(weaponPreviewCamera, itemId);
             }
         }
 

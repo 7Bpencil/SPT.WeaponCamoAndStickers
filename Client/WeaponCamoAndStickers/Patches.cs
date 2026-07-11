@@ -402,9 +402,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(PlayerModelView __instance)
 		{
-			if (TryGetCamera(__instance).Some(out var camera))
+			if (TarkovApplication.Exist(out var tarkovApplication) &&
+				tarkovApplication.Session != null &&
+				tarkovApplication.Session.Profile != null &&
+				TryGetCamera(__instance).Some(out var camera))
 			{
-				Plugin.Instance.OnPlayerModelViewShown(camera);
+				Plugin.Instance.OnPlayerModelViewShown(tarkovApplication.Session.Profile, camera);
 			}
 		}
 

@@ -18,24 +18,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		private Mesh Cube;
 		private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<int, string> InstanceIdToItemId;
-        private Dictionary<Camera, string> WeaponPreviewCameras;
-        private Dictionary<Camera, string> InventoryIconCameras;
-        private HashSet<Camera> PlayerModelViewCameras;
+		private Dictionary<Camera, HashSet<string>> DecalCameras;
 		private Dictionary<Camera, CommandBuffer> CommandBuffers;
 
 		public DecalRenderer(
 			Dictionary<string, ItemsWithDecals> itemsWithDecals,
 	        Dictionary<int, string> instanceIdToItemId,
-			Dictionary<Camera, string> weaponPreviewCameras,
-	        Dictionary<Camera, string> inventoryIconCameras,
-			HashSet<Camera> playerModelViewCameras)
+			Dictionary<Camera, HashSet<string>> decalCameras)
 		{
 			Cube = Resources.GetBuiltinResource<Mesh>("Cube.fbx");
 			ItemsWithDecals = itemsWithDecals;
 			InstanceIdToItemId = instanceIdToItemId;
-			WeaponPreviewCameras = weaponPreviewCameras;
-	        InventoryIconCameras = inventoryIconCameras;
-			PlayerModelViewCameras = playerModelViewCameras;
+			DecalCameras = decalCameras;
 			CommandBuffers = new();
 			Camera.onPreCull += OnPreCullCameraRender;
 			Camera.onPreRender += OnPreCameraRender;
@@ -70,15 +64,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return true;
 			}
-			if (WeaponPreviewCameras.ContainsKey(currentCamera))
-			{
-				return true;
-			}
-			if (InventoryIconCameras.ContainsKey(currentCamera))
-			{
-				return true;
-			}
-			if (PlayerModelViewCameras.Contains(currentCamera))
+			if (DecalCameras.ContainsKey(currentCamera))
 			{
 				return true;
 			}
@@ -112,19 +98,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				DrawAllDecals(currentCamera, buffer);
 				return;
 			}
-			if (WeaponPreviewCameras.TryGetValue(currentCamera, out var previewItemId))
+			if (DecalCameras.TryGetValue(currentCamera, out var previewItems))
 			{
-				DrawDecalsOnItem(previewItemId, currentCamera, buffer);
-				return;
-			}
-			if (InventoryIconCameras.TryGetValue(currentCamera, out var iconItemId))
-			{
-				DrawDecalsOnItem(iconItemId, currentCamera, buffer);
-				return;
-			}
-			if (PlayerModelViewCameras.Contains(currentCamera))
-			{
-				DrawAllDecals(currentCamera, buffer);
+				foreach (var previewItemId in previewItems)
+				{
+					DrawDecalsOnItem(previewItemId, currentCamera, buffer);
+				}
 				return;
 			}
 		}
