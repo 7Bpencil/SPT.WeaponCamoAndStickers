@@ -52,6 +52,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void Reset(Transform transformHandle)
         {
 			var rotationOffset = UVTools.GetHandleLocalRotation(_decalInfo.LocalScale, _decalInfo.TextureAngle);
+			transformHandle.parent = _decal.DecalRoot;
 			transformHandle.position = UVTools.GetHandlePosition(_decal, _decalInfo.TextureUV);
             transformHandle.localRotation = _decal.DecalTransform.localRotation * rotationOffset;
         }

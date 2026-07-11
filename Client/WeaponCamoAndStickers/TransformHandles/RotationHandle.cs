@@ -56,6 +56,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void Reset(Transform transformHandle)
 		{
+			transformHandle.parent = _decal.DecalRoot;
             transformHandle.localPosition = _decal.DecalTransform.localPosition;
             transformHandle.localRotation = _decal.DecalTransform.localRotation;
 		}
