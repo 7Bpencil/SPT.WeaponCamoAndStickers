@@ -802,6 +802,16 @@ namespace SevenBoldPencil.MaterialEditor
             return (left, right);
         }
 
+        private ref Vector2 GetScrollPosition(DecalTextureType textureType)
+        {
+            switch (textureType)
+            {
+                case DecalTextureType.Camo: return ref CamosScrollPosition;
+                case DecalTextureType.Sticker: return ref StickersScrollPosition;
+                default: throw new ArgumentException();
+            }
+        }
+
         private void DrawAllTextures(int x, int y, string currentTextureName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
         {
             var texturesDirectory = BigPlugin.GetTexturesDirectory(decalTextureType);
@@ -810,8 +820,9 @@ namespace SevenBoldPencil.MaterialEditor
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
 
-            BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, CamosScrollPosition);
-            CamosScrollPosition = GUI.BeginScrollView(visibleRect, CamosScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+            ref var scrollPosition = ref GetScrollPosition(decalTextureType);
+            BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, scrollPosition);
+            scrollPosition = GUI.BeginScrollView(visibleRect, scrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
             DrawAllTextures(ref x, ref y, currentTextureName, texturesDirectory, drawName: false);
 
