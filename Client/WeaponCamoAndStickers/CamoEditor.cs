@@ -218,8 +218,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const int buttonHeight = 32;
         public const int smallIconSize = 16;
         public const int iconSize = buttonHeight * 2 + smallMargin;
-        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
-        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int boxWidth = windowWidth - bigMargin * 2;
         public const int boxHeight = iconSize + smallMargin * 2;
         public const int nameWidth = 120;
@@ -276,6 +274,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public const int maxDecalsVisible = 10;
         public const int maxPresetsVisible = 22;
+        public const int maxTextureIconsVisibleHeight = 9 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxEraseMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
         public static readonly Rect colorPickerRect = new(0, 252, 230, 304);
 
