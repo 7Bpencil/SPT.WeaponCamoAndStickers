@@ -61,12 +61,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     public class SkinnedDecalsHost : IDecalsHost
     {
         public readonly Transform DefaultDecalsRoot;
-        public readonly PlayerBody PlayerBody;
+        public readonly Skeleton Skeleton;
 
-        public SkinnedDecalsHost(Transform defaultDecalsRoot, PlayerBody playerBody)
+        public SkinnedDecalsHost(Transform defaultDecalsRoot, Skeleton skeleton)
         {
             DefaultDecalsRoot = defaultDecalsRoot;
-            PlayerBody = playerBody;
+            Skeleton = skeleton;
         }
 
         public Transform GetDecalRoot(string bone)
@@ -75,7 +75,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 return DefaultDecalsRoot;
             }
-			if (PlayerBody.SkeletonRootJoint.Bones.TryGetValue(bone, out var boneTransform))
+			if (Skeleton.Bones.TryGetValue(bone, out var boneTransform))
             {
                 return boneTransform;
             }
