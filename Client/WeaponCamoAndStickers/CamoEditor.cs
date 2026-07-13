@@ -1709,35 +1709,40 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (CurrentlyEditedDecalIndex.Some(out var currentlyEditedDecalIndex) && RuntimeGizmos)
             {
                 var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, currentlyEditedDecalIndex);
-				switch (decalInfo.MirrorMode)
-				{
-					case DecalMirrorMode.Disabled:
-					{
-						DrawDecal(decal, RuntimeGizmos);
-						break;
-					}
-					case DecalMirrorMode.Enabled:
-					{
-						DrawDecal(decal, RuntimeGizmos);
-						DrawDecalMirrored(decal, RuntimeGizmos);
-						break;
-					}
-					case DecalMirrorMode.EnabledNoFlip:
-					{
-						DrawDecal(decal, RuntimeGizmos);
-						DrawDecalMirrored(decal, RuntimeGizmos);
-						break;
-					}
-				}
+                DrawDecalProjectionBox(RuntimeGizmos, decalInfo, decal);
             }
         }
 
-		private void DrawDecal(Decal decal, RuntimeGizmos runtimeGizmos)
+        public static void DrawDecalProjectionBox(RuntimeGizmos runtimeGizmos, DecalInfo decalInfo, Decal decal)
+        {
+			switch (decalInfo.MirrorMode)
+			{
+				case DecalMirrorMode.Disabled:
+				{
+					DrawDecal(decal, runtimeGizmos);
+					break;
+				}
+				case DecalMirrorMode.Enabled:
+				{
+					DrawDecal(decal, runtimeGizmos);
+					DrawDecalMirrored(decal, runtimeGizmos);
+					break;
+				}
+				case DecalMirrorMode.EnabledNoFlip:
+				{
+					DrawDecal(decal, runtimeGizmos);
+					DrawDecalMirrored(decal, runtimeGizmos);
+					break;
+				}
+			}
+        }
+
+		private static void DrawDecal(Decal decal, RuntimeGizmos runtimeGizmos)
 		{
 			DrawDecal(decal.DecalTransform.localToWorldMatrix, runtimeGizmos);
 		}
 
-		private void DrawDecalMirrored(Decal decal, RuntimeGizmos runtimeGizmos)
+		private static void DrawDecalMirrored(Decal decal, RuntimeGizmos runtimeGizmos)
 		{
 			var localPosition = decal.DecalTransform.localPosition;
 			var localRotation = decal.DecalTransform.localRotation;
@@ -1752,7 +1757,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			DrawDecal(localToWorldMatrix, runtimeGizmos);
 		}
 
-        private void DrawDecal(in Matrix4x4 localToWorldMatrix, RuntimeGizmos runtimeGizmos)
+        private static void DrawDecal(in Matrix4x4 localToWorldMatrix, RuntimeGizmos runtimeGizmos)
         {
 			// its easier to accurately place decal when
 			// its transform handle is located on the face
@@ -1760,7 +1765,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			var offset = new Vector3(0, -0.5f, 0);
 			var resultMatrix = localToWorldMatrix * Matrix4x4.Translate(offset);
-            RuntimeGizmos.Cubes.Add(resultMatrix);
+            runtimeGizmos.Cubes.Add(resultMatrix);
         }
     }
 }
