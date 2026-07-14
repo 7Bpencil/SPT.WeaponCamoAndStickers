@@ -600,7 +600,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 for (var i = 0; i < decalsInfo.Count; i++)
                 {
                     var decalInfo = decalsInfo[i];
-                    DrawDecalElementUI(x, decalsY, i, decalInfo);
+                    DrawDecalElementUI
+                    (
+                        x, decalsY, i, decalInfo,
+                        ItemId, InstanceID, Plugin, CamoEditorResources, CamoEditorStyle,
+                        SetCurrentlyEditedDecal
+                    );
                     decalsY += boxHeight + mediumMargin;
                 }
                 y += visibleHeight + mediumMargin;
@@ -614,7 +619,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     var newDecalInfo = Plugin.GetNewEraserDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
                     var newDecalIndex = Plugin.AddNewEraserDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
-                    SetCurrentlyEditedDecal(newDecalIndex);
+                    SetCurrentlyEditedDecal(ItemId, InstanceID, newDecalIndex);
                 }
                 lineX += halfBoxWidthButton + smallMargin;
 
@@ -622,16 +627,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     var newDecalInfo = Plugin.GetNewPaintDecalInfo(ItemType, WeaponPreviewRotator, PreviewPivot, StencilType);
                     var newDecalIndex = Plugin.AddNewPaintDecal(ItemId, InstanceID, newDecalInfo, DecalsHost, Camera);
-                    SetCurrentlyEditedDecal(newDecalIndex);
+                    SetCurrentlyEditedDecal(ItemId, InstanceID, newDecalIndex);
                 }
             }
 
 			GUI.DragWindow();
         }
 
-        private void SetCurrentlyEditedDecal(int decalIndex)
+        private void SetCurrentlyEditedDecal(string itemId, int instanceID, int decalIndex)
         {
-            var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+            var (decalInfo, decal) = Plugin.GetDecal(itemId, instanceID, decalIndex);
             var textureData = Plugin.GetTextureData(decalInfo.Texture);
 
             // TODO
@@ -643,7 +648,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
-        private void DrawDecalElementUI(int x, int y, int decalIndex, DecalInfo decalInfo)
+        public static void DrawDecalElementUI(
+            int x, int y, int decalIndex, DecalInfo decalInfo,
+            string itemId, int instanceID, Plugin Plugin, CamoEditorResources CamoEditorResources, CamoEditorStyle CamoEditorStyle,
+            Action<string, int, int> setCurrentlyEditedDecal)
         {
             var textureData = Plugin.GetTextureData(decalInfo.Texture);
             var maskData = Plugin.GetTextureData(decalInfo.Mask);
@@ -670,7 +678,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalIcon = getDecalIcon();
             if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon))
             {
-                SetCurrentlyEditedDecal(decalIndex);
+                setCurrentlyEditedDecal(itemId, instanceID, decalIndex);
             }
 
             static string getDecalName(DecalInfo decalInfo)
@@ -697,31 +705,31 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var lineX = x + boxWidth - (smallMargin + buttonHeight) * 4;
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
             {
-                Plugin.Delete(ItemId, decalIndex);
+                Plugin.Delete(itemId, decalIndex);
             }
             lineX += buttonHeight + smallMargin;
 
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DuplicateIcon))
             {
-                var newDecalIndex = Plugin.Duplicate(ItemId, decalIndex);
-                SetCurrentlyEditedDecal(newDecalIndex);
+                var newDecalIndex = Plugin.Duplicate(itemId, decalIndex);
+                setCurrentlyEditedDecal(itemId, instanceID, newDecalIndex);
             }
             lineX += buttonHeight + smallMargin;
 
             var isVisibleIcon = decalInfo.IsVisible ? CamoEditorResources.VisibleIcon : CamoEditorResources.HiddenIcon;
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), isVisibleIcon))
             {
-                Plugin.SwitchIsVisible(ItemId, decalIndex, decalInfo);
+                Plugin.SwitchIsVisible(itemId, decalIndex, decalInfo);
             }
             lineX += buttonHeight + smallMargin;
 
             if (GUI.Button(new Rect(lineX, topLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveUpIcon))
             {
-                Plugin.Move(ItemId, decalIndex, decalIndex - 1);
+                Plugin.Move(itemId, decalIndex, decalIndex - 1);
             }
             if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveDownIcon))
             {
-                Plugin.Move(ItemId, decalIndex, decalIndex + 1);
+                Plugin.Move(itemId, decalIndex, decalIndex + 1);
             }
         }
 
@@ -1181,7 +1189,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTypeMenu, maxTextureIconsVisibleHeight);
+            // TODO this shit is annoying, create separate class
+            DrawAllTextures(
+                x, y, ItemId, decalIndex, decalInfo, decal, DecalTypeMenu, maxTextureIconsVisibleHeight,
+                Plugin, GetScrollPosition, SyncTransformHandle,
+                CamoEditorResources, CamoEditorStyle);
         }
 
         private void DrawDecalEditUI_Mask(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1257,7 +1269,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxMaskIconsVisibleHeight);
+            DrawAllTextures(
+                x, y, ItemId, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxMaskIconsVisibleHeight,
+                Plugin, GetScrollPosition, SyncTransformHandle,
+                CamoEditorResources, CamoEditorStyle);
         }
 
         private void DrawDecalEditUI_Mask_Erase(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1352,7 +1367,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(x, y, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight);
+            DrawAllTextures(
+                x, y, ItemId, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight,
+                Plugin, GetScrollPosition, SyncTransformHandle,
+                CamoEditorResources, CamoEditorStyle);
         }
 
         public void SetupTransformHandle(HandleType handleType)
@@ -1455,7 +1473,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        private void DrawAllTextures(int x, int y, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
+        public delegate ref Vector2 GetScrollPositionDelegate(DecalTextureType textureType);
+
+        public static void DrawAllTextures(
+            int x, int y, string ItemId, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType, int maxIconsVisibleHeight,
+            Plugin Plugin, GetScrollPositionDelegate GetScrollPosition, Action SyncTransformHandle,
+            CamoEditorResources CamoEditorResources, CamoEditorStyle CamoEditorStyle)
         {
             var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
 
@@ -1467,12 +1490,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, scrollPosition);
             scrollPosition = GUI.BeginScrollView(visibleRect, scrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            DrawAllTextures(ref x, ref y, decalIndex, decalInfo, decal, texturesDirectory, drawName: false);
+            DrawAllTextures(
+                ref x, ref y, ItemId, decalIndex, decalInfo, decal, texturesDirectory, false,
+                Plugin, SyncTransformHandle,
+                CamoEditorResources, CamoEditorStyle);
 
             GUI.EndScrollView();
         }
 
-        private void DrawAllTextures(ref int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal, TexturesDirectory texturesDirectory, bool drawName = true)
+        private static void DrawAllTextures(
+            ref int x, ref int y, string ItemId, int decalIndex, DecalInfo decalInfo, Decal decal, TexturesDirectory texturesDirectory, bool drawName,
+            Plugin Plugin, Action SyncTransformHandle,
+            CamoEditorResources CamoEditorResources, CamoEditorStyle CamoEditorStyle)
         {
             if (drawName)
             {
@@ -1496,7 +1525,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             foreach (var subDirectory in texturesDirectory.Directories)
             {
-                DrawAllTextures(ref x, ref y, decalIndex, decalInfo, decal, subDirectory);
+                DrawAllTextures(
+                    ref x, ref y, ItemId, decalIndex, decalInfo, decal, subDirectory, true,
+                    Plugin, SyncTransformHandle,
+                    CamoEditorResources, CamoEditorStyle);
             }
 
             var textures = texturesDirectory.Textures;

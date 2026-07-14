@@ -12,6 +12,7 @@ using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.CameraControl;
+using EFT.Visual;
 using EFT.UI;
 using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
@@ -319,6 +320,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
+	public class Patch_PlayerBody_EquipmentSlotClass_method_4 : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerBody.EquipmentSlotClass), nameof(PlayerBody.EquipmentSlotClass.method_4));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerBody playerBody, GameObject model)
+		{
+			Plugin.Instance.OnEquippedInSlot(playerBody, model);
+		}
+	}
+
 	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
@@ -344,6 +359,71 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static void Prefix(AssetPoolObject __instance)
 		{
 			Plugin.Instance.OnItemDestroyed(__instance);
+		}
+	}
+
+	// this is the method that inits skin and has access to skin id and body part
+	public class Patch_PlayerBody_SetSkin_CreateItem : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(PlayerBody), nameof(PlayerBody.SetSkin));
+        }
+
+        [PatchPostfix]
+        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+		{
+			string profileId = default;
+
+			// for some reason parent can be null at this moment,
+			// usually this happens in Overall screen,
+			// I guess it gets parented to PlayerModelView later
+			var parent = __instance.transform.parent;
+			if (parent)
+			{
+				// We dont support changed materials on bots at this moment.
+				// AI has AccountId = "0",
+				// you would think that better way is to check player.IsAI,
+				// but it set to false even on AI at this stage in initialization.
+				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+				{
+					// we are in raid or walking in hideout
+					profileId = player.ProfileId;
+				}
+			}
+			else
+			{
+				// profile is null in character creation screen
+	    		if (TarkovApplication.Exist(out var tarkovApplication) &&
+					tarkovApplication.Session != null &&
+					tarkovApplication.Session.Profile != null)
+	            {
+					// we are in hideout ui screens
+		            profileId = tarkovApplication.Session.Profile.Id;
+	            }
+			}
+
+			if (profileId != default)
+			{
+				var skinId = __instance.BodyCustomization[part.Key];
+				var skin = __instance.BodySkins[part.Key];
+				Plugin.Instance.OnSkinCreated(profileId, skinId, skin, skeleton);
+			}
+		}
+	}
+
+	// this is used right before lodded skin is destroyed
+	public class Patch_LoddedSkin_Unskin : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LoddedSkin), nameof(LoddedSkin.Unskin));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(LoddedSkin __instance)
+		{
+			Plugin.Instance.OnSkinDestroyed(__instance);
 		}
 	}
 

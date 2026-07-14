@@ -6,6 +6,7 @@
 //
 
 using Diz.Skinning;
+using EFT;
 using EFT.InventoryLogic;
 using EFT.Visual;
 using EFT.UI;
@@ -14,6 +15,7 @@ using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -67,5 +69,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public SimpleContextMenuButton _buttonTemplate { get { return __buttonTemplate.Get(__instance); } set { __buttonTemplate.Set(__instance, value); } }
 		public RectTransform _buttonsContainer { get { return __buttonsContainer.Get(__instance); } set { __buttonsContainer.Set(__instance, value); } }
+	}
+
+	public struct Dress_Proxy(Dress instance)
+	{
+        private readonly Dress __instance = instance;
+
+		private static TypedFieldInfo<Dress, PlayerBody> _PlayerBody = new("PlayerBody");
+
+		public PlayerBody PlayerBody { get { return _PlayerBody.Get(__instance); } set { _PlayerBody.Set(__instance, value); } }
+	}
+
+	public struct CameraImage_Proxy(CameraImage instance)
+	{
+        private readonly CameraImage __instance = instance;
+
+		private static TypedFieldInfo<CameraImage, RawImage> _rawImage_0 = new("rawImage_0");
+
+		public RawImage rawImage_0 { get { return _rawImage_0.Get(__instance); } set { _rawImage_0.Set(__instance, value); } }
 	}
 }

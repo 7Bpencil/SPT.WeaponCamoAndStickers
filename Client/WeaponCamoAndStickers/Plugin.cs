@@ -9,9 +9,11 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using Diz.Skinning;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
+using EFT.Visual;
 using EFT.UI.WeaponModding;
 using Newtonsoft.Json;
 using SevenBoldPencil.Common;
@@ -29,6 +31,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 {
     public readonly record struct ItemData(string Id, ItemType Type);
 
+    public readonly record struct DressData(string Id, int InstanceID);
+
     public enum ItemType
     {
         Weapon,
@@ -36,6 +40,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Headwear,
         FaceCover,
         Container,
+        Armor,
+        Vest,
+        Backpack,
     }
 
     public interface IDecalsHost
@@ -262,6 +269,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, ItemData> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
+        private Dictionary<int, string> DressesWaitingToBeSkinned;
         private HashSet<string> WeaponsWaitingForRandomCamo;
         private Dictionary<Camera, HashSet<string>> DecalCameras;
 
@@ -331,6 +339,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
+            DressesWaitingToBeSkinned = new();
             WeaponsWaitingForRandomCamo = new();
             DecalCameras = new();
 
@@ -349,8 +358,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PoolManagerClass_CreateItemAsync().Enable();
             new Patch_PoolManagerClass_method_2().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
+            new Patch_PlayerBody_EquipmentSlotClass_method_4().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
+            new Patch_PlayerBody_SetSkin_CreateItem().Enable();
+            new Patch_LoddedSkin_Unskin().Enable();
             new Patch_GClass3380_smethod_2().Enable();
             new Patch_GClass2304_smethod_0().Enable();
             new Patch_PlayerModelView_method_0().Enable();
@@ -1443,6 +1455,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             });
         }
 
+		public void ApplyBone(string itemId, int decalIndex)
+        {
+            ModifyDecalOnItems(itemId, decalIndex, static (decalsHost, decal, decalInfo) =>
+            {
+				var bone = decalsHost.GetDecalRoot(decalInfo.Bone);
+                decal.ChangeRoot(bone);
+            });
+        }
+
         public void ApplyLocalPosition(string itemId, int decalIndex)
         {
             ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
@@ -1961,6 +1982,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        // notice that we modify decal on all items
+        public void ModifyDecalOnItems(string itemId, int decalIndex, Action<IDecalsHost, Decal, DecalInfo> changeDecal)
+        {
+            var itemsWithDecals = ItemsWithDecals[itemId];
+            var decalInfo = itemsWithDecals.DecalsInfo[decalIndex];
+            foreach (var itemWithDecals in itemsWithDecals.Items.Values)
+            {
+                var decal = itemWithDecals.Decals[decalIndex];
+                changeDecal(itemWithDecals.DecalsHost, decal, decalInfo);
+            }
+        }
+
         public void ToggleFavouriteTexture(string textureName)
         {
             FavouriteTextures.Toggle(textureName);
@@ -2085,11 +2118,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (assetPoolObject.TryGetComponent<DressItem>(out _))
             {
-                // TODO (if its loose loot, just destroy)
                 // we support some skinned mesh items, but they have to be dressed on PlayerBody
                 // to spawn decals properly, at this moment there is only static loot model,
-                // so keep record of this item for future, when it gets put on character,
+                // so keep record of this item for future when it gets put on character
                 // or gets destroyed (in case it was on floor as loose loot all this time)
+
+                DressesWaitingToBeSkinned.Add(instanceID, itemId);
+                Logger.Log(LogLevel.Info, "Dress", "Record for future", itemId, instanceID);
                 return;
             }
 
@@ -2179,6 +2214,48 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         //     return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
         // }
 
+        public void OnSkinCreated(string profileId, string skinId, LoddedSkin skin, Skeleton skeleton)
+        {
+    		// opposite to other items skinId is the same for all players,
+    		// we could make separate system for such type of items,
+    		// but its simpler to just prepend it by player id
+
+    		var itemId = profileId + skinId;
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+			{
+				return;
+			}
+
+            var instanceID = skin.gameObject.GetInstanceID();
+            if (itemsWithDecals.Items.ContainsKey(instanceID))
+            {
+    			Logger.Log(LogLevel.Error, "Skin", "Already created", itemId, instanceID);
+                return;
+            }
+
+			var decalsHost = new SkinnedDecalsHost(skin.transform, skeleton);
+			OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
+        }
+
+        public void OnSkinDestroyed(LoddedSkin skin)
+        {
+            var instanceID = skin.gameObject.GetInstanceID();
+			OnItemDestroyed(instanceID);
+        }
+
+        public void OnEquippedInSlot(PlayerBody playerBody, GameObject gameObject)
+        {
+            var instanceID = gameObject.GetInstanceID();
+
+            if (DressesWaitingToBeSkinned.Remove(instanceID, out var itemId) &&
+                ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+				var decalsHost = new SkinnedDecalsHost(gameObject.transform, playerBody.SkeletonRootJoint);
+				OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
+                Logger.Log(LogLevel.Info, "Dress", "Equipped", itemId, instanceID);
+            }
+        }
+
         public void OnItemDestroyed(AssetPoolObject assetPoolObject)
         {
             var instanceID = assetPoolObject.gameObject.GetInstanceID();
@@ -2189,6 +2266,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (!InstanceIdToItemId.Remove(instanceID, out var itemId))
             {
+                if (DressesWaitingToBeSkinned.Remove(instanceID))
+                {
+                    // skinned meshes that didn't had the chance to be dressed don't get recorded
+                    // in InstanceIdToItemId, but are still listed in DressesWaitingToBeSkinned
+
+                    Logger.Log(LogLevel.Info, "Dress", "Destroyed not equipped", instanceID);
+                }
                 return;
             }
 
@@ -2384,7 +2468,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     Plugin = this,
                     CamoEditorResources = CamoEditorResources,
-                    ErrorMessage = "This item cannot be painted, use change material",
+                    ErrorMessage = "You can put stickers on this item on Overall screen, or change material to apply camo",
                 });
 
     			Logger.Log(LogLevel.Info, "CamoEditorError", "Setup");
@@ -2400,6 +2484,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemType.Headwear => 1,
                 ItemType.FaceCover => 1,
                 ItemType.Container => 0,
+                ItemType.Armor => 1,
+                ItemType.Vest => 1,
+                ItemType.Backpack => 1,
                 _ => throw new ArgumentException($"Unknown item type: {itemType}"),
             };
         }
@@ -2638,8 +2725,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             camoEditor.ForceOnEndedDraggingHandle();
 
-            var itemId = camoEditor.ItemId;
-            var instanceID = camoEditor.InstanceID;
+            SaveOrDeleteItemDecals(camoEditor.ItemId, camoEditor.InstanceID);
+
+            SaveClosedTexturesDirectoriesToDisk();
+            SaveFavouriteTexturesToDisk();
+
+            camoEditor.Destroy();
+            CamoEditor = default;
+        }
+
+        public void SaveOrDeleteItemDecals(string itemId, int instanceID)
+        {
             if (GetDecalsInfo(itemId).Some(out var decalsInfo))
             {
                 if (decalsInfo.Count == 0)
@@ -2661,12 +2757,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     Logger.Log(LogLevel.Info, "CamoEditor", "Rewrite decals", itemId);
                 }
             }
-
-            SaveClosedTexturesDirectoriesToDisk();
-            SaveFavouriteTexturesToDisk();
-
-            camoEditor.Destroy();
-            CamoEditor = default;
         }
 
         public void WriteDecalsToFile(string itemId, List<DecalInfo> decalsInfo)
@@ -2697,7 +2787,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return snapshot;
             }
 
-            // copies all painted guns inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
+            // copies all painted items inside player equipment (on hands/sling/holster, inside backpack, rig, etc)
             var profile = tarkovApplication.Session.Profile;
             var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
 
@@ -2706,6 +2796,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (CanItemHaveDecals(item) && ItemsWithDecals.TryGetValue(item.Id, out var itemsWithDecals))
                 {
                     snapshot[item.Id] = CopyDecalsInfo(itemsWithDecals.DecalsInfo);
+                }
+            }
+
+            // copies all painted clothes
+            var profileId = profile.Id;
+            foreach (var skinId in profile.Customization.Values)
+            {
+                var itemId = profileId + skinId;
+                if (ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+                {
+                    snapshot[itemId] = CopyDecalsInfo(itemsWithDecals.DecalsInfo);
                 }
             }
 
@@ -2973,6 +3074,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 FaceCoverItemClass => new(ItemType.FaceCover),
                 SimpleContainerItemClass => new(ItemType.Container),
                 MobContainerItemClass => new(ItemType.Container),
+                ArmorItemClass => new(ItemType.Armor),
+                VestItemClass => new(ItemType.Vest),
+                BackpackItemClass => new(ItemType.Backpack),
                 _ => default,
             };
         }
