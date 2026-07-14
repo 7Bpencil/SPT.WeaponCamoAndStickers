@@ -257,6 +257,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_method_0().Enable();
             new Patch_PlayerModelView_method_1().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
+            new Patch_ScrollTrigger_OnScroll().Enable();
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
@@ -2134,6 +2135,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemsWithDecals.Add(itemId, itemsWithDecals);
                 WriteDecalsToFile(itemId, decalsInfo);
             }
+        }
+
+        public bool CanScroll()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                if (camoEditor.WindowRect.Contains(Event.current.mousePosition))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

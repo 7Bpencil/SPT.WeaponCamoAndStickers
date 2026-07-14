@@ -384,4 +384,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
+	public class Patch_ScrollTrigger_OnScroll : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(ScrollTrigger), nameof(ScrollTrigger.OnScroll));
+        }
+
+        [PatchPrefix]
+        public static bool Prefix()
+		{
+			return Plugin.Instance.CanScroll();
+		}
+	}
+
 }
