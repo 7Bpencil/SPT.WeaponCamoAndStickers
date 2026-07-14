@@ -884,6 +884,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public DecalTextureData GetTextureData(string textureName)
         {
+            if (textureName is null)
+            {
+                return ErrorTextureData;
+            }
 			if (DecalTextures.TryGetValue(textureName, out var textureData))
             {
                 return textureData;
