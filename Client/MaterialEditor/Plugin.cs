@@ -625,6 +625,7 @@ namespace SevenBoldPencil.MaterialEditor
                 CamoEditorResources = CamoEditorResources,
                 Items = items,
                 ItemsDict = itemsDict,
+                WindowRect = MaterialEditor.CamoEditor.GetDefaultWindowRect_Item(),
             });
         }
 
@@ -764,7 +765,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             // save editor position
             var isOpened = false;
-            var windowRect = MaterialEditor.CamoEditor.GetDefaultWindowRect();
+            var windowRect = MaterialEditor.CamoEditor.GetDefaultWindowRect_Clothes();
             if (CamoEditor.Some(out var camoEditor))
             {
                 isOpened = camoEditor.IsOpened;
