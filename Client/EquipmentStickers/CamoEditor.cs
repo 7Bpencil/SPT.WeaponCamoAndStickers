@@ -61,12 +61,23 @@ namespace SevenBoldPencil.EquipmentStickers
 	{
 		public static readonly Dictionary<string, string> BonesReadableNames = new()
 		{
-			{ Plugin.BoneRibcage, "Ribcage" },
+			{ Plugin.BoneSpine1, "Spine 1" },
+			{ Plugin.BoneSpine2, "Spine 2" },
+			{ Plugin.BoneSpine3, "Spine 3" },
+			{ Plugin.BoneNeck, "Neck" },
+			{ Plugin.BoneHead, "Head" },
 			{ Plugin.BoneRightUpperarm, "Right Upperarm" },
 			{ Plugin.BoneLeftUpperarm, "Left Upperarm" },
-			{ Plugin.BoneHead, "Head" },
+			{ Plugin.BoneRightThigh1, "Right Thigh 1" },
 			{ Plugin.BoneRightThigh2, "Right Thigh 2" },
+			{ Plugin.BoneRightCalf, "Right Calf" },
+			{ Plugin.BoneRightFoot, "Right Foot" },
+			{ Plugin.BoneRightToe, "Right Toe" },
+			{ Plugin.BoneLeftThigh1, "Left Thigh 1" },
 			{ Plugin.BoneLeftThigh2, "Left Thigh 2" },
+			{ Plugin.BoneLeftCalf, "Left Calf" },
+			{ Plugin.BoneLeftFoot, "Left Foot" },
+			{ Plugin.BoneLeftToe, "Left Toe" },
 		};
 
 		public StringCache<string> SelectBone = new(v => $"Select Bone | {BonesReadableNames[v]}");
