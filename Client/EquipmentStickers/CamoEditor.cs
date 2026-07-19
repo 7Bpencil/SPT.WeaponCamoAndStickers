@@ -115,6 +115,7 @@ namespace SevenBoldPencil.EquipmentStickers
         public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
+        public WeaponCamoAndStickers.TextField<string> CurrentPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
         public Vector2 PresetsScrollPosition;
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedItemIndex;
@@ -131,7 +132,7 @@ namespace SevenBoldPencil.EquipmentStickers
         // brace for imGUI shitshow
 
         public const int maxDecalsVisible = 9;
-        public const int maxPresetsVisible = 22;
+        public const int maxPresetsVisible = 21;
         public const int maxTextureIconsVisibleHeight = 11 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaskIconsVisibleHeight = 13 * (buttonHeight + smallMargin) - smallMargin;
 
@@ -165,11 +166,22 @@ namespace SevenBoldPencil.EquipmentStickers
 					}
 					else
 					{
-	                    WindowRect.height = CalculateDecalsWindowHeight(itemIndex);
-	                    WindowRect = GUI.Window(10, WindowRect, DrawOpenedWindowDecals, GUIContent.none);
+	                    if (ArePresetsOpened)
+						{
+		                    WindowRect.height = CalculatePresetsWindowHeight(itemIndex);
+		                    WindowRect = GUI.Window(10, WindowRect, DrawOpenedWindowPresets, GUIContent.none);
 
-	                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-	                    GUI.Window(11, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+		                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+		                    GUI.Window(11, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+						}
+						else
+						{
+		                    WindowRect.height = CalculateDecalsWindowHeight(itemIndex);
+		                    WindowRect = GUI.Window(10, WindowRect, DrawOpenedWindowDecals, GUIContent.none);
+
+		                    var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+		                    GUI.Window(11, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+						}
 					}
                 }
                 else
@@ -222,6 +234,31 @@ namespace SevenBoldPencil.EquipmentStickers
                 visibleHeight + mediumMargin + // decals
                 buttonHeight + bigMargin; // add new decal button
         }
+
+		private int CalculatePresetsWindowHeight(int itemIndex)
+		{
+            var header =
+                smallMargin + buttonHeight + smallMargin + // item name
+                buttonHeight + mediumMargin + // back button
+                buttonHeight + bigMargin + // show/hide presets button
+                smallMargin + bigMargin + // separator
+                buttonHeight + mediumMargin; // preset name
+
+            var totalPresets = BigPlugin.GetPresetsCount();
+            if (totalPresets > 0)
+            {
+                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                return
+                    header +
+                    visibleHeight + bigMargin; // presets
+            }
+            else
+            {
+                return
+                    header +
+                    buttonHeight + bigMargin; // no presets text
+            }
+		}
 
 		private int CalculateDecalEditWindowHeight(int itemIndex, int decalIndex)
 		{
@@ -385,6 +422,58 @@ namespace SevenBoldPencil.EquipmentStickers
             }
 
 			GUI.DragWindow();
+        }
+
+		private void DrawOpenedWindowPresets(int windowID)
+		{
+            BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
+
+            var itemIndex = CurrentlyEditedItemIndex.Value;
+            var item = Items[itemIndex];
+
+            var x = bigMargin;
+            var y = smallMargin;
+
+            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), item.Name, CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
+            {
+                CurrentlyEditedItemIndex = default;
+            }
+            y += buttonHeight + mediumMargin;
+
+            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Hide Presets"))
+            {
+                ArePresetsOpened = false;
+            }
+            y += buttonHeight + bigMargin;
+
+            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
+            y += smallMargin + bigMargin;
+
+            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentPresetName, SaveDecalsIntoPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentPresetName, BigPlugin.GetPresetNames(), ref PresetsScrollPosition, SwitchToPreset, BigPlugin.DeletePreset, CamoEditorResources, CamoEditorStyle, maxPresetsVisible);
+
+			GUI.DragWindow();
+		}
+
+        private void SaveDecalsIntoPreset(string presetName)
+        {
+			if (CurrentlyEditedItemIndex.Some(out var itemIndex))
+			{
+	            var item = Items[itemIndex];
+	            BigPlugin.SaveDecalsIntoPreset(item.ItemId, presetName);
+			}
+        }
+
+        private void SwitchToPreset(string presetName)
+        {
+			if (CurrentlyEditedItemIndex.Some(out var itemIndex))
+			{
+	            var item = Items[itemIndex];
+	            BigPlugin.SwitchToPreset(item.ItemId, item.InstanceID, item.DecalsHost, Camera, presetName);
+			}
         }
 
         private void SetCurrentlyEditedDecal(string itemId, int instanceID, int decalIndex)
