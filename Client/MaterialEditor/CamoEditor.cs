@@ -102,7 +102,8 @@ namespace SevenBoldPencil.MaterialEditor
 
         public const int maxDecalsVisibleWhenPresetsAreNotOpened = 10;
         public const int maxDecalsVisibleWhenPresetsAreOpened = 6;
-        public const int maxPresetsVisible = 24;
+        public const int maxItemPresetsVisible = 24;
+        public const int maxMaterialPresetsVisible = 22;
 
         public const int maxEraseMaskIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 25 * (buttonHeight + smallMargin) - smallMargin;
@@ -220,7 +221,7 @@ namespace SevenBoldPencil.MaterialEditor
             var totalPresets = Plugin.GetItemPresetsCount();
             if (totalPresets > 0)
             {
-                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxItemPresetsVisible, buttonHeight, smallMargin);
                 return
                     header +
                     visibleHeight + bigMargin; // presets
@@ -278,7 +279,7 @@ namespace SevenBoldPencil.MaterialEditor
             var totalPresets = Plugin.GetMaterialPresetsCount();
             if (totalPresets > 0)
             {
-                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxPresetsVisible, buttonHeight, smallMargin);
+                var (_, visibleHeight) = BigCamoEditor.CalculateScrollViewTotalAndVisibleHeight(totalPresets, maxMaterialPresetsVisible, buttonHeight, smallMargin);
                 return
                     header +
                     visibleHeight + bigMargin; // presets
@@ -359,7 +360,7 @@ namespace SevenBoldPencil.MaterialEditor
             y += smallMargin + bigMargin;
 
             BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentItemPresetName, SaveItemsIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentItemPresetName, Plugin.GetItemPresetNames(), ref ItemPresetsScrollPosition, SwitchToItemPreset, Plugin.DeleteItemPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentItemPresetName, Plugin.GetItemPresetNames(), ref ItemPresetsScrollPosition, SwitchToItemPreset, Plugin.DeleteItemPreset, CamoEditorResources, CamoEditorStyle, maxItemPresetsVisible);
 
 			GUI.DragWindow();
         }
@@ -510,9 +511,8 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-
             BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentMaterialPresetName, SaveMaterialIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentMaterialPresetName, Plugin.GetMaterialPresetNames(), ref MaterialPresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle);
+            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentMaterialPresetName, Plugin.GetMaterialPresetNames(), ref MaterialPresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle, maxMaterialPresetsVisible);
 
 			GUI.DragWindow();
         }

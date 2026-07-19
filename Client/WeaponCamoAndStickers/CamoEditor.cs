@@ -555,7 +555,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
             y += buttonHeight + mediumMargin;
 
-            DrawPresets(ref x, ref y, ref CurrentPresetName, Plugin.GetPresetNames(), ref PresetsScrollPosition, SwitchToPreset, Plugin.DeletePreset, CamoEditorResources, CamoEditorStyle);
+            DrawPresets(ref x, ref y, ref CurrentPresetName, Plugin.GetPresetNames(), ref PresetsScrollPosition, SwitchToPreset, Plugin.DeletePreset, CamoEditorResources, CamoEditorStyle, maxPresetsVisible);
 
 			GUI.DragWindow();
         }
@@ -1680,7 +1680,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Action<string> switchToPreset,
             Action<string> deletePreset,
             CamoEditorResources camoEditorResources,
-            CamoEditorStyle camoEditorStyle)
+            CamoEditorStyle camoEditorStyle,
+            int maxPresetsVisible)
         {
             var presetButtonWidth = boxWidth - buttonHeight - smallMargin;
 
