@@ -25,8 +25,6 @@ using DecalInfo = SevenBoldPencil.WeaponCamoAndStickers.DecalInfo;
 using SkinnedDecalsHost = SevenBoldPencil.WeaponCamoAndStickers.SkinnedDecalsHost;
 using HandleType = SevenBoldPencil.WeaponCamoAndStickers.HandleType;
 
-// TODO make all clothes - stencil 0, all equipment - stencil 1
-
 namespace SevenBoldPencil.EquipmentStickers
 {
     public readonly record struct StartDecalTransform(string Name, string Bone, Vector3 LocalPosition, Vector3 LocalEulerAngles, Vector3 LocalScale);
@@ -44,8 +42,6 @@ namespace SevenBoldPencil.EquipmentStickers
 		public const string BoneRightUpperarm = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanRCollarbone/Base HumanRUpperarm";
 		public const string BoneLeftUpperarm = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanLCollarbone/Base HumanLUpperarm";
 
-		// TODO honestly, I dont even care what bones rigs and armors have,
-		// I attach decals to player body anyway. Not sure about backpacks, tho
 		private Dictionary<EBodyModelPart, StartDecalTransform[][]> StartDecalTransforms = new()
 		{
 			{
