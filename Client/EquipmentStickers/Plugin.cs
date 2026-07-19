@@ -59,53 +59,47 @@ namespace SevenBoldPencil.EquipmentStickers
 		private Dictionary<EBodyModelPart, StartDecalTransform[][]> StartDecalTransforms = new()
 		{
 			{
-				// TODO add attachment points for different parts of the head
 				EBodyModelPart.Head,
 				[
 					[
-						new("Head Forehead", BoneHead, new(-0.104f, 0.14f, 0), new(11.173f, 270, 0), new(0.08f, 0.08f, 0.08f)),
-						new("Head Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.98f, 277.755f, 79.388f), new(0.106f, 0.106f, 0.106f)),
-						new("Head Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.98f, 264.424f, 273.614f), new(0.106f, 0.106f, 0.106f)),
-						new("Head Back", BoneHead, new(-0.073f, -0.093f, 0), new(3.2f, 270, 180), new(0.106f, 0.106f, 0.106f)),
-						new("Head Top", BoneHead, new(-0.184f, 0.048f, 0), new(281.9f, 90, 0), new(0.106f, 0.106f, 0.106f)),
+						new("Forehead", BoneHead, new(-0.104f, 0.140f, 0.000f), new(11.173f, 270.000f, 0.000f), new(0.106f, 0.080f, 0.089f)),
+						new("Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.980f, 277.755f, 79.388f), new(0.106f, 0.080f, 0.070f)),
+						new("Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.987f, 264.424f, 273.614f), new(0.106f, 0.080f, 0.070f)),
+						new("Back", BoneHead, new(-0.073f, -0.093f, 0.000f), new(3.200f, 270.000f, 180.000f), new(0.106f, 0.080f, 0.106f)),
+						new("Top", BoneHead, new(-0.184f, 0.048f, 0.000f), new(281.900f, 90.000f, 0.000f), new(0.106f, 0.080f, 0.127f)),
 					],
 					[
-						new("Head Cheek Right", BoneHead, new(-0.004f, 0.09f, -0.071f), new(351.173f, 263.495f, 69.262f), new(0.077f, 0.077f, 0.077f)),
-						new("Head Cheek Left", BoneHead, new(-0.004f, 0.09f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.077f, 0.077f)),
+						new("Cheek Right", BoneHead, new(-0.004f, 0.090f, -0.071f), new(351.737f, 263.495f, 69.262f), new(0.077f, 0.080f, 0.077f)),
+						new("Cheek Left", BoneHead, new(-0.004f, 0.090f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.080f, 0.077f)),
 					],
 					[
-						new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0), new(14.524f, 270, 180), new(0.08f, 0.08f, 0.08f)),
+						new("Neck Right", BoneNeck, new(-0.076f, -0.010f, -0.070f), new(12.545f, 271.353f, 106.472f), new(0.065f, 0.080f, 0.065f)),
+						new("Neck Left", BoneNeck, new(-0.080f, 0.001f, 0.076f), new(12.545f, 271.353f, 259.871f), new(0.065f, 0.080f, 0.065f)),
+						new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0.000f), new(14.524f, 270.000f, 180.000f), new(0.080f, 0.080f, 0.080f)),
 					]
 				]
 			},
 			{
-				// TODO add attachment points for shoulders, middle section, groin
-				// TODO upperarm side, upperarm front, upperarm back
-				// TODO forearm, IK or not?
 				EBodyModelPart.Body,
 				[
 					[
-						new("Chest Front", BoneSpine3, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-						new("Chest Back", BoneSpine3, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Chest Front", BoneSpine3, new(-0.089f, 0.239f, 0.000f), new(18.936f, 270.085f, 0.017f), new(0.128f, 0.090f, 0.084f)),
+						new("Chest Back", BoneSpine3, new(-0.061f, -0.113f, 0.000f), new(12.551f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
 					],
 					[
-						new("Abdomen Front", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-						new("Abdomen Right", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-						new("Abdomen Left", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-						new("Abdomen Back", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Abdomen Front", BoneSpine2, new(-0.001f, 0.242f, 0.000f), new(354.967f, 272.249f, 0.000f), new(0.138f, 0.090f, 0.090f)),
+						new("Abdomen Right", BoneSpine2, new(-0.035f, 0.045f, -0.209f), new(351.662f, 270.000f, 94.698f), new(0.090f, 0.090f, 0.090f)),
+						new("Abdomen Left", BoneSpine2, new(-0.035f, 0.045f, 0.209f), new(351.662f, 270.000f, 270.216f), new(0.090f, 0.090f, 0.090f)),
+						new("Abdomen Back", BoneSpine2, new(-0.063f, -0.118f, 0.000f), new(351.662f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
 					],
 					[
-						new("Groin Front", BoneSpine1, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-						new("Groin Back", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Groin Front", BoneSpine1, new(0.062f, 0.220f, 0.000f), new(352.612f, 270.000f, 0.000f), new(0.155f, 0.090f, 0.102f)),
+						new("Groin Back", BoneSpine2, new(0.113f, -0.152f, 0.000f), new(336.285f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
 					],
 					[
-						new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0, 0.11f), new(0, 83, 84f), new(0.068f, 0.1f, 0.068f)),
-						new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.11f), new(356, 100, 282), new(0.068f, 0.1f, 0.068f)),
+						new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0.000f, 0.110f), new(0.000f, 83.000f, 84.000f), new(0.068f, 0.100f, 0.068f)),
+						new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.110f), new(356.000f, 100.000f, 282.000f), new(0.068f, 0.100f, 0.068f)),
 					],
-					[
-						new("Shoulder Right", BoneRightUpperarm, new(-0.05f, 0, 0.13f), new(0, 95, 87), new(0.1f, 0.1f, 0.1f)),
-						new("Shoulder Left", BoneLeftUpperarm, new(-0.05f, 0, -0.13f), new(0, 87, 275), new(0.1f, 0.1f, 0.1f)),
-					]
 				]
 			},
 			{
