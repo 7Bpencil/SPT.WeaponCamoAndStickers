@@ -68,16 +68,6 @@ namespace SevenBoldPencil.EquipmentStickers
 			{ Plugin.BoneHead, "Head" },
 			{ Plugin.BoneRightUpperarm, "Right Upperarm" },
 			{ Plugin.BoneLeftUpperarm, "Left Upperarm" },
-			{ Plugin.BoneRightThigh1, "Right Thigh 1" },
-			{ Plugin.BoneRightThigh2, "Right Thigh 2" },
-			{ Plugin.BoneRightCalf, "Right Calf" },
-			{ Plugin.BoneRightFoot, "Right Foot" },
-			{ Plugin.BoneRightToe, "Right Toe" },
-			{ Plugin.BoneLeftThigh1, "Left Thigh 1" },
-			{ Plugin.BoneLeftThigh2, "Left Thigh 2" },
-			{ Plugin.BoneLeftCalf, "Left Calf" },
-			{ Plugin.BoneLeftFoot, "Left Foot" },
-			{ Plugin.BoneLeftToe, "Left Toe" },
 		};
 
 		public StringCache<string> SelectBone = new(v => $"Select Bone | {BonesReadableNames[v]}");
