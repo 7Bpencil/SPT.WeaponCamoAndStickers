@@ -23,6 +23,7 @@ using DecalMirrorMode = SevenBoldPencil.WeaponCamoAndStickers.DecalMirrorMode;
 using DecalPaintMode = SevenBoldPencil.WeaponCamoAndStickers.DecalPaintMode;
 using DecalInfo = SevenBoldPencil.WeaponCamoAndStickers.DecalInfo;
 using SkinnedDecalsHost = SevenBoldPencil.WeaponCamoAndStickers.SkinnedDecalsHost;
+using HandleType = SevenBoldPencil.WeaponCamoAndStickers.HandleType;
 
 // TODO make all clothes - stencil 0, all equipment - stencil 1
 
@@ -302,6 +303,30 @@ namespace SevenBoldPencil.EquipmentStickers
 				StartTransforms: startTransforms
             ));
 		}
+
+        public void Update()
+        {
+            CheckCamoEditorKeybinds();
+        }
+
+        public void CheckCamoEditorKeybinds()
+        {
+            if (CamoEditor.Some(out var camoEditor))
+            {
+                if (Input.GetKeyDown(BigPlugin.MoveButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Position);
+                }
+                else if (Input.GetKeyDown(BigPlugin.RotateButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Rotation);
+                }
+                else if (Input.GetKeyDown(BigPlugin.ScaleButton.Value.MainKey))
+                {
+                    camoEditor.SetupTransformHandle(HandleType.Scale);
+                }
+            }
+        }
 
         public void LateUpdate()
         {

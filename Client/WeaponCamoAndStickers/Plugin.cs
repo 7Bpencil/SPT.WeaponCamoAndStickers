@@ -1024,7 +1024,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void CheckCamoEditorKeybinds()
         {
-            if (CamoEditor.Some(out var camoEditor) && camoEditor.CurrentlyEditedDecalIndex.HasValue)
+            if (CamoEditor.Some(out var camoEditor))
             {
                 if (Input.GetKeyDown(MoveButton.Value.MainKey))
                 {
