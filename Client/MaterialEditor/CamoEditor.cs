@@ -10,8 +10,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO we need presets both for item template and different color swatches
-
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
 using CamoEditorStyle = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorStyle;
