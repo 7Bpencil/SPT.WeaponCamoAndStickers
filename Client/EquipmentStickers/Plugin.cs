@@ -17,20 +17,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// some ideas:
-// stickers only (dont let people camo it, they will be disappointed)
-// less options (no uv)
-//
-// or add string Bone to DecalInfo from main plugin?
-// at least reuse DecalInfo and Decal classes,
-// can probably even reuse DecalRenderer, just get reference to  InstancesToId
-// or just shove ItemsWithDecal : IItemWithDecals
-// GetDecalRoot(string bone) -> Transform
-// GetDecals() -> List<Decal>
-// in camo editor if amount of bones is 0, dont show selector
-// if amount of items is 1 dont show selector
-// building from scratch just with shared DecalInfo and Decal is probably better idea
-
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalMirrorMode = SevenBoldPencil.WeaponCamoAndStickers.DecalMirrorMode;
@@ -69,20 +55,26 @@ namespace SevenBoldPencil.EquipmentStickers
 
 		// TODO honestly, I dont even care what bones rigs and armors have,
 		// I attach decals to player body anyway. Not sure about backpacks, tho
-		private Dictionary<EBodyModelPart, StartDecalTransform[]> StartDecalTransforms = new()
+		private Dictionary<EBodyModelPart, StartDecalTransform[][]> StartDecalTransforms = new()
 		{
 			{
 				// TODO add attachment points for different parts of the head
 				EBodyModelPart.Head,
 				[
-					new("Head Forehead", BoneHead, new(-0.104f, 0.14f, 0), new(11.173f, 270, 0), new(0.08f, 0.08f, 0.08f)),
-					new("Head Back", BoneHead, new(-0.073f, -0.093f, 0), new(3.2f, 270, 180), new(0.106f, 0.106f, 0.106f)),
-					new("Head Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.98f, 277.755f, 79.388f), new(0.106f, 0.106f, 0.106f)),
-					new("Head Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.98f, 264.424f, 273.614f), new(0.106f, 0.106f, 0.106f)),
-					new("Head Top", BoneHead, new(-0.184f, 0.048f, 0), new(281.9f, 90, 0), new(0.106f, 0.106f, 0.106f)),
-					new("Head Cheek Right", BoneHead, new(-0.004f, 0.09f, -0.071f), new(351.173f, 263.495f, 69.262f), new(0.077f, 0.077f, 0.077f)),
-					new("Head Cheek Left", BoneHead, new(-0.004f, 0.09f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.077f, 0.077f)),
-					new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0), new(14.524f, 270, 180), new(0.08f, 0.08f, 0.08f)),
+					[
+						new("Head Forehead", BoneHead, new(-0.104f, 0.14f, 0), new(11.173f, 270, 0), new(0.08f, 0.08f, 0.08f)),
+						new("Head Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.98f, 277.755f, 79.388f), new(0.106f, 0.106f, 0.106f)),
+						new("Head Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.98f, 264.424f, 273.614f), new(0.106f, 0.106f, 0.106f)),
+						new("Head Back", BoneHead, new(-0.073f, -0.093f, 0), new(3.2f, 270, 180), new(0.106f, 0.106f, 0.106f)),
+						new("Head Top", BoneHead, new(-0.184f, 0.048f, 0), new(281.9f, 90, 0), new(0.106f, 0.106f, 0.106f)),
+					],
+					[
+						new("Head Cheek Right", BoneHead, new(-0.004f, 0.09f, -0.071f), new(351.173f, 263.495f, 69.262f), new(0.077f, 0.077f, 0.077f)),
+						new("Head Cheek Left", BoneHead, new(-0.004f, 0.09f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.077f, 0.077f)),
+					],
+					[
+						new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0), new(14.524f, 270, 180), new(0.08f, 0.08f, 0.08f)),
+					]
 				]
 			},
 			{
@@ -91,33 +83,48 @@ namespace SevenBoldPencil.EquipmentStickers
 				// TODO forearm, IK or not?
 				EBodyModelPart.Body,
 				[
-					new("Center Upper Chest", BoneRibcage, new(-0.022f, 0.146f, 0.129f), new(43f, 234, 300), new(0.09f, 0.09f, 0.09f)),
-					new("Spine 3", BoneSpine3, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-					new("Spine 2", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-					new("Spine 1", BoneSpine1, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
-
-					new("Right Shoulder", BoneRightUpperarm, new(-0.05f, 0, 0.13f), new(0, 95, 87), new(0.1f, 0.1f, 0.1f)),
-					new("Right Upperarm", BoneRightUpperarm, new(-0.142f, 0, 0.11f), new(0, 83, 84f), new(0.068f, 0.1f, 0.068f)),
-
-					new("Left Shoulder", BoneLeftUpperarm, new(-0.05f, 0, -0.13f), new(0, 87, 275), new(0.1f, 0.1f, 0.1f)),
-					new("Left Upperarm", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.11f), new(356, 100, 282), new(0.068f, 0.1f, 0.068f)),
+					[
+						new("Chest Front", BoneSpine3, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Chest Back", BoneSpine3, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+					],
+					[
+						new("Abdomen Front", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Abdomen Right", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Abdomen Left", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Abdomen Back", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+					],
+					[
+						new("Groin Front", BoneSpine1, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+						new("Groin Back", BoneSpine2, new(0, 0, 0), new(0, 0, 0), new(0.09f, 0.09f, 0.09f)),
+					],
+					[
+						new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0, 0.11f), new(0, 83, 84f), new(0.068f, 0.1f, 0.068f)),
+						new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.11f), new(356, 100, 282), new(0.068f, 0.1f, 0.068f)),
+					],
+					[
+						new("Shoulder Right", BoneRightUpperarm, new(-0.05f, 0, 0.13f), new(0, 95, 87), new(0.1f, 0.1f, 0.1f)),
+						new("Shoulder Left", BoneLeftUpperarm, new(-0.05f, 0, -0.13f), new(0, 87, 275), new(0.1f, 0.1f, 0.1f)),
+					]
 				]
 			},
 			{
 				// TODO add attachment points for different parts of the legs
 				EBodyModelPart.Feet,
 				[
-					new("Right Thigh 1", BoneRightThigh1, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Right Thigh 2", BoneRightThigh2, new(0, 0.12f, 0.025f), new(350, 90, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Right Calf", BoneRightCalf, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Right Foot", BoneRightFoot, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Right Toe", BoneRightToe, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-
-					new("Left Thigh 1", BoneLeftThigh1, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Left Thigh 2", BoneLeftThigh2, new(0, 0.12f, 0.025f), new(350, 90, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Left Calf", BoneLeftCalf, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Left Foot", BoneLeftFoot, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					new("Left Toe", BoneLeftToe, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					[
+						new("Right Thigh 1", BoneRightThigh1, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Thigh 2", BoneRightThigh2, new(0, 0.12f, 0.025f), new(350, 90, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Calf", BoneRightCalf, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Foot", BoneRightFoot, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Toe", BoneRightToe, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					],
+					[
+						new("Left Thigh 1", BoneLeftThigh1, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Thigh 2", BoneLeftThigh2, new(0, 0.12f, 0.025f), new(350, 90, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Calf", BoneLeftCalf, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Foot", BoneLeftFoot, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Toe", BoneLeftToe, new(0, 0.0f, 0.0f), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					]
 				]
 			},
 		};

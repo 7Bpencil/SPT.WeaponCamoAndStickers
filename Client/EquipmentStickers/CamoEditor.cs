@@ -110,7 +110,7 @@ namespace SevenBoldPencil.EquipmentStickers
         int InstanceID,
         SkinnedDecalsHost DecalsHost,
         byte StencilType,
-        StartDecalTransform[] StartTransforms
+        StartDecalTransform[][] StartTransforms
     );
 
     public class CamoEditor
@@ -240,7 +240,7 @@ namespace SevenBoldPencil.EquipmentStickers
 			var item = Items[itemIndex];
 			if (IsStartTransformsListOpened)
 			{
-				var startTransformsHeight = item.StartTransforms.Length * (buttonHeight + smallMargin) - smallMargin;
+				var startTransformsHeight = CalculateStartTransformsListHeight(item.StartTransforms);
 				return
 					bigMargin +
 	                buttonHeight + mediumMargin + // back button
@@ -287,6 +287,23 @@ namespace SevenBoldPencil.EquipmentStickers
                         visibleHeight + bigMargin; // icons grid
 				}
 			}
+		}
+
+		private int CalculateStartTransformsListHeight(StartDecalTransform[][] startTransforms)
+		{
+			var result = 0;
+			foreach (var startTransformsGroup in startTransforms)
+			{
+				foreach (var startTransform in startTransformsGroup)
+				{
+					result += buttonHeight + smallMargin;
+				}
+				result -= smallMargin;
+				result += bigMargin;
+			}
+			result -= bigMargin;
+
+			return result;
 		}
 
         private void DrawOpenedWindowItems(int windowID)
@@ -373,9 +390,10 @@ namespace SevenBoldPencil.EquipmentStickers
 
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Add Sticker"))
             {
-                var newDecalInfo = Plugin.GetNewDecalInfo(item.StartTransforms[0], item.StencilType);
+                var newDecalInfo = Plugin.GetNewDecalInfo(item.StartTransforms[0][0], item.StencilType);
                 var newDecalIndex = BigPlugin.AddNewPaintDecal(item.ItemId, item.InstanceID, newDecalInfo, item.DecalsHost, Camera);
                 SetCurrentlyEditedDecal(item.ItemId, item.InstanceID, newDecalIndex);
+				IsStartTransformsListOpened = true;
             }
 
 			GUI.DragWindow();
@@ -454,7 +472,7 @@ namespace SevenBoldPencil.EquipmentStickers
             y += buttonHeight + mediumMargin;
         }
 
-		private void DrawStartTransformsList(int x, ref int y, string itemId, int decalIndex, DecalInfo decalInfo, StartDecalTransform[] startTransforms)
+		private void DrawStartTransformsList(int x, ref int y, string itemId, int decalIndex, DecalInfo decalInfo, StartDecalTransform[][] startTransforms)
 		{
             if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Close"))
 			{
@@ -465,15 +483,20 @@ namespace SevenBoldPencil.EquipmentStickers
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-			for (var i = 0; i < startTransforms.Length; i++)
+			foreach (var startTransformsGroup in startTransforms)
 			{
-	            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), startTransforms[i].Name))
+				foreach (var startTransform in startTransformsGroup)
 				{
-					// TODO switch root as well
-					Plugin.SwitchStartTransform(itemId, decalIndex, decalInfo, startTransforms[i]);
-                    SyncTransformHandle();
+		            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), startTransform.Name))
+					{
+						Plugin.SwitchStartTransform(itemId, decalIndex, decalInfo, startTransform);
+	                    SyncTransformHandle();
+						IsStartTransformsListOpened = false;
+					}
+					y += buttonHeight + smallMargin;
 				}
-	            y += buttonHeight + smallMargin;
+				y -= smallMargin;
+				y += bigMargin;
 			}
 		}
 
