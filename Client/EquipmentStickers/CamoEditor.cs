@@ -26,6 +26,7 @@ using PositionHandle = SevenBoldPencil.WeaponCamoAndStickers.PositionHandle;
 using RotationHandle = SevenBoldPencil.WeaponCamoAndStickers.RotationHandle;
 using ScaleHandle = SevenBoldPencil.WeaponCamoAndStickers.ScaleHandle;
 using SkinnedDecalsHost = SevenBoldPencil.WeaponCamoAndStickers.SkinnedDecalsHost;
+using PresetsWindow = SevenBoldPencil.WeaponCamoAndStickers.PresetsWindow;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.EquipmentStickers
@@ -115,8 +116,7 @@ namespace SevenBoldPencil.EquipmentStickers
         public List<CamoEditorItem> Items;
         public bool IsOpened;
         public bool ArePresetsOpened;
-        public WeaponCamoAndStickers.TextField<string> CurrentPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
-        public Vector2 PresetsScrollPosition;
+        public PresetsWindow PresetsWindow;
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedItemIndex;
         public Option<int> CurrentlyEditedDecalIndex;
@@ -147,6 +147,15 @@ namespace SevenBoldPencil.EquipmentStickers
             if (CamoEditorStyle == null)
             {
                 CamoEditorStyle = new(GUI.skin);
+                PresetsWindow = new()
+                {
+                    CamoEditorResources = CamoEditorResources,
+                    CamoEditorStyle = CamoEditorStyle,
+                    MaxPresetsVisible = maxPresetsVisible,
+                    SavePreset = SaveDecalsIntoPreset,
+                    SwitchToPreset = SwitchToPreset,
+                    DeletePreset = BigPlugin.DeletePreset,
+                };
             }
 
             var originalMatrix = GUI.matrix;
@@ -452,8 +461,8 @@ namespace SevenBoldPencil.EquipmentStickers
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentPresetName, SaveDecalsIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentPresetName, BigPlugin.GetPresetNames(), ref PresetsScrollPosition, SwitchToPreset, BigPlugin.DeletePreset, CamoEditorResources, CamoEditorStyle, maxPresetsVisible);
+            PresetsWindow.DrawPresetNameTextField(ref x, ref y);
+            PresetsWindow.DrawPresets(ref x, ref y, BigPlugin.GetPresetNames());
 
 			GUI.DragWindow();
 		}

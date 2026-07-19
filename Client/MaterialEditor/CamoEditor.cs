@@ -17,6 +17,7 @@ using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorReso
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
 using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
+using PresetsWindow = SevenBoldPencil.WeaponCamoAndStickers.PresetsWindow;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.MaterialEditor
@@ -77,10 +78,8 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsOpened;
         public bool AreItemPresetsOpened;
         public bool AreMaterialPresetsOpened;
-        public WeaponCamoAndStickers.TextField<string> CurrentItemPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
-        public WeaponCamoAndStickers.TextField<string> CurrentMaterialPresetName = new(v => v, BigCamoEditor.TryParsePresetName);
-        public Vector2 ItemPresetsScrollPosition;
-        public Vector2 MaterialPresetsScrollPosition;
+        public PresetsWindow ItemPresetsWindow;
+        public PresetsWindow MaterialPresetsWindow;
         public Vector2 MaterialsScrollPosition;
         public Option<EditedOverride> CurrentlyEditedOverride;
         public HashSet<EditedOverride> LinkedOverrides = new();
@@ -127,6 +126,24 @@ namespace SevenBoldPencil.MaterialEditor
             if (CamoEditorStyle == null)
             {
                 CamoEditorStyle = new(GUI.skin);
+                ItemPresetsWindow = new()
+                {
+                    CamoEditorResources = CamoEditorResources,
+                    CamoEditorStyle = CamoEditorStyle,
+                    MaxPresetsVisible = maxItemPresetsVisible,
+                    SavePreset = SaveItemsIntoPreset,
+                    SwitchToPreset = SwitchToItemPreset,
+                    DeletePreset = Plugin.DeleteItemPreset,
+                };
+                MaterialPresetsWindow = new()
+                {
+                    CamoEditorResources = CamoEditorResources,
+                    CamoEditorStyle = CamoEditorStyle,
+                    MaxPresetsVisible = maxMaterialPresetsVisible,
+                    SavePreset = SaveMaterialIntoPreset,
+                    SwitchToPreset = SwitchToMaterialPreset,
+                    DeletePreset = Plugin.DeleteMaterialPreset,
+                };
             }
 
             var originalMatrix = GUI.matrix;
@@ -356,8 +373,8 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentItemPresetName, SaveItemsIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentItemPresetName, Plugin.GetItemPresetNames(), ref ItemPresetsScrollPosition, SwitchToItemPreset, Plugin.DeleteItemPreset, CamoEditorResources, CamoEditorStyle, maxItemPresetsVisible);
+            ItemPresetsWindow.DrawPresetNameTextField(ref x, ref y);
+            ItemPresetsWindow.DrawPresets(ref x, ref y, Plugin.GetItemPresetNames());
 
 			GUI.DragWindow();
         }
@@ -508,8 +525,8 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            BigCamoEditor.DrawPresetNameTextField(ref x, ref y, ref CurrentMaterialPresetName, SaveMaterialIntoPreset, CamoEditorResources, CamoEditorStyle);
-            BigCamoEditor.DrawPresets(ref x, ref y, ref CurrentMaterialPresetName, Plugin.GetMaterialPresetNames(), ref MaterialPresetsScrollPosition, SwitchToMaterialPreset, Plugin.DeleteMaterialPreset, CamoEditorResources, CamoEditorStyle, maxMaterialPresetsVisible);
+            MaterialPresetsWindow.DrawPresetNameTextField(ref x, ref y);
+            MaterialPresetsWindow.DrawPresets(ref x, ref y, Plugin.GetMaterialPresetNames());
 
 			GUI.DragWindow();
         }
