@@ -179,7 +179,6 @@ namespace SevenBoldPencil.MaterialEditor
                                     var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + y, openCloseButtonWidth, openCloseButtonHeight);
                                     GUI.Window(windowID, openColorPickerWindowRect, openColorPickerWindow, GUIContent.none);
                                 }
-
                             }
 
                             if (AreAdvancedSettingsOpened)
@@ -204,8 +203,8 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
 
-                var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openColorPickerWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                var openButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
+                GUI.Window(2, openButtonWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
             }
 
             GUI.matrix = originalMatrix;
