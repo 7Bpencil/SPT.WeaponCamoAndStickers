@@ -554,6 +554,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 						// map environment decals and bullet holes target _StencilType = 0,
 						// which means to keep head clean from helmet decals, we should set it stencil to 0,
 						// which means to keep hands and body clean from weapon decals, we should set it stencil to 1
+						// would be nice to set all body parts to 0, but then environment decals will be projected
+						// on legs and hands which is noticable
 
 						if (part.Key == EBodyModelPart.Head)
 						{
