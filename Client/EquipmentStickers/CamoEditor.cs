@@ -748,6 +748,31 @@ namespace SevenBoldPencil.EquipmentStickers
             }
         }
 
+#if DEBUG
+        public void PrintDecalsTransforms()
+        {
+			if (!CurrentlyEditedItemIndex.Some(out var itemIndex))
+			{
+				return;
+			}
+
+			var item = Items[itemIndex];
+            if (!BigPlugin.GetDecalsInfo(item.ItemId).Some(out var decalsInfo))
+            {
+				return;
+            }
+
+			for (var i = 0; i < decalsInfo.Count; i++)
+			{
+	            var (decalInfo, decal) = BigPlugin.GetDecal(item.ItemId, item.InstanceID, i);
+				var p = decal.DecalTransform.localPosition;
+				var r = decal.DecalTransform.localEulerAngles;
+				var s = decal.DecalTransform.localScale;
+				Plugin.Instance.LoggerInstance.LogWarning($"new(\"{decalInfo.Name}\", \"{decalInfo.Bone}\", new({p.x:F3}f, {p.y:F3}f, {p.z:F3}f), new({r.x:F3}f, {r.y:F3}f, {r.z:F3}f), new({s.x:F3}f, {s.y:F3}f, {s.z:F3}f)),");
+			}
+        }
+#endif
+
         public void SetupTransformHandle(HandleType handleType)
         {
 			if (!CurrentlyEditedItemIndex.Some(out var itemIndex))

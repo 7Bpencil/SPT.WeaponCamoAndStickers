@@ -325,6 +325,12 @@ namespace SevenBoldPencil.EquipmentStickers
                 {
                     camoEditor.SetupTransformHandle(HandleType.Scale);
                 }
+#if DEBUG
+                else if (Input.GetKeyDown(KeyCode.F2))
+                {
+                    camoEditor.PrintDecalsTransforms();
+                }
+#endif
             }
         }
 
