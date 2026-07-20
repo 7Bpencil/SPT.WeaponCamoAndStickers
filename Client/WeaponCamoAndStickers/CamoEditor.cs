@@ -303,10 +303,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 CamoEditorStyle = new(GUI.skin);
 
-                PresetsWindow = new()
+                PresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {
-                    CamoEditorResources = CamoEditorResources,
-                    CamoEditorStyle = CamoEditorStyle,
                     MaxPresetsVisible = maxPresetsVisible,
                     SavePreset = SaveDecalsIntoPreset,
                     SwitchToPreset = SwitchToPreset,
@@ -1651,6 +1649,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Action<string> SavePreset;
         public Action<string> SwitchToPreset;
         public Action<string> DeletePreset;
+
+        public PresetsWindow(CamoEditorResources camoEditorResources, CamoEditorStyle camoEditorStyle)
+        {
+            CamoEditorResources = camoEditorResources;
+            CamoEditorStyle = camoEditorStyle;
+        }
 
         public static Option<string> TryParsePresetName(string presetName)
         {

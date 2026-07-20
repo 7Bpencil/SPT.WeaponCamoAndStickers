@@ -127,19 +127,15 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 CamoEditorStyle = new(GUI.skin);
 
-                ItemPresetsWindow = new()
+                ItemPresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {
-                    CamoEditorResources = CamoEditorResources,
-                    CamoEditorStyle = CamoEditorStyle,
                     MaxPresetsVisible = maxItemPresetsVisible,
                     SavePreset = SaveItemsIntoPreset,
                     SwitchToPreset = SwitchToItemPreset,
                     DeletePreset = Plugin.DeleteItemPreset,
                 };
-                MaterialPresetsWindow = new()
+                MaterialPresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {
-                    CamoEditorResources = CamoEditorResources,
-                    CamoEditorStyle = CamoEditorStyle,
                     MaxPresetsVisible = maxMaterialPresetsVisible,
                     SavePreset = SaveMaterialIntoPreset,
                     SwitchToPreset = SwitchToMaterialPreset,

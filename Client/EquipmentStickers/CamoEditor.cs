@@ -148,10 +148,8 @@ namespace SevenBoldPencil.EquipmentStickers
             {
                 CamoEditorStyle = new(GUI.skin);
 
-                PresetsWindow = new()
+                PresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {
-                    CamoEditorResources = CamoEditorResources,
-                    CamoEditorStyle = CamoEditorStyle,
                     MaxPresetsVisible = maxPresetsVisible,
                     SavePreset = SaveDecalsIntoPreset,
                     SwitchToPreset = SwitchToPreset,
