@@ -55,6 +55,8 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/IMG-20260408-WA0015.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_.45_ACP_submachine_gun_EXUSIAINEWCOVENANT_2026-06-0102-26-15.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_9x19_submachine_gun_AgentVIVI_2026-05-2718-58-41.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/HK_UMP_.40_SW_submachine_gun_2026-07-1700-55-12.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/HK_UMP_.45_ACP_submachine_gun_Leva_2026-07-1500-27-46.png)
 
 ### Dandy
 
