@@ -7,7 +7,7 @@ Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.Wea
 add `-c Release` to get optimized build and copy artifacts into `Escape from Tarkov/Development/7Bpencil.WeaponCamoAndStickers/Stage`<br>
 add `-p:DefineConstants=LOG_ALL` to print info messages into BepInEx console<br>
 
-## APPLY PAINT
+## PAINT GUNS
 
 Video: <https://www.youtube.com/watch?v=54NjlThfFv0>
 
@@ -26,6 +26,12 @@ Video: <https://www.youtube.com/watch?v=54NjlThfFv0>
 ![](previews/paint/sks.png)
 ![](previews/paint/mpx.png)
 ![](previews/paint/ak50.png)
+
+## PAINT ITEMS
+
+![](previews/paint-items/helmet.png)
+![](previews/paint-items/sword.png)
+![](previews/paint-items/secure-container.png)
 
 ## CHANGE MATERIAL
 
@@ -55,6 +61,13 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ![](previews/community/DocTahFrek/IMG-20260408-WA0015.png)
 ![](previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_.45_ACP_submachine_gun_EXUSIAINEWCOVENANT_2026-06-0102-26-15.png)
 ![](previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_9x19_submachine_gun_AgentVIVI_2026-05-2718-58-41.png)
+
+### Dandy
+
+![](previews/community/Dandy/hemlock.png)
+![](previews/community/Dandy/vector.png)
+![](previews/community/Dandy/zlr.png)
+![](previews/community/Dandy/beta.png)
 
 ### letmedowneasy
 
