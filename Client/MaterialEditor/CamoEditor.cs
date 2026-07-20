@@ -91,8 +91,8 @@ namespace SevenBoldPencil.MaterialEditor
         public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
-        public Vector2 CamosScrollPosition;
-        public Vector2 StickersScrollPosition;
+        public WeaponCamoAndStickers.TexturesWindow CamosWindow;
+        public WeaponCamoAndStickers.TexturesWindow StickersWindow;
 		public Rect WindowRect;
 
         // brace for imGUI shitshow
@@ -102,7 +102,7 @@ namespace SevenBoldPencil.MaterialEditor
         public const int maxItemPresetsVisible = 24;
         public const int maxMaterialPresetsVisible = 22;
 
-        public const int maxEraseMaskIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
+        public const int maxTextureIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 25 * (buttonHeight + smallMargin) - smallMargin;
 
         public static readonly int colorPickerY_Color = 217;
@@ -126,6 +126,7 @@ namespace SevenBoldPencil.MaterialEditor
             if (CamoEditorStyle == null)
             {
                 CamoEditorStyle = new(GUI.skin);
+
                 ItemPresetsWindow = new()
                 {
                     CamoEditorResources = CamoEditorResources,
@@ -143,6 +144,17 @@ namespace SevenBoldPencil.MaterialEditor
                     SavePreset = SaveMaterialIntoPreset,
                     SwitchToPreset = SwitchToMaterialPreset,
                     DeletePreset = Plugin.DeleteMaterialPreset,
+                };
+
+                CamosWindow = new(DecalTextureType.Camo, BigPlugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxTextureIconsVisibleHeight,
+                    SelectTexture = SelectTexture,
+                };
+                StickersWindow = new(DecalTextureType.Sticker, BigPlugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxTextureIconsVisibleHeight,
+                    SelectTexture = SelectTexture,
                 };
             }
 
@@ -345,7 +357,7 @@ namespace SevenBoldPencil.MaterialEditor
             else
             {
                 var texturesDirectory = BigPlugin.GetTexturesDirectory(DecalTypeMenu);
-                var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
+                var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxTextureIconsVisibleHeight);
                 return
                     header +
                     buttonHeight + smallMargin + // compensate specular
@@ -793,7 +805,14 @@ namespace SevenBoldPencil.MaterialEditor
                 DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
                 y += buttonHeight + smallMargin;
 
-                DrawAllTextures(x, y, materialInfo.Texture, DecalTypeMenu, maxEraseMaskIconsVisibleHeight);
+                if (DecalTypeMenu == DecalTextureType.Camo)
+                {
+                    CamosWindow.DrawAllTextures(x, y);
+                }
+                if (DecalTypeMenu == DecalTextureType.Sticker)
+                {
+                    StickersWindow.DrawAllTextures(x, y);
+                }
             }
 
 			GUI.DragWindow();
@@ -821,99 +840,13 @@ namespace SevenBoldPencil.MaterialEditor
             return (left, right);
         }
 
-        private ref Vector2 GetScrollPosition(DecalTextureType textureType)
+        private void SelectTexture(string textureName)
         {
-            switch (textureType)
+            var (_, materialName, materialInfo, _) = GetEditedMaterialInfo();
+            if (materialInfo.Texture != textureName)
             {
-                case DecalTextureType.Camo: return ref CamosScrollPosition;
-                case DecalTextureType.Sticker: return ref StickersScrollPosition;
-                default: throw new ArgumentException();
+                ForEveryLinkedItem(Plugin.ChangeTexture, textureName);
             }
-        }
-
-        private void DrawAllTextures(int x, int y, string currentTextureName, DecalTextureType decalTextureType, int maxIconsVisibleHeight)
-        {
-            var texturesDirectory = BigPlugin.GetTexturesDirectory(decalTextureType);
-
-            var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
-            var totalRect = new Rect(x, y, boxWidth, totalHeight);
-            var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
-
-            ref var scrollPosition = ref GetScrollPosition(decalTextureType);
-            BigCamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, scrollPosition);
-            scrollPosition = GUI.BeginScrollView(visibleRect, scrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-            DrawAllTextures(ref x, ref y, currentTextureName, texturesDirectory, drawName: false);
-
-            GUI.EndScrollView();
-        }
-
-        private void DrawAllTextures(ref int x, ref int y, string currentTextureName, TexturesDirectory texturesDirectory, bool drawName = true)
-        {
-            if (drawName)
-            {
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
-                {
-                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
-                }
-
-                var iconSize = 20;
-                var iconMargin = (buttonHeight - iconSize) / 2;
-                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
-                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
-
-                y += buttonHeight + smallMargin;
-            }
-
-            if (texturesDirectory.IsClosed)
-            {
-                return;
-            }
-
-            foreach (var subDirectory in texturesDirectory.Directories)
-            {
-                DrawAllTextures(ref x, ref y, currentTextureName, subDirectory);
-            }
-
-            var textures = texturesDirectory.Textures;
-            for (var i = 0; i < textures.Length; i++)
-            {
-                var textureName = textures[i];
-                var textureData = BigPlugin.GetTextureData(textureName);
-
-                var ix = i % iconColumns;
-                var iy = i / iconColumns;
-
-                var xi = x + ix * (iconSize + smallMargin);
-                var yi = y + iy * (iconSize + smallMargin);
-
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
-                {
-                    var e = Event.current;
-                    if (e.button == 0) // left click
-                    {
-                        if (currentTextureName != textureName)
-                        {
-                            ForEveryLinkedItem(Plugin.ChangeTexture, textureName);
-                        }
-                    }
-                    if (e.button == 1) // right click
-                    {
-                        BigPlugin.ToggleFavouriteTexture(textureName);
-                    }
-                }
-                if (textureData.Format == DecalTextureFormat.Video)
-                {
-                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, 16, 16), CamoEditorResources.PlayIcon);
-                }
-                if (BigPlugin.IsFavouriteTexture(textureName))
-                {
-                    GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
-                }
-            }
-
-            var totalRows = BigCamoEditor.DivideIntCeil(textures.Length, iconColumns);
-            y += (iconSize + smallMargin) * totalRows;
         }
 
         private void DrawOpenedWindowCloseButton(int windowID)

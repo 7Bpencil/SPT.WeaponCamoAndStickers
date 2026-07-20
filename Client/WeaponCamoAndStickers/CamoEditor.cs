@@ -260,9 +260,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Option<int> CurrentlyEditedDecalIndex;
         public DecalSettingType DecalSettingType;
         public DecalTextureType DecalTypeMenu;
-        public Vector2 CamosScrollPosition;
-        public Vector2 StickersScrollPosition;
-        public Vector2 MasksScrollPosition;
+        public TexturesWindow CamosWindow;
+        public TexturesWindow StickersWindow;
+        public TexturesWindow MasksWindow;
+        public TexturesWindow EraseMasksWindow;
         public bool IsColorPickerOpened;
         public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public RuntimeTransformHandle TransformHandle;
@@ -301,6 +302,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (CamoEditorStyle == null)
             {
                 CamoEditorStyle = new(GUI.skin);
+
                 PresetsWindow = new()
                 {
                     CamoEditorResources = CamoEditorResources,
@@ -309,6 +311,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     SavePreset = SaveDecalsIntoPreset,
                     SwitchToPreset = SwitchToPreset,
                     DeletePreset = Plugin.DeletePreset,
+                };
+
+                CamosWindow = new(DecalTextureType.Camo, Plugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxTextureIconsVisibleHeight,
+                    SelectTexture = SelectCamoTexture,
+                };
+                StickersWindow = new(DecalTextureType.Sticker, Plugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxTextureIconsVisibleHeight,
+                    SelectTexture = SelectStickerTexture,
+                };
+                MasksWindow = new(DecalTextureType.Mask, Plugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxMaskIconsVisibleHeight,
+                    SelectTexture = SelectMaskTexture,
+                };
+                EraseMasksWindow = new(DecalTextureType.Mask, Plugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxEraseMaskIconsVisibleHeight,
+                    SelectTexture = SelectMaskTexture,
                 };
             }
 
@@ -423,7 +446,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 else
                 {
                     var texturesDirectory = Plugin.GetTexturesDirectory(DecalTextureType.Mask);
-                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxMaskIconsVisibleHeight);
+                    var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, MasksWindow.MaxVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + mediumMargin + // back button
@@ -442,7 +465,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (decalInfo.PaintMode == DecalPaintMode.Erase)
             {
                 var texturesDirectory = Plugin.GetTexturesDirectory(DecalTextureType.Mask);
-                var (_, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxEraseMaskIconsVisibleHeight);
+                var (_, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, EraseMasksWindow.MaxVisibleHeight);
                 return
                     bigMargin +
                     buttonHeight + mediumMargin + // back button
@@ -1197,11 +1220,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
-            // TODO this shit is annoying, create separate class
-            DrawAllTextures(
-                x, y, ItemId, decalIndex, decalInfo, decal, DecalTypeMenu, maxTextureIconsVisibleHeight,
-                Plugin, GetScrollPosition, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
+            if (DecalTypeMenu == DecalTextureType.Camo)
+            {
+                CamosWindow.DrawAllTextures(x, y);
+            }
+            if (DecalTypeMenu == DecalTextureType.Sticker)
+            {
+                StickersWindow.DrawAllTextures(x, y);
+            }
         }
 
         private void DrawDecalEditUI_Mask(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1277,10 +1303,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(
-                x, y, ItemId, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxMaskIconsVisibleHeight,
-                Plugin, GetScrollPosition, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
+            MasksWindow.DrawAllTextures(x, y);
         }
 
         private void DrawDecalEditUI_Mask_Erase(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -1375,10 +1398,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DrawAllTextures(
-                x, y, ItemId, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxEraseMaskIconsVisibleHeight,
-                Plugin, GetScrollPosition, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
+            EraseMasksWindow.DrawAllTextures(x, y);
         }
 
         public void SetupTransformHandle(HandleType handleType)
@@ -1470,126 +1490,38 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        private ref Vector2 GetScrollPosition(DecalTextureType textureType)
+        private void SelectCamoTexture(string textureName)
         {
-            switch (textureType)
+            var decalIndex = CurrentlyEditedDecalIndex.Value;
+            var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+            if (decalInfo.Texture != textureName)
             {
-                case DecalTextureType.Camo: return ref CamosScrollPosition;
-                case DecalTextureType.Sticker: return ref StickersScrollPosition;
-                case DecalTextureType.Mask: return ref MasksScrollPosition;
-                default: throw new ArgumentException();
+                Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle();
             }
         }
 
-        public delegate ref Vector2 GetScrollPositionDelegate(DecalTextureType textureType);
-
-        public static void DrawAllTextures(
-            int x, int y, string ItemId, int decalIndex, DecalInfo decalInfo, Decal decal, DecalTextureType decalTextureType, int maxIconsVisibleHeight,
-            Plugin Plugin, GetScrollPositionDelegate GetScrollPosition, Action SyncTransformHandle,
-            CamoEditorResources CamoEditorResources, CamoEditorStyle CamoEditorStyle)
+        private void SelectStickerTexture(string textureName)
         {
-            var texturesDirectory = Plugin.GetTexturesDirectory(decalTextureType);
-
-            var (totalHeight, visibleHeight) = CalculateTexturesDirectoryHeight(texturesDirectory, maxIconsVisibleHeight);
-            var totalRect = new Rect(x, y, boxWidth, totalHeight);
-            var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
-
-            ref var scrollPosition = ref GetScrollPosition(decalTextureType);
-            DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, scrollPosition);
-            scrollPosition = GUI.BeginScrollView(visibleRect, scrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
-
-            DrawAllTextures(
-                ref x, ref y, ItemId, decalIndex, decalInfo, decal, texturesDirectory, false,
-                Plugin, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
-
-            GUI.EndScrollView();
+            var decalIndex = CurrentlyEditedDecalIndex.Value;
+            var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+            if (decalInfo.Texture != textureName)
+            {
+                Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
+                Plugin.FixScale(ItemId, decalIndex, decalInfo);
+                SyncTransformHandle();
+            }
         }
 
-        private static void DrawAllTextures(
-            ref int x, ref int y, string ItemId, int decalIndex, DecalInfo decalInfo, Decal decal, TexturesDirectory texturesDirectory, bool drawName,
-            Plugin Plugin, Action SyncTransformHandle,
-            CamoEditorResources CamoEditorResources, CamoEditorStyle CamoEditorStyle)
+        private void SelectMaskTexture(string textureName)
         {
-            if (drawName)
+            var decalIndex = CurrentlyEditedDecalIndex.Value;
+            var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
+            if (decalInfo.Mask != textureName)
             {
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
-                {
-                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
-                }
-
-                var iconSize = 20;
-                var iconMargin = (buttonHeight - iconSize) / 2;
-                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
-                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
-
-                y += buttonHeight + smallMargin;
+                Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
             }
-
-            if (texturesDirectory.IsClosed)
-            {
-                return;
-            }
-
-            foreach (var subDirectory in texturesDirectory.Directories)
-            {
-                DrawAllTextures(
-                    ref x, ref y, ItemId, decalIndex, decalInfo, decal, subDirectory, true,
-                    Plugin, SyncTransformHandle,
-                    CamoEditorResources, CamoEditorStyle);
-            }
-
-            var textures = texturesDirectory.Textures;
-            for (var i = 0; i < textures.Length; i++)
-            {
-                var textureName = textures[i];
-                var textureData = Plugin.GetTextureData(textureName);
-
-                var ix = i % iconColumns;
-                var iy = i / iconColumns;
-
-                var xi = x + ix * (iconSize + smallMargin);
-                var yi = y + iy * (iconSize + smallMargin);
-
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
-                {
-                    var e = Event.current;
-                    if (e.button == 0) // left click
-                    {
-                        if (textureData.Type == DecalTextureType.Camo && decalInfo.Texture != textureName)
-                        {
-                            Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                            Plugin.FixTextureUV(ItemId, decalIndex, decalInfo);
-                            SyncTransformHandle();
-                        }
-                        if (textureData.Type == DecalTextureType.Sticker && decalInfo.Texture != textureName)
-                        {
-                            Plugin.ChangeTexture(ItemId, decalIndex, decalInfo, textureName);
-                            Plugin.FixScale(ItemId, decalIndex, decalInfo);
-                            SyncTransformHandle();
-                        }
-                        if (textureData.Type == DecalTextureType.Mask && decalInfo.Mask != textureName)
-                        {
-                            Plugin.ChangeMask(ItemId, decalIndex, decalInfo, textureName);
-                        }
-                    }
-                    if (e.button == 1) // right click
-                    {
-                        Plugin.ToggleFavouriteTexture(textureName);
-                    }
-                }
-                if (textureData.Format == DecalTextureFormat.Video)
-                {
-                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, smallIconSize, smallIconSize), CamoEditorResources.PlayIcon);
-                }
-                if (Plugin.IsFavouriteTexture(textureName))
-                {
-                    GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
-                }
-            }
-
-            var totalRows = DivideIntCeil(textures.Length, iconColumns);
-            y += (iconSize + smallMargin) * totalRows;
         }
 
         public void Destroy()
@@ -1806,6 +1738,112 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 y += buttonHeight + bigMargin;
             }
         }
+    }
+
+    public class TexturesWindow
+    {
+        public CamoEditorResources CamoEditorResources;
+        public CamoEditorStyle CamoEditorStyle;
+        public TexturesDirectory TexturesDirectory;
+        public Vector2 ScrollPosition;
+        public int MaxVisibleHeight;
+
+        public Func<string, DecalTextureData> GetTextureData;
+        public Func<string, bool> IsFavouriteTexture;
+        public Action<string> SelectTexture;
+        public Action<string> ToggleFavouriteTexture;
+
+        public TexturesWindow() { }
+
+        public TexturesWindow(DecalTextureType textureType, Plugin plugin, CamoEditorResources camoEditorResources, CamoEditorStyle camoEditorStyle)
+        {
+            CamoEditorResources = camoEditorResources;
+            CamoEditorStyle = camoEditorStyle;
+            TexturesDirectory = plugin.GetTexturesDirectory(textureType);
+            GetTextureData = plugin.GetTextureData;
+            IsFavouriteTexture = plugin.IsFavouriteTexture;
+            ToggleFavouriteTexture = plugin.ToggleFavouriteTexture;
+        }
+
+        public void DrawAllTextures(int x, int y)
+        {
+            var (totalHeight, visibleHeight) = CamoEditor.CalculateTexturesDirectoryHeight(TexturesDirectory, MaxVisibleHeight);
+            var totalRect = new Rect(x, y, boxWidth, totalHeight);
+            var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
+
+            CamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, ScrollPosition);
+            ScrollPosition = GUI.BeginScrollView(visibleRect, ScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+            DrawAllTextures(ref x, ref y, TexturesDirectory, false);
+
+            GUI.EndScrollView();
+        }
+
+        private void DrawAllTextures(ref int x, ref int y, TexturesDirectory texturesDirectory, bool drawName)
+        {
+            if (drawName)
+            {
+                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
+                {
+                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
+                }
+
+                var iconSize = 20;
+                var iconMargin = (buttonHeight - iconSize) / 2;
+                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
+                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+
+                y += buttonHeight + smallMargin;
+            }
+
+            if (texturesDirectory.IsClosed)
+            {
+                return;
+            }
+
+            foreach (var subDirectory in texturesDirectory.Directories)
+            {
+                DrawAllTextures(ref x, ref y, subDirectory, true);
+            }
+
+            var textures = texturesDirectory.Textures;
+            for (var i = 0; i < textures.Length; i++)
+            {
+                var textureName = textures[i];
+                var textureData = GetTextureData(textureName);
+
+                var ix = i % iconColumns;
+                var iy = i / iconColumns;
+
+                var xi = x + ix * (iconSize + smallMargin);
+                var yi = y + iy * (iconSize + smallMargin);
+
+                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
+                {
+                    var e = Event.current;
+                    if (e.button == 0) // left click
+                    {
+                        SelectTexture(textureName);
+                    }
+                    if (e.button == 1) // right click
+                    {
+                        ToggleFavouriteTexture(textureName);
+                    }
+                }
+                if (textureData.Format == DecalTextureFormat.Video)
+                {
+                    GUI.DrawTexture(new Rect(xi + smallMargin, yi + smallMargin, smallIconSize, smallIconSize), CamoEditorResources.PlayIcon);
+                }
+                if (IsFavouriteTexture(textureName))
+                {
+                    GUI.DrawTexture(new Rect(xi + iconSize - 3 - smallIconSize, yi + iconSize - 3 - smallIconSize, smallIconSize, smallIconSize), CamoEditorResources.FavouriteIcon);
+                }
+            }
+
+            var totalRows = CamoEditor.DivideIntCeil(textures.Length, iconColumns);
+            y += (iconSize + smallMargin) * totalRows;
+        }
+
     }
 
 }

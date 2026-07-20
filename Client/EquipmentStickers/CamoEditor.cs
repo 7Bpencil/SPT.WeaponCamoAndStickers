@@ -121,8 +121,8 @@ namespace SevenBoldPencil.EquipmentStickers
         public Option<int> CurrentlyEditedItemIndex;
         public Option<int> CurrentlyEditedDecalIndex;
         public DecalSettingType DecalSettingType;
-        public Vector2 StickersScrollPosition;
-        public Vector2 MasksScrollPosition;
+        public WeaponCamoAndStickers.TexturesWindow StickersWindow;
+        public WeaponCamoAndStickers.TexturesWindow MasksWindow;
 		public bool IsStartTransformsListOpened;
         public bool IsColorPickerOpened;
         public WeaponCamoAndStickers.TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
@@ -147,6 +147,7 @@ namespace SevenBoldPencil.EquipmentStickers
             if (CamoEditorStyle == null)
             {
                 CamoEditorStyle = new(GUI.skin);
+
                 PresetsWindow = new()
                 {
                     CamoEditorResources = CamoEditorResources,
@@ -155,6 +156,17 @@ namespace SevenBoldPencil.EquipmentStickers
                     SavePreset = SaveDecalsIntoPreset,
                     SwitchToPreset = SwitchToPreset,
                     DeletePreset = BigPlugin.DeletePreset,
+                };
+
+                StickersWindow = new(DecalTextureType.Sticker, BigPlugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxTextureIconsVisibleHeight,
+                    SelectTexture = SelectStickerTexture,
+                };
+                MasksWindow = new(DecalTextureType.Mask, BigPlugin, CamoEditorResources, CamoEditorStyle)
+                {
+                    MaxVisibleHeight = maxMaskIconsVisibleHeight,
+                    SelectTexture = SelectMaskTexture,
                 };
             }
 
@@ -288,7 +300,7 @@ namespace SevenBoldPencil.EquipmentStickers
                 if (DecalSettingType == DecalSettingType.Texture)
 				{
 		            var texturesDirectory = BigPlugin.GetTexturesDirectory(DecalTextureType.Sticker);
-		            var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxTextureIconsVisibleHeight);
+		            var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, StickersWindow.MaxVisibleHeight);
 		            return
 		                bigMargin +
 		                buttonHeight + mediumMargin + // back button
@@ -307,7 +319,7 @@ namespace SevenBoldPencil.EquipmentStickers
 				else
 				{
                     var texturesDirectory = BigPlugin.GetTexturesDirectory(DecalTextureType.Mask);
-                    var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxMaskIconsVisibleHeight);
+                    var (totalHeight, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, MasksWindow.MaxVisibleHeight);
                     return
                         bigMargin +
                         buttonHeight + mediumMargin + // back button
@@ -765,10 +777,7 @@ namespace SevenBoldPencil.EquipmentStickers
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            BigCamoEditor.DrawAllTextures(
-                x, y, itemId, decalIndex, decalInfo, decal, DecalTextureType.Sticker, maxTextureIconsVisibleHeight,
-                BigPlugin, GetScrollPosition, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
+			StickersWindow.DrawAllTextures(x, y);
 		}
 
 		private void DrawDecalEditUI_Mask(int x, ref int y, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal)
@@ -787,19 +796,32 @@ namespace SevenBoldPencil.EquipmentStickers
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            BigCamoEditor.DrawAllTextures(
-                x, y, itemId, decalIndex, decalInfo, decal, DecalTextureType.Mask, maxMaskIconsVisibleHeight,
-                BigPlugin, GetScrollPosition, SyncTransformHandle,
-                CamoEditorResources, CamoEditorStyle);
+			MasksWindow.DrawAllTextures(x, y);
 		}
 
-        private ref Vector2 GetScrollPosition(DecalTextureType textureType)
+        private void SelectStickerTexture(string textureName)
         {
-            switch (textureType)
+            var itemIndex = CurrentlyEditedItemIndex.Value;
+			var decalIndex = CurrentlyEditedDecalIndex.Value;
+            var item = Items[itemIndex];
+            var (decalInfo, decal) = BigPlugin.GetDecal(item.ItemId, item.InstanceID, decalIndex);
+            if (decalInfo.Texture != textureName)
             {
-                case DecalTextureType.Sticker: return ref StickersScrollPosition;
-                case DecalTextureType.Mask: return ref MasksScrollPosition;
-                default: throw new ArgumentException();
+                BigPlugin.ChangeTexture(item.ItemId, decalIndex, decalInfo, textureName);
+                BigPlugin.FixScale(item.ItemId, decalIndex, decalInfo);
+                SyncTransformHandle();
+            }
+        }
+
+        private void SelectMaskTexture(string textureName)
+        {
+            var itemIndex = CurrentlyEditedItemIndex.Value;
+			var decalIndex = CurrentlyEditedDecalIndex.Value;
+            var item = Items[itemIndex];
+            var (decalInfo, decal) = BigPlugin.GetDecal(item.ItemId, item.InstanceID, decalIndex);
+            if (decalInfo.Mask != textureName)
+            {
+                BigPlugin.ChangeMask(item.ItemId, decalIndex, decalInfo, textureName);
             }
         }
 
