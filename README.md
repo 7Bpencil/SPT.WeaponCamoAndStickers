@@ -30,8 +30,8 @@ Video: <https://www.youtube.com/watch?v=54NjlThfFv0>
 ## PAINT ITEMS
 
 ![](previews/paint-items/helmet.png)
-![](previews/paint-items/sword.png)
 ![](previews/paint-items/secure-container.png)
+![](previews/paint-items/sword.png)
 
 ## CHANGE MATERIAL
 
