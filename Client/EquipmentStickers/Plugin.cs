@@ -29,7 +29,7 @@ namespace SevenBoldPencil.EquipmentStickers
 {
     public readonly record struct StartDecalTransform(string Name, string Bone, Vector3 LocalPosition, Vector3 LocalEulerAngles, Vector3 LocalScale);
 
-    [BepInPlugin("7Bpencil.EquipmentStickers", "7Bpencil.EquipmentStickers", "1.16.1")]
+    [BepInPlugin("7Bpencil.EquipmentStickers", "7Bpencil.EquipmentStickers", "1.17.0")]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
