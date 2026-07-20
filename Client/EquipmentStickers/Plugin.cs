@@ -41,6 +41,17 @@ namespace SevenBoldPencil.EquipmentStickers
 		public const string BoneHead = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanNeck/Base HumanHead";
 		public const string BoneRightUpperarm = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanRCollarbone/Base HumanRUpperarm";
 		public const string BoneLeftUpperarm = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2/Base HumanSpine3/Base HumanRibcage/Base HumanLCollarbone/Base HumanLUpperarm";
+		public const string BonePelvis = "Root_Joint/Base HumanPelvis";
+		public const string BoneRightThigh1 = "Root_Joint/Base HumanPelvis/Base HumanRThigh1";
+		public const string BoneRightThigh2 = "Root_Joint/Base HumanPelvis/Base HumanRThigh1/Base HumanRThigh2";
+		public const string BoneRightCalf = "Root_Joint/Base HumanPelvis/Base HumanRThigh1/Base HumanRThigh2/Base HumanRCalf";
+		public const string BoneRightFoot = "Root_Joint/Base HumanPelvis/Base HumanRThigh1/Base HumanRThigh2/Base HumanRCalf/Base HumanRFoot";
+		public const string BoneRightToe = "Root_Joint/Base HumanPelvis/Base HumanRThigh1/Base HumanRThigh2/Base HumanRCalf/Base HumanRFoot/Base HumanRToe";
+		public const string BoneLeftThigh1 = "Root_Joint/Base HumanPelvis/Base HumanLThigh1";
+		public const string BoneLeftThigh2 = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2";
+		public const string BoneLeftCalf = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf";
+		public const string BoneLeftFoot = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot";
+		public const string BoneLeftToe = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot/Base HumanLToe";
 
 		private Dictionary<EBodyModelPart, StartDecalTransform[][]> StartDecalTransforms = new()
 		{
@@ -86,6 +97,29 @@ namespace SevenBoldPencil.EquipmentStickers
 						new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0.000f, 0.110f), new(0.000f, 83.000f, 84.000f), new(0.068f, 0.100f, 0.068f)),
 						new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.110f), new(356.000f, 100.000f, 282.000f), new(0.068f, 0.100f, 0.068f)),
 					],
+				]
+			},
+			{
+				// TODO finalize placement
+				EBodyModelPart.Feet,
+				[
+					[
+						new("Pelvis", BonePelvis, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					],
+					[
+						new("Right Thigh 1", BoneRightThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Thigh 2", BoneRightThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Calf", BoneRightCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Foot", BoneRightFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Right Toe", BoneRightToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					],
+					[
+						new("Left Thigh 1", BoneLeftThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Thigh 2", BoneLeftThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Calf", BoneLeftCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Foot", BoneLeftFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+						new("Left Toe", BoneLeftToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+					]
 				]
 			},
 		};
@@ -173,10 +207,11 @@ namespace SevenBoldPencil.EquipmentStickers
 
         public List<CamoEditorItem> BuildItemsFromBodySkins(string profileId, PlayerBody playerBody)
 		{
-            var result = new List<CamoEditorItem>(7); // 2 body skins and 5 items
+            var result = new List<CamoEditorItem>(8); // 3 body skins and 5 items
 
 			TryBuildSkin(EBodyModelPart.Head, 0, profileId, playerBody, result);
 			TryBuildSkin(EBodyModelPart.Body, 1, profileId, playerBody, result);
+			TryBuildSkin(EBodyModelPart.Feet, 1, profileId, playerBody, result);
 
             TryBuildItem(EquipmentSlot.Headwear, EBodyModelPart.Head, playerBody, result);
             TryBuildItem(EquipmentSlot.FaceCover, EBodyModelPart.Head, playerBody, result);
