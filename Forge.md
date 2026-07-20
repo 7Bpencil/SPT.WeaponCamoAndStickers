@@ -1,6 +1,6 @@
 # Tabs {.tabset}
 
-## APPLY PAINT
+## PAINT GUNS
 One video speaks louder than thousand words: (also READ FAQ)
 
 https://www.youtube.com/watch?v=54NjlThfFv0
@@ -20,6 +20,12 @@ https://www.youtube.com/watch?v=54NjlThfFv0
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint/sks.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint/mpx.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint/ak50.png)
+
+## PAINT ITEMS
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint-items/helmet.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint-items/secure-container.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/paint-items/sword.png)
 
 ## CHANGE MATERIAL
 
@@ -49,6 +55,13 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/IMG-20260408-WA0015.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_.45_ACP_submachine_gun_EXUSIAINEWCOVENANT_2026-06-0102-26-15.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_9x19_submachine_gun_AgentVIVI_2026-05-2718-58-41.png)
+
+### Dandy
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/hemlock.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/zlr.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/vector.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/beta.png)
 
 ### letmedowneasy
 
