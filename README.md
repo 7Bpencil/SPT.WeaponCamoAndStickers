@@ -63,7 +63,6 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ![](previews/community/DocTahFrek/TDI_KRISS_Vector_Gen.2_9x19_submachine_gun_AgentVIVI_2026-05-2718-58-41.png)
 ![](previews/community/DocTahFrek/HK_UMP_.40_SW_submachine_gun_2026-07-1700-55-12.png)
 ![](previews/community/DocTahFrek/HK_UMP_.45_ACP_submachine_gun_Leva_2026-07-1500-27-46.png)
-![](previews/community/DocTahFrek/HK_UMP_9x19mm_submachine_gun_Lenna_2026-07-1602-21-11.png)
 
 ### Dandy
 
