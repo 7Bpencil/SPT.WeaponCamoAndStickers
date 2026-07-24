@@ -81,7 +81,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/zovchernobyl/Kalashnikov_PPK-20_9x19mm_2026-04-1210-57-57.png)
 
-### Spirit
+### [Spirit](https://forge.sp-tarkov.com/addon/47/spirits-embroidery)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Spirit/RShG-2_72.5mm_rocket_launcher_2026-04-1408-39-57.png)
 
