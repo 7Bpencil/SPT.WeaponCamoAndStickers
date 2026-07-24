@@ -55,7 +55,7 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ![](previews/community/Bandoot/dawn.gif)
 ![](previews/community/Bandoot/cyberpunk.png)
 
-### DocTahFrek
+### [DocTahFrek](https://forge.sp-tarkov.com/addon/90/docs-weapon-skin-collection)
 
 ![](previews/community/DocTahFrek/Colt_M4A1_5.56x45_assault_rifle_SOPMOD_II_2026-04-1002-11-21.png)
 ![](previews/community/DocTahFrek/IMG-20260408-WA0015.png)
