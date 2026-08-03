@@ -185,7 +185,7 @@ namespace SevenBoldPencil.EquipmentStickers
             }
 
             var originalMatrix = GUI.matrix;
-            GUI.matrix = BigCamoEditor.CalculateUIScale();
+            GUI.matrix = BigCamoEditor.CalculateUIScaleMatrix();
 
             if (IsOpened)
             {

@@ -289,10 +289,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill, false, 0, color, 0, 0);
         }
 
-        public static Matrix4x4 CalculateUIScale()
+        public static float CalculateUIScale()
         {
             var baseUIScale = Math.Max(Screen.height / 1080, 1);
-            var uiScale = baseUIScale * Plugin.UIScale.Value;
+            return baseUIScale * Plugin.UIScale.Value;
+        }
+
+        public static Matrix4x4 CalculateUIScaleMatrix()
+        {
+            var uiScale = CalculateUIScale();
             return Matrix4x4.Scale(new(uiScale, uiScale, 1f));
         }
 
@@ -334,7 +339,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var originalMatrix = GUI.matrix;
-            GUI.matrix = CalculateUIScale();
+            GUI.matrix = CalculateUIScaleMatrix();
 
             if (IsOpened)
             {

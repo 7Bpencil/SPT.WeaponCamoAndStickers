@@ -30,7 +30,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var originalMatrix = GUI.matrix;
-            GUI.matrix = CamoEditor.CalculateUIScale();
+            GUI.matrix = CamoEditor.CalculateUIScaleMatrix();
 
             if (IsOpened)
             {
