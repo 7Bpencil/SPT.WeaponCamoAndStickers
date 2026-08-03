@@ -2524,14 +2524,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (CamoEditor.Some(out var camoEditor))
             {
-                if (camoEditor.WindowRect.Contains(Event.current.mousePosition))
+                if (WeaponCamoAndStickers.CamoEditor.WindowRectContainsMouse(camoEditor.WindowRect))
                 {
                     return false;
                 }
             }
             if (CamoEditorError.Some(out var camoEditorError))
             {
-                if (camoEditorError.WindowRect.Contains(Event.current.mousePosition))
+                if (WeaponCamoAndStickers.CamoEditor.WindowRectContainsMouse(camoEditorError.WindowRect))
                 {
                     return false;
                 }

@@ -301,6 +301,18 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return Matrix4x4.Scale(new(uiScale, uiScale, 1f));
         }
 
+        public static Rect ScaleRect(Rect rect)
+        {
+            var uiScale = CalculateUIScale();
+            return new Rect(rect.x * uiScale, rect.y * uiScale, rect.width * uiScale, rect.height * uiScale);
+        }
+
+        public static bool WindowRectContainsMouse(Rect windowRect)
+        {
+            var scaledWindowRect = ScaleRect(windowRect);
+            return scaledWindowRect.Contains(Event.current.mousePosition);
+        }
+
         public void DrawWindow()
         {
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call

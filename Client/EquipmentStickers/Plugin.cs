@@ -408,7 +408,7 @@ namespace SevenBoldPencil.EquipmentStickers
 		{
             if (CamoEditor.Some(out var camoEditor))
             {
-                if (camoEditor.WindowRect.Contains(Event.current.mousePosition))
+                if (WeaponCamoAndStickers.CamoEditor.WindowRectContainsMouse(camoEditor.WindowRect))
                 {
                     return false;
                 }
