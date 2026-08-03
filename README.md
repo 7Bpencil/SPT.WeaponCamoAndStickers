@@ -1,3 +1,7 @@
+## Texture Packs
+
+Many people created their own texture packs and skins presets, check `addon.csv` file for download links
+
 ## Build
 
 Clone into `Escape from Tarkov/Development/SPT.WeaponCamoAndStickers`<br>
