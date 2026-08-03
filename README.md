@@ -1,6 +1,6 @@
 ## Texture Packs
 
-Many people created their own texture packs and skins presets, check `addon.csv` file for download links
+Many people created their own texture packs and skins presets, check `addon.csv` file for download links. I have all archives downloaded, contact me if any of them become inaccessible
 
 ## Build
 
