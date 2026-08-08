@@ -347,30 +347,30 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             WeaponsWaitingForRemoteCamo = new();
 
-            new Patch_WeaponModdingScreen_method_6().Enable();
-            new Patch_WeaponPreview_Class3271_method_1().Enable();
+            new Patch_WeaponModdingScreen_CreateModSlotViews().Enable();
+            new Patch_WeaponPreview_CG_SetupItemPreview_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
             new Patch_ScrollTrigger_OnScroll().Enable();
             new Patch_WeaponPreview_Hide().Enable();
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
-            new Patch_InteractionButtonsContainer_method_3().Enable();
+            new Patch_InteractionButtonsContainer_CreateDynamicContextButton().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
-            new Patch_PoolManagerClass_CreateItemAsync().Enable();
-            new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_ObjectsFactory_CreateItemAsync().Enable();
+            new Patch_ObjectsFactory_PopOrCreate().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
-            new Patch_PlayerBody_EquipmentSlotClass_method_4().Enable();
+            new Patch_PlayerBody_SlotView_CreateAndParent().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_PlayerBody_SetSkin_CreateItem().Enable();
             new Patch_LoddedSkin_Unskin().Enable();
-            new Patch_GClass3380_smethod_2().Enable();
-            new Patch_GClass2304_smethod_0().Enable();
-            new Patch_PlayerModelView_method_0().Enable();
-            new Patch_PlayerModelView_method_1().Enable();
+            new Patch_ItemExtensions_CloneItemInternal().Enable();
+            new Patch_ClientApplicationInitOperation_CursorVisibilityChangedHandler().Enable();
+            new Patch_PlayerModelView_OnLoadingCompleted().Enable();
+            new Patch_PlayerModelView_Destroy().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
-            new Patch_BotCreatorClass_method_2().Enable();
-            new Patch_GClass926_GetItemIcon().Enable();
-            new Patch_GClass928_GetItemHash().Enable();
+            new Patch_BotCreatorClient_CreateBot().Enable();
+            new Patch_ItemIconCreator_GetItemIcon().Enable();
+            new Patch_IconsHash_GetItemHash().Enable();
 
             TryEnableFikaSupport(assemblyDir);
 
@@ -2211,7 +2211,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         // TODO add ability to select attachment point (ECharacterWeaponBones.weapon or EWeaponModType.mod_magazine)
         // public static Transform GetModTransform(WeaponPrefab weaponPrefab, EWeaponModType modType)
         // {
-        //     return TransformHelperClass.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
+        //     return TransformTools.FindTransformRecursive(weaponPrefab.Hierarchy.GetTransform(ECharacterWeaponBones.Weapon_root), modType.ToString()).GetChild(0).transform;
         // }
 
         public void OnSkinCreated(string profileId, string skinId, LoddedSkin skin, Skeleton skeleton)
@@ -2884,7 +2884,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     return PMCWeaponCamoSpawnChance.Value;
             }
 
-			if (BotSettingsRepoClass.IsBossOrFollower(botRole))
+			if (WildSpawnTypeExtension.IsBossOrFollower(botRole))
 			{
                 return OtherBossesWeaponCamoSpawnChance.Value;
 			}
@@ -3069,14 +3069,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return item switch
             {
                 Weapon => new(ItemType.Weapon),
-                KnifeItemClass => new(ItemType.Knife),
-                HeadwearItemClass => new(ItemType.Headwear),
-                FaceCoverItemClass => new(ItemType.FaceCover),
-                SimpleContainerItemClass => new(ItemType.Container),
-                MobContainerItemClass => new(ItemType.Container),
-                ArmorItemClass => new(ItemType.Armor),
-                VestItemClass => new(ItemType.Vest),
-                BackpackItemClass => new(ItemType.Backpack),
+                Knife => new(ItemType.Knife),
+                Headwear => new(ItemType.Headwear),
+                FaceCover => new(ItemType.FaceCover),
+                SimpleContainer => new(ItemType.Container),
+                MobContainer => new(ItemType.Container),
+                Armor => new(ItemType.Armor),
+                Vest => new(ItemType.Vest),
+                Backpack => new(ItemType.Backpack),
                 _ => default,
             };
         }

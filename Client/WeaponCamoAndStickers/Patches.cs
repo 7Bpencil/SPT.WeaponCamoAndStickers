@@ -31,11 +31,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	// this method tries to initialize gui for all slots in weapon,
 	// pretend that there are no slots when applying paint to not obscure view
-	public class Patch_WeaponModdingScreen_method_6 : ModulePatch
+	public class Patch_WeaponModdingScreen_CreateModSlotViews : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.method_6));
+            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.CreateModSlotViews));
         }
 
         [PatchPrefix]
@@ -45,21 +45,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_WeaponPreview_Class3271_method_1 : ModulePatch
+	public class Patch_WeaponPreview_CG_SetupItemPreview_method_1 : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponPreview.Class3271), nameof(WeaponPreview.Class3271.method_1));
+            return AccessTools.Method(typeof(WeaponPreview.CG_SetupItemPreview), nameof(WeaponPreview.CG_SetupItemPreview.method_1));
         }
 
         [PatchPostfix]
-        public static void Postfix(WeaponPreview.Class3271 __instance)
+        public static void Postfix(WeaponPreview.CG_SetupItemPreview __instance)
         {
 			// this called when WeaponPreview is opened and fully initialized,
 			// WeaponPreview is used both by weapon modding screen and item overview
    			var weaponPreview = __instance.weaponPreview_0;
 			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
-			var item = _weaponPreview.item_0;
+			var item = _weaponPreview._currentItem;
 			if (item == null)
 			{
 				return;
@@ -77,7 +77,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject, out PreviewPivot previewPivot)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
-			var itemGO = weaponPreview.gameObject_0;
+			var itemGO = weaponPreview._originalObject;
 
 			if (itemGO &&
 				itemGO.TryGetComponent<AssetPoolObject>(out assetPoolObject) &&
@@ -103,7 +103,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static bool Prefix(WeaponPreview __instance)
 		{
 			var _weaponPreview = new WeaponPreview_Proxy(__instance);
-			var item = _weaponPreview.item_0;
+			var item = _weaponPreview._currentItem;
 			if (item != null)
 			{
 				return Plugin.Instance.CanWeaponPreviewRotate();
@@ -138,7 +138,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static bool Prefix(WeaponPreview __instance)
 		{
 			var _weaponPreview = new WeaponPreview_Proxy(__instance);
-			var item = _weaponPreview.item_0;
+			var item = _weaponPreview._currentItem;
 			if (item != null)
 			{
 				var camera = __instance.WeaponPreviewCamera;
@@ -161,7 +161,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	    }
 
 	    [PatchPostfix]
-	    private static void Postfix(ItemInfoInteractionsAbstractClass<EItemInfoButton> __result, ItemUiContext __instance, ItemContextClass itemContext)
+	    private static void Postfix(ContextInteractions<EItemInfoButton> __result, ItemUiContext __instance, DragItemContext itemContext)
 	    {
 			if (itemContext.ViewType != EItemViewType.Inventory)
 			{
@@ -172,13 +172,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				return;
 			}
 
-			var __result__ = new ItemInfoInteractionsAbstractClass_Proxy<EItemInfoButton>(__result);
-			var interactions = __result__.Dictionary_0;
+			var interactions = __result._dynamicInteractions;
 			var item = itemContext.Item;
 
 			var key = "APPLY PAINT";
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
-	        interactions[key] = new Custom_DynamicInteractionClass(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
+	        interactions[key] = new Custom_DynamicContextInteraction(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
 			{
 				NonInteractiveTooltip = Plugin.CanItemHaveDecals(item) ? GetRequiresBenchTooltip() : new(new FailedResult("Only following items can be painted: Weapons, Knives, Helmets, Facemasks, Containers")),
 			};
@@ -201,9 +200,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	        return instance != null && instance.InRaid;
 	    }
 
-		public static void OpenApplyPaintWindow(ItemInfoInteractionsAbstractClass<EItemInfoButton> result)
+		public static void OpenApplyPaintWindow(ContextInteractions<EItemInfoButton> result)
 		{
-			if (result is GClass3758 gclass)
+			if (result is InventoryItemContextInteractions gclass)
 			{
 				Plugin.Instance.WaitForWeaponPreview();
 				gclass.method_28();
@@ -211,35 +210,34 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Custom_DynamicInteractionClass : DynamicInteractionClass
+	public class Custom_DynamicContextInteraction : DynamicContextInteraction
 	{
 		public Option<FailedResult> NonInteractiveTooltip;
-		public Custom_DynamicInteractionClass(string id, string key, Action callback, Sprite icon) : base(id, key, callback, icon) {}
+		public Custom_DynamicContextInteraction(string id, string key, Action callback, Sprite icon) : base(id, key, callback, icon) {}
 	}
 
 	// here custom buttons are actually constructed
-	public class Patch_InteractionButtonsContainer_method_3 : ModulePatch
+	public class Patch_InteractionButtonsContainer_CreateDynamicContextButton : ModulePatch
 	{
 	    protected override MethodBase GetTargetMethod()
 	    {
-	        return AccessTools.Method(typeof(InteractionButtonsContainer), nameof(InteractionButtonsContainer.method_3));
+	        return AccessTools.Method(typeof(InteractionButtonsContainer), nameof(InteractionButtonsContainer.CreateDynamicContextButton));
 	    }
 
 	    [PatchPrefix]
-	    private static bool Prefix(InteractionButtonsContainer __instance, DynamicInteractionClass interaction)
+	    private static bool Prefix(InteractionButtonsContainer __instance, DynamicContextInteraction interaction)
 	    {
-	        if (interaction is Custom_DynamicInteractionClass customInteraction)
+	        if (interaction is Custom_DynamicContextInteraction customInteraction)
 	        {
-				var __instance__ = new InteractionButtonsContainer_Proxy(__instance);
-				AddButton(__instance, __instance__._buttonTemplate, __instance__._buttonsContainer, customInteraction);
+				AddButton(__instance, __instance._buttonTemplate, __instance._buttonsContainer, customInteraction);
 	            return false;
 	        }
 	        return true;
 	    }
 
-		private static void AddButton(InteractionButtonsContainer instance, SimpleContextMenuButton buttonTemplate, RectTransform buttonsContainer, Custom_DynamicInteractionClass interaction)
+		private static void AddButton(InteractionButtonsContainer instance, SimpleContextMenuButton buttonTemplate, RectTransform buttonsContainer, Custom_DynamicContextInteraction interaction)
 		{
-	        var button = instance.method_1
+	        var button = instance.CreateContextButton
 			(
 	            interaction.Key,
 	            interaction.Key,
@@ -250,7 +248,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	            () => { }
 	        );
 	        button.SetButtonInteraction(interaction.NonInteractiveTooltip.HasValue ? interaction.NonInteractiveTooltip.Value : SuccessfulResult.New);
-	        instance.method_5(button);
+	        instance.BindButton(button);
 		}
 	}
 
@@ -268,30 +266,30 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_PoolManagerClass_CreateItemAsync : ModulePatch
+	public class Patch_ObjectsFactory_CreateItemAsync : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(GDelegate62), typeof(CancellationToken)];
-            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.CreateItemAsync), parameters);
+			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(YieldDelegate), typeof(CancellationToken)];
+            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync), parameters);
         }
 
         [PatchPrefix]
-        public static void Prefix(PoolManagerClass __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, GDelegate62 yield, CancellationToken ct = default(CancellationToken))
+        public static void Prefix(ObjectsFactory __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, YieldDelegate yield, CancellationToken ct = default(CancellationToken))
 		{
 			Plugin.Instance.OnCreateItemAsync(item);
 		}
 	}
 
-	public class Patch_PoolManagerClass_method_2 : ModulePatch
+	public class Patch_ObjectsFactory_PopOrCreate : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(PoolManagerClass), nameof(PoolManagerClass.method_2));
+            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.PopOrCreate));
         }
 
         [PatchPostfix]
-        public static void Postfix(PoolManagerClass __instance, GameObject __result, ResourceKey resourceKey, PoolManagerClass.PoolsCategory poolCategory)
+        public static void Postfix(ObjectsFactory __instance, GameObject __result, ResourceKey resourceKey, ObjectsFactory.PoolsCategory poolCategory)
 		{
 			Plugin.Instance.OnCreatedItemGameObject(resourceKey, __result);
 		}
@@ -312,7 +310,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// OnItemPrefabCreated safely catches multiple inits anyway
 
 			var __instance__ = new WeaponPrefab_Proxy(__instance);
-			var item = __instance__.weapon_0;
+			var item = __instance__._weaponData;
 			if (item != null)
 			{
 				Plugin.Instance.OnDecalsHostCreated_Weapon(item.Id, ItemType.Weapon, __instance);
@@ -320,11 +318,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_PlayerBody_EquipmentSlotClass_method_4 : ModulePatch
+	public class Patch_PlayerBody_SlotView_CreateAndParent : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(PlayerBody.EquipmentSlotClass), nameof(PlayerBody.EquipmentSlotClass.method_4));
+            return AccessTools.Method(typeof(PlayerBody.SlotView), nameof(PlayerBody.SlotView.CreateAndParent));
         }
 
         [PatchPostfix]
@@ -432,17 +430,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	// - raid loading screen
 	// - raid exit screen
 	// - profile overview screen
-	public class Patch_GClass3380_smethod_2 : ModulePatch
+	public class Patch_ItemExtensions_CloneItemInternal : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
 			Type[] parameters = null;
 			Type[] generics = [typeof(Item)];
-            return AccessTools.Method(typeof(GClass3380), nameof(GClass3380.smethod_2), parameters, generics);
+            return AccessTools.Method(typeof(ItemExtensions), nameof(ItemExtensions.CloneItemInternal), parameters, generics);
         }
 
         [PatchPostfix]
-        public static void Postfix(GClass3380 __instance, Item __result, Item originalItem, IIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
+        public static void Postfix(Item __result, Item originalItem, IDatabaseIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
 		{
 			if (Plugin.CanItemHaveDecals(originalItem))
 			{
@@ -452,15 +450,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	}
 
 	// this method is used everywhere to set cursor visible or invisible
-	public class Patch_GClass2304_smethod_0 : ModulePatch
+	public class Patch_ClientApplicationInitOperation_CursorVisibilityChangedHandler : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(GClass2304), nameof(GClass2304.smethod_0));
+            return AccessTools.Method(typeof(ClientApplicationInitOperation), nameof(ClientApplicationInitOperation.CursorVisibilityChangedHandler));
         }
 
         [PatchPrefix]
-        public static bool Prefix(GClass2304 __instance, bool isCursorVisible)
+        public static bool Prefix(ClientApplicationInitOperation __instance, bool isCursorVisible)
 		{
 			if (!isCursorVisible)
 			{
@@ -472,11 +470,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	}
 
 	// this method is called when PlayerModelView is opened and finishes loading
-	public class Patch_PlayerModelView_method_0 : ModulePatch
+	public class Patch_PlayerModelView_OnLoadingCompleted : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_0));
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.OnLoadingCompleted));
         }
 
         [PatchPostfix]
@@ -508,17 +506,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	}
 
 	// this method is called when PlayerModelView is closed
-	public class Patch_PlayerModelView_method_1 : ModulePatch
+	public class Patch_PlayerModelView_Destroy : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_1));
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.Destroy));
         }
 
         [PatchPrefix]
         public static void Prefix(PlayerModelView __instance)
 		{
-			if (Patch_PlayerModelView_method_0.TryGetCamera(__instance).Some(out var camera))
+			if (Patch_PlayerModelView_OnLoadingCompleted.TryGetCamera(__instance).Some(out var camera))
 			{
 				Plugin.Instance.OnPlayerModelViewClosed(camera);
 			}
@@ -538,8 +536,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
 		{
 			var skin = __instance.BodySkins[part.Key];
-			var _skin = new LoddedSkin_Proxy(skin);
-			foreach (var lod in _skin._lods)
+			foreach (var lod in skin._lods)
 			{
 				var skinnedMeshRenderer = lod.SkinnedMeshRenderer;
                 foreach (var material in skinnedMeshRenderer.sharedMaterials)
@@ -572,15 +569,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	}
 
 	// I am pretty certain all bot spawning functions eventually lead to this method
-	public class Patch_BotCreatorClass_method_2 : ModulePatch
+	public class Patch_BotCreatorClient_CreateBot : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(BotCreatorClass), nameof(BotCreatorClass.method_2));
+            return AccessTools.Method(typeof(BotCreatorClient), nameof(BotCreatorClient.CreateBot));
         }
 
         [PatchPrefix]
-        public static void Prefix(PlayerModelView __instance, Profile profile, GClass682 bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
+        public static void Prefix(PlayerModelView __instance, Profile profile, PositionNote bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
 		{
 			var spawnChance = Plugin.Instance.GetCamoSpawnChanceFromBotRole(profile.Info.Settings.Role);
 			if (spawnChance <= 0)
@@ -601,15 +598,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_GClass926_GetItemIcon : ModulePatch
+	public class Patch_ItemIconCreator_GetItemIcon : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(GClass926), nameof(GClass926.GetItemIcon));
+            return AccessTools.Method(typeof(ItemIconCreator), nameof(ItemIconCreator.GetItemIcon));
         }
 
         [PatchPrefix]
-		public static bool Prefix(GClass926 __instance, ref GClass929 __result, Item item, in XYCellSizeStruct size, bool forcedGeneration = false)
+		public static bool Prefix(ItemIconCreator __instance, ref ItemIcon __result, Item item, in IntVec2 size, bool forcedGeneration = false)
 		{
 			// only items with decals go through custom route
 			if (Plugin.CanItemHaveDecals(item) &&
@@ -623,95 +620,95 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 
 		// everything below is mostly copy-paste of original methods, read comments to know what changed
-		public static GClass929 GetItemIcon(GClass926 __instance, Item item, in XYCellSizeStruct size, bool forcedGeneration = false)
+		public static ItemIcon GetItemIcon(ItemIconCreator __instance, Item item, in IntVec2 size, bool forcedGeneration = false)
 		{
-			int itemHash = GClass928.GetItemHash(item); // we postfix GetItemHash separately to keep it compatible with other mods that patch it too
-			GClass929 icon;
-			bool flag = __instance.method_7(itemHash, out icon);
-			if (!forcedGeneration && flag && (GClass2340.InRaid || !icon.IsGeneratedInRaid))
+			int itemHash = IconsHash.GetItemHash(item); // we postfix GetItemHash separately to keep it compatible with other mods that patch it too
+			ItemIcon icon;
+			bool flag = __instance.TryGetCachedIcon(itemHash, out icon);
+			if (!forcedGeneration && flag && (InGameStatus.InRaid || !icon.IsGeneratedInRaid))
 			{
 				return icon;
 			}
-			icon = new GClass929(itemHash)
+			icon = new ItemIcon(itemHash)
 			{
-				IsGeneratedInRaid = GClass2340.InRaid
+				IsGeneratedInRaid = InGameStatus.InRaid
 			};
-			if (!forcedGeneration && __instance.method_8(itemHash, out var path))
+			if (!forcedGeneration && __instance.TryGetIconPath(itemHash, out var path))
 			{
-				__instance.method_6(icon, path, size).HandleExceptions();
+				__instance.LoadFromUserCacheAsync(icon, path, size).HandleExceptions();
 				return icon;
 			}
-			method_1(__instance, icon, item, size, saveToFile: true, requireZeroMip: true).HandleExceptions(); // use our method_1
+			FillIconWithNewSpriteAsync(__instance, icon, item, size, saveToFile: true, requireZeroMip: true).HandleExceptions(); // use our FillIconWithNewSpriteAsync
 			return icon;
 		}
 
-		public static async Task method_1(GClass926 __instance, GClass929 icon, Item item, XYCellSizeStruct size, bool saveToFile, bool requireZeroMip)
+		public static async Task FillIconWithNewSpriteAsync(ItemIconCreator __instance, ItemIcon icon, Item item, IntVec2 size, bool saveToFile, bool requireZeroMip)
 		{
-			__instance.Int_1++;
-			__instance.Dictionary_0[icon.Hash] = icon;
+			__instance._queueCount++;
+			__instance._memoryCacheIndex[icon.Hash] = icon;
 			// in theory we could rewrite only this delegate, but sadly item is not passed inside and we need it,
 			// and I dont want to build any more scaffolding to get around it
-			GClass926.RenderModelResult renderModelResult = await __instance.RenderModel(item, async delegate(GameObject model, PreviewPivot pivot)
+			ItemIconCreator.RenderModelResult renderModelResult = await __instance.RenderModel(item, async delegate(GameObject model, PreviewPivot pivot)
 			{
-				await __instance.method_0(); // this method loads camera first time when it doesnt exist, only after it its safe to use Camera_0
-				while (__instance.Bool_0)
+				await __instance.PrepareCameraAsync(); // this method loads camera first time when it doesnt exist, only after it its safe to use camera_0
+				while (__instance._isIconCreating)
 				{
 					await JobScheduler.Yield();
 				}
-				__instance.Bool_0 = true;
+				__instance._isIconCreating = true;
 				await JobScheduler.Yield();
 
-				Plugin.Instance.BeforeInventoryIconRecorded(item.Id, __instance.Camera_0); // we need to know which camera renders which item
-				Sprite result = method_4(__instance, model, in size, pivot); // use our method_4
-				Plugin.Instance.AfterInventoryIconRecorded(item.Id, __instance.Camera_0); // clear info about that camera
+				Plugin.Instance.BeforeInventoryIconRecorded(item.Id, __instance.camera_0); // we need to know which camera renders which item
+				Sprite result = CaptureSpriteOfModel(__instance, model, in size, pivot); // use our CaptureSpriteOfModel
+				Plugin.Instance.AfterInventoryIconRecorded(item.Id, __instance.camera_0); // clear info about that camera
 
 				await JobScheduler.Yield();
-				__instance.Bool_0 = false;
+				__instance._isIconCreating = false;
 				return result;
 			});
 			if (renderModelResult.sprite != null)
 			{
-				GClass926.smethod_1(icon);
+				ItemIconCreator.CleanIcon(icon);
 				Sprite sprite = renderModelResult.sprite;
 				icon.Sprite = sprite;
 				icon.Sprite.texture.filterMode = FilterMode.Trilinear;
 				icon.Changed.Invoke();
 				if ((!requireZeroMip) ? saveToFile : (saveToFile && renderModelResult.zeroMipWasLoaded))
 				{
-					await __instance.method_5(icon);
+					await __instance.SaveIconAsync(icon);
 				}
 			}
 			else
 			{
 				Debug.LogError("Something went wrong! Sprite for " + icon.Hash + " was not created!");
 			}
-			__instance.Int_1 = Mathf.Max(__instance.Int_1 - 1, 0);
-			if (__instance.Int_1 <= 0)
+			__instance._queueCount = Mathf.Max(__instance._queueCount - 1, 0);
+			if (__instance._queueCount <= 0)
 			{
-				if (__instance.Nullable_0.HasValue)
+				if (__instance._prevTextureLimit.HasValue)
 				{
-					QualitySettings.streamingMipmapsMaxLevelReduction = __instance.Nullable_0.Value;
-					__instance.Nullable_0 = null;
+					QualitySettings.streamingMipmapsMaxLevelReduction = __instance._prevTextureLimit.Value;
+					__instance._prevTextureLimit = null;
 				}
-				if (__instance.Dictionary_1.Count > 0)
+				if (__instance._fileCacheIndex.Count > 0)
 				{
-					__instance.method_10();
-					File.WriteAllText(__instance.String_1, JsonParserClass.ToJson(__instance.Dictionary_1));
+					__instance.CheckCacheFolder();
+					File.WriteAllText(__instance._indexPath, JsonExtensions.ToJson(__instance._fileCacheIndex));
 				}
 			}
 		}
 
-		public static Sprite method_4(GClass926 __instance, GameObject model, in XYCellSizeStruct size, PreviewPivot previewPivot)
+		public static Sprite CaptureSpriteOfModel(ItemIconCreator __instance, GameObject model, in IntVec2 size, PreviewPivot previewPivot)
 		{
 			if (model == null)
 			{
 				return null;
 			}
-			GClass926.Struct115 @struct = GClass926.Struct115.Store();
-			GClass926.Struct115.Reset();
+			ItemIconCreator.IconRenderSettings @struct = ItemIconCreator.IconRenderSettings.Store();
+			ItemIconCreator.IconRenderSettings.Reset();
 			// ShaderReplacer.Replace(model); // ShaderReplacer replaces deferred shaders with forward ones, we need original deferred, so disable
-			__instance.method_2(model, in size, previewPivot);
-			Light[] light_ = __instance.Light_0;
+			__instance.SetupScene(model, in size, previewPivot);
+			Light[] light_ = __instance.light_0;
 			for (int i = 0; i < light_.Length; i++)
 			{
 				light_[i].enabled = true;
@@ -721,10 +718,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			model.SetActive(value: false);
 			// ShaderReplacer.Restore();
 			@struct.Restore();
-			return GClass926.smethod_2(texture);
+			return ItemIconCreator.CreateSprite(texture);
 		}
 
-		public static Texture2D method_3(GClass926 __instance, GameObject model, in XYCellSizeStruct size)
+		public static Texture2D method_3(ItemIconCreator __instance, GameObject model, in IntVec2 size)
 		{
 			// by default icon camera is forward rendering,
 			// probably because they really wanted to render icons with orthogonal projection,
@@ -742,15 +739,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// change depth to 24, otherwise background turns white
 			RenderTexture temporary = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, 8);
 			temporary.name = "IconCreator TextureDouble";
-			__instance.Camera_0.gameObject.SetActive(value: true);
+			__instance.camera_0.gameObject.SetActive(value: true);
 
 			// calculate new camera position and fov
-			var cameraTransform = __instance.Camera_0.transform;
+			var cameraTransform = __instance.camera_0.transform;
 			var modelTransform = model.transform;
 			modelTransform.SetParent(null, worldPositionStays: true); // they keep model as child of camera
 
 			var originalPosition = cameraTransform.position;
-			var originalFov = __instance.Camera_0.fieldOfView;
+			var originalFov = __instance.camera_0.fieldOfView;
 
 			// by default distance is around 1, make it 15 for more "orthographic" look,
 			// 15 is max, everything higher makes item disappear (there are probably a way to increase that, but 15 looks fine)
@@ -758,49 +755,49 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var currentDistance = (modelTransform.position - cameraTransform.position).magnitude;
 			var offset = targetDistance - currentDistance;
 			var newPosition = originalPosition - cameraTransform.forward * offset;
-			var newFov = 2 * Mathf.Atan2(__instance.Camera_0.orthographicSize, targetDistance);
+			var newFov = 2 * Mathf.Atan2(__instance.camera_0.orthographicSize, targetDistance);
 
 			// set
-			__instance.Camera_0.orthographic = false;
-			__instance.Camera_0.renderingPath = RenderingPath.DeferredShading;
+			__instance.camera_0.orthographic = false;
+			__instance.camera_0.renderingPath = RenderingPath.DeferredShading;
 			cameraTransform.position = newPosition;
-			__instance.Camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
+			__instance.camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
 
-			__instance.Camera_0.targetTexture = temporary;
-			__instance.Camera_0.clearFlags = CameraClearFlags.Color;
-			__instance.Camera_0.backgroundColor = new Color(0f, 0f, 0f, 0f);
-			__instance.Camera_0.useOcclusionCulling = false;
-			__instance.IconShadow_0.SetTexDimension(width, height);
+			__instance.camera_0.targetTexture = temporary;
+			__instance.camera_0.clearFlags = CameraClearFlags.Color;
+			__instance.camera_0.backgroundColor = new Color(0f, 0f, 0f, 0f);
+			__instance.camera_0.useOcclusionCulling = false;
+			__instance.iconShadow_0.SetTexDimension(width, height);
 			RenderTexture temporary2 = RenderTexture.GetTemporary(x, y);
-			GClass860.ClearTexture(temporary2);
-			__instance.Camera_0.Render();
+			RendererExtensions.ClearTexture(temporary2);
+			__instance.camera_0.Render();
 			Graphics.Blit(temporary, temporary2);
 			RenderTexture active = RenderTexture.active;
 			RenderTexture.active = temporary2;
-			Texture2D texture2D = GClass926.smethod_0(x, y);
-			texture2D.ReadPixels(new Rect(0f, 0f, __instance.Camera_0.pixelWidth, __instance.Camera_0.pixelHeight), 0, 0, recalculateMipMaps: false);
+			Texture2D texture2D = ItemIconCreator.GetTexture(x, y);
+			texture2D.ReadPixels(new Rect(0f, 0f, __instance.camera_0.pixelWidth, __instance.camera_0.pixelHeight), 0, 0, recalculateMipMaps: false);
 			texture2D.Apply();
 			RenderTexture.active = active;
-			__instance.Camera_0.targetTexture = null;
+			__instance.camera_0.targetTexture = null;
 			RenderTexture.ReleaseTemporary(temporary);
 			RenderTexture.ReleaseTemporary(temporary2);
-			__instance.Camera_0.gameObject.SetActive(value: false);
+			__instance.camera_0.gameObject.SetActive(value: false);
 
 			// revert
-			__instance.Camera_0.orthographic = true;
-			__instance.Camera_0.renderingPath = RenderingPath.Forward;
+			__instance.camera_0.orthographic = true;
+			__instance.camera_0.renderingPath = RenderingPath.Forward;
 			cameraTransform.position = originalPosition;
-			__instance.Camera_0.fieldOfView = originalFov;
+			__instance.camera_0.fieldOfView = originalFov;
 
 			return texture2D;
 		}
 	}
 
-	public class Patch_GClass928_GetItemHash : ModulePatch
+	public class Patch_IconsHash_GetItemHash : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(GClass928), nameof(GClass928.GetItemHash));
+            return AccessTools.Method(typeof(IconsHash), nameof(IconsHash.GetItemHash));
         }
 
         [PatchPostfix]

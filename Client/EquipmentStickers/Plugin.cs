@@ -145,8 +145,8 @@ namespace SevenBoldPencil.EquipmentStickers
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin);
 
             new Patch_OverallScreen_Show().Enable();
-            new Patch_PlayerModelView_method_0().Enable();
-			new Patch_InventoryPlayerModelWithStatsWindow_method_4().Enable();
+            new Patch_PlayerModelView_OnLoadingCompleted().Enable();
+			new Patch_InventoryPlayerModelWithStatsWindow_DragHandler().Enable();
 			new Patch_ScrollTrigger_OnScroll().Enable();
             new Patch_OverallScreen_Close().Enable();
         }
@@ -265,7 +265,7 @@ namespace SevenBoldPencil.EquipmentStickers
 				return;
 			}
 
-            var go = slot.GameObject_0;
+            var go = slot._model;
             if (!go)
             {
                 return;
@@ -280,7 +280,7 @@ namespace SevenBoldPencil.EquipmentStickers
 				return;
 			}
 
-            var item = slot.Item_0;
+            var item = slot._item;
 			var itemId = item.Id;
 			var instanceID = go.GetInstanceID();
 			var decalsHost = new SkinnedDecalsHost(assetPoolObject.transform, playerBody.SkeletonRootJoint);
@@ -289,7 +289,7 @@ namespace SevenBoldPencil.EquipmentStickers
 
             result.Add(new CamoEditorItem
             (
-                Name: GClass2348.Localized(item.Name),
+                Name: LocalizationExtensions.Localized(item.Name),
                 ItemId: itemId,
                 InstanceID: instanceID,
 				DecalsHost: decalsHost,

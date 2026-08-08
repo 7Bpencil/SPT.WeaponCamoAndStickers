@@ -26,7 +26,6 @@ using UnityEngine;
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
-using LoddedSkin_Proxy = SevenBoldPencil.WeaponCamoAndStickers.LoddedSkin_Proxy;
 using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
 using SystemObject = System.Object;
 
@@ -193,20 +192,20 @@ namespace SevenBoldPencil.MaterialEditor
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
 
-            new Patch_PoolManagerClass_CreateItemAsync().Enable();
-            new Patch_PoolManagerClass_method_2().Enable();
+            new Patch_ObjectsFactory_CreateItemAsync().Enable();
+            new Patch_ObjectsFactory_PopOrCreate().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
-            new Patch_WeaponModdingScreen_method_6().Enable();
-            new Patch_GClass2304_smethod_0().Enable();
-            new Patch_WeaponPreview_Class3271_method_1().Enable();
+            new Patch_WeaponModdingScreen_CreateModSlotViews().Enable();
+            new Patch_ClientApplicationInitOperation_CursorVisibilityChangedHandler().Enable();
+            new Patch_WeaponPreview_CG_SetupItemPreview_method_1().Enable();
             new Patch_WeaponPreview_Rotate().Enable();
             new Patch_ScrollTrigger_OnScroll().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
-            new Patch_GClass3380_smethod_2().Enable();
-            new Patch_GClass928_GetItemHash().Enable();
-            new Patch_GClass928_smethod_1().Enable();
+            new Patch_ItemExtensions_CloneItemInternal().Enable();
+            new Patch_IconsHash_GetItemHash().Enable();
+            new Patch_IconsHash_HashForItem().Enable();
             new Patch_HotObject_SetTemperatureToRenderer().Enable();
             new Patch_RainCondensator_OnEnable().Enable();
             new Patch_RainCondensator_UpdateValues().Enable();
@@ -214,7 +213,7 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_PlayerBody_SetSkin().Enable();
             new Patch_LoddedSkin_Unskin().Enable();
             new Patch_OverallScreen_Show().Enable();
-            new Patch_PlayerModelView_method_0().Enable();
+            new Patch_PlayerModelView_OnLoadingCompleted().Enable();
             new Patch_OverallScreen_Close().Enable();
 
             TryEnableFikaSupport(assemblyDir);
@@ -426,9 +425,8 @@ namespace SevenBoldPencil.MaterialEditor
 
         public ItemWithMaterials BuildItemOverrides(LoddedSkin skin)
         {
-            var _skin = new LoddedSkin_Proxy(skin);
             var targetMaterials = new Dictionary<string, TargetMaterial>();
-            foreach (var lod in _skin._lods)
+            foreach (var lod in skin._lods)
             {
                 BuildRendererOverrides(lod.SkinnedMeshRenderer, targetMaterials);
             }
@@ -507,9 +505,8 @@ namespace SevenBoldPencil.MaterialEditor
 
         public Dictionary<string, MaterialInfo> GetOriginalMaterials(LoddedSkin skin)
         {
-            var _skin = new LoddedSkin_Proxy(skin);
             var originals = new Dictionary<string, MaterialInfo>();
-            foreach (var lod in _skin._lods)
+            foreach (var lod in skin._lods)
             {
                 GetOriginalMaterials(lod.SkinnedMeshRenderer, originals);
             }
@@ -698,7 +695,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             return new CamoEditorItem
             (
-                Name: GClass2348.Localized(item.Name),
+                Name: LocalizationExtensions.Localized(item.Name),
                 ItemId: itemId,
                 InstanceID: instanceID,
                 ItemWithMaterials: itemWithMaterials,

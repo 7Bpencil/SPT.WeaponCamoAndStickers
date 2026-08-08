@@ -921,8 +921,8 @@ namespace SevenBoldPencil.EquipmentStickers
 
             var handle = CreateTransformHandle(handleType, itemId, decalIndex, decalInfo, decal);
 			var cameraProvider = new RawImageCameraProvider(Camera, RawImage);
-            TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayerMaskClass.WeaponPreview);
-			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
+            TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayersMaskController.WeaponPreview);
+			TransformTools.SetLayersRecursively(TransformHandle.gameObject, LayersMaskController.WeaponPreview);
         }
 
 		public void FreezeAnimator()

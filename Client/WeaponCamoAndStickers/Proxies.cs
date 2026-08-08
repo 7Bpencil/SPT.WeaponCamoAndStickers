@@ -26,49 +26,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         private readonly WeaponPreview __instance = instance;
 
-		private static TypedFieldInfo<WeaponPreview, GameObject> __gameObject_0 = new("gameObject_0");
-		private static TypedFieldInfo<WeaponPreview, Item> __item_0 = new("item_0");
+		private static TypedFieldInfo<WeaponPreview, GameObject> __originalObject = new("_originalObject");
+		private static TypedFieldInfo<WeaponPreview, Item> __currentItem = new("_currentItem");
 
-		public GameObject gameObject_0 { get { return __gameObject_0.Get(__instance); } set { __gameObject_0.Set(__instance, value); } }
-		public Item item_0 { get { return __item_0.Get(__instance); } set { __item_0.Set(__instance, value); } }
+		public GameObject _originalObject { get { return __originalObject.Get(__instance); } set { __originalObject.Set(__instance, value); } }
+		public Item _currentItem { get { return __currentItem.Get(__instance); } set { __currentItem.Set(__instance, value); } }
 	}
 
 	public struct WeaponPrefab_Proxy(WeaponPrefab instance)
 	{
         private readonly WeaponPrefab __instance = instance;
 
-		private static TypedFieldInfo<WeaponPrefab, Weapon> __weapon_0 = new("weapon_0");
+		private static TypedFieldInfo<WeaponPrefab, Weapon> __weaponData = new("_weaponData");
 
-		public Weapon weapon_0 { get { return __weapon_0.Get(__instance); } set { __weapon_0.Set(__instance, value); } }
-	}
-
-	public struct LoddedSkin_Proxy(LoddedSkin instance)
-	{
-        private readonly LoddedSkin __instance = instance;
-
-		private static TypedFieldInfo<LoddedSkin, AbstractSkin[]> __lods = new("_lods");
-
-		public AbstractSkin[] _lods { get { return __lods.Get(__instance); } set { __lods.Set(__instance, value); } }
-	}
-
-	public struct ItemInfoInteractionsAbstractClass_Proxy<T>(ItemInfoInteractionsAbstractClass<T> instance) where T : struct, Enum
-	{
-        private readonly ItemInfoInteractionsAbstractClass<T> __instance = instance;
-
-		private static TypedFieldInfo<ItemInfoInteractionsAbstractClass<T>, Dictionary<string, DynamicInteractionClass>> __Dictionary_0 = new("Dictionary_0");
-
-		public Dictionary<string, DynamicInteractionClass> Dictionary_0 { get { return __Dictionary_0.Get(__instance); } set { __Dictionary_0.Set(__instance, value); } }
-	}
-
-	public struct InteractionButtonsContainer_Proxy(InteractionButtonsContainer instance)
-	{
-        private readonly InteractionButtonsContainer __instance = instance;
-
-		private static TypedFieldInfo<InteractionButtonsContainer, SimpleContextMenuButton> __buttonTemplate = new("_buttonTemplate");
-		private static TypedFieldInfo<InteractionButtonsContainer, RectTransform> __buttonsContainer = new("_buttonsContainer");
-
-		public SimpleContextMenuButton _buttonTemplate { get { return __buttonTemplate.Get(__instance); } set { __buttonTemplate.Set(__instance, value); } }
-		public RectTransform _buttonsContainer { get { return __buttonsContainer.Get(__instance); } set { __buttonsContainer.Set(__instance, value); } }
+		public Weapon _weaponData { get { return __weaponData.Get(__instance); } set { __weaponData.Set(__instance, value); } }
 	}
 
 	public struct Dress_Proxy(Dress instance)
@@ -84,8 +55,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         private readonly CameraImage __instance = instance;
 
-		private static TypedFieldInfo<CameraImage, RawImage> _rawImage_0 = new("rawImage_0");
+		private static TypedFieldInfo<CameraImage, RawImage> __rawImage = new("_rawImage");
 
-		public RawImage rawImage_0 { get { return _rawImage_0.Get(__instance); } set { _rawImage_0.Set(__instance, value); } }
+		public RawImage _rawImage { get { return __rawImage.Get(__instance); } set { __rawImage.Set(__instance, value); } }
 	}
 }

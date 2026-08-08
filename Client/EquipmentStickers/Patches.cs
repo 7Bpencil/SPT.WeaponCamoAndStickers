@@ -7,6 +7,7 @@
 
 using Comfort.Common;
 using EFT;
+using EFT.Counters;
 using EFT.InventoryLogic;
 using EFT.UI;
 using System.Reflection;
@@ -28,18 +29,18 @@ namespace SevenBoldPencil.EquipmentStickers
         }
 
         [PatchPostfix]
-        public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, SessionCountersClass overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
+        public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, CountersCollection overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
 		{
 			Plugin.Instance.WaitForWeaponPreview();
 		}
 	}
 
 	// this method is called when PlayerModelView is opened and finishes loading
-	public class Patch_PlayerModelView_method_0 : ModulePatch
+	public class Patch_PlayerModelView_OnLoadingCompleted : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.method_0));
+            return AccessTools.Method(typeof(PlayerModelView), nameof(PlayerModelView.OnLoadingCompleted));
         }
 
         [PatchPostfix]
@@ -67,7 +68,7 @@ namespace SevenBoldPencil.EquipmentStickers
 			{
 				var _cameraImage = new CameraImage_Proxy(cameraImage);
 				camera = cameraImage.targetCamera;
-				rawImage = _cameraImage.rawImage_0;
+				rawImage = _cameraImage._rawImage;
 				return true;
 			}
 
@@ -77,11 +78,11 @@ namespace SevenBoldPencil.EquipmentStickers
 		}
 	}
 
-	public class Patch_InventoryPlayerModelWithStatsWindow_method_4 : ModulePatch
+	public class Patch_InventoryPlayerModelWithStatsWindow_DragHandler : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(InventoryPlayerModelWithStatsWindow), nameof(InventoryPlayerModelWithStatsWindow.method_4));
+            return AccessTools.Method(typeof(InventoryPlayerModelWithStatsWindow), nameof(InventoryPlayerModelWithStatsWindow.DragHandler));
         }
 
         [PatchPrefix]

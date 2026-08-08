@@ -5,6 +5,7 @@
 // LICENSE file in the root directory of this source tree.
 //
 
+using EFT.CameraControl;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -56,7 +57,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public bool CanCameraSeeDecals(Camera currentCamera)
 		{
-			if (CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera)
+			if (CameraManager.Instance.Camera && CameraManager.Instance.Camera == currentCamera)
 			{
 				return true;
 			}
@@ -88,7 +89,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public void DrawDecals(Camera currentCamera, CommandBuffer buffer)
 		{
-			if (CameraClass.Instance.Camera && CameraClass.Instance.Camera == currentCamera)
+			if (CameraManager.Instance.Camera && CameraManager.Instance.Camera == currentCamera)
 			{
 				DrawAllDecals(currentCamera, buffer);
 				return;

@@ -1435,8 +1435,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var handle = CreateTransformHandle(handleType, decalIndex, decalInfo, decal);
             var cameraProvider = new DefaultCameraProvider(Camera);
-            TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayerMaskClass.WeaponPreview);
-			TransformHelperClass.SetLayersRecursively(TransformHandle.gameObject, LayerMaskClass.WeaponPreview);
+            TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayersMaskController.WeaponPreview);
+			TransformTools.SetLayersRecursively(TransformHandle.gameObject, LayersMaskController.WeaponPreview);
         }
 
         public ITransformHandle CreateTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)
