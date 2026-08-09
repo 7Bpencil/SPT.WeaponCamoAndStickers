@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <Authors>7Bpencil</Authors>
     <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
-    <AssemblyVersion>1.17.1</AssemblyVersion>
+    <AssemblyVersion>1.18.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <LangVersion>latest</LangVersion>
