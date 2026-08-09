@@ -5,15 +5,12 @@
 // LICENSE file in the root directory of this source tree.
 //
 
-using Diz.Skinning;
 using EFT;
 using EFT.InventoryLogic;
 using EFT.Visual;
 using EFT.UI;
 using EFT.UI.WeaponModding;
 using SevenBoldPencil.Common;
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 

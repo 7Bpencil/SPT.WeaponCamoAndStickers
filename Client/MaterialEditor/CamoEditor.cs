@@ -15,8 +15,6 @@ using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
 using CamoEditorStyle = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorStyle;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
-using TexturesDirectory = SevenBoldPencil.WeaponCamoAndStickers.TexturesDirectory;
-using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
 using PresetsWindow = SevenBoldPencil.WeaponCamoAndStickers.PresetsWindow;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
