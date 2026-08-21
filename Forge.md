@@ -38,19 +38,31 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ## COMMUNITY SHOWCASE
 
-### Call_me_Chanka
-
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Call_me_Chanka/numbers.png)
-
 ### shoNky
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/shoNky/m700.png)
 
+### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Clacker/Screenshot_2026-06-02_191516.png)
+
+### Unknown
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Unknown/pUiZCFw.png)
+
+### Call_me_Chanka
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Call_me_Chanka/numbers.png)
+
+### Kuromi
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Kuromi/FN_SCAR-H_7.62x51_assault_rifle_SCAR-H_Short_2026-08-1715-59-12.png)
+
 ### [Bandoot](https://sp-mod.com/addon/64/anime-larp-camo-presets)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/summary.gif)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/dawn.gif)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/summary.gif)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/cyberpunk.png)
 
 ### [DocTahFrek](https://sp-mod.com/addon/90/docs-weapon-skin-collection)
@@ -73,21 +85,9 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/beta.png)
 
-### Kuromi
-
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Kuromi/FN_SCAR-H_7.62x51_assault_rifle_SCAR-H_Short_2026-08-1715-59-12.png)
-
 ### letmedowneasy
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/letmedowneasy/armors.png)
-
-### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
-
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Clacker/Screenshot_2026-06-02_191516.png)
-
-### Unknown
-
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Unknown/pUiZCFw.png)
 
 ### zovchernobyl
 
