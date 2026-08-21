@@ -42,14 +42,14 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Call_me_Chanka/numbers.png)
 
-### [Bandoot](https://forge.sp-tarkov.com/addon/64/anime-larp-camo-presets)
+### [Bandoot](https://sp-mod.com/addon/64/anime-larp-camo-presets)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/summary.gif)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/dawn.gif)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/cyberpunk.png)
 
-### [DocTahFrek](https://forge.sp-tarkov.com/addon/90/docs-weapon-skin-collection)
+### [DocTahFrek](https://sp-mod.com/addon/90/docs-weapon-skin-collection)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/Colt_M4A1_5.56x45_assault_rifle_SOPMOD_II_2026-04-1002-11-21.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/IMG-20260408-WA0015.png)
@@ -81,7 +81,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/zovchernobyl/Kalashnikov_PPK-20_9x19mm_2026-04-1210-57-57.png)
 
-### [Spirit](https://forge.sp-tarkov.com/addon/47/spirits-embroidery)
+### [Spirit](https://sp-mod.com/addon/47/spirits-embroidery)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Spirit/RShG-2_72.5mm_rocket_launcher_2026-04-1408-39-57.png)
 
