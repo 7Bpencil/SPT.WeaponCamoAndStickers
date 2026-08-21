@@ -73,7 +73,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/letmedowneasy/armors.png)
 
-### Clacker
+### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Clacker/Screenshot_2026-06-02_191516.png)
 

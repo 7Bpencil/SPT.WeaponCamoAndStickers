@@ -79,7 +79,7 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 
 ![](previews/community/letmedowneasy/armors.png)
 
-### Clacker
+### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
 
 ![](previews/community/Clacker/Screenshot_2026-06-02_191516.png)
 
