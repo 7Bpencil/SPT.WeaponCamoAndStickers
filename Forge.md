@@ -42,6 +42,10 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Call_me_Chanka/numbers.png)
 
+### shoNky
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/shoNky/m700.png)
+
 ### [Bandoot](https://sp-mod.com/addon/64/anime-larp-camo-presets)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
@@ -68,6 +72,10 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/vector.png)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/beta.png)
+
+### Kuromi
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Kuromi/FN_SCAR-H_7.62x51_assault_rifle_SCAR-H_Short_2026-08-1715-59-12.png)
 
 ### letmedowneasy
 

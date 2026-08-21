@@ -51,6 +51,10 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 
 ![](previews/community/Call_me_Chanka/numbers.png)
 
+### shoNky
+
+![](previews/community/shoNky/m700.png)
+
 ### [Bandoot](https://sp-mod.com/addon/64/anime-larp-camo-presets)
 
 ![](previews/community/Bandoot/Colt_M4A1_5.56x45_assault_rifle_2026-04-0822-27-27.png)
@@ -74,6 +78,10 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ![](previews/community/Dandy/zlr.png)
 ![](previews/community/Dandy/vector.png)
 ![](previews/community/Dandy/beta.png)
+
+### Kuromi
+
+![](previews/community/Kuromi/FN_SCAR-H_7.62x51_assault_rifle_SCAR-H_Short_2026-08-1715-59-12.png)
 
 ### letmedowneasy
 
