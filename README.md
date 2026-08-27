@@ -4,9 +4,9 @@ Many people created their own texture packs and skins presets, check `addon.csv`
 
 ## Build
 
-Clone into `Escape from Tarkov/Development/SPT.WeaponCamoAndStickers`<br>
+Set `SPTPath` in `Client/Shared.props` to your `Escape from Tarkov` install<br>
 `dotnet build ./Client` will compile all projects including Fika support<br>
-Build artifacts are copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.WeaponCamoAndStickers`<br>
+Build artifacts will be copied into `Escape from Tarkov/BepInEx/plugins/7Bpencil.WeaponCamoAndStickers`<br>
 add `-c Release` to get optimized build and copy artifacts into `Escape from Tarkov/Development/7Bpencil.WeaponCamoAndStickers/Stage`<br>
 add `-p:DefineConstants=LOG_ALL` to print info messages into BepInEx console<br>
 
