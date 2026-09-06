@@ -1701,10 +1701,21 @@ namespace SevenBoldPencil.MaterialEditor
                     var item = items[itemIndices[i]];
                     if (GetMaterialsInfo(item.ItemId).Some(out var materialsInfo))
                     {
+                        if (materialsInfo.Materials.Count == 0)
+                        {
+                            // TODO clean database entry on reset override
+                            // this happens when item was painted, then reset, then preset was created,
+                            // entry in database is still there but without any materials
+                            continue;
+                        }
                         var materials = new Dictionary<string, MaterialInfo>(materialsInfo.Materials.Count);
                         foreach (var (materialName, materialInfo) in materialsInfo.Materials)
                         {
                             materials.Add(materialName, materialInfo.GetCopy());
+                        }
+                        if (materials.Count == 0)
+                        {
+                            continue;
                         }
                         if (itemsInfo == null)
                         {
