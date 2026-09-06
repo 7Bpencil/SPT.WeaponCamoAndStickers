@@ -838,29 +838,51 @@ namespace SevenBoldPencil.MaterialEditor
                 CloseCamoEditor();
             }
 
-            var items = GetOrBuildItemsFromBodySkins(profileId, playerModelView);
+            var (items, itemsDict) = GetOrBuildItemsFromBodySkins(profileId, playerModelView);
             CamoEditor = new(new CamoEditor()
             {
                 Plugin = this,
                 BigPlugin = BigPlugin.Instance,
                 CamoEditorResources = CamoEditorResources,
                 Items = items,
+                ItemsDict = itemsDict,
                 IsOpened = isOpened,
                 WindowRect = windowRect
             });
         }
 
-        public List<CamoEditorItem> GetOrBuildItemsFromBodySkins(string profileId, PlayerModelView playerModelView)
+        public (List<CamoEditorItem>, Dictionary<string, List<int>>) GetOrBuildItemsFromBodySkins(string profileId, PlayerModelView playerModelView)
         {
             var bodySkins = playerModelView.PlayerBody.BodySkins;
             var bodyCustomization = playerModelView.PlayerBody.BodyCustomization;
             var result = new List<CamoEditorItem>(bodySkins.Count);
+            var resultDict = new Dictionary<string, List<int>>(bodySkins.Count);
             foreach (var (bodyPart, skin) in bodySkins)
             {
                 var skinId = bodyCustomization[bodyPart];
-                result.Add(GetOrBuildItem(profileId, skinId, skin));
+                AddCamoEditorItem(profileId, skinId, skin, result, resultDict);
             }
-            return result;
+            return (result, resultDict);
+        }
+
+        public void AddCamoEditorItem(string profileId, string skinId, LoddedSkin skin, List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict)
+        {
+            var editorItem = GetOrBuildItem(profileId, skinId, skin);
+
+            items.Add(editorItem);
+
+            var itemIndex = items.Count - 1;
+            var templateId = skinId;
+            if (itemsDict.TryGetValue(templateId, out var sameItems))
+            {
+                sameItems.Add(itemIndex);
+            }
+            else
+            {
+                sameItems = new List<int>();
+                sameItems.Add(itemIndex);
+                itemsDict.Add(templateId, sameItems);
+            }
         }
 
         public CamoEditorItem GetOrBuildItem(string profileId, string skinId, LoddedSkin skin)
