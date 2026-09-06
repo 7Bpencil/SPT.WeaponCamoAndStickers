@@ -481,11 +481,11 @@ namespace SevenBoldPencil.MaterialEditor
                 return false;
             }
 
-            // TODO I noticed LOD1 have p0/Reflective/Specular shader, so we skip LOD1 entirely, not good, but it has different properties...
             // TODO how to support other shaders? switch with predetermined list in enum
             var materialShaderName = material.shader.name;
-			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" ||
-                materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal")
+			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" || // most common
+                materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal" || // clothes and equipment
+                materialShaderName == "p0/Reflective/Specular") // LOD1 shader
             {
                 return true;
             }
