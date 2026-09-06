@@ -49,6 +49,7 @@ namespace SevenBoldPencil.MaterialEditor
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVaspectRatio = new(SimpleFloatFormat);
 
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
     }
@@ -346,7 +347,8 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // reflect color value
                     buttonHeight + smallMargin + // texture uv x
                     buttonHeight + smallMargin + // texture uv y
-                    buttonHeight + bigMargin; // texture uv scale
+                    buttonHeight + smallMargin + // texture uv scale
+                    buttonHeight + bigMargin; // texture uv aspect ratio
             }
             else
             {
@@ -355,7 +357,8 @@ namespace SevenBoldPencil.MaterialEditor
                 return
                     header +
                     buttonHeight + smallMargin + // compensate specular
-                    buttonHeight + mediumMargin + // texture uv scale
+                    buttonHeight + smallMargin + // texture uv scale
+                    buttonHeight + mediumMargin + // texture uv aspect ratio
                     iconSize + bigMargin + // icon
                     smallMargin + bigMargin + // separator
                     buttonHeight + smallMargin + // toolbar camos/stickers
@@ -764,16 +767,32 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             {
-                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
+                var aspectRatio = textureUV.x / textureUV.y;
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.x, leftScale, rightScale);
-                if (newUVx != textureUV.x)
+                var newUVy = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.y, leftScale, rightScale);
+                if (newUVy != textureUV.y)
                 {
-                    textureUV.x = newUVx;
-                    textureUV.y = newUVx;
+                    textureUV.x = newUVy * aspectRatio;
+                    textureUV.y = newUVy;
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + mediumMargin;
+            }
+
+            {
+                // we keep y constant and change x
+                var aspectRatio = textureUV.x / textureUV.y;
+                var (leftScale, rightScale) = GetLoopingSliderBounds(aspectRatio);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV aspect ratio:", CamoEditorStyle.LabelStyleName);
+                var newAspectRatio = GUI.HorizontalSlider(new Rect(sliderX, y + 17, sliderWidth, buttonHeight), aspectRatio, leftScale, rightScale);
+                if (newAspectRatio != aspectRatio)
+                {
+                    textureUV.x = textureUV.y * newAspectRatio;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVaspectRatio.Get(aspectRatio), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + mediumMargin;
             }
 
