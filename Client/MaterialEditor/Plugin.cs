@@ -150,6 +150,7 @@ namespace SevenBoldPencil.MaterialEditor
 		public ManualLogSource LoggerInstance;
 
         private string ItemPresetsDir;
+        private string BotItemPresetsDir;
         private string MaterialPresetsDir;
         private string ItemsDir;
         private Material CombineTexturesMaterial;
@@ -157,6 +158,7 @@ namespace SevenBoldPencil.MaterialEditor
         private Dictionary<TargetMaterial, VideoData> Videos;
 
         private Dictionary<string, ItemPreset> ItemPresets;
+        private Dictionary<int, Dictionary<string, List<ItemPreset>>> BotItemPresets;
         private Dictionary<string, MaterialPreset> MaterialPresets;
         private Dictionary<string, ItemsWithMaterials> ItemsWithMaterials;
         private HashSet<Renderer> PatchedRenderers;
@@ -177,6 +179,7 @@ namespace SevenBoldPencil.MaterialEditor
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             ItemPresetsDir = Path.Combine(assemblyDir, "presets-item-materials");
+            BotItemPresetsDir = Path.Combine(assemblyDir, "bot-presets");
             MaterialPresetsDir = Path.Combine(assemblyDir, "presets-materials");
             ItemsDir = Path.Combine(assemblyDir, "items-materials");
             var combineTexturesShader = new TypedFieldInfo<BigPlugin, Shader>("CombineTexturesShader").Get(BigPlugin.Instance);
@@ -185,6 +188,7 @@ namespace SevenBoldPencil.MaterialEditor
             Videos = new();
 
             ItemPresets = LoadItemPresets();
+            BotItemPresets = LoadBotItemPresets();
             MaterialPresets = LoadMaterialPresets();
             ItemsWithMaterials = LoadItemsWithMaterials();
             PatchedRenderers = new();
@@ -215,6 +219,8 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_OverallScreen_Show().Enable();
             new Patch_PlayerModelView_OnLoadingCompleted().Enable();
             new Patch_OverallScreen_Close().Enable();
+            new Patch_BotCreatorClient_CreateBot().Enable();
+            new Patch_LocalPlayer_Create().Enable();
 
             TryEnableFikaSupport(assemblyDir);
         }
@@ -260,6 +266,65 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             return result;
+        }
+
+        public Dictionary<int, Dictionary<string, List<ItemPreset>>> LoadBotItemPresets()
+        {
+            var botDirectoryPaths = SafeIO.GetDirectories(BotItemPresetsDir);
+            var bots = new Dictionary<int, Dictionary<string, List<ItemPreset>>>(botDirectoryPaths.Length);
+            foreach (var botDirectoryPath in botDirectoryPaths)
+            {
+                var botDirectoryName = Path.GetFileName(botDirectoryPath);
+
+                Logger.LogError(botDirectoryPath);
+                Logger.LogError(botDirectoryName);
+
+                if (!int.TryParse(botDirectoryName, out var botType))
+                {
+                    continue;
+                }
+
+                var itemDirectoryPaths = SafeIO.GetDirectories(botDirectoryPath);
+                var items = new Dictionary<string, List<ItemPreset>>(itemDirectoryPaths.Length);
+
+                foreach (var itemDirectoryPath in itemDirectoryPaths)
+                {
+                    var itemTemplateId = Path.GetFileName(itemDirectoryPath);
+                    Logger.LogError(itemTemplateId);
+
+                    var presetsPath = Path.Combine(itemDirectoryPath, "presets-item-materials");
+                    var presetPaths = SafeIO.GetFiles(presetsPath, "*.json");
+                    var presets = new List<ItemPreset>(presetPaths.Length);
+
+                    foreach (var presetPath in presetPaths)
+                    {
+                        Logger.LogError(presetPath);
+                        if (SafeIO.ReadAllText(presetPath).Ok(out var json, out var e))
+                        {
+                            var preset = JsonConvert.DeserializeObject<ItemPreset>(json);
+                            UpgradeOldVersionsOfItemPreset(preset);
+                            presets.Add(preset);
+                            Logger.LogError("added");
+                        }
+                        else
+                        {
+                            Logger.Log(LogLevel.Error, "BotPreset", "Failed to load from disk", presetPath, e);
+                        }
+                    }
+
+                    if (presets.Count > 0)
+                    {
+                        items.Add(itemTemplateId, presets);
+                    }
+                }
+
+                if (items.Count > 0)
+                {
+                    bots.Add(botType, items);
+                }
+            }
+
+            return bots;
         }
 
         public static void UpgradeOldVersionsOfItemPreset(ItemPreset itemPreset)
@@ -1794,5 +1859,72 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
+        public void QueueWeaponForRandomCamoGeneration(WildSpawnType botRole, Item item)
+        {
+            if (ItemsWithMaterials.ContainsKey(item.Id))
+            {
+                Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue weapon for camo generation, but weapon already has one", item.Id);
+                return;
+            }
+            if (!BotItemPresets.TryGetValue((int)botRole, out var botItems))
+            {
+                return;
+            }
+            if (!botItems.TryGetValue(item.StringTemplateId, out var itemPresets))
+            {
+                return;
+            }
+
+            var preset = itemPresets[UnityEngine.Random.Range(0, itemPresets.Count)];
+            var presetMaterials = preset.Materials;
+
+            Dictionary<string, List<string>> itemsDict = new();
+
+			item.GetAllItemsNonAlloc(CompoundItem._containedItems, onlyMerged: false, includeParent: true);
+            foreach (var subitem in CompoundItem._containedItems)
+            {
+                if (itemsDict.TryGetValue(subitem.StringTemplateId, out var sameItems))
+                {
+                    sameItems.Add(subitem.Id);
+                }
+                else
+                {
+                    sameItems = new List<string>();
+                    sameItems.Add(subitem.Id);
+                    itemsDict.Add(subitem.StringTemplateId, sameItems);
+                }
+            }
+            CompoundItem._containedItems.Clear();
+
+
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            foreach (var (templateId, presetItems) in preset.Materials)
+            {
+                if (itemsDict.TryGetValue(templateId, out var templateItems))
+                {
+                    foreach (var (localItemIndex, presetItem) in presetItems)
+                    {
+                        if (localItemIndex < templateItems.Count)
+                        {
+                            var itemId = templateItems[localItemIndex];
+                            var itemsWithMaterials = new ItemsWithMaterials()
+                            {
+                                Items = new(),
+                                MaterialsInfo = new MaterialsInfo()
+                                {
+                                    SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
+                                    SaveTime = time,
+                                    Materials = presetItem
+                                }
+                            };
+                            ItemsWithMaterials.Add(itemId, itemsWithMaterials);
+                            WriteMaterialsToFile(itemId, itemsWithMaterials.MaterialsInfo);
+                        }
+                    }
+                }
+            }
+
+            Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", item.Id);
+        }
     }
 }

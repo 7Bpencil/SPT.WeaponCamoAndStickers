@@ -500,4 +500,45 @@ namespace SevenBoldPencil.MaterialEditor
 		}
 	}
 
+	// I am pretty certain all bot spawning functions eventually lead to this method
+	public class Patch_BotCreatorClient_CreateBot : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(BotCreatorClient), nameof(BotCreatorClient.CreateBot));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(PlayerModelView __instance, Profile profile, PositionNote bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
+		{
+			var botRole = profile.Info.Settings.Role;
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
+            }
+		}
+	}
+
+	public class Patch_LocalPlayer_Create : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LocalPlayer), nameof(LocalPlayer.Create));
+        }
+
+        [PatchPrefix]
+		private static void Prefix(Profile profile)
+	    {
+			var botRole = profile.Info.Settings.Role;
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
+            }
+	    }
+	}
+
 }
