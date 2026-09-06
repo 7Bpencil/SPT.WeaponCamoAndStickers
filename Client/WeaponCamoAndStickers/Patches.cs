@@ -383,7 +383,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				// AI has AccountId = "0",
 				// you would think that better way is to check player.IsAI,
 				// but it set to false even on AI at this stage in initialization.
-				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+				if (parent.TryGetComponent<Player>(out var player))
 				{
 					// we are in raid or walking in hideout
 					profileId = player.ProfileId;

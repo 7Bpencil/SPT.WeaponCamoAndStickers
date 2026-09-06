@@ -403,7 +403,7 @@ namespace SevenBoldPencil.MaterialEditor
 				// AI has AccountId = "0",
 				// you would think that better way is to check player.IsAI,
 				// but it set to false even on AI at this stage in initialization.
-				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+				if (parent.TryGetComponent<Player>(out var player))
 				{
 					// we are in raid or walking in hideout
 					profileId = player.ProfileId;
@@ -518,6 +518,10 @@ namespace SevenBoldPencil.MaterialEditor
             {
 				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
             }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
+            }
 		}
 	}
 
@@ -537,6 +541,10 @@ namespace SevenBoldPencil.MaterialEditor
             foreach (var item in equipmentItems)
             {
 				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
+            }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
             }
 	    }
 	}

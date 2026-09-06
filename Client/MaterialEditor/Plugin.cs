@@ -1962,5 +1962,48 @@ namespace SevenBoldPencil.MaterialEditor
 
             Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", item.Id);
         }
+
+        public void QueueSkinForRandomCamoGeneration(WildSpawnType botRole, string profileId, string skinId)
+        {
+            var itemId = profileId + skinId;
+            if (ItemsWithMaterials.ContainsKey(itemId))
+            {
+                Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue weapon for camo generation, but weapon already has one", skinId);
+                return;
+            }
+            if (!BotItemPresets.TryGetValue((int)botRole, out var botItems))
+            {
+                return;
+            }
+            if (!botItems.TryGetValue(skinId, out var itemPresets))
+            {
+                return;
+            }
+
+            var preset = itemPresets[UnityEngine.Random.Range(0, itemPresets.Count)];
+            var presetMaterials = preset.Materials;
+
+            var time = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (presetMaterials.TryGetValue(skinId, out var presetItems))
+            {
+                if (presetItems.TryGetValue(0, out var presetItem))
+                {
+                    var itemsWithMaterials = new ItemsWithMaterials()
+                    {
+                        Items = new(),
+                        MaterialsInfo = new MaterialsInfo()
+                        {
+                            SchemaVersion = MaterialsInfo.CurrentSchemaVersion,
+                            SaveTime = time,
+                            Materials = presetItem
+                        }
+                    };
+                    ItemsWithMaterials.Add(itemId, itemsWithMaterials);
+                    WriteMaterialsToFile(itemId, itemsWithMaterials.MaterialsInfo);
+                }
+            }
+
+            Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
+        }
     }
 }
