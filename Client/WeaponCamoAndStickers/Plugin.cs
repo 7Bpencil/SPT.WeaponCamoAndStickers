@@ -246,6 +246,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string PreviewsDir;
         private string ItemsDir;
         private string PresetsDir;
+        private string BotPresetsDir;
         private string ClosedDirectoriesPath;
         private string FavouriteTexturesPath;
         private Shader DecalShader;
@@ -265,12 +266,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private HashSet<string> FavouriteTextures;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
+        private Dictionary<int, Dictionary<string, List<List<DecalInfo>>>> BotDecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
         private Dictionary<ResourceKey, ItemData> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
         private Dictionary<int, string> DressesWaitingToBeSkinned;
-        private HashSet<string> WeaponsWaitingForRandomCamo;
+        // private HashSet<string> WeaponsWaitingForRandomCamo;
         private Dictionary<Camera, HashSet<string>> DecalCameras;
 
         private DecalRenderer DecalRenderer;
@@ -305,6 +307,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PreviewsDir = Path.Combine(assemblyDir, "temp", "previews");
             ItemsDir = Path.Combine(assemblyDir, "items");
             PresetsDir = Path.Combine(assemblyDir, "presets");
+            BotPresetsDir = Path.Combine(assemblyDir, "bot-presets");
             ClosedDirectoriesPath = Path.Combine(assemblyDir, "temp", "closed-directories.json");
             FavouriteTexturesPath = Path.Combine(assemblyDir, "temp", "favourite-textures.json");
 
@@ -335,12 +338,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             FavouriteTextures = LoadFavouriteTextures();
 
             DecalPresets = LoadDecalPresets();
+            BotDecalPresets = LoadBotDecalPresets();
             ItemsWithDecals = LoadItemsWithDecals();
             Clones = new();
             ResourceKeyToItem = new();
             InstanceIdToItemId = new();
             DressesWaitingToBeSkinned = new();
-            WeaponsWaitingForRandomCamo = new();
+            // WeaponsWaitingForRandomCamo = new();
             DecalCameras = new();
 
             DecalRenderer = new(ItemsWithDecals, InstanceIdToItemId, DecalCameras);
@@ -369,6 +373,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_Destroy().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
             new Patch_BotCreatorClient_CreateBot().Enable();
+            new Patch_LocalPlayer_Create().Enable();
             new Patch_ItemIconCreator_GetItemIcon().Enable();
             new Patch_IconsHash_GetItemHash().Enable();
 
@@ -916,6 +921,65 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             return result;
+        }
+
+        public Dictionary<int, Dictionary<string, List<List<DecalInfo>>>> LoadBotDecalPresets()
+        {
+            var botDirectoryPaths = SafeIO.GetDirectories(BotPresetsDir);
+            var bots = new Dictionary<int, Dictionary<string, List<List<DecalInfo>>>>(botDirectoryPaths.Length);
+            foreach (var botDirectoryPath in botDirectoryPaths)
+            {
+                var botDirectoryName = Path.GetFileName(botDirectoryPath);
+
+                Logger.LogError(botDirectoryPath);
+                Logger.LogError(botDirectoryName);
+
+                if (!int.TryParse(botDirectoryName, out var botType))
+                {
+                    continue;
+                }
+
+                var itemDirectoryPaths = SafeIO.GetDirectories(botDirectoryPath);
+                var items = new Dictionary<string, List<List<DecalInfo>>>(itemDirectoryPaths.Length);
+
+                foreach (var itemDirectoryPath in itemDirectoryPaths)
+                {
+                    var itemTemplateId = Path.GetFileName(itemDirectoryPath);
+                    Logger.LogError(itemTemplateId);
+
+                    var presetsPath = Path.Combine(itemDirectoryPath, "presets");
+                    var presetPaths = SafeIO.GetFiles(presetsPath, "*.json");
+                    var presets = new List<List<DecalInfo>>(presetPaths.Length);
+
+                    foreach (var presetPath in presetPaths)
+                    {
+                        Logger.LogError(presetPath);
+                        if (SafeIO.ReadAllText(presetPath).Ok(out var json, out var e))
+                        {
+                            var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                            UpgradeOldVersionsOfDecalsInfo(decalsInfo);
+                            presets.Add(decalsInfo);
+                            Logger.LogError("added");
+                        }
+                        else
+                        {
+                            Logger.Log(LogLevel.Error, "BotPreset", "Failed to load from disk", presetPath, e);
+                        }
+                    }
+
+                    if (presets.Count > 0)
+                    {
+                        items.Add(itemTemplateId, presets);
+                    }
+                }
+
+                if (items.Count > 0)
+                {
+                    bots.Add(botType, items);
+                }
+            }
+
+            return bots;
         }
 
         public Dictionary<string, ItemsWithDecals> LoadItemsWithDecals()
@@ -2058,10 +2122,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             itemId = GetOriginalItemId(itemId);
             var instanceID = weaponPrefab.gameObject.GetInstanceID();
 
-            if (WeaponsWaitingForRandomCamo.Remove(itemId))
-            {
-                GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
-            }
+            // if (WeaponsWaitingForRandomCamo.Remove(itemId))
+            // {
+            //     GenerateAndRecordRandomCamoForWeapon(itemId, weaponPrefab);
+            // }
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
@@ -2892,40 +2956,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return 0;
         }
 
-        public void QueueWeaponForRandomCamoGeneration(string itemId, float spawnChance)
+        public void QueueWeaponForRandomCamoGeneration(WildSpawnType botRole, string itemId, string templateId)
         {
             if (ItemsWithDecals.ContainsKey(itemId))
             {
                 Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue weapon for camo generation, but weapon already has one", itemId);
                 return;
             }
-
-            // to generate adequate camo we need to know
-            // dimensions of a weapon, the only reasonable
-            // way to do it is WeaponPreview.GetBounds,
-            // which requires spawned GameObject, so
-            // we have to wait until weapon is constructed
-
-            void queueWeaponForCamoGeneraion(string itemId)
+            if (!BotDecalPresets.TryGetValue((int)botRole, out var botItems))
             {
-    			if (UnityEngine.Random.value <= spawnChance / 100f)
-    			{
-                    WeaponsWaitingForRandomCamo.Add(itemId);
-                    Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
-    			}
+                return;
+            }
+            if (!botItems.TryGetValue(templateId, out var itemPresets))
+            {
+                return;
             }
 
-            if (IsFikaSupportEnabled)
+            var decalsInfo = itemPresets[UnityEngine.Random.Range(0, itemPresets.Count)];
+            // TODO should we make a copy?
+            var itemsWithDecals = new ItemsWithDecals()
             {
-                if (IsFikaServer.Some(out var isFikaServer) && isFikaServer)
-                {
-                    queueWeaponForCamoGeneraion(itemId);
-                }
-            }
-            else
-            {
-                queueWeaponForCamoGeneraion(itemId);
-            }
+                Items = new(),
+                DecalsInfo = decalsInfo,
+            };
+            ItemsWithDecals.Add(itemId, itemsWithDecals);
+            WriteDecalsToFile(itemId, decalsInfo);
+
+            Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
         }
 
         public void GenerateAndRecordRandomCamoForWeapon(string itemId, WeaponPrefab weaponPrefab)

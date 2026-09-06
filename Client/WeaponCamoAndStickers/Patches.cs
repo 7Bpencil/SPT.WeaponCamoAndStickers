@@ -579,23 +579,34 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
         public static void Prefix(PlayerModelView __instance, Profile profile, PositionNote bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
 		{
-			var spawnChance = Plugin.Instance.GetCamoSpawnChanceFromBotRole(profile.Info.Settings.Role);
-			if (spawnChance <= 0)
-			{
-				return;
-			}
+			var botRole = profile.Info.Settings.Role;
 
-			// GetPlayerItems is pretty expensive, so should be avoided when possible
             var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
             foreach (var item in equipmentItems)
             {
-				// only weapons get randomized camos
-                if (item is Weapon)
-                {
-					Plugin.Instance.QueueWeaponForRandomCamoGeneration(item.Id, spawnChance);
-				}
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item.Id, item.StringTemplateId);
             }
 		}
+	}
+
+	public class Patch_LocalPlayer_Create : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LocalPlayer), nameof(LocalPlayer.Create));
+        }
+
+        [PatchPrefix]
+		private static void Prefix(Profile profile)
+	    {
+			var botRole = profile.Info.Settings.Role;
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item.Id, item.StringTemplateId);
+            }
+	    }
 	}
 
 	public class Patch_ItemIconCreator_GetItemIcon : ModulePatch
