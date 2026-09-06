@@ -2985,6 +2985,36 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
         }
 
+        public void QueueSkinForRandomCamoGeneration(WildSpawnType botRole, string profileId, string skinId)
+        {
+            var itemId = profileId + skinId;
+            if (ItemsWithDecals.ContainsKey(itemId))
+            {
+                Logger.Log(LogLevel.Warning, "RandomCamo", "Tried to queue weapon for camo generation, but weapon already has one", skinId);
+                return;
+            }
+            if (!BotDecalPresets.TryGetValue((int)botRole, out var botItems))
+            {
+                return;
+            }
+            if (!botItems.TryGetValue(skinId, out var itemPresets))
+            {
+                return;
+            }
+
+            var decalsInfo = itemPresets[UnityEngine.Random.Range(0, itemPresets.Count)];
+            // TODO should we make a copy?
+            var itemsWithDecals = new ItemsWithDecals()
+            {
+                Items = new(),
+                DecalsInfo = decalsInfo,
+            };
+            ItemsWithDecals.Add(itemId, itemsWithDecals);
+            WriteDecalsToFile(itemId, decalsInfo);
+
+            Logger.Log(LogLevel.Info, "RandomCamo", "Queue item", itemId);
+        }
+
         public void GenerateAndRecordRandomCamoForWeapon(string itemId, WeaponPrefab weaponPrefab)
         {
             if (ItemsWithDecals.ContainsKey(itemId))

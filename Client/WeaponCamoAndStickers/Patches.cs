@@ -586,6 +586,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
 				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item.Id, item.StringTemplateId);
             }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
+            }
 		}
 	}
 
@@ -605,6 +609,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             foreach (var item in equipmentItems)
             {
 				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item.Id, item.StringTemplateId);
+            }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
             }
 	    }
 	}
