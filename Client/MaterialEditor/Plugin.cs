@@ -670,11 +670,14 @@ namespace SevenBoldPencil.MaterialEditor
         public void AddCamoEditorItem(Item item, AssetPoolObject assetPoolObject, List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict)
         {
             var editorItem = GetOrBuildItem(item, assetPoolObject);
+            AddCamoEditorItem(editorItem, item.StringTemplateId, items, itemsDict);
+        }
 
+        public void AddCamoEditorItem(CamoEditorItem editorItem, string templateId, List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict)
+        {
             items.Add(editorItem);
 
             var itemIndex = items.Count - 1;
-            var templateId = item.StringTemplateId;
             if (itemsDict.TryGetValue(templateId, out var sameItems))
             {
                 sameItems.Add(itemIndex);
@@ -803,21 +806,7 @@ namespace SevenBoldPencil.MaterialEditor
         public void AddCamoEditorItem(string profileId, string skinId, LoddedSkin skin, List<CamoEditorItem> items, Dictionary<string, List<int>> itemsDict)
         {
             var editorItem = GetOrBuildItem(profileId, skinId, skin);
-
-            items.Add(editorItem);
-
-            var itemIndex = items.Count - 1;
-            var templateId = skinId;
-            if (itemsDict.TryGetValue(templateId, out var sameItems))
-            {
-                sameItems.Add(itemIndex);
-            }
-            else
-            {
-                sameItems = new List<int>();
-                sameItems.Add(itemIndex);
-                itemsDict.Add(templateId, sameItems);
-            }
+            AddCamoEditorItem(editorItem, skinId, items, itemsDict);
         }
 
         public CamoEditorItem GetOrBuildItem(string profileId, string skinId, LoddedSkin skin)
