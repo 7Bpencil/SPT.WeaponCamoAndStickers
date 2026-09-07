@@ -50,6 +50,8 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ### shoNky
 
 ![](previews/community/shoNky/m700.png)
+![](previews/community/shoNky/vector.png)
+![](previews/community/shoNky/death-mask.png)
 
 ### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
 
