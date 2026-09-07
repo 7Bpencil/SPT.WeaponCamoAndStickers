@@ -79,6 +79,7 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 ![](previews/community/DocTahFrek/HK_UMP_.40_SW_submachine_gun_2026-07-1700-55-12.png)
 ![](previews/community/DocTahFrek/HK_UMP_.45_ACP_submachine_gun_Leva_2026-07-1500-27-46.png)
 ![](previews/community/DocTahFrek/HK_MP7A1_4.6x30_submachine_gun_Cheeta_2026-07-2102-21-51.png)
+![](previews/community/DocTahFrek/Barrett_M107A1_.50_BMG_anti-material_rifle_Misia_GFL_2026-08-3023-19-56.png)
 
 ### Dandy
 
