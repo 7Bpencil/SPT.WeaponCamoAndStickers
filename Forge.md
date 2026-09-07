@@ -78,10 +78,9 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/SAG_AK-545_Short_5.45x39_carbine_Exterminator_2026-08-2201-18-28.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/Mechanics_Colt_M4A1_.300_blackout_assault_rifle_Rattlesnake_2026-08-2200-58-46.png)
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/Desert_Tech_MDR_7.62x51_assault_rifle_2026-08-2216-35-33.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/IWI_Tavor_X95_5.56x45_assault_rifle_OD_2026-08-2402-31-03.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/Desert_Tech_MDR_7.62x51_assault_rifle_2026-08-2216-35-33.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/GP-7_gas_mask_2026-09-0108-33-29.png)
-![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/Colt_M4A1_5.56x45_assault_rifle_Mister_Chief_2026-08-2002-14-00.png)
 
 ### Dandy
 
