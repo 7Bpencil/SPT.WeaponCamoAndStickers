@@ -2654,7 +2654,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 CopyDecalsInfo(decalsInfo, oldPresetDecalsInfo);
                 WritePresetToFile(presetName, oldPresetDecalsInfo);
             }
-            else
+            else if (decalsInfo.Count > 0)
             {
                 var newPresetDecalsInfo = CopyDecalsInfo(decalsInfo);
                 DecalPresets.Add(presetName, newPresetDecalsInfo);
