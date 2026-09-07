@@ -402,7 +402,7 @@ namespace SevenBoldPencil.MaterialEditor
 				// AI has AccountId = "0",
 				// you would think that better way is to check player.IsAI,
 				// but it set to false even on AI at this stage in initialization.
-				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+				if (parent.TryGetComponent<Player>(out var player))
 				{
 					// we are in raid or walking in hideout
 					profileId = player.ProfileId;
@@ -497,6 +497,55 @@ namespace SevenBoldPencil.MaterialEditor
 		{
 			Plugin.Instance.CloseCamoEditor();
 		}
+	}
+
+	// I am pretty certain all bot spawning functions eventually lead to this method
+	public class Patch_BotCreatorClient_CreateBot : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(BotCreatorClass), nameof(BotCreatorClass.method_2));
+        }
+
+        [PatchPrefix]
+        public static void Prefix(PlayerModelView __instance, Profile profile, GClass682 bornInfo, Action<BotOwner> callback, bool isLocalGame, CancellationToken cancellationToken)
+		{
+			var botRole = profile.Info.Settings.Role;
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
+            }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
+            }
+		}
+	}
+
+	public class Patch_LocalPlayer_Create : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(LocalPlayer), nameof(LocalPlayer.Create));
+        }
+
+        [PatchPrefix]
+		private static void Prefix(Profile profile)
+	    {
+			var botRole = profile.Info.Settings.Role;
+
+            var equipmentItems = profile.Inventory.GetPlayerItems(EPlayerItems.Equipment);
+            foreach (var item in equipmentItems)
+            {
+				Plugin.Instance.QueueWeaponForRandomCamoGeneration(botRole, item);
+            }
+            foreach (var skinId in profile.Customization.Values)
+            {
+				Plugin.Instance.QueueSkinForRandomCamoGeneration(botRole, profile.Id, skinId);
+            }
+	    }
 	}
 
 }
