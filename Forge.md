@@ -42,6 +42,10 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/shoNky/m700.png)
 
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/shoNky/vector.png)
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/shoNky/death-mask.png)
+
 ### [Clacker](https://sp-mod.com/addon/72/cag-scribbles)
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Clacker/Screenshot_2026-06-02_191516.png)
@@ -70,6 +74,7 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/HK_UMP_.40_SW_submachine_gun_2026-07-1700-55-12.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/HK_UMP_.45_ACP_submachine_gun_Leva_2026-07-1500-27-46.png)
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/HK_MP7A1_4.6x30_submachine_gun_Cheeta_2026-07-2102-21-51.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/DocTahFrek/Barrett_M107A1_.50_BMG_anti-material_rifle_Misia_GFL_2026-08-3023-19-56.png)
 
 ### Dandy
 
@@ -79,7 +84,18 @@ https://www.youtube.com/watch?v=hJcIlx6UV9A
 
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/vector.png)
 
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/cloudy.png)
+
 ![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Dandy/beta.png)
+
+### Sgt_Samples
+
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/SAG_AK-545_Short_5.45x39_carbine_Exterminator_2026-08-2201-18-28.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/SIG_MCX-SPEAR_6.8x51_assault_rifle_2026-08-2600-10-49.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/IWI_Tavor_X95_5.56x45_assault_rifle_OD_2026-08-2402-31-03.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/Desert_Tech_MDR_7.62x51_assault_rifle_2026-08-2216-35-33.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/GP-7_gas_mask_2026-09-0108-33-29.png)
+![](https://raw.githubusercontent.com/7Bpencil/SPT.WeaponCamoAndStickers/refs/heads/master/previews/community/Sgt_Samples/MP-155_12ga_semi-automatic_shotgun_Ultima_2026-08-2308-22-35.png)
 
 ### letmedowneasy
 
