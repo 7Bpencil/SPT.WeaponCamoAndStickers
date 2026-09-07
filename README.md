@@ -107,6 +107,10 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 
 ![](previews/community/Unknown/pUiZCFw.png)
 
+### Razolak
+
+![](previews/community/Razolak/sandy.png)
+
 ### zovchernobyl
 
 ![](previews/community/zovchernobyl/Kalashnikov_PPK-20_9x19mm_2026-04-1210-57-57.png)
