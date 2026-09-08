@@ -48,6 +48,8 @@ namespace SevenBoldPencil.MaterialEditor
 
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVscaleX = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVscaleY = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
 
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
@@ -346,6 +348,8 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // reflect color value
                     buttonHeight + smallMargin + // texture uv x
                     buttonHeight + smallMargin + // texture uv y
+                    buttonHeight + smallMargin + // texture uv scale x
+                    buttonHeight + smallMargin + // texture uv scale y
                     buttonHeight + bigMargin; // texture uv scale
             }
             else
@@ -742,7 +746,7 @@ namespace SevenBoldPencil.MaterialEditor
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
-                var newUVz = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.z, -1f, 1f);
+                var newUVz = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.z, -1f, 1f);
                 if (newUVz != textureUV.z)
                 {
                     textureUV.z = newUVz;
@@ -753,7 +757,7 @@ namespace SevenBoldPencil.MaterialEditor
 
 
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV y:", CamoEditorStyle.LabelStyleName);
-                var newUVw = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.w, -1f, 1f);
+                var newUVw = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.w, -1f, 1f);
                 if (newUVw != textureUV.w)
                 {
                     textureUV.w = newUVw;
@@ -761,13 +765,41 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
+
+
+                {
+                    var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
+                    GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale X:", CamoEditorStyle.LabelStyleName);
+                    var newUVx = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.x, leftScale, rightScale);
+                    if (newUVx != textureUV.x)
+                    {
+                        textureUV.x = newUVx;
+                        ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                    }
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleX.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
+                    y += buttonHeight + mediumMargin;
+                }
+
+
+                {
+                    var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
+                    GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale Y:", CamoEditorStyle.LabelStyleName);
+                    var newUVy = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.y, leftScale, rightScale);
+                    if (newUVy != textureUV.y)
+                    {
+                        textureUV.y = newUVy;
+                        ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                    }
+                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleY.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
+                    y += buttonHeight + mediumMargin;
+                }
             }
 
             {
                 var aspectRatio = textureUV.x / textureUV.y;
                 var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVy = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.y, leftScale, rightScale);
+                var newUVy = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.y, leftScale, rightScale);
                 if (newUVy != textureUV.y)
                 {
                     textureUV.x = newUVy * aspectRatio;
