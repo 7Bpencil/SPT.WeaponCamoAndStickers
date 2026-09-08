@@ -764,16 +764,17 @@ namespace SevenBoldPencil.MaterialEditor
             }
 
             {
-                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
+                var aspectRatio = textureUV.x / textureUV.y;
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
                 GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
-                var newUVx = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.x, leftScale, rightScale);
-                if (newUVx != textureUV.x)
+                var newUVy = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureUV.y, leftScale, rightScale);
+                if (newUVy != textureUV.y)
                 {
-                    textureUV.x = newUVx;
-                    textureUV.y = newUVx;
+                    textureUV.x = newUVy * aspectRatio;
+                    textureUV.y = newUVy;
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + mediumMargin;
             }
 
