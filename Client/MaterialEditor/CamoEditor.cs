@@ -48,6 +48,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVangle = new(SimpleFloatFormat);
         public StringCache<float> TextureUVaspectRatio = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
 
@@ -347,6 +348,7 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // reflect color value
                     buttonHeight + smallMargin + // texture uv x
                     buttonHeight + smallMargin + // texture uv y
+                    buttonHeight + smallMargin + // texture uv angle
                     buttonHeight + smallMargin + // texture uv aspect ratio
                     buttonHeight + bigMargin; // texture uv scale
             }
@@ -682,6 +684,7 @@ namespace SevenBoldPencil.MaterialEditor
             var specVals = materialInfo.SpecVals;
             var defVals = materialInfo.DefVals;
             var textureUV = materialInfo.TextureUV;
+            var textureAngle = materialInfo.TextureAngle;
             var compensateSpecular = materialInfo.CompensateSpecular;
 
             var x = bigMargin;
@@ -762,6 +765,17 @@ namespace SevenBoldPencil.MaterialEditor
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+
+
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV angle:", CamoEditorStyle.LabelStyleName);
+                var newTextureAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureAngle, -180f, 180f);
+                if (newTextureAngle != textureAngle)
+                {
+                    textureAngle = newTextureAngle;
+                    ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureAngle), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
 
 

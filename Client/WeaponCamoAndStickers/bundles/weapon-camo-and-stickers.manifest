@@ -1,0 +1,63 @@
+ManifestFileVersion: 0
+CRC: 6280288
+Hashes:
+  AssetFileHash:
+    serializedVersion: 2
+    Hash: 54d8938752e9d6a0386c4bc0d2753d0e
+  TypeTreeHash:
+    serializedVersion: 2
+    Hash: b4f2efbdb85a500017afd875df75d980
+  IncrementalBuildHash:
+    serializedVersion: 2
+    Hash: 54d8938752e9d6a0386c4bc0d2753d0e
+HashAppended: 0
+ClassTypes:
+- Class: 28
+  Script: {instanceID: 0}
+- Class: 48
+  Script: {instanceID: 0}
+SerializeReferenceClassIdentifiers: []
+Assets:
+- Assets/WeaponCamoAndStickers/Icons/duplicate.png
+- Assets/WeaponCamoAndStickers/Icons/opened-arrow.png
+- Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png
+- Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader
+- Assets/WeaponCamoAndStickers/Icons/down-arrow.png
+- Assets/WeaponCamoAndStickers/Icons/undo.png
+- Assets/WeaponCamoAndStickers/Icons/visible.png
+- Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/UV-Texture-Move-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/hsv-circle.png
+- Assets/WeaponCamoAndStickers/Icons/closed-arrow-color-wheel.png
+- Assets/WeaponCamoAndStickers/Icons/paste-eraser.png
+- Assets/WeaponCamoAndStickers/Icons/UV-Mask-Move-Icon.png
+- Assets/WeaponCamoAndStickers/Textures/missing.png
+- Assets/WeaponCamoAndStickers/Icons/mirror-off.png
+- Assets/WeaponCamoAndStickers/Icons/UV-Texture-Rotate-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/play-icon.png
+- Assets/WeaponCamoAndStickers/Icons/hsv-circle-icon.png
+- Assets/WeaponCamoAndStickers/Icons/copy-eraser.png
+- Assets/WeaponCamoAndStickers/Shaders/AdvancedHandleShader.shader
+- Assets/WeaponCamoAndStickers/Icons/paste-paint.png
+- Assets/WeaponCamoAndStickers/Icons/checkbox-on.png
+- Assets/WeaponCamoAndStickers/Icons/Move-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/diskette-error.png
+- Assets/WeaponCamoAndStickers/Icons/diskette.png
+- Assets/WeaponCamoAndStickers/Shaders/CombineTextures.shader
+- Assets/WeaponCamoAndStickers/Icons/UV-Texture-Scale-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/closed-arrow.png
+- Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png
+- Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader
+- Assets/WeaponCamoAndStickers/Icons/star.png
+- Assets/WeaponCamoAndStickers/Icons/color-palette.png
+- Assets/WeaponCamoAndStickers/Icons/copy-paint.png
+- Assets/WeaponCamoAndStickers/Icons/link-on.png
+- Assets/WeaponCamoAndStickers/Icons/bin.png
+- Assets/WeaponCamoAndStickers/Icons/mirror-on.png
+- Assets/WeaponCamoAndStickers/Icons/hidden.png
+- Assets/WeaponCamoAndStickers/Icons/up-arrow.png
+- Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png
+- Assets/WeaponCamoAndStickers/Icons/opened-arrow-color-wheel.png
+- Assets/WeaponCamoAndStickers/Icons/checkbox-off.png
+Dependencies: []

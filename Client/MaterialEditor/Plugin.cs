@@ -27,6 +27,7 @@ using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using CamoEditorResources = SevenBoldPencil.WeaponCamoAndStickers.CamoEditorResources;
 using DecalTextureType = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureType;
 using DecalTextureFormat = SevenBoldPencil.WeaponCamoAndStickers.DecalTextureFormat;
+using UVTools = SevenBoldPencil.WeaponCamoAndStickers.UVTools;
 using SystemObject = System.Object;
 
 namespace SevenBoldPencil.MaterialEditor
@@ -84,6 +85,7 @@ namespace SevenBoldPencil.MaterialEditor
         public Vector3 ReflectColorHSV;
         public string Texture;
         public Vector4 TextureUV;
+        public float TextureAngle;
         public Vector2 SpecVals; // defined as float3 in shader, but only x and y are used
         public Vector2 DefVals; // defined as float3 in shader, but only x and y are used
         public bool CompensateSpecular;
@@ -143,6 +145,7 @@ namespace SevenBoldPencil.MaterialEditor
         public static readonly int _DefVals = Shader.PropertyToID("_DefVals");
         public static readonly int _ColorTex = Shader.PropertyToID("_ColorTex");
         public static readonly int _ColorTex_ST = Shader.PropertyToID("_ColorTex_ST");
+        public static readonly int _ColorTexRotation = Shader.PropertyToID("_ColorTexRotation");
         public static readonly int _AlphaTex = Shader.PropertyToID("_AlphaTex");
 
         public static Plugin Instance;
@@ -355,6 +358,11 @@ namespace SevenBoldPencil.MaterialEditor
                 materialInfo.DefVals = new(1, 1);
                 materialInfo.CompensateSpecular = true;
             }
+            if (materialInfo.SchemaVersion == 1)
+            {
+                materialInfo.SchemaVersion = 2;
+                materialInfo.TextureAngle = 0;
+            }
         }
 
         public void OnCreateItemAsync(Item item)
@@ -545,6 +553,7 @@ namespace SevenBoldPencil.MaterialEditor
                 ReflectColorHSV = material.GetColor(_ReflectColor).RGBAtoHSV(),
                 Texture = "",
                 TextureUV = material.GetVector(_MainTex_ST),
+                TextureAngle = 0,
                 SpecVals = material.GetVector(_SpecVals),
                 DefVals = material.GetVector(_DefVals),
                 CompensateSpecular = true,
@@ -1009,7 +1018,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (targetMaterial.CustomTexture.Some(out var customTexture) &&
                     customTexture.Combined.Some(out var combined))
                 {
-                    RenderCombinedTexture(combined, customTexture.Color, videoData.MaterialInfo.TextureUV, targetMaterial.OriginalTexture);
+                    RenderCombinedTexture(combined, customTexture.Color, videoData.MaterialInfo.TextureUV, videoData.MaterialInfo.TextureAngle, targetMaterial.OriginalTexture);
                 }
             }
         }
@@ -1272,7 +1281,7 @@ namespace SevenBoldPencil.MaterialEditor
                     if (!customTexture.IsVideo)
                     {
                         // video will get rerendered in LateUpdate anyway
-                        RenderCombinedTexture(renderTexture, customTexture.Color, materialInfo.TextureUV, alpha);
+                        RenderCombinedTexture(renderTexture, customTexture.Color, materialInfo.TextureUV, materialInfo.TextureAngle, alpha);
                     }
                     targetMaterial.CustomTexture = new(customTexture with { Combined = new(renderTexture) });
                     targetMaterial.PropertyBlock.SetTexture(_MainTex, renderTexture);
@@ -1338,7 +1347,31 @@ namespace SevenBoldPencil.MaterialEditor
                         !customTexture.IsVideo)
                     {
                         // no need to rerender video, it will get rerendered in LateUpdate anyway,
-                        RenderCombinedTexture(combined, customTexture.Color, materialInfo.TextureUV, targetMaterial.OriginalTexture);
+                        RenderCombinedTexture(combined, customTexture.Color, materialInfo.TextureUV, materialInfo.TextureAngle, targetMaterial.OriginalTexture);
+                    }
+                }
+            );
+        }
+
+        public void ChangeTextureAngle(string itemId, string materialName, float textureAngle)
+        {
+            ModifyMaterialOnItems
+            (
+                itemId, materialName,
+                (materialInfo) => materialInfo.TextureAngle = textureAngle,
+                (targetMaterial, materialInfo) =>
+                {
+                    // texture tiling and offset is valid option only
+                    // if user has custom texture without proper specular map
+                    // (custom texture + specular compensation = combined texture),
+                    // people wont like ugly tiling/offset anyway
+
+                    if (targetMaterial.CustomTexture.Some(out var customTexture) &&
+                        customTexture.Combined.Some(out var combined) &&
+                        !customTexture.IsVideo)
+                    {
+                        // no need to rerender video, it will get rerendered in LateUpdate anyway,
+                        RenderCombinedTexture(combined, customTexture.Color, materialInfo.TextureUV, materialInfo.TextureAngle, targetMaterial.OriginalTexture);
                     }
                 }
             );
@@ -1448,7 +1481,7 @@ namespace SevenBoldPencil.MaterialEditor
                 if (!isVideo)
                 {
                     // video will get rerendered in LateUpdate anyway
-                    RenderCombinedTexture(renderTexture, texture, materialInfo.TextureUV, alpha);
+                    RenderCombinedTexture(renderTexture, texture, materialInfo.TextureUV, materialInfo.TextureAngle, alpha);
                 }
 
                 return new CustomTexture(texture, new(renderTexture), isVideo);
@@ -1473,12 +1506,14 @@ namespace SevenBoldPencil.MaterialEditor
             return renderTexture;
         }
 
-        public void RenderCombinedTexture(RenderTexture renderTexture, Texture color, Vector4 colorUV, Texture alpha)
+        public void RenderCombinedTexture(RenderTexture renderTexture, Texture color, Vector4 colorUV, float textureAngle, Texture alpha)
         {
             // we dont plug texture uv into _MainTex_ST of item material,
             // otherwise it will show repetition and offset in specular and gloss maps,
             // which looks ugly, so we sample color texture with that UV instead
+            var colorTextureRotation = UVTools.GetRotationVector(textureAngle);
             CombineTexturesMaterial.SetVector(_ColorTex_ST, colorUV);
+            CombineTexturesMaterial.SetVector(_ColorTexRotation, colorTextureRotation);
             CombineTexturesMaterial.SetTexture(_ColorTex, color);
             CombineTexturesMaterial.SetTexture(_AlphaTex, alpha);
             Graphics.Blit(null, renderTexture, CombineTexturesMaterial);

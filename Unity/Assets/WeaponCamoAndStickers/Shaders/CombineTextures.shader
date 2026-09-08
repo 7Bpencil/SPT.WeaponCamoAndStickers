@@ -3,6 +3,7 @@ Shader "WeaponCamoAndStickers/CombineTextures"
     Properties
     {
         _ColorTex ("Color", 2D) = "white" {}
+        _ColorTexRotation ("Color Rotation", Vector) = (1, 0, 0, 0)
         _AlphaTex ("Alpha", 2D) = "white" {}
     }
     SubShader
@@ -35,6 +36,7 @@ Shader "WeaponCamoAndStickers/CombineTextures"
             };
 
 	        sampler2D _ColorTex;
+			float2 _ColorTexRotation;
 			float4 _ColorTex_ST;
 	        sampler2D _AlphaTex;
 
@@ -47,9 +49,18 @@ Shader "WeaponCamoAndStickers/CombineTextures"
                 return o;
             }
 
+			float2 rotate(float2 vec, float2 rot)
+			{
+				return float2(
+	                rot.x * vec.x - rot.y * vec.y,
+	                rot.y * vec.x + rot.x * vec.y
+				);
+			}
+
             float4 frag (v2f i) : SV_Target
             {
-                float4 color = tex2D(_ColorTex, i.colorUV);
+				float2 rotatedColorUV = rotate(i.colorUV, _ColorTexRotation);
+                float4 color = tex2D(_ColorTex, rotatedColorUV);
                 float4 alpha = tex2D(_AlphaTex, i.alphaUV);
                 return float4(color.rgb, alpha.a);
 			}
