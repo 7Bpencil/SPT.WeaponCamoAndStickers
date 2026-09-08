@@ -48,6 +48,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
+        public StringCache<float> TextureUVaspectRatio = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
 
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
@@ -346,6 +347,7 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // reflect color value
                     buttonHeight + smallMargin + // texture uv x
                     buttonHeight + smallMargin + // texture uv y
+                    buttonHeight + smallMargin + // texture uv aspect ratio
                     buttonHeight + bigMargin; // texture uv scale
             }
             else
@@ -760,6 +762,20 @@ namespace SevenBoldPencil.MaterialEditor
                     ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
                 }
                 GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+
+
+                // we keep height constant and change width
+                var aspectRatio = textureUV.x / textureUV.y;
+                var (leftScale, rightScale) = GetLoopingSliderBounds(aspectRatio);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV aspect ratio:", CamoEditorStyle.LabelStyleName);
+                var newAspectRatio = GUI.HorizontalSlider(new Rect(sliderX + 37, y + 11, sliderWidth - 37, buttonHeight), aspectRatio, leftScale, rightScale);
+                if (newAspectRatio != aspectRatio)
+                {
+                    textureUV.x = textureUV.y * newAspectRatio;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVaspectRatio.Get(aspectRatio), CamoEditorStyle.LabelStyleValue);
                 y += buttonHeight + smallMargin;
             }
 
