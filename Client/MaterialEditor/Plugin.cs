@@ -1594,29 +1594,32 @@ namespace SevenBoldPencil.MaterialEditor
             }
             if (ItemPresets.TryGetValue(presetName, out var oldPreset))
             {
-                CopyAllMaterials(items, itemsDict, oldPreset.Materials);
+                oldPreset.Materials.Clear();
+                CopyAllMaterials(items, itemsDict, ref oldPreset.Materials);
                 WriteItemPresetToFile(presetName, oldPreset);
             }
             else
             {
-                var newMaterials = new Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>>(itemsDict.Count);
-                CopyAllMaterials(items, itemsDict, newMaterials);
-                var newPreset = new ItemPreset()
+                Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> newMaterials = null;
+                CopyAllMaterials(items, itemsDict, ref newMaterials);
+                if (newMaterials != null)
                 {
-                    SchemaVersion = ItemPreset.CurrentSchemaVersion,
-                    Materials = newMaterials,
-                };
-                ItemPresets.Add(presetName, newPreset);
-                WriteItemPresetToFile(presetName, newPreset);
+                    var newPreset = new ItemPreset()
+                    {
+                        SchemaVersion = ItemPreset.CurrentSchemaVersion,
+                        Materials = newMaterials,
+                    };
+                    ItemPresets.Add(presetName, newPreset);
+                    WriteItemPresetToFile(presetName, newPreset);
+                }
             }
         }
 
         public void CopyAllMaterials(
             List<CamoEditorItem> items,
             Dictionary<string, List<int>> itemsDict,
-            Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> allMaterials)
+            ref Dictionary<string, Dictionary<int, Dictionary<string, MaterialInfo>>> allMaterials)
         {
-            allMaterials.Clear();
             foreach (var (templateId, itemIndices) in itemsDict)
             {
                 Dictionary<int, Dictionary<string, MaterialInfo>> itemsInfo = null;
@@ -1625,6 +1628,12 @@ namespace SevenBoldPencil.MaterialEditor
                     var item = items[itemIndices[i]];
                     if (GetMaterialsInfo(item.ItemId).Some(out var materialsInfo))
                     {
+                        if (materialsInfo.Materials.Count == 0)
+                        {
+                            // this happens if item material was changed, then reset, then saved
+                            // into preset, entry in database is still there, but without any materials
+                            continue;
+                        }
                         var materials = new Dictionary<string, MaterialInfo>(materialsInfo.Materials.Count);
                         foreach (var (materialName, materialInfo) in materialsInfo.Materials)
                         {
@@ -1639,6 +1648,10 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 if (itemsInfo != null)
                 {
+                    if (allMaterials == null)
+                    {
+                        allMaterials = new(itemsDict.Count);
+                    }
                     allMaterials.Add(templateId, itemsInfo);
                 }
             }
