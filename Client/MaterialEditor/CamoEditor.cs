@@ -67,8 +67,17 @@ namespace SevenBoldPencil.MaterialEditor
 
     public readonly record struct EditedOverride(int ItemIndex, string MaterialName);
 
+    public enum SettingsScreen
+    {
+        Texture,
+        Color,
+        UV
+    }
+
     public class CamoEditor
     {
+        public static readonly string[] SettingsScreens = ["Texture", "Color", "UV"];
+
         public Plugin Plugin;
         public BigPlugin BigPlugin;
         public CamoEditorResources CamoEditorResources;
@@ -87,7 +96,7 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsColorPickerOpened_Color;
         public bool IsColorPickerOpened_SpecColor;
         public bool IsColorPickerOpened_ReflectColor;
-        public bool AreAdvancedSettingsOpened;
+        public SettingsScreen SettingsScreen = SettingsScreen.Texture;
         public DecalTextureType DecalTypeMenu = DecalTextureType.Camo;
         public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
@@ -106,9 +115,9 @@ namespace SevenBoldPencil.MaterialEditor
         public const int maxTextureIconsVisibleHeight = 16 * (buttonHeight + smallMargin) - smallMargin;
         public const int maxMaterialsVisibleHeight = 25 * (buttonHeight + smallMargin) - smallMargin;
 
-        public static readonly int colorPickerY_Color = 217;
-        public static readonly int colorPickerY_SpecColor = 469;
-        public static readonly int colorPickerY_ReflectColor = 721;
+        public static readonly int colorPickerY_Color = 217 - 36;
+        public static readonly int colorPickerY_SpecColor = 469 - 36;
+        public static readonly int colorPickerY_ReflectColor = 721 - 36;
         public static readonly int colorPickerSize = hsCircleDiameter + bigMargin * 2;
 
         public static Rect GetDefaultWindowRect_Item()
@@ -205,7 +214,7 @@ namespace SevenBoldPencil.MaterialEditor
                                 }
                             }
 
-                            if (AreAdvancedSettingsOpened)
+                            if (SettingsScreen == SettingsScreen.Color)
                             {
                                 DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
                                 DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DrawColorPickerWindow_SpecColor, DrawColorPickerWindowOpenButton_SpecColor, DrawColorPickerWindowCloseButton_SpecColor);
@@ -322,13 +331,12 @@ namespace SevenBoldPencil.MaterialEditor
                 buttonHeight + mediumMargin + // back button
                 buttonHeight + bigMargin + // show/hide presets button
                 smallMargin + bigMargin + // separator
-                buttonHeight + mediumMargin; // show/hide advanced settings
+                buttonHeight + mediumMargin; // tabs texture/color/uv
 
-            if (AreAdvancedSettingsOpened)
+            if (SettingsScreen == SettingsScreen.Color)
             {
                 return
                     header +
-                    buttonHeight + smallMargin + // compensate specular
                     buttonHeight + smallMargin + // color
                     buttonHeight + smallMargin + // color hue
                     buttonHeight + smallMargin + // color saturation
@@ -346,15 +354,20 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // reflect color
                     buttonHeight + smallMargin + // reflect color hue
                     buttonHeight + smallMargin + // reflect color saturation
-                    buttonHeight + smallMargin + // reflect color value
+                    buttonHeight + mediumMargin; // reflect color value
+            }
+            if (SettingsScreen == SettingsScreen.UV)
+            {
+                return
+                    header +
                     buttonHeight + smallMargin + // texture uv angle
                     buttonHeight + smallMargin + // texture uv x
                     buttonHeight + smallMargin + // texture uv y
                     buttonHeight + smallMargin + // texture uv scale x
                     buttonHeight + smallMargin + // texture uv scale y
-                    buttonHeight + bigMargin; // texture uv scale
+                    buttonHeight + mediumMargin; // texture uv scale
             }
-            else
+            if (SettingsScreen == SettingsScreen.Texture)
             {
                 var texturesDirectory = BigPlugin.GetTexturesDirectory(DecalTypeMenu);
                 var (_, visibleHeight) = BigCamoEditor.CalculateTexturesDirectoryHeight(texturesDirectory, maxTextureIconsVisibleHeight);
@@ -367,6 +380,8 @@ namespace SevenBoldPencil.MaterialEditor
                     buttonHeight + smallMargin + // toolbar camos/stickers
                     visibleHeight + bigMargin; // icons grid
             }
+
+            return header;
         }
 
         private void DrawOpenedWindow_Presets(int windowID)
@@ -678,16 +693,6 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
             var (_, materialName, materialInfo, _) = GetEditedMaterialInfo();
-            var colorHSV = materialInfo.ColorHSV;
-            var specColorHSV = materialInfo.SpecColorHSV;
-            var reflectColorHSV = materialInfo.ReflectColorHSV;
-            var glossness = materialInfo.Glossness;
-            var specularness = materialInfo.Specularness;
-            var specVals = materialInfo.SpecVals;
-            var defVals = materialInfo.DefVals;
-            var textureUV = materialInfo.TextureUV;
-            var textureAngle = materialInfo.TextureAngle;
-            var compensateSpecular = materialInfo.CompensateSpecular;
 
             var x = bigMargin;
             var y = smallMargin;
@@ -710,13 +715,135 @@ namespace SevenBoldPencil.MaterialEditor
             BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            var advancedSettingsLabel = AreAdvancedSettingsOpened ? "Hide Advanced Settings" : "Show Advanced Settings";
-            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), advancedSettingsLabel))
-            {
-                AreAdvancedSettingsOpened = !AreAdvancedSettingsOpened;
-            }
+            SettingsScreen = (SettingsScreen)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)SettingsScreen, SettingsScreens);
             y += buttonHeight + mediumMargin;
 
+            if (SettingsScreen == SettingsScreen.Texture)
+            {
+                SettingsScreen_Texture(ref x, ref y, materialName, materialInfo);
+            }
+            if (SettingsScreen == SettingsScreen.Color)
+            {
+                SettingsScreen_Color(ref x, ref y, materialName, materialInfo);
+            }
+            if (SettingsScreen == SettingsScreen.UV)
+            {
+                SettingsScreen_UV(ref x, ref y, materialName, materialInfo);
+            }
+
+			GUI.DragWindow();
+        }
+
+        private void SettingsScreen_Color(ref int x, ref int y, string materialName, MaterialInfo materialInfo)
+        {
+            var colorHSV = materialInfo.ColorHSV;
+            var specColorHSV = materialInfo.SpecColorHSV;
+            var reflectColorHSV = materialInfo.ReflectColorHSV;
+            var glossness = materialInfo.Glossness;
+            var specularness = materialInfo.Specularness;
+            var specVals = materialInfo.SpecVals;
+            var defVals = materialInfo.DefVals;
+
+            DrawSlidersColorHSV(ref x, ref y, ref colorHSV, ref TextField_Color, "Color:", Strings.Color, Plugin.ChangeColor);
+            DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Strings.DefVals, Plugin.ChangeDefVals);
+            DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Strings.Glossness, Plugin.ChangeGlossness);
+            DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, ref TextField_SpecColor, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
+            DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Strings.Specularness, Plugin.ChangeSpecularness);
+            DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Strings.SpecVals, Plugin.ChangeSpecVals);
+            DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, ref TextField_ReflectColor, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
+        }
+
+        private void SettingsScreen_UV(ref int x, ref int y, string materialName, MaterialInfo materialInfo)
+        {
+            var textureUV = materialInfo.TextureUV;
+            var textureAngle = materialInfo.TextureAngle;
+
+            var sliderWidth = 224 + 12;
+            var labelX = x;
+            var sliderX = labelX + nameWidth + smallMargin - 42 - 12;
+            var valueX = sliderX + sliderWidth + smallMargin;
+
+
+            GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV angle:", CamoEditorStyle.LabelStyleName);
+            var newTextureAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureAngle, -180f, 180f);
+            if (newTextureAngle != textureAngle)
+            {
+                textureAngle = newTextureAngle;
+                ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
+            }
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVangle.Get(textureAngle), CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
+
+
+            GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
+            var newUVz = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.z, -1f, 1f);
+            if (newUVz != textureUV.z)
+            {
+                textureUV.z = newUVz;
+                ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+            }
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVx.Get(textureUV.z), CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
+
+
+            GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV y:", CamoEditorStyle.LabelStyleName);
+            var newUVw = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.w, -1f, 1f);
+            if (newUVw != textureUV.w)
+            {
+                textureUV.w = newUVw;
+                ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+            }
+            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
+            y += buttonHeight + smallMargin;
+
+
+            {
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale X:", CamoEditorStyle.LabelStyleName);
+                var newUVx = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.x, leftScale, rightScale);
+                if (newUVx != textureUV.x)
+                {
+                    textureUV.x = newUVx;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleX.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+            }
+
+
+            {
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale Y:", CamoEditorStyle.LabelStyleName);
+                var newUVy = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.y, leftScale, rightScale);
+                if (newUVy != textureUV.y)
+                {
+                    textureUV.y = newUVy;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleY.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + smallMargin;
+            }
+
+            {
+                var aspectRatio = textureUV.x / textureUV.y;
+                var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale:", CamoEditorStyle.LabelStyleName);
+                var newUVy = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.y, leftScale, rightScale);
+                if (newUVy != textureUV.y)
+                {
+                    textureUV.x = newUVy * aspectRatio;
+                    textureUV.y = newUVy;
+                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
+                }
+                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscale.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
+                y += buttonHeight + mediumMargin;
+            }
+        }
+
+        private void SettingsScreen_Texture(ref int x, ref int y, string materialName, MaterialInfo materialInfo)
+        {
+            var textureUV = materialInfo.TextureUV;
+            var compensateSpecular = materialInfo.CompensateSpecular;
 
             var sliderWidth = 224 + 12;
             var labelX = x;
@@ -737,78 +864,6 @@ namespace SevenBoldPencil.MaterialEditor
                 y += buttonHeight + smallMargin;
             }
 
-            if (AreAdvancedSettingsOpened)
-            {
-                DrawSlidersColorHSV(ref x, ref y, ref colorHSV, ref TextField_Color, "Color:", Strings.Color, Plugin.ChangeColor);
-                DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Strings.DefVals, Plugin.ChangeDefVals);
-                DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Strings.Glossness, Plugin.ChangeGlossness);
-                DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, ref TextField_SpecColor, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
-                DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Strings.Specularness, Plugin.ChangeSpecularness);
-                DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Strings.SpecVals, Plugin.ChangeSpecVals);
-                DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, ref TextField_ReflectColor, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
-
-
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV angle:", CamoEditorStyle.LabelStyleName);
-                var newTextureAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureAngle, -180f, 180f);
-                if (newTextureAngle != textureAngle)
-                {
-                    textureAngle = newTextureAngle;
-                    ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
-                }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVangle.Get(textureAngle), CamoEditorStyle.LabelStyleValue);
-                y += buttonHeight + smallMargin;
-
-
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
-                var newUVz = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.z, -1f, 1f);
-                if (newUVz != textureUV.z)
-                {
-                    textureUV.z = newUVz;
-                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
-                }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVx.Get(textureUV.z), CamoEditorStyle.LabelStyleValue);
-                y += buttonHeight + smallMargin;
-
-
-                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV y:", CamoEditorStyle.LabelStyleName);
-                var newUVw = GUI.HorizontalSlider(new Rect(sliderX - 24, y + 11, sliderWidth + 24, buttonHeight), textureUV.w, -1f, 1f);
-                if (newUVw != textureUV.w)
-                {
-                    textureUV.w = newUVw;
-                    ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
-                }
-                GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVy.Get(textureUV.w), CamoEditorStyle.LabelStyleValue);
-                y += buttonHeight + smallMargin;
-
-
-                {
-                    var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.x);
-                    GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale X:", CamoEditorStyle.LabelStyleName);
-                    var newUVx = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.x, leftScale, rightScale);
-                    if (newUVx != textureUV.x)
-                    {
-                        textureUV.x = newUVx;
-                        ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
-                    }
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleX.Get(textureUV.x), CamoEditorStyle.LabelStyleValue);
-                    y += buttonHeight + mediumMargin;
-                }
-
-
-                {
-                    var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
-                    GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV scale Y:", CamoEditorStyle.LabelStyleName);
-                    var newUVy = GUI.HorizontalSlider(new Rect(sliderX + 13, y + 11, sliderWidth - 13, buttonHeight), textureUV.y, leftScale, rightScale);
-                    if (newUVy != textureUV.y)
-                    {
-                        textureUV.y = newUVy;
-                        ForEveryLinkedItem(Plugin.ChangeTextureUV, textureUV);
-                    }
-                    GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVscaleY.Get(textureUV.y), CamoEditorStyle.LabelStyleValue);
-                    y += buttonHeight + mediumMargin;
-                }
-            }
-
             {
                 var aspectRatio = textureUV.x / textureUV.y;
                 var (leftScale, rightScale) = GetLoopingSliderBounds(textureUV.y);
@@ -824,7 +879,6 @@ namespace SevenBoldPencil.MaterialEditor
                 y += buttonHeight + mediumMargin;
             }
 
-            if (!AreAdvancedSettingsOpened)
             {
                 if (string.IsNullOrWhiteSpace(materialInfo.Texture))
                 {
@@ -855,8 +909,6 @@ namespace SevenBoldPencil.MaterialEditor
                     StickersWindow.DrawAllTextures(x, y);
                 }
             }
-
-			GUI.DragWindow();
         }
 
         // when fractional part of value goes over 0.5 slider moves to next page
