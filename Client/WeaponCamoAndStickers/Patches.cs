@@ -274,25 +274,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync), parameters);
         }
 
-        [PatchPrefix]
-        public static void Prefix(ObjectsFactory __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, YieldDelegate yield, CancellationToken ct = default(CancellationToken))
-		{
-			Plugin.Instance.OnCreateItemAsync(item);
-		}
-	}
-
-	public class Patch_ObjectsFactory_PopOrCreate : ModulePatch
-	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.PopOrCreate));
-        }
-
         [PatchPostfix]
-        public static void Postfix(ObjectsFactory __instance, GameObject __result, ResourceKey resourceKey, ObjectsFactory.PoolsCategory poolCategory)
+        public static void Postfix(ref Task<GameObject> __result, Item item)
 		{
-			Plugin.Instance.OnCreatedItemGameObject(resourceKey, __result);
+			if (Plugin.Instance.HasDecals(item).Some(out var itemType))
+			{
+				__result = WrapTask(__result, item, itemType);
+			}
 		}
+
+	    private static async Task<GameObject> WrapTask(Task<GameObject> task, Item item, ItemType itemType)
+	    {
+	        var itemGameObject = await task;
+			Plugin.Instance.OnCreatedItemGameObject(item, itemType, itemGameObject);
+			return itemGameObject;
+	    }
 	}
 
 	public class Patch_WeaponPrefab_InitHotObjects : ModulePatch

@@ -29,10 +29,6 @@ using SystemObject = System.Object;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
-    public readonly record struct ItemData(string Id, ItemType Type);
-
-    public readonly record struct DressData(string Id, int InstanceID);
-
     public enum ItemType
     {
         Weapon,
@@ -267,7 +263,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
         private Dictionary<string, string> Clones;
-        private Dictionary<ResourceKey, ItemData> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
         private Dictionary<int, string> DressesWaitingToBeSkinned;
         private HashSet<string> WeaponsWaitingForRandomCamo;
@@ -337,7 +332,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalPresets = LoadDecalPresets();
             ItemsWithDecals = LoadItemsWithDecals();
             Clones = new();
-            ResourceKeyToItem = new();
             InstanceIdToItemId = new();
             DressesWaitingToBeSkinned = new();
             WeaponsWaitingForRandomCamo = new();
@@ -356,7 +350,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_InteractionButtonsContainer_CreateDynamicContextButton().Enable();
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_ObjectsFactory_CreateItemAsync().Enable();
-            new Patch_ObjectsFactory_PopOrCreate().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
             new Patch_PlayerBody_SlotView_CreateAndParent().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
@@ -2004,51 +1997,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return FavouriteTextures.Contains(textureName);
         }
 
-        public void OnCreateItemAsync(Item item)
+        public Option<ItemType> HasDecals(Item item)
         {
             if (!GetItemType(item).Some(out var itemType))
             {
-                return;
+                return default;
             }
 
             var itemId = GetOriginalItemId(item.Id);
             if (!ItemsWithDecals.ContainsKey(itemId))
             {
-                return;
+                return default;
             }
 
-            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItem))
+            return new(itemType);
+        }
+
+        public void OnCreatedItemGameObject(Item item, ItemType itemType, GameObject itemGameObject)
+        {
+            if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
             {
-                if (existingItem.Id == itemId)
+                if (assetPoolObject is WeaponPrefab weaponPrefab)
                 {
-                    Logger.Log(LogLevel.Info, "Item", "Potential warning, already loading (ignore if happened on weapon reload)", itemId, item.Prefab.path);
+                    OnDecalsHostCreated_Weapon(item.Id, itemType, weaponPrefab);
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItem.Id, item.Prefab.path);
-                }
-            }
-            else
-            {
-                ResourceKeyToItem.Add(item.Prefab, new(itemId, itemType));
-                Logger.Log(LogLevel.Info, "Item", "Loading", itemId, item.Prefab.path);
-            }
-        }
-
-        public void OnCreatedItemGameObject(ResourceKey itemPrefab, GameObject itemGameObject)
-        {
-            if (ResourceKeyToItem.Remove(itemPrefab, out var item))
-            {
-                if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
-                {
-                    if (assetPoolObject is WeaponPrefab weaponPrefab)
-                    {
-                        OnDecalsHostCreated_Weapon(item.Id, item.Type, weaponPrefab);
-                    }
-                    else
-                    {
-                        OnDecalsHostCreated_Item(item.Id, item.Type, assetPoolObject);
-                    }
+                    OnDecalsHostCreated_Item(item.Id, itemType, assetPoolObject);
                 }
             }
         }

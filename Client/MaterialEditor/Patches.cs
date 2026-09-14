@@ -19,6 +19,7 @@ using EFT.UI.WeaponModding;
 using System;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using SPT.Reflection.Patching;
 using JetBrains.Annotations;
@@ -37,25 +38,21 @@ namespace SevenBoldPencil.MaterialEditor
             return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync), parameters);
         }
 
-        [PatchPrefix]
-        public static void Prefix(ObjectsFactory __instance, Item item, ECameraType cameraType, [CanBeNull] IPlayer player, bool isAnimated, YieldDelegate yield, CancellationToken ct = default(CancellationToken))
-		{
-			Plugin.Instance.OnCreateItemAsync(item);
-		}
-	}
-
-	public class Patch_ObjectsFactory_PopOrCreate : ModulePatch
-	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.PopOrCreate));
-        }
-
         [PatchPostfix]
-        public static void Postfix(ObjectsFactory __instance, GameObject __result, ResourceKey resourceKey, ObjectsFactory.PoolsCategory poolCategory)
+        public static void Postfix(ref Task<GameObject> __result, Item item)
 		{
-			Plugin.Instance.OnCreatedItemGameObject(resourceKey, __result);
+			if (Plugin.Instance.HasChangedMaterials(item))
+			{
+				__result = WrapTask(__result, item);
+			}
 		}
+
+	    private static async Task<GameObject> WrapTask(Task<GameObject> task, Item item)
+	    {
+	        var itemGameObject = await task;
+			Plugin.Instance.OnCreatedItemGameObject(item, itemGameObject);
+			return itemGameObject;
+	    }
 	}
 
 	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch

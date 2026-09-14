@@ -161,7 +161,6 @@ namespace SevenBoldPencil.MaterialEditor
         private Dictionary<string, ItemsWithMaterials> ItemsWithMaterials;
         private HashSet<Renderer> PatchedRenderers;
         private Dictionary<string, string> Clones;
-        private Dictionary<ResourceKey, string> ResourceKeyToItem;
         private Dictionary<int, string> InstanceIdToItemId;
 
         private Option<CamoEditor> CamoEditor;
@@ -189,11 +188,9 @@ namespace SevenBoldPencil.MaterialEditor
             ItemsWithMaterials = LoadItemsWithMaterials();
             PatchedRenderers = new();
             Clones = new();
-            ResourceKeyToItem = new();
             InstanceIdToItemId = new();
 
             new Patch_ObjectsFactory_CreateItemAsync().Enable();
-            new Patch_ObjectsFactory_PopOrCreate().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
             new Patch_ItemUiContext_GetItemContextInteractions().Enable();
@@ -357,55 +354,34 @@ namespace SevenBoldPencil.MaterialEditor
             }
         }
 
-        public void OnCreateItemAsync(Item item)
+        public bool HasChangedMaterials(Item item)
         {
             var itemId = GetOriginalItemId(item.Id);
-            if (!ItemsWithMaterials.ContainsKey(itemId))
+            return ItemsWithMaterials.ContainsKey(itemId);
+        }
+
+        public void OnCreatedItemGameObject(Item item, GameObject itemGameObject)
+        {
+            var itemId = GetOriginalItemId(item.Id);
+            if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
             {
-                return;
-            }
-            if (ResourceKeyToItem.TryGetValue(item.Prefab, out var existingItemId))
-            {
-                if (existingItemId == itemId)
+                var instanceID = itemGameObject.GetInstanceID();
+                if (itemsWithMaterials.Items.ContainsKey(instanceID))
                 {
-                    Logger.Log(LogLevel.Info, "Item", "Potential warning, already loading (ignore if happened on weapon reload)", itemId, item.Prefab.path);
+        			Logger.Log(LogLevel.Error, "Item", "Already added", itemId, item.Prefab.path, instanceID);
+                    return;
+                }
+                if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
+                {
+                    var itemWithMaterials = BuildItemOverrides(assetPoolObject);
+                    PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
+                    itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
+                    InstanceIdToItemId.Add(instanceID, itemId);
+        			Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, item.Prefab.path, instanceID);
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, "Item", "Collision", itemId, existingItemId, item.Prefab.path);
-                }
-            }
-            else
-            {
-                ResourceKeyToItem.Add(item.Prefab, itemId);
-                Logger.Log(LogLevel.Info, "Item", "Loading", itemId, item.Prefab.path);
-            }
-        }
-
-        public void OnCreatedItemGameObject(ResourceKey itemPrefab, GameObject itemGameObject)
-        {
-            if (ResourceKeyToItem.Remove(itemPrefab, out var itemId))
-            {
-                if (ItemsWithMaterials.TryGetValue(itemId, out var itemsWithMaterials))
-                {
-                    var instanceID = itemGameObject.GetInstanceID();
-                    if (itemsWithMaterials.Items.ContainsKey(instanceID))
-                    {
-            			Logger.Log(LogLevel.Error, "Item", "Already added", itemId, itemPrefab.path, instanceID);
-                        return;
-                    }
-                    if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
-                    {
-                        var itemWithMaterials = BuildItemOverrides(assetPoolObject);
-                        PatchItem(itemWithMaterials, itemsWithMaterials.MaterialsInfo);
-                        itemsWithMaterials.Items.Add(instanceID, itemWithMaterials);
-                        InstanceIdToItemId.Add(instanceID, itemId);
-            			Logger.Log(LogLevel.Info, "Item", "Loaded", itemId, itemPrefab.path, instanceID);
-                    }
-                    else
-                    {
-            			Logger.Log(LogLevel.Error, "Item", "No AssetPoolObject", itemId, itemPrefab.path, instanceID);
-                    }
+        			Logger.Log(LogLevel.Error, "Item", "No AssetPoolObject", itemId, item.Prefab.path, instanceID);
                 }
             }
         }
