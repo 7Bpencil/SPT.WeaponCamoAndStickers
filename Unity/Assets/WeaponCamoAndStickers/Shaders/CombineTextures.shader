@@ -3,6 +3,7 @@ Shader "WeaponCamoAndStickers/CombineTextures"
     Properties
     {
         _ColorTex ("Color", 2D) = "white" {}
+        _ColorTexRotation ("Color Rotation", Vector) = (1, 0, 0, 0)
         _AlphaTex ("Alpha", 2D) = "white" {}
     }
     SubShader
@@ -35,14 +36,23 @@ Shader "WeaponCamoAndStickers/CombineTextures"
             };
 
 	        sampler2D _ColorTex;
-			float4 _ColorTex_ST;
 	        sampler2D _AlphaTex;
+			float4 _ColorTex_ST;
+			float2 _ColorTexRotation;
+
+			float2 rotate(float2 vec, float2 rot)
+			{
+				return float2(
+	                rot.x * vec.x - rot.y * vec.y,
+	                rot.y * vec.x + rot.x * vec.y
+				);
+			}
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.position = UnityObjectToClipPos(v.vertex);
-				o.colorUV = TRANSFORM_TEX(v.uv, _ColorTex);
+				o.colorUV = rotate(TRANSFORM_TEX(v.uv, _ColorTex), _ColorTexRotation);
                 o.alphaUV = v.uv;
                 return o;
             }

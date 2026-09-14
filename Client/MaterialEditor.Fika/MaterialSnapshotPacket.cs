@@ -49,6 +49,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
             writer.PutUnmanaged<Vector3>(d.ReflectColorHSV);
             writer.Put(d.Texture);
             writer.PutUnmanaged<Vector4>(d.TextureUV);
+            writer.Put(d.TextureAngle);
             writer.PutUnmanaged<Vector2>(d.SpecVals);
             writer.PutUnmanaged<Vector2>(d.DefVals);
             writer.Put(d.CompensateSpecular);
@@ -102,6 +103,7 @@ namespace SevenBoldPencil.MaterialEditor.Fika
                 ReflectColorHSV = reader.GetUnmanaged<Vector3>(),
                 Texture = reader.GetString(),
                 TextureUV = reader.GetUnmanaged<Vector4>(),
+                TextureAngle = reader.GetFloat(),
                 SpecVals = reader.GetUnmanaged<Vector2>(),
                 DefVals = reader.GetUnmanaged<Vector2>(),
                 CompensateSpecular = reader.GetBool(),
