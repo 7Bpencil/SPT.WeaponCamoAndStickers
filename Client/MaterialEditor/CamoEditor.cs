@@ -46,7 +46,6 @@ namespace SevenBoldPencil.MaterialEditor
         public Vector2StringCache DefVals = new();
         public Vector2StringCache SpecVals = new();
 
-        public StringCache<float> TextureUVangle = new(v => $"{v:F3}°");
         public StringCache<float> TextureUVx = new(SimpleFloatFormat);
         public StringCache<float> TextureUVy = new(SimpleFloatFormat);
         public StringCache<float> TextureUVscaleX = new(SimpleFloatFormat);
@@ -54,6 +53,26 @@ namespace SevenBoldPencil.MaterialEditor
         public StringCache<float> TextureUVscale = new(SimpleFloatFormat);
 
         public static string SimpleFloatFormat(float v) => $"{v:F3}";
+
+        public static Option<float> ParseFloatAngle(string angleString)
+        {
+            if (!float.TryParse(angleString, out var angle))
+            {
+                return default;
+            }
+
+            // remove revolutions and bound to [-180, 180]
+            var sign = Math.Sign(angle);
+            var r = Math.Abs(angle) % 360;
+            if (r > 180)
+            {
+                r -= 360;
+            }
+
+            var result = r * sign;
+
+            return new(result);
+        }
     }
 
     public record CamoEditorItem
@@ -101,6 +120,7 @@ namespace SevenBoldPencil.MaterialEditor
         public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
+        public WeaponCamoAndStickers.TextField<float> TextField_TextureAngle = new(MaterialStringCache.SimpleFloatFormat, MaterialStringCache.ParseFloatAngle);
         public WeaponCamoAndStickers.TexturesWindow CamosWindow;
         public WeaponCamoAndStickers.TexturesWindow StickersWindow;
 		public Rect WindowRect;
@@ -497,6 +517,7 @@ namespace SevenBoldPencil.MaterialEditor
                         TextField_Color.SetValue(materialInfo.ColorHSV);
                         TextField_SpecColor.SetValue(materialInfo.SpecColorHSV);
                         TextField_ReflectColor.SetValue(materialInfo.ReflectColorHSV);
+                        TextField_TextureAngle.SetValue(materialInfo.TextureAngle);
                     }
                 }
 
@@ -764,15 +785,35 @@ namespace SevenBoldPencil.MaterialEditor
             var valueX = sliderX + sliderWidth + smallMargin;
 
 
-            GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV angle:", CamoEditorStyle.LabelStyleName);
-            var newTextureAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), textureAngle, -180f, 180f);
-            if (newTextureAngle != textureAngle)
             {
-                textureAngle = newTextureAngle;
-                ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
+                GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV angle:", CamoEditorStyle.LabelStyleName);
+                var newTextureAngle = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth - 50, buttonHeight), textureAngle, -180f, 180f);
+                if (newTextureAngle != textureAngle)
+                {
+                    textureAngle = newTextureAngle;
+                    TextField_TextureAngle.SetValue(textureAngle);
+                    ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
+                }
+
+
+                // TODO all TextFields are copypasted, make one good DrawTextField function
+                var textFieldX = x + boxWidth - fourthBoxWidthButton;
+
+                var previousBackgroundColor = GUI.backgroundColor;
+                var buttonBackgroundColor = TextField_TextureAngle.IsValid ? previousBackgroundColor : Color.red;
+
+                GUI.backgroundColor = buttonBackgroundColor;
+                var newTextureAngleString = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), TextField_TextureAngle.Value, 8, CamoEditorStyle.RGBHexTextFieldStyle);
+                GUI.backgroundColor = previousBackgroundColor;
+
+                if (TextField_TextureAngle.TrySetValue(newTextureAngleString, out var newTextureAngleOption) && newTextureAngleOption.Some(out newTextureAngle))
+                {
+                    textureAngle = newTextureAngle;
+                    ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
+                }
+
+                y += buttonHeight + smallMargin;
             }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), Strings.TextureUVangle.Get(textureAngle), CamoEditorStyle.LabelStyleValue);
-            y += buttonHeight + smallMargin;
 
 
             GUI.Label(new Rect(labelX, y, nameWidth, buttonHeight), "UV x:", CamoEditorStyle.LabelStyleName);
