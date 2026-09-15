@@ -213,10 +213,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public HashSet<string> MasksDirectory;
     }
 
-    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", "1.18.0")]
+    [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", PluginVersion)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
+        public const string PluginVersion = "1.18.0";
         public const string DefaultCamoName = "builtin/camos/default.png";
         public const string DefaultStickerName = "builtin/stickers/default.png";
         public const string DefaultMaskName = "builtin/masks/default.png";
