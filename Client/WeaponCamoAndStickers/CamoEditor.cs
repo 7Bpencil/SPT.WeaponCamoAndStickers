@@ -163,13 +163,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public StringCache<T> String;
         public Func<string, Option<T>> TryParse;
+        public int MaxInputLength;
         public string Value;
         public bool IsValid;
 
-        public TextField(Func<T, string> format, Func<string, Option<T>> tryParse, string startValue = "")
+        public TextField(Func<T, string> format, Func<string, Option<T>> tryParse, int maxInputLength, string startValue = "")
         {
             String = new(format);
             TryParse = tryParse;
+            MaxInputLength = maxInputLength;
             Value = startValue;
             IsValid = TryParse(startValue).HasValue;
         }
@@ -265,7 +267,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public TexturesWindow MasksWindow;
         public TexturesWindow EraseMasksWindow;
         public bool IsColorPickerOpened;
-        public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
+        public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect = GetDefaultWindowRect();
@@ -1169,14 +1171,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var textFieldX = x + boxWidth - fourthBoxWidthButton;
                     GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-                    var previousBackgroundColor = GUI.backgroundColor;
-                    var buttonBackgroundColor = ColorTextField.IsValid ? previousBackgroundColor : Color.red;
-
-                    GUI.backgroundColor = buttonBackgroundColor;
-                    var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
-                    GUI.backgroundColor = previousBackgroundColor;
-
-                    if (ColorTextField.TrySetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
+                    if (DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
                     {
                         decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
                         Plugin.ApplyColor(ItemId, decalIndex);
@@ -1589,6 +1584,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
+        public static Option<T> DrawTextField<T>(int x, int y, ref WeaponCamoAndStickers.TextField<T> textField, GUIStyle textFieldStyle) where T : IEquatable<T>
+        {
+            var previousBackgroundColor = GUI.backgroundColor;
+            var buttonBackgroundColor = textField.IsValid ? previousBackgroundColor : Color.red;
+
+            GUI.backgroundColor = buttonBackgroundColor;
+            var newValueString = GUI.TextField(new Rect(x, y, fourthBoxWidthButton, buttonHeight), textField.Value, textField.MaxInputLength, textFieldStyle);
+            GUI.backgroundColor = previousBackgroundColor;
+
+            if (textField.TrySetValue(newValueString, out var newValueOption) && newValueOption.Some(out var newValue))
+            {
+                return new(newValue);
+            }
+
+            return default;
+        }
 
         public void DrawDecalProjectionBox()
         {
@@ -1659,7 +1670,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     {
         public CamoEditorResources CamoEditorResources;
         public CamoEditorStyle CamoEditorStyle;
-        public TextField<string> textField = new(v => v, TryParsePresetName);
+        public TextField<string> textField = new(v => v, TryParsePresetName, maxPresetNameLength);
         public Vector2 presetsScrollPosition;
         public int MaxPresetsVisible;
 

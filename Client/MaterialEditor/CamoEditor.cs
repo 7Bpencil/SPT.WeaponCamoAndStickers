@@ -117,10 +117,10 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsColorPickerOpened_ReflectColor;
         public SettingsScreen SettingsScreen = SettingsScreen.Texture;
         public DecalTextureType DecalTypeMenu = DecalTextureType.Camo;
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
-        public WeaponCamoAndStickers.TextField<float> TextField_TextureAngle = new(MaterialStringCache.SimpleFloatFormat, MaterialStringCache.ParseFloatAngle);
+        public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        public WeaponCamoAndStickers.TextField<float> TextField_TextureAngle = new(MaterialStringCache.SimpleFloatFormat, MaterialStringCache.ParseFloatAngle, 8);
         public WeaponCamoAndStickers.TexturesWindow CamosWindow;
         public WeaponCamoAndStickers.TexturesWindow StickersWindow;
 		public Rect WindowRect;
@@ -607,14 +607,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var textFieldX = x + boxWidth - fourthBoxWidthButton;
                 GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-                var previousBackgroundColor = GUI.backgroundColor;
-                var buttonBackgroundColor = textField.IsValid ? previousBackgroundColor : Color.red;
-
-                GUI.backgroundColor = buttonBackgroundColor;
-                var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), textField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
-                GUI.backgroundColor = previousBackgroundColor;
-
-                if (textField.TrySetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
+                if (BigCamoEditor.DrawTextField(textFieldX, y, ref textField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
                 {
                     colorHSV = newColor;
                     ForEveryLinkedItem(action, colorHSV);
@@ -795,18 +788,9 @@ namespace SevenBoldPencil.MaterialEditor
                     ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);
                 }
 
-
-                // TODO all TextFields are copypasted, make one good DrawTextField function
                 var textFieldX = x + boxWidth - fourthBoxWidthButton;
 
-                var previousBackgroundColor = GUI.backgroundColor;
-                var buttonBackgroundColor = TextField_TextureAngle.IsValid ? previousBackgroundColor : Color.red;
-
-                GUI.backgroundColor = buttonBackgroundColor;
-                var newTextureAngleString = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), TextField_TextureAngle.Value, 8, CamoEditorStyle.RGBHexTextFieldStyle);
-                GUI.backgroundColor = previousBackgroundColor;
-
-                if (TextField_TextureAngle.TrySetValue(newTextureAngleString, out var newTextureAngleOption) && newTextureAngleOption.Some(out newTextureAngle))
+                if (BigCamoEditor.DrawTextField(textFieldX, y, ref TextField_TextureAngle, CamoEditorStyle.RGBHexTextFieldStyle).Some(out newTextureAngle))
                 {
                     textureAngle = newTextureAngle;
                     ForEveryLinkedItem(Plugin.ChangeTextureAngle, textureAngle);

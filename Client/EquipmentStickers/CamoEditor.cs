@@ -141,7 +141,7 @@ namespace SevenBoldPencil.EquipmentStickers
         public WeaponCamoAndStickers.TexturesWindow MasksWindow;
 		public bool IsStartTransformsListOpened;
         public bool IsColorPickerOpened;
-        public WeaponCamoAndStickers.TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV);
+        public WeaponCamoAndStickers.TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public RuntimeTransformHandle TransformHandle;
 		public Rect WindowRect = GetDefaultWindowRect();
 
@@ -728,14 +728,7 @@ namespace SevenBoldPencil.EquipmentStickers
                     var textFieldX = x + boxWidth - fourthBoxWidthButton;
                     GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-                    var previousBackgroundColor = GUI.backgroundColor;
-                    var buttonBackgroundColor = ColorTextField.IsValid ? previousBackgroundColor : Color.red;
-
-                    GUI.backgroundColor = buttonBackgroundColor;
-                    var newColorHex = GUI.TextField(new Rect(textFieldX, y, fourthBoxWidthButton, buttonHeight), ColorTextField.Value, 7, CamoEditorStyle.RGBHexTextFieldStyle);
-                    GUI.backgroundColor = previousBackgroundColor;
-
-                    if (ColorTextField.TrySetValue(newColorHex, out var newColorOption) && newColorOption.Some(out var newColor))
+                    if (BigCamoEditor.DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
                     {
                         decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
                         BigPlugin.ApplyColor(itemId, decalIndex);
