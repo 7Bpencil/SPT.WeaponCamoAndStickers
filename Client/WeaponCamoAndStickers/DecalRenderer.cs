@@ -143,26 +143,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecalsOnItem(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
 		{
-			if (itemWithDecals == null)
-			{
-				Plugin.Instance.LoggerInstance.LogWarning("itemWithDecals");
-				return;
-			}
-			if (decalsInfo == null)
-			{
-				Plugin.Instance.LoggerInstance.LogWarning("decalsInfo");
-				return;
-			}
-			if (!currentCamera)
-			{
-				Plugin.Instance.LoggerInstance.LogWarning("currentCamera");
-				return;
-			}
-			if (buffer == null)
-			{
-				Plugin.Instance.LoggerInstance.LogWarning("buffer");
-				return;
-			}
 			var decals = itemWithDecals.Decals;
 			for (var i = 0; i < decals.Count; i++)
 			{
@@ -214,6 +194,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecal(in Matrix4x4 localToWorldMatrix, Material material, CommandBuffer buffer)
 		{
+			if (!material)
+			{
+				return;
+			}
 			// its easier to accurately place decal when
 			// its transform handle is located on the face
 			// of projector volume, instead of geometric center.
