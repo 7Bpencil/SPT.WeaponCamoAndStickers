@@ -49,10 +49,9 @@ namespace RuntimeHandle
                 o.transform.SetParent(transform, false);
                 o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _axis);
                 o.transform.localPosition = axis * 2;
-                var handleMesh = MeshUtils.CreateCone(.4f, .2f, .0f, 8, 1);
                 o.AddComponent<MeshRenderer>().material = _material;
-                o.AddComponent<MeshFilter>().mesh = handleMesh;
-                o.AddComponent<MeshCollider>().sharedMesh = handleMesh;
+                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateCone(.4f, .2f, .0f, 8, 1);
+                o.AddComponent<MeshCollider>();
             }
 
             return this;
