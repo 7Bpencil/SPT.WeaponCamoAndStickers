@@ -24,7 +24,7 @@ namespace RuntimeHandle
         public ScaleAxis _axis1Handle;
         public ScaleAxis _axis2Handle;
 
-        public void Initialize(
+        public ScalePlane Initialize(
 			Transform transformHandle,
 			Transform scaleHandle,
 			// IScaleAxisHandle handle,
@@ -57,6 +57,8 @@ namespace RuntimeHandle
 	            o.AddComponent<MeshCollider>();
 				_plane = o.transform;
 			}
+
+			return this;
         }
 
 		public override bool CanInteract(Vector3 hitPoint)

@@ -25,7 +25,7 @@ namespace RuntimeHandle
 
 		public Vector3 Axis => _axis;
 
-        public void Initialize(
+        public ScaleAxis Initialize(
 			Transform transformHandle,
 			Transform scaleHandle,
 			// IScaleAxisHandle handle,
@@ -61,6 +61,8 @@ namespace RuntimeHandle
                 o.AddComponent<MeshCollider>();
 				_tip = o.transform;
             }
+
+			return this;
         }
 
         public void SetHandleVisualScale(float scale)
