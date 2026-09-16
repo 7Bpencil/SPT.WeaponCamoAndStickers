@@ -11,56 +11,112 @@ using System;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using Il2CppInterop.Runtime;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
-    public class CamoEditorResources(AssetBundle bundle)
+    public class CamoEditorResources
     {
-        public Shader PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
-        public Shader RotationHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/AdvancedHandleShader.shader");
-        public Shader ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
+        public Shader PositionHandleShader;
+        public Shader RotationHandleShader;
+        public Shader ScaleHandleShader;
 
-        public Texture2D MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/color-palette.png");
-        public Texture2D MainIconMaterial = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle-icon.png");
-        public Texture2D ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow.png");
-        public Texture2D OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
-        public Texture2D ClosedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow-color-wheel.png");
-        public Texture2D OpenedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow-color-wheel.png");
-        public Texture2D MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/up-arrow.png");
-        public Texture2D MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/down-arrow.png");
-        public Texture2D EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
-        public Texture2D EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
-        public Texture2D EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
-        public Texture2D EditTextureUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Move-Icon.png");
-        public Texture2D EditTextureUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Rotate-Icon.png");
-        public Texture2D EditTextureUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Scale-Icon.png");
-        public Texture2D EditMaskUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Move-Icon.png");
-        public Texture2D EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png");
-        public Texture2D EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png");
-        public Texture2D DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/duplicate.png");
-        public Texture2D CopyPaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-paint.png");
-        public Texture2D PastePaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-paint.png");
-        public Texture2D CopyEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-eraser.png");
-        public Texture2D PasteEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-eraser.png");
-        public Texture2D DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
-        public Texture2D SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
-        public Texture2D SaveErrorIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette-error.png");
-        public Texture2D ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
-        public Texture2D PlayIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/play-icon.png");
-        public Texture2D HiddenIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hidden.png");
-        public Texture2D VisibleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/visible.png");
-        public Texture2D MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
-        public Texture2D MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
-        public Texture2D MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
-        public Texture2D Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
-        public Texture2D FavouriteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/star.png");
-        public Texture2D CheckboxOff = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-off.png");
-        public Texture2D CheckboxOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-on.png");
-        public Texture2D LinkOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/link-on.png");
+        public Texture2D MainIcon;
+        public Texture2D MainIconMaterial;
+        public Texture2D ClosedIcon;
+        public Texture2D OpenedIcon;
+        public Texture2D ClosedIconColorWheel;
+        public Texture2D OpenedIconColorWheel;
+        public Texture2D MoveUpIcon;
+        public Texture2D MoveDownIcon;
+        public Texture2D EditPositionIcon;
+        public Texture2D EditRotationIcon;
+        public Texture2D EditScaleIcon;
+        public Texture2D EditTextureUVOffsetIcon;
+        public Texture2D EditTextureUVAngleIcon;
+        public Texture2D EditTextureUVTilingIcon;
+        public Texture2D EditMaskUVOffsetIcon;
+        public Texture2D EditMaskUVAngleIcon;
+        public Texture2D EditMaskUVTilingIcon;
+        public Texture2D DuplicateIcon;
+        public Texture2D CopyPaintIcon;
+        public Texture2D PastePaintIcon;
+        public Texture2D CopyEraserIcon;
+        public Texture2D PasteEraserIcon;
+        public Texture2D DeleteIcon;
+        public Texture2D SaveIcon;
+        public Texture2D SaveErrorIcon;
+        public Texture2D ColorWheelHSV;
+        public Texture2D PlayIcon;
+        public Texture2D HiddenIcon;
+        public Texture2D VisibleIcon;
+        public Texture2D MirrorDisabled;
+        public Texture2D MirrorEnabled;
+        public Texture2D MirrorEnabledNoFilp;
+        public Texture2D Reset;
+        public Texture2D FavouriteIcon;
+        public Texture2D CheckboxOff;
+        public Texture2D CheckboxOn;
+        public Texture2D LinkOn;
 
-        public string[] DecalSettingsToolbar = ["Texture", "Mask"];
-        public string[] DecalTypesToolbar = ["Camos", "Stickers"];
+        public string[] DecalSettingsToolbar;
+        public string[] DecalTypesToolbar;
+
+        public CamoEditorResources(AssetBundle bundle)
+        {
+            Plugin.Instance.LoggerInstance.LogWarning("Start loaded textures");
+
+            PositionHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
+            RotationHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/AdvancedHandleShader.shader");
+            ScaleHandleShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/HandleShader.shader");
+            MainIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/color-palette.png");
+            MainIconMaterial = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle-icon.png");
+            ClosedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow.png");
+            OpenedIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow.png");
+            ClosedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/closed-arrow-color-wheel.png");
+            OpenedIconColorWheel = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/opened-arrow-color-wheel.png");
+            MoveUpIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/up-arrow.png");
+            MoveDownIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/down-arrow.png");
+            EditPositionIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Move-Icon.png");
+            EditRotationIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Rotate-Icon.png");
+            EditScaleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/Scale-Icon.png");
+            EditTextureUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Move-Icon.png");
+            EditTextureUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Rotate-Icon.png");
+            EditTextureUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Texture-Scale-Icon.png");
+            EditMaskUVOffsetIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Move-Icon.png");
+            EditMaskUVAngleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Rotate-Icon.png");
+            EditMaskUVTilingIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/UV-Mask-Scale-Icon.png");
+            DuplicateIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/duplicate.png");
+            CopyPaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-paint.png");
+            PastePaintIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-paint.png");
+            CopyEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/copy-eraser.png");
+            PasteEraserIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/paste-eraser.png");
+            DeleteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bin.png");
+            SaveIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette.png");
+            SaveErrorIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/diskette-error.png");
+            ColorWheelHSV = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hsv-circle.png");
+            PlayIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/play-icon.png");
+            HiddenIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/hidden.png");
+            VisibleIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/visible.png");
+            MirrorDisabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-off.png");
+            MirrorEnabled = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on.png");
+            MirrorEnabledNoFilp = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/mirror-on-no-flip.png");
+            Reset = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/undo.png");
+            FavouriteIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/star.png");
+            CheckboxOff = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-off.png");
+            CheckboxOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-on.png");
+            LinkOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/link-on.png");
+
+            DecalSettingsToolbar = ["Texture", "Mask"];
+            DecalTypesToolbar = ["Camos", "Stickers"];
+
+            Plugin.Instance.LoggerInstance.LogWarning("End loaded textures");
+
+            Plugin.Instance.LoggerInstance.LogWarning((bool)MainIcon);
+            Plugin.Instance.LoggerInstance.LogWarning((bool)ClosedIcon);
+            Plugin.Instance.LoggerInstance.LogWarning((bool)OpenedIcon);
+        }
     }
 
     public class CamoEditorStyle
@@ -267,7 +323,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public TexturesWindow MasksWindow;
         public TexturesWindow EraseMasksWindow;
         public bool IsColorPickerOpened;
-        public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        // public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect = GetDefaultWindowRect();
@@ -362,10 +418,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
 
                     WindowRect.height = CalculateDecalEditWindowHeight(decalIndex, decalInfo, decal);
-                    WindowRect = GUI.Window(1, WindowRect, DrawDecalEditUI, GUIContent.none);
+                    WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawDecalEditUI), GUIContent.none);
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
 
                     if (decalInfo.PaintMode == DecalPaintMode.Paint)
                     {
@@ -374,15 +430,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             if (IsColorPickerOpened)
                             {
                                 var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
-                                GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+                                GUI.Window(3, colorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindow), GUIContent.none);
 
                                 var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                                GUI.Window(4, closeColorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowCloseButton), GUIContent.none);
                             }
                             else
                             {
                                 var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                                GUI.Window(3, openColorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowOpenButton), GUIContent.none);
                             }
                         }
                     }
@@ -392,24 +448,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     if (ArePresetsOpened)
                     {
                         WindowRect.height = CalculatePresetsWindowHeight();
-                        WindowRect = GUI.Window(1, WindowRect, DrawPresetsListUI, GUIContent.none);
+                        WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawPresetsListUI), GUIContent.none);
                     }
                     else
                     {
                         WindowRect.height = CalculateDecalsWindowHeight();
-                        WindowRect = GUI.Window(1, WindowRect, DrawDecalsListUI, GUIContent.none);
+                        WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawDecalsListUI), GUIContent.none);
                     }
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
                 }
             }
             else
             {
-                WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
+                WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindow), GUIContent.none);
 
                 var openButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openButtonWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                GUI.Window(2, openButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindowOpenButton), GUIContent.none);
             }
 
             GUI.matrix = originalMatrix;
@@ -693,7 +749,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             CurrentlyEditedDecalIndex = new(decalIndex);
             DecalTypeMenu = decalInfo.PaintMode == DecalPaintMode.Paint ? textureData.Type : DecalTextureType.Mask; // eraser doesnt care about texture type, but whatever...
-            ColorTextField.SetValue(decalInfo.ColorHSVA);
+            // ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
         public static void DrawDecalElementUI(
@@ -808,7 +864,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
-                ColorTextField.SetValue(decalInfo.ColorHSVA);
+                // ColorTextField.SetValue(decalInfo.ColorHSVA);
                 Plugin.ApplyColor(ItemId, decalIndex);
             }
 
@@ -824,7 +880,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -834,7 +890,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -844,7 +900,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
             }
@@ -888,7 +944,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (decalInfo.PaintMode == DecalPaintMode.Paint)
             {
-                DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
+                // DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
                 y += buttonHeight + mediumMargin;
 
                 if (DecalSettingType == DecalSettingType.Texture)
@@ -1171,11 +1227,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var textFieldX = x + boxWidth - fourthBoxWidthButton;
                     GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-                    if (DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
-                    {
-                        decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
-                        Plugin.ApplyColor(ItemId, decalIndex);
-                    }
+                    // if (DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
+                    // {
+                    //     decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
+                    //     Plugin.ApplyColor(ItemId, decalIndex);
+                    // }
                 }
             }
             y += buttonHeight + bigMargin;
@@ -1227,7 +1283,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
+            // DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
             if (DecalTypeMenu == DecalTextureType.Camo)
@@ -1431,7 +1487,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var handle = CreateTransformHandle(handleType, decalIndex, decalInfo, decal);
             var cameraProvider = new DefaultCameraProvider(Camera);
             TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayersMaskController.WeaponPreview);
-			TransformTools.SetLayersRecursively(TransformHandle.gameObject, LayersMaskController.WeaponPreview);
+			SetLayersRecursively(TransformHandle.gameObject.transform, LayersMaskController.WeaponPreview);
+        }
+
+        public static void SetLayersRecursively(Transform root, int layer)
+        {
+            root.gameObject.layer = layer;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                SetLayersRecursively(root.GetChild(i), layer);
+            }
         }
 
         public ITransformHandle CreateTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)

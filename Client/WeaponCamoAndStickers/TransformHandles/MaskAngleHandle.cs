@@ -47,7 +47,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void Init(Transform transformHandle, Camera transformHandleCamera, Transform root)
         {
             var rotationHandleY = new RotationAxisHandle_MaskAngle(_decalInfo, _decal, Vector3.up);
-            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, _handleShader);
+            var axisY = new GameObject("MaskAngleAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, Vector3.up, Color.green, _handleShader);
+            axisY._handle = rotationHandleY;
         }
 
         public void Reset(Transform transformHandle)

@@ -26,14 +26,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     	public static readonly int _MaskTexRotation = Shader.PropertyToID("_MaskTexRotation");
 
 		public Material DecalMaterial;
-		public LocalKeyword DecalMaterialKeywordErase;
 		public Transform DecalTransform;
 		public Transform DecalRoot;
 
-		public void Init(DecalInfo info, Transform root, Shader shader)
+		public DecalInfo _Init;
+
+		public void Init(Transform root, Shader shader)
 		{
+			var info = _Init;
+			_Init = null;
+
 			DecalMaterial = new Material(shader);
-			DecalMaterialKeywordErase = new LocalKeyword(shader, "ERASE");
 			DecalTransform = transform;
 			DecalRoot = root;
 
@@ -48,7 +51,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			ChangeMaskAngle(info.MaskAngle);
 			ChangeColor(info.ColorHSVA);
 			ChangeMaxAngle(info.MaxAngle);
-			ChangePaintMode(info.PaintMode);
+			ChangePaintMode((byte)info.PaintMode);
 			ChangeStencilType(info.StencilType);
 
 			DecalMaterial.SetColor(_Temperature, new Color(0.1f, 1, 1, 0));
@@ -109,12 +112,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DecalMaterial.SetFloat(_MaxAngle, maxAngle);
         }
 
-		public void ChangePaintMode(DecalPaintMode paintMode)
+		public void ChangePaintMode(byte paintModeByte)
 		{
+			var paintMode = (DecalPaintMode)paintModeByte;
 			if (paintMode == DecalPaintMode.Paint)
 			{
 	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.Keep);
-				DecalMaterial.DisableKeyword(DecalMaterialKeywordErase);
+				DecalMaterial.DisableKeyword("ERASE");
 			}
 			if (paintMode == DecalPaintMode.Erase)
 			{
@@ -123,7 +127,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 				// preventing other decals from rendering
 
 	            DecalMaterial.SetFloat(_StencilPassOperation, (int)StencilOp.DecrementWrap);
-				DecalMaterial.EnableKeyword(DecalMaterialKeywordErase);
+				DecalMaterial.EnableKeyword("ERASE");
 			}
 		}
 

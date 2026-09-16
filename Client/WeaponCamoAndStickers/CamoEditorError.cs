@@ -6,6 +6,7 @@
 //
 
 using UnityEngine;
+using Il2CppInterop.Runtime;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
@@ -35,17 +36,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             if (IsOpened)
             {
                 WindowRect.height = CalculateErrorWindowHeight();
-                WindowRect = GUI.Window(1, WindowRect, DrawErrorMessageWindow, GUIContent.none);
+                WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawErrorMessageWindow), GUIContent.none);
 
                 var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
 			}
 			else
 			{
-                WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
+                WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindow), GUIContent.none);
 
                 var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openColorPickerWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                GUI.Window(2, openColorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindowOpenButton), GUIContent.none);
 			}
 
             GUI.matrix = originalMatrix;

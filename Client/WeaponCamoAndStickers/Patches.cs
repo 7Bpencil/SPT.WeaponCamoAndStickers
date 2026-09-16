@@ -22,9 +22,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using SPT.Reflection.Patching;
+using SPTushonka.Reflection.Patching;
 using HarmonyLib;
 using UnityEngine;
+using Il2CppInterop.Runtime;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -48,17 +49,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponPreview.CG_SetupItemPreview), nameof(WeaponPreview.CG_SetupItemPreview.method_1));
+            return AccessTools.Method(typeof(WeaponPreview.__c__DisplayClass23_0), nameof(WeaponPreview.__c__DisplayClass23_0.Method_Internal_Void_Token_IEasyBundle_0));
         }
 
         [PatchPostfix]
-        public static void Postfix(WeaponPreview.CG_SetupItemPreview __instance)
+        public static void Postfix(WeaponPreview.__c__DisplayClass23_0 __instance)
         {
 			// this called when WeaponPreview is opened and fully initialized,
 			// WeaponPreview is used both by weapon modding screen and item overview
-   			var weaponPreview = __instance.weaponPreview_0;
-			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
-			var item = _weaponPreview._currentItem;
+   			var weaponPreview = __instance.__4__this;
+			// var _weaponPreview = new WeaponPreview_Proxy(weaponPreview);
+			var item = weaponPreview._currentItem;
 			if (item == null)
 			{
 				return;
@@ -67,13 +68,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
-			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject, out var previewPivot))
+			if (TryGetAssetPoolObject(weaponPreview, out var assetPoolObject, out var previewPivot))
 			{
+				Logger.LogWarning($"Patch_WeaponPreview_CG_SetupItemPreview_method_1: {item.Prefab.path}");
 				Plugin.Instance.OnWeaponPreviewOpened(item, assetPoolObject, weaponPreview.Rotator, previewPivot, weaponPreview.WeaponPreviewCamera);
 			}
 		}
 
-		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject, out PreviewPivot previewPivot)
+		public static bool TryGetAssetPoolObject(WeaponPreview weaponPreview, out AssetPoolObject assetPoolObject, out PreviewPivot previewPivot)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview._originalObject;
@@ -101,8 +103,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
         public static bool Prefix(WeaponPreview __instance)
 		{
-			var _weaponPreview = new WeaponPreview_Proxy(__instance);
-			var item = _weaponPreview._currentItem;
+			// var _weaponPreview = new WeaponPreview_Proxy(__instance);
+			var item = __instance._currentItem;
 			if (item != null)
 			{
 				return Plugin.Instance.CanWeaponPreviewRotate();
@@ -136,8 +138,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPrefix]
         public static bool Prefix(WeaponPreview __instance)
 		{
-			var _weaponPreview = new WeaponPreview_Proxy(__instance);
-			var item = _weaponPreview._currentItem;
+			// var _weaponPreview = new WeaponPreview_Proxy(__instance);
+			var item = __instance._currentItem;
 			if (item != null)
 			{
 				var camera = __instance.WeaponPreviewCamera;
@@ -201,10 +203,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public static void OpenApplyPaintWindow(ContextInteractions<EItemInfoButton> result)
 		{
+			Logger.LogWarning($"OpenApplyPaintWindow");
 			if (result is InventoryItemContextInteractions gclass)
 			{
+				Logger.LogWarning($"OpenApplyPaintWindow inside");
 				Plugin.Instance.WaitForWeaponPreview();
-				gclass.method_28();
+				gclass.ButtonItemOverlook();
 			}
 		}
 	}
@@ -212,7 +216,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	public class Custom_DynamicContextInteraction : DynamicContextInteraction
 	{
 		public Option<FailedResult> NonInteractiveTooltip;
-		public Custom_DynamicContextInteraction(string id, string key, Action callback, Sprite icon) : base(id, key, callback, icon) {}
+		public Custom_DynamicContextInteraction(string id, string key, Action callback, Sprite icon) : base(id, key, callback, icon, default(Il2CppSystem.Enum), "") {}
 	}
 
 	// here custom buttons are actually constructed
@@ -226,8 +230,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	    [PatchPrefix]
 	    private static bool Prefix(InteractionButtonsContainer __instance, DynamicContextInteraction interaction)
 	    {
+			Logger.LogWarning($"Patch_InteractionButtonsContainer_CreateDynamicContextButton: {interaction.Id} {interaction.Key}");
 	        if (interaction is Custom_DynamicContextInteraction customInteraction)
 	        {
+				Logger.LogWarning($"Patch_InteractionButtonsContainer_CreateDynamicContextButton: {interaction.Id} {interaction.Key} inner");
 				AddButton(__instance, __instance._buttonTemplate, __instance._buttonsContainer, customInteraction);
 	            return false;
 	        }
@@ -243,8 +249,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	            buttonTemplate,
 	            buttonsContainer,
 	            interaction.Icon,
-	            () => { if (!interaction.NonInteractiveTooltip.HasValue) { interaction.Execute(); } },
-	            () => { }
+	            DelegateSupport.ConvertDelegate<Il2CppSystem.Action>(() => { if (!interaction.NonInteractiveTooltip.HasValue) { interaction.Execute(); } }),
+	            DelegateSupport.ConvertDelegate<Il2CppSystem.Action>(() => { })
 	        );
 	        button.SetButtonInteraction(interaction.NonInteractiveTooltip.HasValue ? interaction.NonInteractiveTooltip.Value : SuccessfulResult.New);
 	        instance.BindButton(button);
@@ -269,25 +275,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         protected override MethodBase GetTargetMethod()
         {
-			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(YieldDelegate), typeof(CancellationToken)];
-            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync), parameters);
+			// Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(YieldDelegate), typeof(CancellationToken)];
+            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync));
         }
 
         [PatchPostfix]
-        public static void Postfix(ref Task<GameObject> __result, Item item)
+        public static void Postfix(ref Il2CppSystem.Threading.Tasks.Task<GameObject> __result, Item item)
 		{
-			if (Plugin.Instance.HasDecals(item).Some(out var itemType))
-			{
-				__result = WrapTask(__result, item, itemType);
-			}
+			// if (Plugin.Instance.HasDecals(item).Some(out var itemType))
+			// {
+			// 	__result = WrapTask(__result, item, itemType);
+			// }
 		}
 
-	    private static async Task<GameObject> WrapTask(Task<GameObject> task, Item item, ItemType itemType)
-	    {
-	        var itemGameObject = await task;
-			Plugin.Instance.OnCreatedItemGameObject(item, itemType, itemGameObject);
-			return itemGameObject;
-	    }
+	  //   private static async Il2CppSystem.Threading.Tasks.Task<GameObject> WrapTask(Il2CppSystem.Threading.Tasks.Task<GameObject> task, Item item, ItemType itemType)
+	  //   {
+	  //       var itemGameObject = await task;
+			// Plugin.Instance.OnCreatedItemGameObject(item, itemType, itemGameObject);
+			// return itemGameObject;
+	  //   }
 	}
 
 	public class Patch_WeaponPrefab_InitHotObjects : ModulePatch
@@ -304,8 +310,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// but for some reason new way doesn't work for bots, so reintroduce it back,
 			// OnItemPrefabCreated safely catches multiple inits anyway
 
-			var __instance__ = new WeaponPrefab_Proxy(__instance);
-			var item = __instance__._weaponData;
+			// var __instance__ = new WeaponPrefab_Proxy(__instance);
+			var item = __instance._weaponData;
 			if (item != null)
 			{
 				Plugin.Instance.OnDecalsHostCreated_Weapon(item.Id, ItemType.Weapon, __instance);
@@ -364,44 +370,44 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
 
         [PatchPostfix]
-        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+        public static void Postfix(PlayerBody __instance, Il2CppSystem.Collections.Generic.KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
 		{
-			string profileId = default;
+			// string profileId = default;
 
-			// for some reason parent can be null at this moment,
-			// usually this happens in Overall screen,
-			// I guess it gets parented to PlayerModelView later
-			var parent = __instance.transform.parent;
-			if (parent)
-			{
-				// We dont support changed materials on bots at this moment.
-				// AI has AccountId = "0",
-				// you would think that better way is to check player.IsAI,
-				// but it set to false even on AI at this stage in initialization.
-				if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
-				{
-					// we are in raid or walking in hideout
-					profileId = player.ProfileId;
-				}
-			}
-			else
-			{
-				// profile is null in character creation screen
-	    		if (TarkovApplication.Exist(out var tarkovApplication) &&
-					tarkovApplication.Session != null &&
-					tarkovApplication.Session.Profile != null)
-	            {
-					// we are in hideout ui screens
-		            profileId = tarkovApplication.Session.Profile.Id;
-	            }
-			}
+			// // for some reason parent can be null at this moment,
+			// // usually this happens in Overall screen,
+			// // I guess it gets parented to PlayerModelView later
+			// var parent = __instance.transform.parent;
+			// if (parent)
+			// {
+			// 	// We dont support changed materials on bots at this moment.
+			// 	// AI has AccountId = "0",
+			// 	// you would think that better way is to check player.IsAI,
+			// 	// but it set to false even on AI at this stage in initialization.
+			// 	if (parent.TryGetComponent<Player>(out var player) && player.AccountId != "0")
+			// 	{
+			// 		// we are in raid or walking in hideout
+			// 		profileId = player.ProfileId;
+			// 	}
+			// }
+			// else
+			// {
+			// 	// profile is null in character creation screen
+	  //   		if (TarkovApplication.Exist(out var tarkovApplication) &&
+			// 		tarkovApplication.Session != null &&
+			// 		tarkovApplication.Session.Profile != null)
+	  //           {
+			// 		// we are in hideout ui screens
+		 //            profileId = tarkovApplication.Session.Profile.Id;
+	  //           }
+			// }
 
-			if (profileId != default)
-			{
-				var skinId = __instance.BodyCustomization[part.Key];
-				var skin = __instance.BodySkins[part.Key];
-				Plugin.Instance.OnSkinCreated(profileId, skinId, skin, skeleton);
-			}
+			// if (profileId != default)
+			// {
+			// 	var skinId = __instance.BodyCustomization[part.Key];
+			// 	var skin = __instance.BodySkins[part.Key];
+			// 	Plugin.Instance.OnSkinCreated(profileId, skinId, skin, skeleton);
+			// }
 		}
 	}
 
@@ -528,7 +534,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
 
         [PatchPostfix]
-        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+        public static void Postfix(PlayerBody __instance, Il2CppSystem.Collections.Generic.KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
 		{
 			var skin = __instance.BodySkins[part.Key];
 			foreach (var lod in skin._lods)
@@ -593,200 +599,200 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-	public class Patch_ItemIconCreator_GetItemIcon : ModulePatch
-	{
-        protected override MethodBase GetTargetMethod()
-        {
-            return AccessTools.Method(typeof(ItemIconCreator), nameof(ItemIconCreator.GetItemIcon));
-        }
+	// public class Patch_ItemIconCreator_GetItemIcon : ModulePatch
+	// {
+ //        protected override MethodBase GetTargetMethod()
+ //        {
+ //            return AccessTools.Method(typeof(ItemIconCreator), nameof(ItemIconCreator.GetItemIcon));
+ //        }
 
-        [PatchPrefix]
-		public static bool Prefix(ItemIconCreator __instance, ref ItemIcon __result, Item item, in IntVec2 size, bool forcedGeneration = false)
-		{
-			// only items with decals go through custom route
-			if (Plugin.CanItemHaveDecals(item) &&
-				Plugin.Instance.GetDecalsCount(item.Id) > 0)
-			{
-				__result = GetItemIcon(__instance, item, size);
-				return false;
-			}
+ //        [PatchPrefix]
+	// 	public static bool Prefix(ItemIconCreator __instance, ref ItemIcon __result, Item item, in IntVec2 size, bool forcedGeneration = false)
+	// 	{
+	// 		// only items with decals go through custom route
+	// 		if (Plugin.CanItemHaveDecals(item) &&
+	// 			Plugin.Instance.GetDecalsCount(item.Id) > 0)
+	// 		{
+	// 			__result = GetItemIcon(__instance, item, size);
+	// 			return false;
+	// 		}
 
-			return true;
-		}
+	// 		return true;
+	// 	}
 
-		// everything below is mostly copy-paste of original methods, read comments to know what changed
-		public static ItemIcon GetItemIcon(ItemIconCreator __instance, Item item, in IntVec2 size, bool forcedGeneration = false)
-		{
-			int itemHash = IconsHash.GetItemHash(item); // we postfix GetItemHash separately to keep it compatible with other mods that patch it too
-			ItemIcon icon;
-			bool flag = __instance.TryGetCachedIcon(itemHash, out icon);
-			if (!forcedGeneration && flag && (InGameStatus.InRaid || !icon.IsGeneratedInRaid))
-			{
-				return icon;
-			}
-			icon = new ItemIcon(itemHash)
-			{
-				IsGeneratedInRaid = InGameStatus.InRaid
-			};
-			if (!forcedGeneration && __instance.TryGetIconPath(itemHash, out var path))
-			{
-				__instance.LoadFromUserCacheAsync(icon, path, size).HandleExceptions();
-				return icon;
-			}
-			FillIconWithNewSpriteAsync(__instance, icon, item, size, saveToFile: true, requireZeroMip: true).HandleExceptions(); // use our FillIconWithNewSpriteAsync
-			return icon;
-		}
+	// 	// everything below is mostly copy-paste of original methods, read comments to know what changed
+	// 	public static ItemIcon GetItemIcon(ItemIconCreator __instance, Item item, in IntVec2 size, bool forcedGeneration = false)
+	// 	{
+	// 		int itemHash = IconsHash.GetItemHash(item); // we postfix GetItemHash separately to keep it compatible with other mods that patch it too
+	// 		ItemIcon icon;
+	// 		bool flag = __instance.TryGetCachedIcon(itemHash, out icon);
+	// 		if (!forcedGeneration && flag && (InGameStatus.InRaid || !icon.IsGeneratedInRaid))
+	// 		{
+	// 			return icon;
+	// 		}
+	// 		icon = new ItemIcon(itemHash)
+	// 		{
+	// 			IsGeneratedInRaid = InGameStatus.InRaid
+	// 		};
+	// 		if (!forcedGeneration && __instance.TryGetIconPath(itemHash, out var path))
+	// 		{
+	// 			__instance.LoadFromUserCacheAsync(icon, path, size).HandleExceptions();
+	// 			return icon;
+	// 		}
+	// 		FillIconWithNewSpriteAsync(__instance, icon, item, size, saveToFile: true, requireZeroMip: true).HandleExceptions(); // use our FillIconWithNewSpriteAsync
+	// 		return icon;
+	// 	}
 
-		public static async Task FillIconWithNewSpriteAsync(ItemIconCreator __instance, ItemIcon icon, Item item, IntVec2 size, bool saveToFile, bool requireZeroMip)
-		{
-			__instance._queueCount++;
-			__instance._memoryCacheIndex[icon.Hash] = icon;
-			// in theory we could rewrite only this delegate, but sadly item is not passed inside and we need it,
-			// and I dont want to build any more scaffolding to get around it
-			ItemIconCreator.RenderModelResult renderModelResult = await __instance.RenderModel(item, async delegate(GameObject model, PreviewPivot pivot)
-			{
-				await __instance.PrepareCameraAsync(); // this method loads camera first time when it doesnt exist, only after it its safe to use camera_0
-				while (__instance._isIconCreating)
-				{
-					await JobScheduler.Yield();
-				}
-				__instance._isIconCreating = true;
-				await JobScheduler.Yield();
+	// 	public static async Task FillIconWithNewSpriteAsync(ItemIconCreator __instance, ItemIcon icon, Item item, IntVec2 size, bool saveToFile, bool requireZeroMip)
+	// 	{
+	// 		__instance._queueCount++;
+	// 		__instance._memoryCacheIndex[icon.Hash] = icon;
+	// 		// in theory we could rewrite only this delegate, but sadly item is not passed inside and we need it,
+	// 		// and I dont want to build any more scaffolding to get around it
+	// 		ItemIconCreator.RenderModelResult renderModelResult = await __instance.RenderModel(item, async delegate(GameObject model, PreviewPivot pivot)
+	// 		{
+	// 			await __instance.PrepareCameraAsync(); // this method loads camera first time when it doesnt exist, only after it its safe to use camera_0
+	// 			while (__instance._isIconCreating)
+	// 			{
+	// 				await JobScheduler.Yield();
+	// 			}
+	// 			__instance._isIconCreating = true;
+	// 			await JobScheduler.Yield();
 
-				Plugin.Instance.BeforeInventoryIconRecorded(item.Id, __instance.camera_0); // we need to know which camera renders which item
-				Sprite result = CaptureSpriteOfModel(__instance, model, in size, pivot); // use our CaptureSpriteOfModel
-				Plugin.Instance.AfterInventoryIconRecorded(item.Id, __instance.camera_0); // clear info about that camera
+	// 			Plugin.Instance.BeforeInventoryIconRecorded(item.Id, __instance.camera_0); // we need to know which camera renders which item
+	// 			Sprite result = CaptureSpriteOfModel(__instance, model, in size, pivot); // use our CaptureSpriteOfModel
+	// 			Plugin.Instance.AfterInventoryIconRecorded(item.Id, __instance.camera_0); // clear info about that camera
 
-				await JobScheduler.Yield();
-				__instance._isIconCreating = false;
-				return result;
-			});
-			if (renderModelResult.sprite != null)
-			{
-				ItemIconCreator.CleanIcon(icon);
-				Sprite sprite = renderModelResult.sprite;
-				icon.Sprite = sprite;
-				icon.Sprite.texture.filterMode = FilterMode.Trilinear;
-				icon.Changed.Invoke();
-				if ((!requireZeroMip) ? saveToFile : (saveToFile && renderModelResult.zeroMipWasLoaded))
-				{
-					await __instance.SaveIconAsync(icon);
-				}
-			}
-			else
-			{
-				Debug.LogError("Something went wrong! Sprite for " + icon.Hash + " was not created!");
-			}
-			__instance._queueCount = Mathf.Max(__instance._queueCount - 1, 0);
-			if (__instance._queueCount <= 0)
-			{
-				if (__instance._prevTextureLimit.HasValue)
-				{
-					QualitySettings.streamingMipmapsMaxLevelReduction = __instance._prevTextureLimit.Value;
-					__instance._prevTextureLimit = null;
-				}
-				if (__instance._fileCacheIndex.Count > 0)
-				{
-					__instance.CheckCacheFolder();
-					File.WriteAllText(__instance._indexPath, JsonExtensions.ToJson(__instance._fileCacheIndex));
-				}
-			}
-		}
+	// 			await JobScheduler.Yield();
+	// 			__instance._isIconCreating = false;
+	// 			return result;
+	// 		});
+	// 		if (renderModelResult.sprite != null)
+	// 		{
+	// 			ItemIconCreator.CleanIcon(icon);
+	// 			Sprite sprite = renderModelResult.sprite;
+	// 			icon.Sprite = sprite;
+	// 			icon.Sprite.texture.filterMode = FilterMode.Trilinear;
+	// 			icon.Changed.Invoke();
+	// 			if ((!requireZeroMip) ? saveToFile : (saveToFile && renderModelResult.zeroMipWasLoaded))
+	// 			{
+	// 				await __instance.SaveIconAsync(icon);
+	// 			}
+	// 		}
+	// 		else
+	// 		{
+	// 			Debug.LogError("Something went wrong! Sprite for " + icon.Hash + " was not created!");
+	// 		}
+	// 		__instance._queueCount = Mathf.Max(__instance._queueCount - 1, 0);
+	// 		if (__instance._queueCount <= 0)
+	// 		{
+	// 			if (__instance._prevTextureLimit.HasValue)
+	// 			{
+	// 				QualitySettings.streamingMipmapsMaxLevelReduction = __instance._prevTextureLimit.Value;
+	// 				__instance._prevTextureLimit = null;
+	// 			}
+	// 			if (__instance._fileCacheIndex.Count > 0)
+	// 			{
+	// 				__instance.CheckCacheFolder();
+	// 				File.WriteAllText(__instance._indexPath, JsonExtensions.ToJson(__instance._fileCacheIndex));
+	// 			}
+	// 		}
+	// 	}
 
-		public static Sprite CaptureSpriteOfModel(ItemIconCreator __instance, GameObject model, in IntVec2 size, PreviewPivot previewPivot)
-		{
-			if (model == null)
-			{
-				return null;
-			}
-			ItemIconCreator.IconRenderSettings @struct = ItemIconCreator.IconRenderSettings.Store();
-			ItemIconCreator.IconRenderSettings.Reset();
-			// ShaderReplacer.Replace(model); // ShaderReplacer replaces deferred shaders with forward ones, we need original deferred, so disable
-			__instance.SetupScene(model, in size, previewPivot);
-			Light[] light_ = __instance.light_0;
-			for (int i = 0; i < light_.Length; i++)
-			{
-				light_[i].enabled = true;
-			}
-			model.SetActive(value: true);
-			Texture2D texture = method_3(__instance, model, in size); // use our method_3
-			model.SetActive(value: false);
-			// ShaderReplacer.Restore();
-			@struct.Restore();
-			return ItemIconCreator.CreateSprite(texture);
-		}
+	// 	public static Sprite CaptureSpriteOfModel(ItemIconCreator __instance, GameObject model, in IntVec2 size, PreviewPivot previewPivot)
+	// 	{
+	// 		if (model == null)
+	// 		{
+	// 			return null;
+	// 		}
+	// 		ItemIconCreator.IconRenderSettings @struct = ItemIconCreator.IconRenderSettings.Store();
+	// 		ItemIconCreator.IconRenderSettings.Reset();
+	// 		// ShaderReplacer.Replace(model); // ShaderReplacer replaces deferred shaders with forward ones, we need original deferred, so disable
+	// 		__instance.SetupScene(model, in size, previewPivot);
+	// 		Light[] light_ = __instance.light_0;
+	// 		for (int i = 0; i < light_.Length; i++)
+	// 		{
+	// 			light_[i].enabled = true;
+	// 		}
+	// 		model.SetActive(value: true);
+	// 		Texture2D texture = method_3(__instance, model, in size); // use our method_3
+	// 		model.SetActive(value: false);
+	// 		// ShaderReplacer.Restore();
+	// 		@struct.Restore();
+	// 		return ItemIconCreator.CreateSprite(texture);
+	// 	}
 
-		public static Texture2D method_3(ItemIconCreator __instance, GameObject model, in IntVec2 size)
-		{
-			// by default icon camera is forward rendering,
-			// probably because they really wanted to render icons with orthogonal projection,
-			// they even have forward versions of shaders to make it work,
-			// but decals can only work in deferred rendering,
-			// so we have to switch camera renderingPath,
-			// but deferred rendering doesnt work with orthographic projection for Unity reasons,
-			// so we have to also switch to perspective, and change camera position/fov to keep object size the same,
+	// 	public static Texture2D method_3(ItemIconCreator __instance, GameObject model, in IntVec2 size)
+	// 	{
+	// 		// by default icon camera is forward rendering,
+	// 		// probably because they really wanted to render icons with orthogonal projection,
+	// 		// they even have forward versions of shaders to make it work,
+	// 		// but decals can only work in deferred rendering,
+	// 		// so we have to switch camera renderingPath,
+	// 		// but deferred rendering doesnt work with orthographic projection for Unity reasons,
+	// 		// so we have to also switch to perspective, and change camera position/fov to keep object size the same,
 
-			int x = size.X;
-			int width = x * 2;
-			int y = size.Y;
-			int height = y * 2;
+	// 		int x = size.X;
+	// 		int width = x * 2;
+	// 		int y = size.Y;
+	// 		int height = y * 2;
 
-			// change depth to 24, otherwise background turns white
-			RenderTexture temporary = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, 8);
-			temporary.name = "IconCreator TextureDouble";
-			__instance.camera_0.gameObject.SetActive(value: true);
+	// 		// change depth to 24, otherwise background turns white
+	// 		RenderTexture temporary = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default, 8);
+	// 		temporary.name = "IconCreator TextureDouble";
+	// 		__instance.camera_0.gameObject.SetActive(value: true);
 
-			// calculate new camera position and fov
-			var cameraTransform = __instance.camera_0.transform;
-			var modelTransform = model.transform;
-			modelTransform.SetParent(null, worldPositionStays: true); // they keep model as child of camera
+	// 		// calculate new camera position and fov
+	// 		var cameraTransform = __instance.camera_0.transform;
+	// 		var modelTransform = model.transform;
+	// 		modelTransform.SetParent(null, worldPositionStays: true); // they keep model as child of camera
 
-			var originalPosition = cameraTransform.position;
-			var originalFov = __instance.camera_0.fieldOfView;
+	// 		var originalPosition = cameraTransform.position;
+	// 		var originalFov = __instance.camera_0.fieldOfView;
 
-			// by default distance is around 1, make it 15 for more "orthographic" look,
-			// 15 is max, everything higher makes item disappear (there are probably a way to increase that, but 15 looks fine)
- 			var targetDistance = 15;
-			var currentDistance = (modelTransform.position - cameraTransform.position).magnitude;
-			var offset = targetDistance - currentDistance;
-			var newPosition = originalPosition - cameraTransform.forward * offset;
-			var newFov = 2 * Mathf.Atan2(__instance.camera_0.orthographicSize, targetDistance);
+	// 		// by default distance is around 1, make it 15 for more "orthographic" look,
+	// 		// 15 is max, everything higher makes item disappear (there are probably a way to increase that, but 15 looks fine)
+ // 			var targetDistance = 15;
+	// 		var currentDistance = (modelTransform.position - cameraTransform.position).magnitude;
+	// 		var offset = targetDistance - currentDistance;
+	// 		var newPosition = originalPosition - cameraTransform.forward * offset;
+	// 		var newFov = 2 * Mathf.Atan2(__instance.camera_0.orthographicSize, targetDistance);
 
-			// set
-			__instance.camera_0.orthographic = false;
-			__instance.camera_0.renderingPath = RenderingPath.DeferredShading;
-			cameraTransform.position = newPosition;
-			__instance.camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
+	// 		// set
+	// 		__instance.camera_0.orthographic = false;
+	// 		__instance.camera_0.renderingPath = RenderingPath.DeferredShading;
+	// 		cameraTransform.position = newPosition;
+	// 		__instance.camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
 
-			__instance.camera_0.targetTexture = temporary;
-			__instance.camera_0.clearFlags = CameraClearFlags.Color;
-			__instance.camera_0.backgroundColor = new Color(0f, 0f, 0f, 0f);
-			__instance.camera_0.useOcclusionCulling = false;
-			__instance.iconShadow_0.SetTexDimension(width, height);
-			RenderTexture temporary2 = RenderTexture.GetTemporary(x, y);
-			RendererExtensions.ClearTexture(temporary2);
-			__instance.camera_0.Render();
-			Graphics.Blit(temporary, temporary2);
-			RenderTexture active = RenderTexture.active;
-			RenderTexture.active = temporary2;
-			Texture2D texture2D = ItemIconCreator.GetTexture(x, y);
-			texture2D.ReadPixels(new Rect(0f, 0f, __instance.camera_0.pixelWidth, __instance.camera_0.pixelHeight), 0, 0, recalculateMipMaps: false);
-			texture2D.Apply();
-			RenderTexture.active = active;
-			__instance.camera_0.targetTexture = null;
-			RenderTexture.ReleaseTemporary(temporary);
-			RenderTexture.ReleaseTemporary(temporary2);
-			__instance.camera_0.gameObject.SetActive(value: false);
+	// 		__instance.camera_0.targetTexture = temporary;
+	// 		__instance.camera_0.clearFlags = CameraClearFlags.Color;
+	// 		__instance.camera_0.backgroundColor = new Color(0f, 0f, 0f, 0f);
+	// 		__instance.camera_0.useOcclusionCulling = false;
+	// 		__instance.iconShadow_0.SetTexDimension(width, height);
+	// 		RenderTexture temporary2 = RenderTexture.GetTemporary(x, y);
+	// 		RendererExtensions.ClearTexture(temporary2);
+	// 		__instance.camera_0.Render();
+	// 		Graphics.Blit(temporary, temporary2);
+	// 		RenderTexture active = RenderTexture.active;
+	// 		RenderTexture.active = temporary2;
+	// 		Texture2D texture2D = ItemIconCreator.GetTexture(x, y);
+	// 		texture2D.ReadPixels(new Rect(0f, 0f, __instance.camera_0.pixelWidth, __instance.camera_0.pixelHeight), 0, 0, recalculateMipMaps: false);
+	// 		texture2D.Apply();
+	// 		RenderTexture.active = active;
+	// 		__instance.camera_0.targetTexture = null;
+	// 		RenderTexture.ReleaseTemporary(temporary);
+	// 		RenderTexture.ReleaseTemporary(temporary2);
+	// 		__instance.camera_0.gameObject.SetActive(value: false);
 
-			// revert
-			__instance.camera_0.orthographic = true;
-			__instance.camera_0.renderingPath = RenderingPath.Forward;
-			cameraTransform.position = originalPosition;
-			__instance.camera_0.fieldOfView = originalFov;
+	// 		// revert
+	// 		__instance.camera_0.orthographic = true;
+	// 		__instance.camera_0.renderingPath = RenderingPath.Forward;
+	// 		cameraTransform.position = originalPosition;
+	// 		__instance.camera_0.fieldOfView = originalFov;
 
-			return texture2D;
-		}
-	}
+	// 		return texture2D;
+	// 	}
+	// }
 
 	public class Patch_IconsHash_GetItemHash : ModulePatch
 	{

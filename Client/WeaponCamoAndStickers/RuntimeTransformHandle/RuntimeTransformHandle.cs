@@ -157,19 +157,35 @@ namespace RuntimeHandle
 
         private (HandleBase, Vector3) GetHandle(Ray cameraRay)
         {
-			var hitsCount = Physics.RaycastNonAlloc(cameraRay, _raycastHits, maxDistance: 10, layerMask: _raycastLayerMask);
-            if (hitsCount != 0)
+			if (Physics.Raycast(cameraRay, out var hit, 10f, _raycastLayerMask))
 			{
-				for (var i = 0; i < hitsCount; i++)
-				{
-					var hit = _raycastHits[i];
-	                var p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
-	                if (p_handle)
-	                {
-	                    return (p_handle, hit.point);
-	                }
-				}
+                var p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
+                if (p_handle)
+                {
+                    return (p_handle, hit.point);
+                }
 			}
+
+			// var hitsCount = Physics.RaycastNonAlloc(cameraRay, _raycastHits, maxDistance: 10, layerMask: _raycastLayerMask);
+   //          if (hitsCount != 0)
+			// {
+			// 	for (var i = 0; i < hitsCount; i++)
+			// 	{
+			// 		var hit = _raycastHits[i];
+			// 		if (!hit.collider)
+			// 		{
+			// 			continue;
+			// 		}
+			// 		SevenBoldPencil.WeaponCamoAndStickers.Plugin.Instance.LoggerInstance.LogWarning($"Here 2 {(bool)hit.collider}");
+	  //               var p_handle = hit.collider.gameObject.GetComponentInParent<HandleBase>();
+			// 		SevenBoldPencil.WeaponCamoAndStickers.Plugin.Instance.LoggerInstance.LogWarning("Here 3");
+	  //               if (p_handle)
+	  //               {
+			// 			SevenBoldPencil.WeaponCamoAndStickers.Plugin.Instance.LoggerInstance.LogWarning("Here 4");
+	  //                   return (p_handle, hit.point);
+	  //               }
+			// 	}
+			// }
 
             return default;
         }

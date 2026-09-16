@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Nullable>disable</Nullable>
     <Authors>7Bpencil</Authors>
     <Copyright>Copyright (c) 7Bpencil 2026</Copyright>
@@ -15,10 +15,10 @@
     <StagePath>$(ProjectDir)..\..\Stage\BepInEx\plugins\7Bpencil.WeaponCamoAndStickers</StagePath>
     <AssemblySearchPaths>
       $(AssemblySearchPaths);
-      $(SPTPath)\EscapeFromTarkov_Data\Managed;
       $(SPTPath)\BepInEx\core;
-      $(SPTPath)\BepInEx\plugins\spt;
-      $(SPTPath)\BepInEx\plugins\Fika;
+      $(SPTPath)\BepInEx\interop;
+      $(SPTPath)\BepInEx\plugins\sptushonka;
+      $(SPTPath)\BepInEx\unity-libs;
     </AssemblySearchPaths>
   </PropertyGroup>
 

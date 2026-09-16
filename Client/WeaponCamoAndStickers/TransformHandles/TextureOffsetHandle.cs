@@ -57,9 +57,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var positionHandleX = new PositionAxisHandle_TextureOffset(Vector3.right, Vector3.forward, new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0), _decalInfo, _decal);
             var positionHandleZ = new PositionAxisHandle_TextureOffset(Vector3.forward, Vector3.right, new Vector4(0, 1, 0, 0), new Vector4(1, 0, 0, 0), _decalInfo, _decal);
 
-            var axisX = new GameObject("TextureOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Color.red, _handleShader);
-            var axisZ = new GameObject("TextureOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, positionHandleZ, Vector3.forward, Color.blue, _handleShader);
-            var planeXZ = new GameObject("TextureOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, positionHandleX, Vector3.right, Vector3.forward, Vector3.up, Color.green, _handleShader);
+            var axisX = new GameObject("TextureOffsetAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, Vector3.right, Color.red, _handleShader);
+            axisX._handle = positionHandleX;
+            var axisZ = new GameObject("TextureOffsetAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, Vector3.forward, Color.blue, _handleShader);
+            axisZ._handle = positionHandleZ;
+            var planeXZ = new GameObject("TextureOffsetPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, Vector3.right, Vector3.forward, Vector3.up, Color.green, _handleShader);
+            planeXZ._handle = positionHandleX;
         }
 
         public void Reset(Transform transformHandle)

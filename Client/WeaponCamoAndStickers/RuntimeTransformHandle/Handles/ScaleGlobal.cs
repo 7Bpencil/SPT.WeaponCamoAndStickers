@@ -13,7 +13,7 @@ namespace RuntimeHandle
 	{
 		private Transform _transformHandle;
 		private Transform _transformHandleCameraTransform;
-		private IScaleAxisHandle _handle;
+		public IScaleAxisHandle _handle;
 		private Transform _arc;
         private float _startOffsetLength;
 
@@ -21,13 +21,13 @@ namespace RuntimeHandle
 			Transform transformHandle,
 			Camera transformHandleCamera,
 			Transform scaleHandle,
-			IScaleAxisHandle handle,
+			// IScaleAxisHandle handle,
 			Color color,
 			Shader handleShader)
 		{
 			_transformHandle = transformHandle;
 			_transformHandleCameraTransform = transformHandleCamera.transform;
-			_handle = handle;
+			// _handle = handle;
 
             Init(handleShader, color);
 

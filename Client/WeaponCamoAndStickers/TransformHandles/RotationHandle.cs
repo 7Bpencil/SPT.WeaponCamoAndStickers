@@ -49,9 +49,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var rotationHandleY = new RotationAxisHandle_Transform(_decal.DecalTransform, Vector3.up);
 			var rotationHandleZ = new RotationAxisHandle_Transform(_decal.DecalTransform, Vector3.forward);
 
-            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleX, Vector3.right, Color.red, _handleShader);
-            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleY, Vector3.up, Color.green, _handleShader);
-            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, rotationHandleZ, Vector3.forward, Color.blue, _handleShader);
+            var axisX = new GameObject("RotationAxis.X (YZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, Vector3.right, Color.red, _handleShader);
+            axisX._handle = rotationHandleX;
+            var axisY = new GameObject("RotationAxis.Y (XZ)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, Vector3.up, Color.green, _handleShader);
+            axisY._handle = rotationHandleY;
+            var axisZ = new GameObject("RotationAxis.Z (XY)").AddComponent<RotationAxis>().Initialize(transformHandle, transformHandleCamera, root, Vector3.forward, Color.blue, _handleShader);
+            axisZ._handle = rotationHandleZ;
         }
 
         public void Reset(Transform transformHandle)

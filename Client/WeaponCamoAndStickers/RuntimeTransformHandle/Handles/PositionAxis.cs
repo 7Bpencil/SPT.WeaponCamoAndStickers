@@ -15,20 +15,20 @@ namespace RuntimeHandle
     public class PositionAxis : HandleBase
     {
 		private Transform _transformHandle;
-		private IPositionAxisHandle _handle;
+		public IPositionAxisHandle _handle;
         private Vector3 _axis;
         private float _offsetLength;
 
         public PositionAxis Initialize(
 			Transform transformHandle,
 			Transform positionHandle,
-			IPositionAxisHandle handle,
+			// IPositionAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
 			_transformHandle = transformHandle;
-			_handle = handle;
+			// _handle = handle;
             _axis = axis;
 
             Init(handleShader, color);
@@ -49,9 +49,10 @@ namespace RuntimeHandle
                 o.transform.SetParent(transform, false);
                 o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _axis);
                 o.transform.localPosition = axis * 2;
+                var handleMesh = MeshUtils.CreateCone(.4f, .2f, .0f, 8, 1);
                 o.AddComponent<MeshRenderer>().material = _material;
-                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateCone(.4f, .2f, .0f, 8, 1);
-                o.AddComponent<MeshCollider>();
+                o.AddComponent<MeshFilter>().mesh = handleMesh;
+                o.AddComponent<MeshCollider>().sharedMesh = handleMesh;
             }
 
             return this;

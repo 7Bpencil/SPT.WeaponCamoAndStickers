@@ -14,34 +14,34 @@ namespace RuntimeHandle
         private const float SIZE = 2;
 
 		private Transform _transformHandle;
-		private IScaleAxisHandle _handle;
+		public IScaleAxisHandle _handle;
         private Vector3 _axis1;
         private Vector3 _axis2;
         private Vector3 _perp;
 		private Transform _plane;
         private float _startOffsetLength;
 
-        private ScaleAxis _axis1Handle;
-        private ScaleAxis _axis2Handle;
+        public ScaleAxis _axis1Handle;
+        public ScaleAxis _axis2Handle;
 
-        public ScalePlane Initialize(
+        public void Initialize(
 			Transform transformHandle,
 			Transform scaleHandle,
-			IScaleAxisHandle handle,
-			ScaleAxis axis1,
-			ScaleAxis axis2,
+			// IScaleAxisHandle handle,
+			// ScaleAxis axis1,
+			// ScaleAxis axis2,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
         {
 			_transformHandle = transformHandle;
-			_handle = handle;
-            _axis1 = axis1.Axis;
-            _axis2 = axis2.Axis;
+			// _handle = handle;
+            _axis1 = _axis1Handle.Axis;
+            _axis2 = _axis2Handle.Axis;
             _perp = perp;
 
-            _axis1Handle = axis1;
-            _axis2Handle = axis2;
+            // _axis1Handle = axis1;
+            // _axis2Handle = axis2;
 
             Init(handleShader, color);
 
@@ -52,13 +52,12 @@ namespace RuntimeHandle
 	            o.transform.SetParent(transform, false);
 	            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
 	            o.transform.localPosition = _axis1 + _axis2;
+	            var handleMesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
 	            o.AddComponent<MeshRenderer>().material = _material;
-	            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
-	            o.AddComponent<MeshCollider>();
+	            o.AddComponent<MeshFilter>().mesh = handleMesh;
+	            o.AddComponent<MeshCollider>().sharedMesh = handleMesh;
 				_plane = o.transform;
 			}
-
-            return this;
         }
 
 		public override bool CanInteract(Vector3 hitPoint)

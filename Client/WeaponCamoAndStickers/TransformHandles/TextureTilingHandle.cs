@@ -44,9 +44,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var scaleHandleZ = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.up);
 			var scaleHandleXZ = new ScaleAxisHandle_TextureTiling(_decalInfo, _decal, Vector2.right + Vector2.up);
 
-            var axisX = new GameObject("TextureTilingAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, _handleShader);
-            var axisZ = new GameObject("TextureTilingAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, _handleShader);
-            var planeXZ = new GameObject("TextureTilingPlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandleXZ, axisX, axisZ, Vector3.up, Color.green, _handleShader);
+            var axisX = new GameObject("TextureTilingAxis.X").AddComponent<ScaleAxis>();
+            var axisZ = new GameObject("TextureTilingAxis.Z").AddComponent<ScaleAxis>();
+            var planeXZ = new GameObject("TextureTilingPlane.XZ").AddComponent<ScalePlane>();
+
+			axisX._handle = scaleHandleX;
+			axisZ._handle = scaleHandleZ;
+
+			planeXZ._handle = scaleHandleXZ;
+			planeXZ._axis1Handle = axisX;
+			planeXZ._axis2Handle = axisZ;
+
+            axisX.Initialize(transformHandle, root, Vector3.right, Color.red, _handleShader);
+            axisZ.Initialize(transformHandle, root, Vector3.forward, Color.blue, _handleShader);
+            planeXZ.Initialize(transformHandle, root, Vector3.up, Color.green, _handleShader);
         }
 
         public void Reset(Transform transformHandle)

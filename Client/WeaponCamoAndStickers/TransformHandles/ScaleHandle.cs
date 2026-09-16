@@ -43,10 +43,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var scaleHandleZ = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.forward);
 			var scaleHandleXZ = new ScaleAxisHandle_Transform(_decalInfo, _decal, Vector3.right + Vector3.forward);
 
-            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleX, Vector3.right, Color.red, _handleShader);
-            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleY, Vector3.up, Color.green, _handleShader);
-            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>().Initialize(transformHandle, root, scaleHandleZ, Vector3.forward, Color.blue, _handleShader);
-            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>().Initialize(transformHandle, root, scaleHandleXZ, axisX, axisZ, Vector3.up, Color.green, _handleShader);
+            var axisX = new GameObject("ScaleAxis.X").AddComponent<ScaleAxis>();
+            var axisY = new GameObject("ScaleAxis.Y").AddComponent<ScaleAxis>();
+            var axisZ = new GameObject("ScaleAxis.Z").AddComponent<ScaleAxis>();
+            var planeXZ = new GameObject("ScalePlane.XZ").AddComponent<ScalePlane>();
+
+            axisX._handle = scaleHandleX;
+            axisY._handle = scaleHandleY;
+            axisZ._handle = scaleHandleZ;
+            planeXZ._handle = scaleHandleXZ;
+            planeXZ._axis1Handle = axisX;
+            planeXZ._axis2Handle = axisZ;
+
+            axisX.Initialize(transformHandle, root, Vector3.right, Color.red, _handleShader);
+            axisY.Initialize(transformHandle, root, Vector3.up, Color.green, _handleShader);
+            axisZ.Initialize(transformHandle, root, Vector3.forward, Color.blue, _handleShader);
+            planeXZ.Initialize(transformHandle, root, Vector3.up, Color.green, _handleShader);
         }
 
         public void Reset(Transform transformHandle)

@@ -12,9 +12,12 @@
 
   <ItemGroup>
     <Reference Include="0Harmony" />
-    <Reference Include="spt-reflection" />
+    <Reference Include="SPTushonka.Reflection" />
     <Reference Include="Assembly-CSharp" />
-    <Reference Include="BepInEx" />
+    <Reference Include="BepInEx.Core" />
+    <Reference Include="BepInEx.Unity.IL2CPP" />
+    <Reference Include="Il2Cppmscorlib" />
+    <Reference Include="Il2CppInterop.Runtime" />
     <Reference Include="Comfort" />
     <Reference Include="Sirenix.Serialization" />
     <Reference Include="UnityEngine" />

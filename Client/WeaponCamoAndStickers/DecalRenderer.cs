@@ -9,6 +9,7 @@ using EFT.CameraControl;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Il2CppInterop.Runtime;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -32,8 +33,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			InstanceIdToItemId = instanceIdToItemId;
 			DecalCameras = decalCameras;
 			CommandBuffers = new();
-			Camera.onPreCull += OnPreCullCameraRender;
-			Camera.onPreRender += OnPreCameraRender;
+			Camera.onPreCull += DelegateSupport.ConvertDelegate<Camera.CameraCallback>(OnPreCullCameraRender);
+			Camera.onPreRender += DelegateSupport.ConvertDelegate<Camera.CameraCallback>(OnPreCameraRender);
 		}
 
 		public void OnPreCullCameraRender(Camera currentCamera)
@@ -142,6 +143,26 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecalsOnItem(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
 		{
+			if (itemWithDecals == null)
+			{
+				Plugin.Instance.LoggerInstance.LogWarning("itemWithDecals");
+				return;
+			}
+			if (decalsInfo == null)
+			{
+				Plugin.Instance.LoggerInstance.LogWarning("decalsInfo");
+				return;
+			}
+			if (!currentCamera)
+			{
+				Plugin.Instance.LoggerInstance.LogWarning("currentCamera");
+				return;
+			}
+			if (buffer == null)
+			{
+				Plugin.Instance.LoggerInstance.LogWarning("buffer");
+				return;
+			}
 			var decals = itemWithDecals.Decals;
 			for (var i = 0; i < decals.Count; i++)
 			{

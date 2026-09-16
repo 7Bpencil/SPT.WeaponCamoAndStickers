@@ -8,6 +8,7 @@
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
@@ -132,7 +133,7 @@ namespace SevenBoldPencil.MaterialEditor
     [BepInPlugin("7Bpencil.MaterialEditor", "7Bpencil.MaterialEditor", BigPlugin.PluginVersion)]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin : BasePlugin
     {
         public static readonly int _Color = Shader.PropertyToID("_Color");
         public static readonly int _SpecColor = Shader.PropertyToID("_SpecColor");

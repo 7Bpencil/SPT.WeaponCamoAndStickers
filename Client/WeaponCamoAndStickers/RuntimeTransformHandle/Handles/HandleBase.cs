@@ -7,7 +7,7 @@ namespace RuntimeHandle
      * Created by Peter @sHTiF Stefcek 20.10.2020
      * Rewritten by 7Bpencil 22.03.2026
      */
-    public abstract class HandleBase : MonoBehaviour
+    public class HandleBase : MonoBehaviour
     {
         private Color _defaultColor;
         protected Material _material;
@@ -29,13 +29,25 @@ namespace RuntimeHandle
             _material.color = Color.yellow;
         }
 
-        public abstract bool CanInteract(Vector3 hitPoint);
+        public virtual bool CanInteract(Vector3 hitPoint)
+		{
+			return false;
+		}
 
-        public abstract void StartInteraction(Ray cameraRay);
+        public virtual void StartInteraction(Ray cameraRay)
+		{
 
-        public abstract void Interact(Ray cameraRay);
+		}
 
-        public abstract void EndInteraction();
+        public virtual void Interact(Ray cameraRay)
+		{
+
+		}
+
+        public virtual void EndInteraction()
+		{
+
+		}
 
 		public void OnDestroy()
 		{

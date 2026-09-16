@@ -11,7 +11,7 @@ using EFT.Counters;
 using EFT.InventoryLogic;
 using EFT.UI;
 using System.Reflection;
-using SPT.Reflection.Patching;
+using SPTushonka.Reflection.Patching;
 using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;

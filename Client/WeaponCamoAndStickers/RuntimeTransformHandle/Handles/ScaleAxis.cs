@@ -17,7 +17,7 @@ namespace RuntimeHandle
         private const float SIZE = 2;
 
 		private Transform _transformHandle;
-		private IScaleAxisHandle _handle;
+		public IScaleAxisHandle _handle;
         private Vector3 _axis;
 		private Transform _arm;
 		private Transform _tip;
@@ -25,16 +25,16 @@ namespace RuntimeHandle
 
 		public Vector3 Axis => _axis;
 
-        public ScaleAxis Initialize(
+        public void Initialize(
 			Transform transformHandle,
 			Transform scaleHandle,
-			IScaleAxisHandle handle,
+			// IScaleAxisHandle handle,
 			Vector3 axis,
 			Color color,
 			Shader handleShader)
         {
 			_transformHandle = transformHandle;
-			_handle = handle;
+			// _handle = handle;
             _axis = axis;
 
             Init(handleShader, color);
@@ -56,13 +56,12 @@ namespace RuntimeHandle
                 o.transform.SetParent(transform, false);
                 o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, axis);
                 o.transform.localPosition = axis * SIZE;
+                var handleMesh = MeshUtils.CreateBox(.25f, .25f, .25f);
                 o.AddComponent<MeshRenderer>().material = _material;
-                o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(.25f, .25f, .25f);
-                o.AddComponent<MeshCollider>();
+                o.AddComponent<MeshFilter>().mesh = handleMesh;
+                o.AddComponent<MeshCollider>().sharedMesh = handleMesh;
 				_tip = o.transform;
             }
-
-            return this;
         }
 
         public void SetHandleVisualScale(float scale)

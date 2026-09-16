@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace SevenBoldPencil.Common
 {
-    [RequireComponent(typeof(Camera))]
+    // [RequireComponent(typeof(Camera))]
     public class RuntimeGizmos : MonoBehaviour
     {
         public struct Line

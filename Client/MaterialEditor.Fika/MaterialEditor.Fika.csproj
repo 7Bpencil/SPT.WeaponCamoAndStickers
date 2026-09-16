@@ -12,7 +12,10 @@
 
   <ItemGroup>
     <Reference Include="Assembly-CSharp" />
-    <Reference Include="BepInEx" />
+    <Reference Include="BepInEx.Core" />
+    <Reference Include="BepInEx.Unity.IL2CPP" />
+    <Reference Include="Il2Cppmscorlib" />
+    <Reference Include="Il2CppInterop.Runtime" />
     <Reference Include="Comfort" />
     <Reference Include="Fika.Core" />
     <Reference Include="UnityEngine" />

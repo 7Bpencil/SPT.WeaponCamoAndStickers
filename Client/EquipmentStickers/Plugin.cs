@@ -6,6 +6,7 @@
 //
 
 using BepInEx;
+using BepInEx.Unity.IL2CPP;
 using BepInEx.Logging;
 using EFT;
 using EFT.AssetsManager;
@@ -32,7 +33,7 @@ namespace SevenBoldPencil.EquipmentStickers
     [BepInPlugin("7Bpencil.EquipmentStickers", "7Bpencil.EquipmentStickers", BigPlugin.PluginVersion)]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin : BasePlugin
     {
 		public const string BoneSpine1 = "Root_Joint/Base HumanPelvis/Base HumanSpine1";
 		public const string BoneSpine2 = "Root_Joint/Base HumanPelvis/Base HumanSpine1/Base HumanSpine2";
@@ -135,7 +136,7 @@ namespace SevenBoldPencil.EquipmentStickers
         private Option<CamoEditor> CamoEditor;
         private bool IsCamoEditorWaitingForWeaponPreview;
 
-        private void Awake()
+        public override void Load()
         {
             Instance = this;
 			LoggerInstance = Logger;

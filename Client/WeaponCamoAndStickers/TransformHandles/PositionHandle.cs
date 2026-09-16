@@ -35,13 +35,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
 			var axisHandle = new PositionAxisHandle_Tranform(_decal.DecalTransform);
 
-            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.right, Color.red, _handleShader);
-            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.up, Color.green, _handleShader);
-            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, axisHandle, Vector3.forward, Color.blue, _handleShader);
+            var axisX = new GameObject("PositionAxis.X").AddComponent<PositionAxis>().Initialize(transformHandle, root, Vector3.right, Color.red, _handleShader);
+            axisX._handle = axisHandle;
+            var axisY = new GameObject("PositionAxis.Y").AddComponent<PositionAxis>().Initialize(transformHandle, root, Vector3.up, Color.green, _handleShader);
+            axisY._handle = axisHandle;
+            var axisZ = new GameObject("PositionAxis.Z").AddComponent<PositionAxis>().Initialize(transformHandle, root, Vector3.forward, Color.blue, _handleShader);
+            axisZ._handle = axisHandle;
 
-            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.right, Vector3.up, Vector3.forward, Color.blue, _handleShader);
-            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.up, Vector3.forward, Vector3.right, Color.red, _handleShader);
-            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, axisHandle, Vector3.right, Vector3.forward, Vector3.up, Color.green, _handleShader);
+            var planeXY = new GameObject("PositionPlane.XY").AddComponent<PositionPlane>().Initialize(transformHandle, root, Vector3.right, Vector3.up, Vector3.forward, Color.blue, _handleShader);
+            planeXY._handle = axisHandle;
+            var planeYZ = new GameObject("PositionPlane.YZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, Vector3.up, Vector3.forward, Vector3.right, Color.red, _handleShader);
+            planeYZ._handle = axisHandle;
+            var planeXZ = new GameObject("PositionPlane.XZ").AddComponent<PositionPlane>().Initialize(transformHandle, root, Vector3.right, Vector3.forward, Vector3.up, Color.green, _handleShader);
+            planeXZ._handle = axisHandle;
         }
 
         public void Reset(Transform transformHandle)

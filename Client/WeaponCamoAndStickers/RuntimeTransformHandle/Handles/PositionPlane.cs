@@ -9,14 +9,14 @@ namespace RuntimeHandle
     public class PositionPlane : HandleBase
     {
 		private Transform _transformHandle;
-		private IPositionAxisHandle _handle;
+		public IPositionAxisHandle _handle;
         private Vector3 _perp;
         private Vector3 _offsetLocalSpace;
 
         public PositionPlane Initialize(
 			Transform transformHandle,
 			Transform positionHandle,
-			IPositionAxisHandle handle,
+			// IPositionAxisHandle handle,
 			Vector3 axis1,
 			Vector3 axis2,
 			Vector3 perp,
@@ -24,7 +24,7 @@ namespace RuntimeHandle
 			Shader handleShader)
         {
 			_transformHandle = transformHandle;
-			_handle = handle;
+			// _handle = handle;
             _perp = perp;
 
             Init(handleShader, color);
@@ -36,9 +36,10 @@ namespace RuntimeHandle
 	            o.transform.SetParent(transform, false);
 	            o.transform.localRotation = Quaternion.FromToRotation(Vector3.up, _perp);
 	            o.transform.localPosition = axis1 + axis2;
+				var handleMesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
 	            o.AddComponent<MeshRenderer>().material = _material;
-	            o.AddComponent<MeshFilter>().mesh = MeshUtils.CreateBox(0.02f, 0.25f, 0.25f);
-	            o.AddComponent<MeshCollider>();
+	            o.AddComponent<MeshFilter>().mesh = handleMesh;
+	            o.AddComponent<MeshCollider>().sharedMesh = handleMesh;
 			}
 
             return this;

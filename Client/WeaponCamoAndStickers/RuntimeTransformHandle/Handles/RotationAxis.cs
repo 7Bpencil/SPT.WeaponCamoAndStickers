@@ -21,7 +21,7 @@ namespace RuntimeHandle
 		private Transform _transformHandle;
 		private Transform _transformHandleCamera;
 		private Transform _rotationHandle;
-		private IRotationAxisHandle _handle;
+		public IRotationAxisHandle _handle;
         private Vector3 _perp;
 		private Vector3 _startOffsetLocalSpace;
 
@@ -29,7 +29,7 @@ namespace RuntimeHandle
 			Transform transformHandle,
 			Camera transformHandleCamera,
 			Transform rotationHandle,
-			IRotationAxisHandle handle,
+			// IRotationAxisHandle handle,
 			Vector3 perp,
 			Color color,
 			Shader handleShader)
@@ -37,7 +37,7 @@ namespace RuntimeHandle
 			_transformHandle = transformHandle;
 			_transformHandleCamera = transformHandleCamera.transform;
 			_rotationHandle = rotationHandle;
-			_handle = handle;
+			// _handle = handle;
             _perp = perp;
 
             Init(handleShader, color);
