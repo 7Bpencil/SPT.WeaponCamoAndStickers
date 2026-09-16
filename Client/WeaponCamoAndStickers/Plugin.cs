@@ -227,6 +227,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             Plugin.Instance.Update();
         }
+
+        public void LateUpdate()
+        {
+            Plugin.Instance.LateUpdate();
+        }
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", PluginVersion)]
