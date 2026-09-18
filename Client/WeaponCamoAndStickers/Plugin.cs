@@ -218,20 +218,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class CoroutineRunner : MonoBehaviour
     {
-        public void OnGUI()
-        {
-            Plugin.Instance.OnGUI();
-        }
-
-        public void Update()
-        {
-            Plugin.Instance.Update();
-        }
-
-        public void LateUpdate()
-        {
-            Plugin.Instance.LateUpdate();
-        }
+        public void OnGUI() => Plugin.Instance.OnGUI();
+        public void Update() => Plugin.Instance.Update();
+        public void LateUpdate() => Plugin.Instance.LateUpdate();
     }
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", PluginVersion)]
