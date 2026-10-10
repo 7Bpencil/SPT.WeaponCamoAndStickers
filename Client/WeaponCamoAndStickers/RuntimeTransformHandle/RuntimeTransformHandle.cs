@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace RuntimeHandle
 {

@@ -9,6 +9,7 @@ using EFT.CameraControl;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Il2CppInterop.Runtime;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
@@ -32,8 +33,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			InstanceIdToItemId = instanceIdToItemId;
 			DecalCameras = decalCameras;
 			CommandBuffers = new();
-			Camera.onPreCull += OnPreCullCameraRender;
-			Camera.onPreRender += OnPreCameraRender;
+			Camera.onPreCull += DelegateSupport.ConvertDelegate<Camera.CameraCallback>(OnPreCullCameraRender);
+			Camera.onPreRender += DelegateSupport.ConvertDelegate<Camera.CameraCallback>(OnPreCameraRender);
 		}
 
 		public void OnPreCullCameraRender(Camera currentCamera)

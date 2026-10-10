@@ -9,19 +9,23 @@ using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
+using Il2CppInterop.Runtime.Injection;
 using Diz.Skinning;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.Visual;
 using EFT.UI.WeaponModding;
-using Newtonsoft.Json;
+using RuntimeHandle;
 using SevenBoldPencil.Common;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
@@ -213,10 +217,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public HashSet<string> MasksDirectory;
     }
 
+    public class Runner : MonoBehaviour
+    {
+        public void OnGUI() => Plugin.Instance.OnGUI();
+        public void Update() => Plugin.Instance.Update();
+        public void LateUpdate() => Plugin.Instance.LateUpdate();
+    }
+
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", PluginVersion)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin : BasePlugin
     {
+        public void StartCoroutine(IEnumerator routine)
+        {
+            BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(Runner, routine);
+        }
+
         public const string PluginVersion = "1.19.0";
         public const string DefaultCamoName = "builtin/camos/default.png";
         public const string DefaultStickerName = "builtin/stickers/default.png";
@@ -237,7 +253,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static ConfigEntry<int> OtherBossesWeaponCamoSpawnChance;
         public static ConfigEntry<int> ScavsWeaponCamoSpawnChance;
 
-		public ManualLogSource LoggerInstance;
+		public ManualLogSource Logger;
+        public Runner Runner;
 
         private string TexturesDir;
         private string PreviewsDir;
@@ -280,10 +297,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Action<Dictionary<string, List<DecalInfo>>> OnBotWeaponCamoGenerated;
         public Dictionary<string, WeaponPrefab> WeaponsWaitingForRemoteCamo;
 
-        private void Awake()
+        public JsonSerializerOptions SerializerOptions;
+
+        public override void Load()
         {
             Instance = this;
-			LoggerInstance = Logger;
+			Logger = Log;
+
+            Runner = AddComponent<Runner>();
+
+            SerializerOptions = new()
+            {
+                IncludeFields = true,
+                IgnoreReadOnlyProperties = true,
+                Converters =
+                {
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+                }
+            };
 
             PlayVideoAudio = Config.Bind<bool>("Main", "Video | Play Audio", false, "");
             PlayVideoAudio.SettingChanged += (_, _) => ChangeAudioOnAllVideos(PlayVideoAudio.Value);
@@ -363,10 +394,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_Destroy().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
             new Patch_BotCreatorClient_CreateBot().Enable();
-            new Patch_ItemIconCreator_GetItemIcon().Enable();
+            // new Patch_ItemIconCreator_GetItemIcon().Enable();
             new Patch_IconsHash_GetItemHash().Enable();
 
-            TryEnableFikaSupport(assemblyDir);
+            // TryEnableFikaSupport(assemblyDir);
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
@@ -394,31 +425,31 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// add tooltips on all UI elements
         }
 
-        public void TryEnableFikaSupport(string mainAssemblyDir)
-        {
-            if (!Chainloader.PluginInfos.ContainsKey("com.fika.core"))
-            {
-                return;
-            }
+        // public void TryEnableFikaSupport(string mainAssemblyDir)
+        // {
+        //     if (!Chainloader.PluginInfos.ContainsKey("com.fika.core"))
+        //     {
+        //         return;
+        //     }
 
-            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.WeaponCamoAndStickers.Fika.dll");
-            if (!File.Exists(fikaAssemblyPath))
-            {
-                return;
-            }
+        //     var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.WeaponCamoAndStickers.Fika.dll");
+        //     if (!File.Exists(fikaAssemblyPath))
+        //     {
+        //         return;
+        //     }
 
-            var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
-            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.WeaponCamoAndStickers.Fika.Plugin");
-            var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
-            var fikaPlugin = Activator.CreateInstance(fikaPluginType);
-            fikaPluginAwake.Invoke(fikaPlugin, null);
-        }
+        //     var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
+        //     var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.WeaponCamoAndStickers.Fika.Plugin");
+        //     var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
+        //     var fikaPlugin = Activator.CreateInstance(fikaPluginType);
+        //     fikaPluginAwake.Invoke(fikaPlugin, null);
+        // }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories()
         {
             if (SafeIO.ReadAllText(ClosedDirectoriesPath).Ok(out var json, out var e))
             {
-                var result = JsonConvert.DeserializeObject<ClosedTexturesDirectories>(json);
+                var result = JsonSerializer.Deserialize<ClosedTexturesDirectories>(json, SerializerOptions);
                 return result;
             }
             else
@@ -444,7 +475,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             SaveClosedTexturesDirectories(StickersDirectory, ClosedDirectories.StickersDirectory);
             SaveClosedTexturesDirectories(MasksDirectory, ClosedDirectories.MasksDirectory);
 
-            var json = JsonConvert.SerializeObject(ClosedDirectories, Formatting.Indented);
+            var json = JsonSerializer.Serialize(ClosedDirectories, SerializerOptions);
             SafeIO.WriteAllTextAsync(ClosedDirectoriesPath, json);
         }
 
@@ -699,7 +730,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             else
             {
                 AddTextureError(param);
-                Destroy(preview);
+                GameObject.Destroy(preview);
             }
         }
 
@@ -731,7 +762,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var texture = DownloadHandlerTexture.GetContent(uwr);
             var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFilePath, texture);
             AddTexture(preview, originalSize, param);
-            Destroy(texture);
+            GameObject.Destroy(texture);
         }
 
         private (Texture2D, Vector2Int) CreatePreviewAndStoreOnDisk_Texture(string previewFilePath, Texture texture)
@@ -784,7 +815,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return hitError || loadTicks >= MaxVideoLoadTicks;
             }
 
-            var videoPlayer = gameObject.AddComponent<VideoPlayer>();
+            var videoPlayer = AddComponent<VideoPlayer>();
             videoPlayer.errorReceived += (_, message) =>
             {
                 Logger.Log(LogLevel.Error, "Texture", "Video error", message);
@@ -806,7 +837,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 AddTextureError(param);
                 videoPlayer.Stop();
-                Destroy(videoPlayer);
+                GameObject.Destroy(videoPlayer);
                 yield break;
             }
 
@@ -824,8 +855,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 AddTextureError(param);
                 videoPlayer.Stop();
-                Destroy(videoPlayer);
-                Destroy(renderTexture);
+                GameObject.Destroy(videoPlayer);
+                GameObject.Destroy(renderTexture);
                 yield break;
             }
 
@@ -835,8 +866,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             AddTexture(preview, originalSize, param);
 
             videoPlayer.Stop();
-            Destroy(videoPlayer);
-            Destroy(renderTexture);
+            GameObject.Destroy(videoPlayer);
+            GameObject.Destroy(renderTexture);
         }
 
         public struct AddTexturePararms
@@ -872,7 +903,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (SafeIO.ReadAllText(FavouriteTexturesPath).Ok(out var json, out var e))
             {
-                var result = JsonConvert.DeserializeObject<HashSet<string>>(json);
+                var result = JsonSerializer.Deserialize<HashSet<string>>(json, SerializerOptions);
                 return result;
             }
             else
@@ -885,7 +916,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void SaveFavouriteTexturesToDisk()
         {
-            var json = JsonConvert.SerializeObject(FavouriteTextures, Formatting.Indented);
+            var json = JsonSerializer.Serialize(FavouriteTextures, SerializerOptions);
             SafeIO.WriteAllTextAsync(FavouriteTexturesPath, json);
         }
 
@@ -899,7 +930,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var presetName = Path.GetFileNameWithoutExtension(filePath);
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                    var decalsInfo = JsonSerializer.Deserialize<List<DecalInfo>>(json, SerializerOptions);
                     UpgradeOldVersionsOfDecalsInfo(decalsInfo);
                     result.Add(presetName, decalsInfo);
                 }
@@ -922,7 +953,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var itemId = Path.GetFileNameWithoutExtension(filePath);
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    var decalsInfo = JsonConvert.DeserializeObject<List<DecalInfo>>(json);
+                    var decalsInfo = JsonSerializer.Deserialize<List<DecalInfo>>(json, SerializerOptions);
                     UpgradeOldVersionsOfDecalsInfo(decalsInfo);
                     var itemsWithDecals = new ItemsWithDecals()
                     {
@@ -1247,7 +1278,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return hitError || loadTicks >= MaxVideoLoadTicks;
             }
 
-            var videoPlayer = gameObject.AddComponent<VideoPlayer>();
+            var videoPlayer = AddComponent<VideoPlayer>();
             videoPlayer.errorReceived += (_, message) =>
             {
                 Logger.Log(LogLevel.Error, "Texture", "Video error", message);
@@ -1272,7 +1303,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 DecalTextureAssets.Remove(textureData.FilePath);
                 ClearWaitingAfterLoadError(asset);
                 videoPlayer.Stop();
-                Destroy(videoPlayer);
+                GameObject.Destroy(videoPlayer);
                 yield break;
             }
 
@@ -2133,7 +2164,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public Decal CreateDecal(DecalInfo decalInfo, IDecalsHost decalsHost)
 		{
-            var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
+            var decal = new GameObject("Decal").AddComponent<Decal>();
             var decalRoot = decalsHost.GetDecalRoot(decalInfo.Bone);
 			decal.Init(decalInfo, decalRoot, DecalShader);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
@@ -2287,7 +2318,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             if (decal)
             {
-                Destroy(decal.gameObject);
+                GameObject.Destroy(decal.gameObject);
             }
         }
 
@@ -2655,7 +2686,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void WritePresetToFile(string presetName, List<DecalInfo> preset)
         {
-            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            var json = JsonSerializer.Serialize(preset, SerializerOptions);
             var filePath = GetPresetFilePath(presetName);
             SafeIO.WriteAllTextAsync(filePath, json);
         }
@@ -2737,7 +2768,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void WriteDecalsToFile(string itemId, List<DecalInfo> decalsInfo)
         {
-            var json = JsonConvert.SerializeObject(decalsInfo, Formatting.Indented);
+            var json = JsonSerializer.Serialize(decalsInfo, SerializerOptions);
             var filePath = GetItemFilePath(itemId);
             SafeIO.WriteAllTextAsync(filePath, json);
         }

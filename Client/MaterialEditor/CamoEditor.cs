@@ -9,6 +9,7 @@ using SevenBoldPencil.Common;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Il2CppInterop.Runtime;
 
 using BigPlugin = SevenBoldPencil.WeaponCamoAndStickers.Plugin;
 using BigCamoEditor = SevenBoldPencil.WeaponCamoAndStickers.CamoEditor;
@@ -117,9 +118,9 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsColorPickerOpened_ReflectColor;
         public SettingsScreen SettingsScreen = SettingsScreen.Texture;
         public DecalTextureType DecalTypeMenu = DecalTextureType.Camo;
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
-        public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        // public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        // public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        // public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public WeaponCamoAndStickers.TextField<float> TextField_TextureAngle = new(MaterialStringCache.SimpleFloatFormat, MaterialStringCache.ParseFloatAngle, 8);
         public WeaponCamoAndStickers.TexturesWindow CamosWindow;
         public WeaponCamoAndStickers.TexturesWindow StickersWindow;
@@ -192,10 +193,10 @@ namespace SevenBoldPencil.MaterialEditor
                 if (AreItemPresetsOpened)
                 {
                     WindowRect.height = CalculateMaterialsWindowHeight_Presets();
-                    WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow_Presets, GUIContent.none);
+                    WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindow_Presets), GUIContent.none);
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
                 }
                 else
                 {
@@ -204,18 +205,18 @@ namespace SevenBoldPencil.MaterialEditor
                         if (AreMaterialPresetsOpened)
                         {
                             WindowRect.height = CalculateMaterialEditWindowHeight_Presets();
-                            WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Presets, GUIContent.none);
+                            WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawMaterialEditUI_Presets), GUIContent.none);
 
                             var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                            GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                            GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
                         }
                         else
                         {
                             WindowRect.height = CalculateMaterialEditWindowHeight_Material();
-                            WindowRect = GUI.Window(1, WindowRect, DrawMaterialEditUI_Material, GUIContent.none);
+                            WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawMaterialEditUI_Material), GUIContent.none);
 
                             var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                            GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                            GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
 
                             void DrawColorPicker(int windowID, bool isOpened, int y, UnityEngine.GUI.WindowFunction colorPickerWindow, UnityEngine.GUI.WindowFunction openColorPickerWindow, UnityEngine.GUI.WindowFunction closeColorPickerWindow)
                             {
@@ -236,28 +237,28 @@ namespace SevenBoldPencil.MaterialEditor
 
                             if (SettingsScreen == SettingsScreen.Color)
                             {
-                                DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DrawColorPickerWindow_Color, DrawColorPickerWindowOpenButton_Color, DrawColorPickerWindowCloseButton_Color);
-                                DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DrawColorPickerWindow_SpecColor, DrawColorPickerWindowOpenButton_SpecColor, DrawColorPickerWindowCloseButton_SpecColor);
-                                DrawColorPicker(7, IsColorPickerOpened_ReflectColor, colorPickerY_ReflectColor, DrawColorPickerWindow_ReflectColor, DrawColorPickerWindowOpenButton_ReflectColor, DrawColorPickerWindowCloseButton_ReflectColor);
+                                DrawColorPicker(3, IsColorPickerOpened_Color, colorPickerY_Color, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindow_Color), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowOpenButton_Color), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowCloseButton_Color));
+                                DrawColorPicker(5, IsColorPickerOpened_SpecColor, colorPickerY_SpecColor, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindow_SpecColor), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowOpenButton_SpecColor), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowCloseButton_SpecColor));
+                                DrawColorPicker(7, IsColorPickerOpened_ReflectColor, colorPickerY_ReflectColor, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindow_ReflectColor), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowOpenButton_ReflectColor), DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowCloseButton_ReflectColor));
                             }
                         }
                     }
                     else
                     {
                         WindowRect.height = CalculateMaterialsWindowHeight();
-                        WindowRect = GUI.Window(1, WindowRect, DrawOpenedWindow, GUIContent.none);
+                        WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindow), GUIContent.none);
 
                         var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                        GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                        GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
                     }
                 }
             }
             else
             {
-                WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
+                WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindow), GUIContent.none);
 
                 var openButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openButtonWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                GUI.Window(2, openButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindowOpenButton), GUIContent.none);
             }
 
             GUI.matrix = originalMatrix;
@@ -514,10 +515,10 @@ namespace SevenBoldPencil.MaterialEditor
                         // TODO make it smarter? also notice that we init text fields
                         // after Plugin.OverrideMaterial, because they can be unintialized
                         var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-                        TextField_Color.SetValue(materialInfo.ColorHSV);
-                        TextField_SpecColor.SetValue(materialInfo.SpecColorHSV);
-                        TextField_ReflectColor.SetValue(materialInfo.ReflectColorHSV);
-                        TextField_TextureAngle.SetValue(materialInfo.TextureAngle);
+                        // TextField_Color.SetValue(materialInfo.ColorHSV);
+                        // TextField_SpecColor.SetValue(materialInfo.SpecColorHSV);
+                        // TextField_ReflectColor.SetValue(materialInfo.ReflectColorHSV);
+                        // TextField_TextureAngle.SetValue(materialInfo.TextureAngle);
                     }
                 }
 
@@ -590,68 +591,68 @@ namespace SevenBoldPencil.MaterialEditor
             ForEveryLinkedItem(Plugin.SwitchToMaterialPreset, presetName);
         }
 
-        private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, string name, ColorStringCache strings, Action<string, string, Vector3> action)
-        {
-            var labelWidth = 23;
-            var nameDelta = labelWidth - (nameWidth - 42);
-            var sliderWidth = 224 - nameDelta;
-            var labelX = x;
-            var sliderX = labelX + labelWidth + smallMargin;
-            var valueX = sliderX + sliderWidth + smallMargin;
+        // private void DrawSlidersColorHSV(ref int x, ref int y, ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, string name, ColorStringCache strings, Action<string, string, Vector3> action)
+        // {
+        //     var labelWidth = 23;
+        //     var nameDelta = labelWidth - (nameWidth - 42);
+        //     var sliderWidth = 224 - nameDelta;
+        //     var labelX = x;
+        //     var sliderX = labelX + labelWidth + smallMargin;
+        //     var valueX = sliderX + sliderWidth + smallMargin;
 
-            BigCamoEditor.DrawColor(new Rect(labelX, y + 8, buttonHeight, buttonHeight / 2), colorHSV.HSVtoRGBA());
-            GUI.Label(new Rect(labelX + buttonHeight + mediumMargin, y, boxWidth, buttonHeight), name, CamoEditorStyle.LabelStyleName);
-
-
-            {
-                var textFieldX = x + boxWidth - fourthBoxWidthButton;
-                GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
-
-                if (BigCamoEditor.DrawTextField(textFieldX, y, ref textField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
-                {
-                    colorHSV = newColor;
-                    ForEveryLinkedItem(action, colorHSV);
-                }
-            }
+        //     BigCamoEditor.DrawColor(new Rect(labelX, y + 8, buttonHeight, buttonHeight / 2), colorHSV.HSVtoRGBA());
+        //     GUI.Label(new Rect(labelX + buttonHeight + mediumMargin, y, boxWidth, buttonHeight), name, CamoEditorStyle.LabelStyleName);
 
 
-            y += buttonHeight + smallMargin;
+        //     {
+        //         var textFieldX = x + boxWidth - fourthBoxWidthButton;
+        //         GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-            GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
-            var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.x, 0f, 1f);
-            if (newHue != colorHSV.x)
-            {
-                colorHSV.x = newHue;
-                textField.SetValue(colorHSV);
-                ForEveryLinkedItem(action, colorHSV);
-            }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.H.Get(colorHSV.x), CamoEditorStyle.LabelStyleValue);
-            y += buttonHeight + smallMargin;
+        //         if (BigCamoEditor.DrawTextField(textFieldX, y, ref textField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
+        //         {
+        //             colorHSV = newColor;
+        //             ForEveryLinkedItem(action, colorHSV);
+        //         }
+        //     }
 
 
-            GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "S:", CamoEditorStyle.LabelStyleName);
-            var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.y, 0f, 1f);
-            if (newSaturation != colorHSV.y)
-            {
-                colorHSV.y = newSaturation;
-                textField.SetValue(colorHSV);
-                ForEveryLinkedItem(action, colorHSV);
-            }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.S.Get(colorHSV.y), CamoEditorStyle.LabelStyleValue);
-            y += buttonHeight + smallMargin;
+        //     y += buttonHeight + smallMargin;
+
+        //     GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "H:", CamoEditorStyle.LabelStyleName);
+        //     var newHue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.x, 0f, 1f);
+        //     if (newHue != colorHSV.x)
+        //     {
+        //         colorHSV.x = newHue;
+        //         textField.SetValue(colorHSV);
+        //         ForEveryLinkedItem(action, colorHSV);
+        //     }
+        //     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.H.Get(colorHSV.x), CamoEditorStyle.LabelStyleValue);
+        //     y += buttonHeight + smallMargin;
 
 
-            GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "V:", CamoEditorStyle.LabelStyleName);
-            var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.z, 0f, 1f);
-            if (newValue != colorHSV.z)
-            {
-                colorHSV.z = newValue;
-                textField.SetValue(colorHSV);
-                ForEveryLinkedItem(action, colorHSV);
-            }
-            GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.V.Get(colorHSV.z), CamoEditorStyle.LabelStyleValue);
-            y += buttonHeight + smallMargin;
-        }
+        //     GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "S:", CamoEditorStyle.LabelStyleName);
+        //     var newSaturation = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.y, 0f, 1f);
+        //     if (newSaturation != colorHSV.y)
+        //     {
+        //         colorHSV.y = newSaturation;
+        //         textField.SetValue(colorHSV);
+        //         ForEveryLinkedItem(action, colorHSV);
+        //     }
+        //     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.S.Get(colorHSV.y), CamoEditorStyle.LabelStyleValue);
+        //     y += buttonHeight + smallMargin;
+
+
+        //     GUI.Label(new Rect(labelX, y, labelWidth, buttonHeight), "V:", CamoEditorStyle.LabelStyleName);
+        //     var newValue = GUI.HorizontalSlider(new Rect(sliderX, y + 11, sliderWidth, buttonHeight), colorHSV.z, 0f, 1f);
+        //     if (newValue != colorHSV.z)
+        //     {
+        //         colorHSV.z = newValue;
+        //         textField.SetValue(colorHSV);
+        //         ForEveryLinkedItem(action, colorHSV);
+        //     }
+        //     GUI.Label(new Rect(valueX, y, longFieldWidth, buttonHeight), strings.V.Get(colorHSV.z), CamoEditorStyle.LabelStyleValue);
+        //     y += buttonHeight + smallMargin;
+        // }
 
         private void DrawSliderFloat(ref int x, ref int y, ref float value, float left, float right, string name, int labelWidth, StringCache<float> strings, Action<string, string, float> action)
         {
@@ -758,13 +759,13 @@ namespace SevenBoldPencil.MaterialEditor
             var specVals = materialInfo.SpecVals;
             var defVals = materialInfo.DefVals;
 
-            DrawSlidersColorHSV(ref x, ref y, ref colorHSV, ref TextField_Color, "Color:", Strings.Color, Plugin.ChangeColor);
+            // DrawSlidersColorHSV(ref x, ref y, ref colorHSV, ref TextField_Color, "Color:", Strings.Color, Plugin.ChangeColor);
             DrawSliderVector2(ref x, ref y, ref defVals, 0, 3, "Def Vals X:", "Def Vals Y:", 73, Strings.DefVals, Plugin.ChangeDefVals);
             DrawSliderFloat(ref x, ref y, ref glossness, 0.01f, 10, "Glossness:", 73, Strings.Glossness, Plugin.ChangeGlossness);
-            DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, ref TextField_SpecColor, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
+            // DrawSlidersColorHSV(ref x, ref y, ref specColorHSV, ref TextField_SpecColor, "Specular Color:", Strings.SpecColor, Plugin.ChangeSpecColor);
             DrawSliderFloat(ref x, ref y, ref specularness, 0.01f, 10, "Specularness:", 92, Strings.Specularness, Plugin.ChangeSpecularness);
             DrawSliderVector2(ref x, ref y, ref specVals, 0, 3, "Spec Vals X:", "Spec Vals Y:", 92, Strings.SpecVals, Plugin.ChangeSpecVals);
-            DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, ref TextField_ReflectColor, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
+            // DrawSlidersColorHSV(ref x, ref y, ref reflectColorHSV, ref TextField_ReflectColor, "Reflect Color:", Strings.ReflectColor, Plugin.ChangeReflectColor);
         }
 
         private void SettingsScreen_UV(ref int x, ref int y, string materialName, MaterialInfo materialInfo)
@@ -1061,51 +1062,51 @@ namespace SevenBoldPencil.MaterialEditor
         private void DrawColorPickerWindow_Color(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.ColorHSV, ref TextField_Color, Plugin.ChangeColor);
+            // DrawColorPickerWindow_Common(ref materialInfo.ColorHSV, ref TextField_Color, Plugin.ChangeColor);
         }
 
         private void DrawColorPickerWindow_SpecColor(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.SpecColorHSV, ref TextField_SpecColor, Plugin.ChangeSpecColor);
+            // DrawColorPickerWindow_Common(ref materialInfo.SpecColorHSV, ref TextField_SpecColor, Plugin.ChangeSpecColor);
         }
 
         private void DrawColorPickerWindow_ReflectColor(int windowID)
         {
             var (_, _, materialInfo, _) = GetEditedMaterialInfo();
-            DrawColorPickerWindow_Common(ref materialInfo.ReflectColorHSV, ref TextField_ReflectColor, Plugin.ChangeReflectColor);
+            // DrawColorPickerWindow_Common(ref materialInfo.ReflectColorHSV, ref TextField_ReflectColor, Plugin.ChangeReflectColor);
         }
 
-        private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, Action<string, string, Vector3> changeColorAction)
-        {
-            BigCamoEditor.DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
+   //      private void DrawColorPickerWindow_Common(ref Vector3 colorHSV, ref WeaponCamoAndStickers.TextField<Vector3> textField, Action<string, string, Vector3> changeColorAction)
+   //      {
+   //          BigCamoEditor.DrawColor(new Rect(0, 0, colorPickerSize, colorPickerSize), backgroundColor);
 
-            var x = bigMargin;
-            var y = bigMargin;
+   //          var x = bigMargin;
+   //          var y = bigMargin;
 
-            var hsCircleRect = new Rect(x, y, hsCircleDiameter, hsCircleDiameter);
-			if (GUI.RepeatButton(hsCircleRect, CamoEditorResources.ColorWheelHSV, CamoEditorStyle.ColorPickerButtonStyle))
-            {
-				var direction = Event.current.mousePosition - hsCircleRect.center;
-				var directionScaled = direction / (hsCircleDiameter * 0.5f);
-				var directionClamped = Vector2.ClampMagnitude(directionScaled, 1f);
-				var directionFinal = new Vector2(directionClamped.x, -directionClamped.y);
-				var angle = Mathf.Atan2(directionFinal.y, directionFinal.x) / (Mathf.PI * 2);
-				if (angle < 0)
-				{
-					angle += 1;
-				}
+   //          var hsCircleRect = new Rect(x, y, hsCircleDiameter, hsCircleDiameter);
+			// if (GUI.RepeatButton(hsCircleRect, CamoEditorResources.ColorWheelHSV, CamoEditorStyle.ColorPickerButtonStyle))
+   //          {
+			// 	var direction = Event.current.mousePosition - hsCircleRect.center;
+			// 	var directionScaled = direction / (hsCircleDiameter * 0.5f);
+			// 	var directionClamped = Vector2.ClampMagnitude(directionScaled, 1f);
+			// 	var directionFinal = new Vector2(directionClamped.x, -directionClamped.y);
+			// 	var angle = Mathf.Atan2(directionFinal.y, directionFinal.x) / (Mathf.PI * 2);
+			// 	if (angle < 0)
+			// 	{
+			// 		angle += 1;
+			// 	}
 
-				var hue = angle;
-				var saturation = directionClamped.magnitude;
+			// 	var hue = angle;
+			// 	var saturation = directionClamped.magnitude;
 
-                colorHSV.x = hue;
-                colorHSV.y = saturation;
-                textField.SetValue(colorHSV);
-                ForEveryLinkedItem(changeColorAction, colorHSV);
-            }
-            y += hsCircleDiameter + bigMargin;
-        }
+   //              colorHSV.x = hue;
+   //              colorHSV.y = saturation;
+   //              textField.SetValue(colorHSV);
+   //              ForEveryLinkedItem(changeColorAction, colorHSV);
+   //          }
+   //          y += hsCircleDiameter + bigMargin;
+   //      }
 
         private void ForEveryLinkedItem(EditedOverride thisOverride, Action<CamoEditorItem, string> action)
         {
