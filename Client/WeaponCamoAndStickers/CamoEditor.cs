@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using RuntimeHandle;
 using UnityEngine;
+using Il2CppInterop.Runtime;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
@@ -267,7 +268,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public TexturesWindow MasksWindow;
         public TexturesWindow EraseMasksWindow;
         public bool IsColorPickerOpened;
-        public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
+        // public TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public RuntimeTransformHandle TransformHandle;
         public Option<DecalInfo> CopiedDecalInfo;
 		public Rect WindowRect = GetDefaultWindowRect();
@@ -362,10 +363,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var (decalInfo, decal) = Plugin.GetDecal(ItemId, InstanceID, decalIndex);
 
                     WindowRect.height = CalculateDecalEditWindowHeight(decalIndex, decalInfo, decal);
-                    WindowRect = GUI.Window(1, WindowRect, DrawDecalEditUI, GUIContent.none);
+                    WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawDecalEditUI), GUIContent.none);
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
 
                     if (decalInfo.PaintMode == DecalPaintMode.Paint)
                     {
@@ -374,15 +375,15 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                             if (IsColorPickerOpened)
                             {
                                 var colorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, colorPickerRect.width, colorPickerRect.height);
-                                GUI.Window(3, colorPickerWindowRect, DrawColorPickerWindow, GUIContent.none);
+                                GUI.Window(3, colorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindow), GUIContent.none);
 
                                 var closeColorPickerWindowRect = new Rect(colorPickerWindowRect.xMax, colorPickerWindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(4, closeColorPickerWindowRect, DrawColorPickerWindowCloseButton, GUIContent.none);
+                                GUI.Window(4, closeColorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowCloseButton), GUIContent.none);
                             }
                             else
                             {
                                 var openColorPickerWindowRect = new Rect(WindowRect.xMax, WindowRect.y + colorPickerRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                                GUI.Window(3, openColorPickerWindowRect, DrawColorPickerWindowOpenButton, GUIContent.none);
+                                GUI.Window(3, openColorPickerWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawColorPickerWindowOpenButton), GUIContent.none);
                             }
                         }
                     }
@@ -392,24 +393,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     if (ArePresetsOpened)
                     {
                         WindowRect.height = CalculatePresetsWindowHeight();
-                        WindowRect = GUI.Window(1, WindowRect, DrawPresetsListUI, GUIContent.none);
+                        WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawPresetsListUI), GUIContent.none);
                     }
                     else
                     {
                         WindowRect.height = CalculateDecalsWindowHeight();
-                        WindowRect = GUI.Window(1, WindowRect, DrawDecalsListUI, GUIContent.none);
+                        WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawDecalsListUI), GUIContent.none);
                     }
 
                     var closeButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                    GUI.Window(2, closeButtonWindowRect, DrawOpenedWindowCloseButton, GUIContent.none);
+                    GUI.Window(2, closeButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawOpenedWindowCloseButton), GUIContent.none);
                 }
             }
             else
             {
-                WindowRect = GUI.Window(1, WindowRect, DrawClosedWindow, GUIContent.none);
+                WindowRect = GUI.Window(1, WindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindow), GUIContent.none);
 
                 var openButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
-                GUI.Window(2, openButtonWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
+                GUI.Window(2, openButtonWindowRect, DelegateSupport.ConvertDelegate<GUI.WindowFunction>(DrawClosedWindowOpenButton), GUIContent.none);
             }
 
             GUI.matrix = originalMatrix;
@@ -693,7 +694,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             CurrentlyEditedDecalIndex = new(decalIndex);
             DecalTypeMenu = decalInfo.PaintMode == DecalPaintMode.Paint ? textureData.Type : DecalTextureType.Mask; // eraser doesnt care about texture type, but whatever...
-            ColorTextField.SetValue(decalInfo.ColorHSVA);
+            // ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
         public static void DrawDecalElementUI(
@@ -808,7 +809,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 decalInfo.ColorHSVA.x = hue;
                 decalInfo.ColorHSVA.y = saturation;
-                ColorTextField.SetValue(decalInfo.ColorHSVA);
+                // ColorTextField.SetValue(decalInfo.ColorHSVA);
                 Plugin.ApplyColor(ItemId, decalIndex);
             }
 
@@ -824,7 +825,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newHue != decalInfo.ColorHSVA.x)
                 {
                     decalInfo.ColorHSVA.x = newHue;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -834,7 +835,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newSaturation != decalInfo.ColorHSVA.y)
                 {
                     decalInfo.ColorHSVA.y = newSaturation;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
                 y += buttonHeight + smallMargin;
@@ -844,7 +845,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (newValue != decalInfo.ColorHSVA.z)
                 {
                     decalInfo.ColorHSVA.z = newValue;
-                    ColorTextField.SetValue(decalInfo.ColorHSVA);
+                    // ColorTextField.SetValue(decalInfo.ColorHSVA);
                     Plugin.ApplyColor(ItemId, decalIndex);
                 }
             }
@@ -1171,11 +1172,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     var textFieldX = x + boxWidth - fourthBoxWidthButton;
                     GUI.Label(new Rect(textFieldX - 39, y, longFieldWidth, buttonHeight), "RGB:", CamoEditorStyle.LabelStyleName);
 
-                    if (DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
-                    {
-                        decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
-                        Plugin.ApplyColor(ItemId, decalIndex);
-                    }
+                    // if (DrawTextField(textFieldX, y, ref ColorTextField, CamoEditorStyle.RGBHexTextFieldStyle).Some(out var newColor))
+                    // {
+                    //     decalInfo.ColorHSVA = newColor.WithAlpha(decalInfo.ColorHSVA.w);
+                    //     Plugin.ApplyColor(ItemId, decalIndex);
+                    // }
                 }
             }
             y += buttonHeight + bigMargin;
@@ -1431,7 +1432,17 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var handle = CreateTransformHandle(handleType, decalIndex, decalInfo, decal);
             var cameraProvider = new DefaultCameraProvider(Camera);
             TransformHandle = RuntimeTransformHandle.Create(handle, decal.DecalRoot, cameraProvider, 1 << LayersMaskController.WeaponPreview);
-			TransformTools.SetLayersRecursively(TransformHandle.gameObject, LayersMaskController.WeaponPreview);
+			SetLayersRecursively(TransformHandle.transform, LayersMaskController.WeaponPreview);
+        }
+
+        public static void SetLayersRecursively(Transform root, int layer)
+        {
+            root.gameObject.layer = layer;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                SetLayersRecursively(root.GetChild(i), layer);
+            }
         }
 
         public ITransformHandle CreateTransformHandle(HandleType handleType, int decalIndex, DecalInfo decalInfo, Decal decal)

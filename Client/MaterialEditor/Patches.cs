@@ -21,12 +21,13 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using SPT.Reflection.Patching;
+using SPTushonka.Reflection.Patching;
 using JetBrains.Annotations;
 using HarmonyLib;
 using UnityEngine;
-
-using WeaponPreview_Proxy = SevenBoldPencil.WeaponCamoAndStickers.WeaponPreview_Proxy;
+using Il2CppInterop.Runtime;
+using WMS = EFT.UI.ItemObserveScreen<EFT.UI.WeaponModding.WeaponModdingScreen.WeaponModdingScreenController, EFT.UI.WeaponModding.WeaponModdingScreen>;
+using ILTaskGO = Il2CppSystem.Threading.Tasks.Task<UnityEngine.GameObject>;
 
 namespace SevenBoldPencil.MaterialEditor
 {
@@ -34,25 +35,24 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-			Type[] parameters = [typeof(Item), typeof(ECameraType), typeof(IPlayer), typeof(bool), typeof(YieldDelegate), typeof(CancellationToken)];
-            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync), parameters);
+            return AccessTools.Method(typeof(ObjectsFactory), nameof(ObjectsFactory.CreateItemAsync));
         }
 
         [PatchPostfix]
-        public static void Postfix(ref Task<GameObject> __result, Item item)
+        public static void Postfix(ref ILTaskGO __result, Item item)
 		{
 			if (Plugin.Instance.HasChangedMaterials(item))
 			{
-				__result = WrapTask(__result, item);
+		        __result.ContinueWith(DelegateSupport.ConvertDelegate<Il2CppSystem.Action<ILTaskGO>>((ILTaskGO completedTask) =>
+				{
+		            var itemGameObject = completedTask.Result;
+		            if (itemGameObject)
+		            {
+						Plugin.Instance.OnCreatedItemGameObject(item, itemGameObject);
+		            }
+				}));
 			}
 		}
-
-	    private static async Task<GameObject> WrapTask(Task<GameObject> task, Item item)
-	    {
-	        var itemGameObject = await task;
-			Plugin.Instance.OnCreatedItemGameObject(item, itemGameObject);
-			return itemGameObject;
-	    }
 	}
 
 	public class Patch_AssetPoolObject_ReturnToPool : ModulePatch
@@ -118,7 +118,7 @@ namespace SevenBoldPencil.MaterialEditor
 			if (result is BaseItemContextInteractions gclass)
 			{
 				Plugin.Instance.WaitForWeaponPreview();
-				gclass.method_28();
+				gclass.ButtonItemOverlook();
 			}
 		}
 	}
@@ -129,11 +129,11 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.CreateModSlotViews));
+            return AccessTools.Method(typeof(WMS), nameof(WMS.CreateModSlotViews));
         }
 
         [PatchPrefix]
-        public static bool Prefix(WeaponModdingScreen __instance, CompoundItem weapon)
+        public static bool Prefix(CompoundItem weapon)
 		{
 			if (Plugin.Instance.IsWaitingForWeaponPreview())
 			{
@@ -168,28 +168,27 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponPreview.CG_SetupItemPreview), nameof(WeaponPreview.CG_SetupItemPreview.method_1));
+            return AccessTools.Method(typeof(WeaponPreview.__c__DisplayClass23_0), nameof(WeaponPreview.__c__DisplayClass23_0.Method_Internal_Void_Token_IEasyBundle_0));
         }
 
         [PatchPostfix]
-        public static void Postfix(WeaponPreview.CG_SetupItemPreview __instance)
+        public static void Postfix(WeaponPreview.__c__DisplayClass23_0 __instance)
         {
 			// this called when WeaponPreview is opened and fully initialized,
 			// WeaponPreview is used both by weapon modding screen and item overview
-   			var weaponPreview = __instance.weaponPreview_0;
-			var _weaponPreview = new WeaponPreview_Proxy(__instance.weaponPreview_0);
-			var item = _weaponPreview._currentItem;
+   			var weaponPreview = __instance.__4__this;
+			var item = weaponPreview._currentItem;
 			if (item == null)
 			{
 				return;
 			}
-			if (TryGetAssetPoolObject(_weaponPreview, out var assetPoolObject))
+			if (TryGetAssetPoolObject(weaponPreview, out var assetPoolObject))
 			{
 				Plugin.Instance.OnWeaponPreviewOpened(item, assetPoolObject);
 			}
 		}
 
-		public static bool TryGetAssetPoolObject(WeaponPreview_Proxy weaponPreview, out AssetPoolObject assetPoolObject)
+		public static bool TryGetAssetPoolObject(WeaponPreview weaponPreview, out AssetPoolObject assetPoolObject)
 		{
 			// it takes time to load gameObjects so if you ask too early they will be null
 			var itemGO = weaponPreview._originalObject;
@@ -214,8 +213,7 @@ namespace SevenBoldPencil.MaterialEditor
         [PatchPrefix]
         public static bool Prefix(WeaponPreview __instance)
 		{
-			var _weaponPreview = new WeaponPreview_Proxy(__instance);
-			var item = _weaponPreview._currentItem;
+			var item = __instance._currentItem;
 			if (item != null)
 			{
 				return Plugin.Instance.CanWeaponPreviewRotate();
@@ -243,11 +241,11 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Close));
+            return AccessTools.Method(typeof(WMS), nameof(WMS.Close));
         }
 
         [PatchPrefix]
-        public static void Prefix(WeaponModdingScreen __instance)
+        public static void Prefix()
 		{
 			Plugin.Instance.CloseCamoEditor();
 		}
@@ -319,12 +317,12 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPrefix]
-        public static bool Prefix(Renderer ____renderer, float temperatureCelsio, bool force = false)
+        public static bool Prefix(HotObject __instance)
 		{
 			// HotObjects (barrels, silencers, etc) override renderer materials parameters (_HeatSize, _HeatTemp, etc)
 			// the same way as we via MaterialPropertyBlock, which results in them overriding our changes,
 			// so stop them from doing that! (maybe we could combine their changes, but its already complicated enough)
-			return !Plugin.Instance.IsPatchedRenderer(____renderer);
+			return !Plugin.Instance.IsPatchedRenderer(__instance._renderer);
 		}
 	}
 
@@ -336,12 +334,12 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPrefix]
-        public static bool Prefix(Renderer ____renderer)
+        public static bool Prefix(RainCondensator __instance)
 		{
 			// I dont think this one is necessary, but for some reason
 			// some people still get reset by rain, so lets try
 			// to disable it completely
-			return !Plugin.Instance.IsPatchedRenderer(____renderer);
+			return !Plugin.Instance.IsPatchedRenderer(__instance._renderer);
 		}
 	}
 
@@ -353,10 +351,10 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPrefix]
-        public static bool Prefix(Renderer ____renderer)
+        public static bool Prefix(RainCondensator __instance)
 		{
 			// RainCondensator works the same way as HotObject
-			return !Plugin.Instance.IsPatchedRenderer(____renderer);
+			return !Plugin.Instance.IsPatchedRenderer(__instance._renderer);
 		}
 	}
 
@@ -368,12 +366,12 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPrefix]
-        public static bool Prefix(Renderer ____renderer)
+        public static bool Prefix(RainCondensator __instance)
 		{
 			// I dont think this one is necessary, but for some reason
 			// some people still get reset by rain, so lets try
 			// to disable it completely
-			return !Plugin.Instance.IsPatchedRenderer(____renderer);
+			return !Plugin.Instance.IsPatchedRenderer(__instance._renderer);
 		}
 	}
 
@@ -386,7 +384,7 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPostfix]
-        public static void Postfix(PlayerBody __instance, KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
+        public static void Postfix(PlayerBody __instance, Il2CppSystem.Collections.Generic.KeyValuePair<EBodyModelPart, ResourceKey> part, Skeleton skeleton)
 		{
 			string profileId = default;
 
@@ -450,7 +448,7 @@ namespace SevenBoldPencil.MaterialEditor
         }
 
         [PatchPostfix]
-        public static void Postfix(OverallScreen __instance, Profile currentProfile, Profile[] allProfiles, CountersCollection overallAccountStats, [CanBeNull] InventoryController inventoryController, bool isInMatching)
+        public static void Postfix()
 		{
 			Plugin.Instance.WaitForWeaponPreview();
 		}

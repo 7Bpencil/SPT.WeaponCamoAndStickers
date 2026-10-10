@@ -26,14 +26,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     	public static readonly int _MaskTexRotation = Shader.PropertyToID("_MaskTexRotation");
 
 		public Material DecalMaterial;
-		public LocalKeyword DecalMaterialKeywordErase;
+		public string DecalMaterialKeywordErase;
 		public Transform DecalTransform;
 		public Transform DecalRoot;
 
 		public void Init(DecalInfo info, Transform root, Shader shader)
 		{
 			DecalMaterial = new Material(shader);
-			DecalMaterialKeywordErase = new LocalKeyword(shader, "ERASE");
+			DecalMaterialKeywordErase = "ERASE";
 			DecalTransform = transform;
 			DecalRoot = root;
 

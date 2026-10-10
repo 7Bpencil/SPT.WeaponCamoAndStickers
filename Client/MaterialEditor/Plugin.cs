@@ -8,16 +8,19 @@
 using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Logging;
+using BepInEx.Unity.IL2CPP;
+using Il2CppInterop.Runtime.Injection;
 using EFT;
 using EFT.AssetsManager;
 using EFT.InventoryLogic;
 using EFT.Visual;
 using EFT.UI;
-using Newtonsoft.Json;
+using System.Text.Json;
 using SevenBoldPencil.Common;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -129,11 +132,23 @@ namespace SevenBoldPencil.MaterialEditor
         public MaterialInfo Material;
     }
 
+    public class Runner : MonoBehaviour
+    {
+        public void OnGUI() => Plugin.Instance.OnGUI();
+        public void Update() => Plugin.Instance.Update();
+        public void LateUpdate() => Plugin.Instance.LateUpdate();
+    }
+
     [BepInPlugin("7Bpencil.MaterialEditor", "7Bpencil.MaterialEditor", BigPlugin.PluginVersion)]
     [BepInDependency("7Bpencil.WeaponCamoAndStickers", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin : BasePlugin
     {
+        public void StartCoroutine(IEnumerator routine)
+        {
+            BepInEx.Unity.IL2CPP.Utils.MonoBehaviourExtensions.StartCoroutine(Runner, routine);
+        }
+
         public static readonly int _Color = Shader.PropertyToID("_Color");
         public static readonly int _SpecColor = Shader.PropertyToID("_SpecColor");
         public static readonly int _Glossness = Shader.PropertyToID("_Specularness"); // yes, its swapped in the BSG shader
@@ -150,7 +165,8 @@ namespace SevenBoldPencil.MaterialEditor
 
         public static Plugin Instance;
 
-		public ManualLogSource LoggerInstance;
+		public ManualLogSource Logger;
+        public Runner Runner;
 
         private string ItemPresetsDir;
         private string MaterialPresetsDir;
@@ -172,10 +188,21 @@ namespace SevenBoldPencil.MaterialEditor
         public bool IsFikaSupportEnabled;
         public bool IsFikaHeadless;
 
-        private void Awake()
+        public JsonSerializerOptions SerializerOptions;
+
+        public override void Load()
         {
             Instance = this;
-			LoggerInstance = Logger;
+			Logger = Log;
+
+            ClassInjector.RegisterTypeInIl2Cpp<Runner>();
+            Runner = AddComponent<Runner>();
+
+            SerializerOptions = new()
+            {
+                IncludeFields = true,
+                IgnoreReadOnlyProperties = true,
+            };
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             ItemPresetsDir = Path.Combine(assemblyDir, "presets-item-materials");
@@ -216,28 +243,28 @@ namespace SevenBoldPencil.MaterialEditor
             new Patch_PlayerModelView_OnLoadingCompleted().Enable();
             new Patch_OverallScreen_Close().Enable();
 
-            TryEnableFikaSupport(assemblyDir);
+            // TryEnableFikaSupport(assemblyDir);
         }
 
-        public void TryEnableFikaSupport(string mainAssemblyDir)
-        {
-            if (!Chainloader.PluginInfos.ContainsKey("com.fika.core"))
-            {
-                return;
-            }
+        // public void TryEnableFikaSupport(string mainAssemblyDir)
+        // {
+        //     if (!Chainloader.PluginInfos.ContainsKey("com.fika.core"))
+        //     {
+        //         return;
+        //     }
 
-            var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.MaterialEditor.Fika.dll");
-            if (!File.Exists(fikaAssemblyPath))
-            {
-                return;
-            }
+        //     var fikaAssemblyPath = Path.Combine(mainAssemblyDir, "7Bpencil.MaterialEditor.Fika.dll");
+        //     if (!File.Exists(fikaAssemblyPath))
+        //     {
+        //         return;
+        //     }
 
-            var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
-            var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.MaterialEditor.Fika.Plugin");
-            var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
-            var fikaPlugin = Activator.CreateInstance(fikaPluginType);
-            fikaPluginAwake.Invoke(fikaPlugin, null);
-        }
+        //     var fikaAssembly = Assembly.LoadFrom(fikaAssemblyPath);
+        //     var fikaPluginType = fikaAssembly.GetType("SevenBoldPencil.MaterialEditor.Fika.Plugin");
+        //     var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
+        //     var fikaPlugin = Activator.CreateInstance(fikaPluginType);
+        //     fikaPluginAwake.Invoke(fikaPlugin, null);
+        // }
 
         public Dictionary<string, ItemPreset> LoadItemPresets()
         {
@@ -249,7 +276,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var presetName = Path.GetFileNameWithoutExtension(filePath);
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    var preset = JsonConvert.DeserializeObject<ItemPreset>(json);
+                    var preset = JsonSerializer.Deserialize<ItemPreset>(json, SerializerOptions);
                     UpgradeOldVersionsOfItemPreset(preset);
                     result.Add(presetName, preset);
                 }
@@ -286,7 +313,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var presetName = Path.GetFileNameWithoutExtension(filePath);
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    var preset = JsonConvert.DeserializeObject<MaterialPreset>(json);
+                    var preset = JsonSerializer.Deserialize<MaterialPreset>(json, SerializerOptions);
                     UpgradeOldVersionsOfMaterialPreset(preset);
                     result.Add(presetName, preset);
                 }
@@ -314,7 +341,7 @@ namespace SevenBoldPencil.MaterialEditor
                 var itemId = Path.GetFileNameWithoutExtension(filePath);
                 if (SafeIO.ReadAllText(filePath).Ok(out var json, out var e))
                 {
-                    var materialsInfo = JsonConvert.DeserializeObject<MaterialsInfo>(json);
+                    var materialsInfo = JsonSerializer.Deserialize<MaterialsInfo>(json, SerializerOptions);
                     UpgradeOldVersionsOfMaterialsInfo(materialsInfo);
                     var itemsWithMaterials = new ItemsWithMaterials()
                     {
@@ -918,7 +945,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void WriteMaterialsToFile(string itemId, MaterialsInfo materialsInfo)
         {
-            var json = JsonConvert.SerializeObject(materialsInfo, Formatting.Indented);
+            var json = JsonSerializer.Serialize(materialsInfo, SerializerOptions);
             var filePath = GetItemFilePath(itemId);
             SafeIO.WriteAllTextAsync(filePath, json);
         }
@@ -938,7 +965,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void WriteMaterialPresetToFile(string presetName, MaterialPreset preset)
         {
-            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            var json = JsonSerializer.Serialize(preset, SerializerOptions);
             var filePath = GetMaterialPresetFilePath(presetName);
             SafeIO.WriteAllTextAsync(filePath, json);
         }
@@ -968,7 +995,7 @@ namespace SevenBoldPencil.MaterialEditor
 
         public void WriteItemPresetToFile(string presetName, ItemPreset preset)
         {
-            var json = JsonConvert.SerializeObject(preset, Formatting.Indented);
+            var json = JsonSerializer.Serialize(preset, SerializerOptions);
             var filePath = GetItemPresetFilePath(presetName);
             SafeIO.WriteAllTextAsync(filePath, json);
         }
@@ -979,6 +1006,14 @@ namespace SevenBoldPencil.MaterialEditor
             {
                 var filePath = GetItemPresetFilePath(presetName);
                 SafeIO.DeleteFile(filePath);
+            }
+        }
+
+        public void Update()
+        {
+            if (!CamoEditorResources.MainIcon)
+            {
+                CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin.Instance);
             }
         }
 
@@ -1143,7 +1178,7 @@ namespace SevenBoldPencil.MaterialEditor
                 }
                 if (customTexture.Combined.Some(out var combined))
                 {
-                    Destroy(combined);
+                    GameObject.Destroy(combined);
                 }
             }
         }
@@ -1242,7 +1277,7 @@ namespace SevenBoldPencil.MaterialEditor
 
                     targetMaterial.CustomTexture = new(customTexture with { Combined = default });
                     targetMaterial.PropertyBlock.SetTexture(_MainTex, customTexture.Color);
-                    Destroy(combined);
+                    GameObject.Destroy(combined);
                 }
             }
             else
