@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.Video;
+using HarmonyLib;
 using SystemObject = System.Object;
 
 namespace SevenBoldPencil.WeaponCamoAndStickers
@@ -146,7 +147,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalTextureData
     {
-        public Texture2D Preview;
+        public Texture2D Preview; // loaded on demand, use Plugin.GetPreview to read it
+        public string PreviewFilePath; // null means preview is builtin and always stays in memory
+        public bool IsPreviewQueued;
+        public float PreviewLastUsedTime;
         public Vector2Int OriginalSize;
         public DecalTextureType Type;
         public DecalTextureFormat Format;
@@ -224,6 +228,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public const string ErrorTextureFilePath = "builtin/error.png";
         public const string BuiltinDirectoryName = "builtin";
         public const int MaxVideoLoadTicks = 300; // most videos I tried took 5-10 ticks to load, so 300 should be enough (around 5 sec)
+        public const int MaxConcurrentPreviewJobs = 4; // each job holds a full size texture in memory, so with thousands of textures we must not run them all at once
+        public const int MaxPreviewsLoadedPerFrame = 8; // previews are small, but decoding hundreds of them in one frame would stutter
+        public const float PreviewUnloadDelay = 5f; // seconds since preview was last drawn before it is unloaded
 
         public static Plugin Instance;
 
@@ -260,6 +267,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string[] Stickers;
         private string[] Masks;
         private HashSet<string> FavouriteTextures;
+        private Queue<(string previewFilePath, AddTexturePararms param)> PendingPreviewJobs;
+        private int ActivePreviewJobs;
+        private Queue<DecalTextureData> PreviewsWaitingToLoad;
+        private HashSet<DecalTextureData> LoadedPreviews;
+        private float NextPreviewUnloadCheckTime;
+        private Option<(Sprite sprite, Color color, float degreesPerSecond)> LoadingSpinner;
+        private float NextLoadingSpinnerSearchTime;
 
         private Dictionary<string, List<DecalInfo>> DecalPresets;
         private Dictionary<string, ItemsWithDecals> ItemsWithDecals;
@@ -323,6 +337,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             DecalTextures = new();
             DecalTextureAssets = new();
+            PendingPreviewJobs = new();
+            PreviewsWaitingToLoad = new();
+            LoadedPreviews = new();
 
             ClosedDirectories = LoadClosedTexturesDirectories();
             (CamosDirectory, Camos) = LoadTexturesFromDirectory(DecalTextureType.Camo, "camos", ClosedDirectories.CamosDirectory, DefaultCamoName, DecalTextureFormat.PNG, Texture2D.whiteTexture);
@@ -682,37 +699,229 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void LoadPreviewFromDisk(string previewFilePath, AddTexturePararms param)
         {
+            // only read original size here, preview itself is loaded on demand when editor draws it,
+            // keeping thousands of previews in memory all the time is a waste of VRAM and slows down startup
             using var stream = File.Open(previewFilePath, FileMode.Open);
             using var reader = new BinaryReader(stream);
 
             var originalWidth = reader.ReadInt32();
             var originalHeight = reader.ReadInt32();
-            var remaining = stream.Length - stream.Position;
-            var previewBytes = reader.ReadBytes((int)remaining);
 
-            // preview will look blurry with mip chain
-            var preview = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false, linear: false, createUninitialized: true);
-            if (ImageConversion.LoadImage(preview, previewBytes, markNonReadable: true))
+            AddTexture(null, new(originalWidth, originalHeight), param, previewFilePath: previewFilePath);
+        }
+
+        public Texture2D GetPreview(DecalTextureData textureData)
+        {
+            textureData.PreviewLastUsedTime = Time.unscaledTime;
+
+            if (textureData.Preview == null && textureData.PreviewFilePath != null && !textureData.IsPreviewQueued)
             {
-                AddTexture(preview, new(originalWidth, originalHeight), param);
+                textureData.IsPreviewQueued = true;
+                PreviewsWaitingToLoad.Enqueue(textureData);
             }
-            else
+
+            return textureData.Preview;
+        }
+
+        private void LoadPreviewNow(DecalTextureData textureData)
+        {
+            textureData.PreviewLastUsedTime = Time.unscaledTime;
+
+            if (textureData.Preview != null || textureData.PreviewFilePath == null)
             {
-                AddTextureError(param);
+                return;
+            }
+
+            Texture2D preview = null;
+            try
+            {
+                var bytes = File.ReadAllBytes(textureData.PreviewFilePath);
+                // preview will look blurry with mip chain
+                preview = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false, linear: false, createUninitialized: true);
+                // skip original size header
+                if (ImageConversion.LoadImage(preview, bytes.AsSpan(8).ToArray(), markNonReadable: true))
+                {
+                    textureData.Preview = preview;
+                    LoadedPreviews.Add(textureData);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Log(LogLevel.Error, "Texture", "Failed to load preview", textureData.PreviewFilePath, e);
+            }
+
+            if (preview != null)
+            {
                 Destroy(preview);
             }
+            textureData.Preview = ErrorTexture;
+            textureData.PreviewFilePath = null;
+            textureData.Error = true;
+        }
+
+        private void UpdatePreviews()
+        {
+            for (var i = 0; i < MaxPreviewsLoadedPerFrame && PreviewsWaitingToLoad.Count > 0; i++)
+            {
+                var textureData = PreviewsWaitingToLoad.Dequeue();
+                textureData.IsPreviewQueued = false;
+                LoadPreviewNow(textureData);
+            }
+
+            var now = Time.unscaledTime;
+            if (now < NextPreviewUnloadCheckTime)
+            {
+                return;
+            }
+            NextPreviewUnloadCheckTime = now + 1f;
+
+            // unload previews that are not drawn anymore (editor is closed or scrolled away),
+            // but keep ones whose texture is applied, they are used as low res placeholder while full texture loads
+            LoadedPreviews.RemoveWhere(textureData =>
+            {
+                if (now - textureData.PreviewLastUsedTime < PreviewUnloadDelay || DecalTextureAssets.ContainsKey(textureData.FilePath))
+                {
+                    return false;
+                }
+
+                Destroy(textureData.Preview);
+                textureData.Preview = null;
+                return true;
+            });
+        }
+
+        public bool DrawPreviewButton(Rect rect, DecalTextureData textureData)
+        {
+            var clicked = GUI.Button(rect, GetPreview(textureData));
+            DrawPreviewLoadingSpinner(rect, textureData);
+            return clicked;
+        }
+
+        public void DrawPreviewLoadingSpinner(Rect rect, DecalTextureData textureData)
+        {
+            if (textureData.Preview != null || !TryGetLoadingSpinner(out var spinner))
+            {
+                return;
+            }
+
+            var size = Mathf.Min(rect.width, rect.height) * 0.4f;
+            var spinnerRect = new Rect(rect.center.x - size / 2, rect.center.y - size / 2, size, size);
+            var texture = spinner.sprite.texture;
+            var textureRect = spinner.sprite.textureRect;
+            var uv = new Rect(textureRect.x / texture.width, textureRect.y / texture.height, textureRect.width / texture.width, textureRect.height / texture.height);
+
+            var previousMatrix = GUI.matrix;
+            var previousColor = GUI.color;
+            // GUI space has y axis pointing down, so rotation direction is flipped compared to UI space
+            GUIUtility.RotateAroundPivot(-(Time.unscaledTime * spinner.degreesPerSecond) % 360f, spinnerRect.center);
+            GUI.color = spinner.color;
+            GUI.DrawTextureWithTexCoords(spinnerRect, texture, uv);
+            GUI.color = previousColor;
+            GUI.matrix = previousMatrix;
+        }
+
+        private bool TryGetLoadingSpinner(out (Sprite sprite, Color color, float degreesPerSecond) spinner)
+        {
+            if (LoadingSpinner.Some(out spinner))
+            {
+                return true;
+            }
+
+            // use the same spinner game shows on loading screens, if we can't find it just draw nothing
+            if (Time.unscaledTime < NextLoadingSpinnerSearchTime)
+            {
+                return false;
+            }
+            NextLoadingSpinnerSearchTime = Time.unscaledTime + 5f;
+
+            try
+            {
+                var spinnerField = AccessTools.Field(typeof(EFT.UI.LoadingIndicator), "_spinner");
+                foreach (var indicator in Resources.FindObjectsOfTypeAll<EFT.UI.LoadingIndicator>())
+                {
+                    var spinnerTransform = spinnerField.GetValue(indicator) as RectTransform;
+                    if (spinnerTransform == null)
+                    {
+                        continue;
+                    }
+
+                    var image = spinnerTransform.GetComponentInChildren<UnityEngine.UI.Image>(true);
+                    if (image == null || image.sprite == null)
+                    {
+                        continue;
+                    }
+
+                    var degreesPerSecond = -360f; // UI space, negative is clockwise
+                    var rotator = spinnerTransform.GetComponentInParent<Rotator>(true);
+                    if (rotator != null)
+                    {
+                        var axis = (Vector3)AccessTools.Field(typeof(Rotator), "_axis").GetValue(rotator);
+                        var speed = (float)AccessTools.Field(typeof(Rotator), "_speed").GetValue(rotator);
+                        degreesPerSecond = axis.z * speed;
+                    }
+
+                    LoadingSpinner = new((image.sprite, image.color, degreesPerSecond));
+                    spinner = LoadingSpinner.Value;
+                    Logger.Log(LogLevel.Info, "Texture", "Found game loading spinner", image.sprite.name);
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Log(LogLevel.Error, "Texture", "Failed to find game loading spinner", e);
+            }
+
+            return false;
         }
 
         public void CreatePreviewAndStoreOnDisk(string previewFilePath, AddTexturePararms param)
         {
-            if (param.Format == DecalTextureFormat.PNG)
+            // previews are generated from full size textures, starting all of them at once
+            // (e.g. first launch with a big texture pack) can exhaust RAM/VRAM and crash the game
+            PendingPreviewJobs.Enqueue((previewFilePath, param));
+            StartPendingPreviewJobs();
+        }
+
+        private void StartPendingPreviewJobs()
+        {
+            while (ActivePreviewJobs < MaxConcurrentPreviewJobs && PendingPreviewJobs.Count > 0)
             {
-                StartCoroutine(CreatePreviewAndStoreOnDisk_PNG(previewFilePath, param));
+                var (previewFilePath, param) = PendingPreviewJobs.Dequeue();
+                ActivePreviewJobs++;
+                StartCoroutine(RunPreviewJob(previewFilePath, param));
             }
-            if (param.Format == DecalTextureFormat.Video)
+        }
+
+        private IEnumerator RunPreviewJob(string previewFilePath, AddTexturePararms param)
+        {
+            var job = param.Format == DecalTextureFormat.Video
+                ? CreatePreviewAndStoreOnDisk_Video(previewFilePath, param)
+                : CreatePreviewAndStoreOnDisk_PNG(previewFilePath, param);
+
+            // step the job manually so an exception inside it can't leak the slot and stall the queue
+            while (true)
             {
-                StartCoroutine(CreatePreviewAndStoreOnDisk_Video(previewFilePath, param));
+                object current;
+                try
+                {
+                    if (!job.MoveNext())
+                    {
+                        break;
+                    }
+                    current = job.Current;
+                }
+                catch (Exception e)
+                {
+                    Logger.Log(LogLevel.Error, "Texture", "Failed to create preview", param.Name, e);
+                    break;
+                }
+                yield return current;
             }
+
+            (job as IDisposable)?.Dispose();
+            ActivePreviewJobs--;
+            StartPendingPreviewJobs();
         }
 
         public IEnumerator CreatePreviewAndStoreOnDisk_PNG(string previewFilePath, AddTexturePararms param)
@@ -730,7 +939,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             var texture = DownloadHandlerTexture.GetContent(uwr);
             var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFilePath, texture);
-            AddTexture(preview, originalSize, param);
+            AddTexture(preview, originalSize, param, previewFilePath: previewFilePath);
             Destroy(texture);
         }
 
@@ -832,7 +1041,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             videoPlayer.Pause();
 
             var (preview, originalSize) = CreatePreviewAndStoreOnDisk_Texture(previewFilePath, renderTexture);
-            AddTexture(preview, originalSize, param);
+            AddTexture(preview, originalSize, param, previewFilePath: previewFilePath);
 
             videoPlayer.Stop();
             Destroy(videoPlayer);
@@ -847,11 +1056,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             public DecalTextureFormat Format;
         }
 
-        public void AddTexture(Texture2D preview, Vector2Int originalSize, AddTexturePararms param, bool error = false)
+        public void AddTexture(Texture2D preview, Vector2Int originalSize, AddTexturePararms param, bool error = false, string previewFilePath = null)
         {
             var textureData = new DecalTextureData()
             {
                 Preview = preview,
+                PreviewFilePath = previewFilePath,
+                PreviewLastUsedTime = Time.unscaledTime,
                 OriginalSize = originalSize,
                 Type = param.Type,
                 Format = param.Format,
@@ -860,6 +1071,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
 
             DecalTextures.Add(param.Name, textureData);
+
+            // freshly generated preview, it will be unloaded as soon as nobody draws it
+            if (preview != null && previewFilePath != null)
+            {
+                LoadedPreviews.Add(textureData);
+            }
         }
 
         public void AddTextureError(AddTexturePararms param)
@@ -1014,6 +1231,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void Update()
         {
             CheckCamoEditorKeybinds();
+            UpdatePreviews();
         }
 
         public void CheckCamoEditorKeybinds()
@@ -1111,6 +1329,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var textureData = GetTextureData(textureName);
 
             // set low res version immediately, otherwise texture will flash white which is disturbing
+            LoadPreviewNow(textureData);
             beforeLoad(key, textureData.Preview);
 
             if (textureData.Error)
