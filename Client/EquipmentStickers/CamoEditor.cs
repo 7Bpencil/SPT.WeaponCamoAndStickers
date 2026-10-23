@@ -773,7 +773,7 @@ namespace SevenBoldPencil.EquipmentStickers
             }
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
+                BigPlugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), textureData);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoEditorStyle.TextureNameStyle);
@@ -792,7 +792,7 @@ namespace SevenBoldPencil.EquipmentStickers
             var maskData = BigPlugin.GetTextureData(decalInfo.Mask);
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
+                BigPlugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), maskData);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoEditorStyle.TextureNameStyle);

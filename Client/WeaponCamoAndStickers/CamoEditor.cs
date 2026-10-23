@@ -709,22 +709,22 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var topLineY = y + smallMargin;
             var bottomLineY = topLineY + buttonHeight + smallMargin;
 
-            Texture2D getDecalIcon()
+            DecalTextureData getDecalIcon()
             {
                 if (decalInfo.PaintMode == DecalPaintMode.Paint)
                 {
-                    return textureData.Preview;
+                    return textureData;
                 }
                 if (decalInfo.PaintMode == DecalPaintMode.Erase)
                 {
-                    return maskData.Preview;
+                    return maskData;
                 }
                 throw new ArgumentException($"unknown DecalPaintMode: {decalInfo.PaintMode}");
             }
 
             var textureIconX = x + smallMargin;
             var decalIcon = getDecalIcon();
-            if (GUI.Button(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon))
+            if (Plugin.DrawPreviewButton(new Rect(textureIconX, topLineY, iconSize, iconSize), decalIcon))
             {
                 setCurrentlyEditedDecal(itemId, instanceID, decalIndex);
             }
@@ -1216,7 +1216,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
+                Plugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), textureData);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Texture, CamoEditorStyle.TextureNameStyle);
@@ -1302,7 +1302,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             y += buttonHeight + mediumMargin;
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
+                Plugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), maskData);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoEditorStyle.TextureNameStyle);
@@ -1397,7 +1397,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             {
-                GUI.Button(new Rect(x, y, iconSize, iconSize), maskData.Preview);
+                Plugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), maskData);
 
                 var labelX = x + iconSize + smallMargin + 12;
                 GUI.Label(new Rect(labelX, y + 1, 256, buttonHeight), decalInfo.Mask, CamoEditorStyle.TextureNameStyle);
@@ -1779,8 +1779,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public TexturesDirectory TexturesDirectory;
         public Vector2 ScrollPosition;
         public int MaxVisibleHeight;
+        private float VisibleMinY;
+        private float VisibleMaxY;
 
         public Func<string, DecalTextureData> GetTextureData;
+        public Func<Rect, DecalTextureData, bool> DrawPreviewButton;
         public Func<string, bool> IsFavouriteTexture;
         public Action<string> SelectTexture;
         public Action<string> ToggleFavouriteTexture;
@@ -1793,6 +1796,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             CamoEditorStyle = camoEditorStyle;
             TexturesDirectory = plugin.GetTexturesDirectory(textureType);
             GetTextureData = plugin.GetTextureData;
+            DrawPreviewButton = plugin.DrawPreviewButton;
             IsFavouriteTexture = plugin.IsFavouriteTexture;
             ToggleFavouriteTexture = plugin.ToggleFavouriteTexture;
         }
@@ -1805,6 +1809,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             CamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, ScrollPosition);
             ScrollPosition = GUI.BeginScrollView(visibleRect, ScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
+
+            // previews are loaded on demand, so only touch the ones that are actually visible
+            VisibleMinY = y + ScrollPosition.y;
+            VisibleMaxY = VisibleMinY + visibleHeight;
 
             DrawAllTextures(ref x, ref y, TexturesDirectory, false);
 
@@ -1850,7 +1858,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var xi = x + ix * (iconSize + smallMargin);
                 var yi = y + iy * (iconSize + smallMargin);
 
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
+                if (yi + iconSize < VisibleMinY || yi > VisibleMaxY)
+                {
+                    continue;
+                }
+
+                if (DrawPreviewButton(new Rect(xi, yi, iconSize, iconSize), textureData))
                 {
                     var e = Event.current;
                     if (e.button == 0) // left click

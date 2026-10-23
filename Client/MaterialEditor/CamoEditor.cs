@@ -912,7 +912,7 @@ namespace SevenBoldPencil.MaterialEditor
                 else
                 {
                     var textureData = BigPlugin.GetTextureData(materialInfo.Texture);
-                    GUI.Button(new Rect(x, y, iconSize, iconSize), textureData.Preview);
+                    BigPlugin.DrawPreviewButton(new Rect(x, y, iconSize, iconSize), textureData);
 
                     var iconLabelX = x + iconSize + smallMargin + 12;
                     GUI.Label(new Rect(iconLabelX, y + 1, 256, buttonHeight), materialInfo.Texture, CamoEditorStyle.TextureNameStyle);
