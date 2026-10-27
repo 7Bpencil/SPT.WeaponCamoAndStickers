@@ -1774,8 +1774,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Action<string> SelectTexture;
         public Action<string> ToggleFavouriteTexture;
 
-        public TexturesWindow() { }
-
         public TexturesWindow(DecalTextureType textureType, Plugin plugin, CamoEditorResources camoEditorResources, CamoEditorStyle camoEditorStyle)
         {
             CamoEditorResources = camoEditorResources;
@@ -1791,28 +1789,33 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var (totalHeight, visibleHeight) = CamoEditor.CalculateTexturesDirectoryHeight(TexturesDirectory, MaxVisibleHeight);
             var totalRect = new Rect(x, y, boxWidth, totalHeight);
             var visibleRect = new Rect(x, y, boxWidth + 16, visibleHeight);
+            var visibleRectInner = new Rect(x, y + ScrollPosition.y, boxWidth, visibleHeight);
 
             CamoEditor.DrawScrollBar(x + boxWidth + 5, y, totalHeight, visibleHeight, ScrollPosition);
             ScrollPosition = GUI.BeginScrollView(visibleRect, ScrollPosition, totalRect, GUIStyle.none, GUIStyle.none);
 
-            DrawAllTextures(ref x, ref y, TexturesDirectory, false);
+            DrawAllTextures(ref x, ref y, visibleRectInner, TexturesDirectory, false);
 
             GUI.EndScrollView();
         }
 
-        private void DrawAllTextures(ref int x, ref int y, TexturesDirectory texturesDirectory, bool drawName)
+        private void DrawAllTextures(ref int x, ref int y, Rect visibleRectInner, TexturesDirectory texturesDirectory, bool drawName)
         {
             if (drawName)
             {
-                if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
+                var buttonRect = new Rect(x, y, boxWidth, buttonHeight);
+                if (buttonRect.Overlaps(visibleRectInner))
                 {
-                    texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
-                }
+                    if (GUI.Button(buttonRect, texturesDirectory.Name, CamoEditorStyle.DirectoryButtonStyle))
+                    {
+                        texturesDirectory.IsClosed = !texturesDirectory.IsClosed;
+                    }
 
-                var iconSize = 20;
-                var iconMargin = (buttonHeight - iconSize) / 2;
-                var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
-                GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+                    var iconSize = 20;
+                    var iconMargin = (buttonHeight - iconSize) / 2;
+                    var icon = texturesDirectory.IsClosed ? CamoEditorResources.MoveUpIcon : CamoEditorResources.MoveDownIcon;
+                    GUI.DrawTexture(new Rect(x + boxWidth - smallMargin - buttonHeight + iconMargin, y + iconMargin, iconSize, iconSize), icon);
+                }
 
                 y += buttonHeight + smallMargin;
             }
@@ -1824,22 +1827,27 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             foreach (var subDirectory in texturesDirectory.Directories)
             {
-                DrawAllTextures(ref x, ref y, subDirectory, true);
+                DrawAllTextures(ref x, ref y, visibleRectInner, subDirectory, true);
             }
 
             var textures = texturesDirectory.Textures;
             for (var i = 0; i < textures.Length; i++)
             {
-                var textureName = textures[i];
-                var textureData = GetTextureData(textureName);
-
                 var ix = i % iconColumns;
                 var iy = i / iconColumns;
 
                 var xi = x + ix * (iconSize + smallMargin);
                 var yi = y + iy * (iconSize + smallMargin);
 
-                if (GUI.Button(new Rect(xi, yi, iconSize, iconSize), textureData.Preview))
+                var buttonRect = new Rect(xi, yi, iconSize, iconSize);
+                if (!buttonRect.Overlaps(visibleRectInner))
+                {
+                    continue;
+                }
+
+                var textureName = textures[i];
+                var textureData = GetTextureData(textureName);
+                if (GUI.Button(buttonRect, textureData.Preview))
                 {
                     var e = Event.current;
                     if (e.button == 0) // left click
