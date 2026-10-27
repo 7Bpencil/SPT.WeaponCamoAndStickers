@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="WeaponCamoAndStickers/WeaponCamoAndStickers.csproj" />
+  <Project Path="MaterialEditor/MaterialEditor.csproj" />
+  <Project Path="EquipmentStickers/EquipmentStickers.csproj" />
+  <!-- <Project Path="WeaponCamoAndStickers.Fika/WeaponCamoAndStickers.Fika.csproj" /> -->
+  <!-- <Project Path="MaterialEditor.Fika/MaterialEditor.Fika.csproj" /> -->
+</Solution>
