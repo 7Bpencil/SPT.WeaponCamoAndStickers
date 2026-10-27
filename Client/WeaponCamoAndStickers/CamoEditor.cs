@@ -63,61 +63,50 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public string[] DecalTypesToolbar = ["Camos", "Stickers"];
     }
 
-    public class CamoEditorStyle
+    public class CamoEditorStyle(GUISkin currentSkin)
     {
-        public GUIStyle LabelStyleName;
-        public GUIStyle TextureNameStyle;
-        public GUIStyle LabelStyleValue;
-        public GUIStyle TextFieldStyle;
-        public GUIStyle RGBHexTextFieldStyle;
-		public GUIStyle ColorPickerButtonStyle;
-        public GUIStyle DirectoryButtonStyle;
-
-        public CamoEditorStyle(GUISkin currentSkin)
+        public GUIStyle LabelStyleName = new(currentSkin.label)
         {
-            LabelStyleName = new(currentSkin.label)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                clipping = TextClipping.Clip,
-                wordWrap = false,
-            };
+            alignment = TextAnchor.MiddleLeft,
+            clipping = TextClipping.Clip,
+            wordWrap = false,
+        };
 
-            TextureNameStyle = new(currentSkin.label)
-            {
-                alignment = TextAnchor.UpperLeft,
-                clipping = TextClipping.Overflow,
-                wordWrap = true,
-            };
+        public GUIStyle TextureNameStyle = new(currentSkin.label)
+        {
+            alignment = TextAnchor.UpperLeft,
+            clipping = TextClipping.Overflow,
+            wordWrap = true,
+        };
 
-            LabelStyleValue = new(currentSkin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-            };
+        public GUIStyle LabelStyleValue = new(currentSkin.label)
+        {
+            alignment = TextAnchor.MiddleCenter,
+        };
 
-            TextFieldStyle = new(currentSkin.textField)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                contentOffset = new Vector2(mediumMargin, 0)
-            };
+        public GUIStyle TextFieldStyle = new(currentSkin.textField)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            contentOffset = new Vector2(mediumMargin, 0)
+        };
 
-            RGBHexTextFieldStyle = new(currentSkin.textField)
-            {
-                alignment = TextAnchor.MiddleCenter,
-            };
+        public GUIStyle RGBHexTextFieldStyle = new(currentSkin.textField)
+        {
+            alignment = TextAnchor.MiddleCenter,
+        };
 
-			ColorPickerButtonStyle = new GUIStyle()
-			{
-				stretchWidth = true,
-				stretchHeight = true,
-			};
+		public GUIStyle ColorPickerButtonStyle = new GUIStyle()
+		{
+			stretchWidth = true,
+			stretchHeight = true,
+		};
 
-            DirectoryButtonStyle = new(currentSkin.button)
-            {
-                alignment = TextAnchor.MiddleLeft,
-                clipping = TextClipping.Clip,
-                wordWrap = false,
-            };
-        }
+        public GUIStyle DirectoryButtonStyle = new(currentSkin.button)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            clipping = TextClipping.Clip,
+            wordWrap = false,
+        };
     }
 
     public class DecalStringCache
