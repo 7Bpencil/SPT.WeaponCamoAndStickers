@@ -116,4 +116,5 @@ Video: <https://www.youtube.com/watch?v=hJcIlx6UV9A>
 
 ### [Spirit](https://sp-mod.com/addon/47/spirits-embroidery)
 
+![](previews/community/Spirit/Colt_M4A1_5.56x45_assault_rifle_Goldship_Machine_2026-06-0920-28-59.png)
 ![](previews/community/Spirit/RShG-2_72.5mm_rocket_launcher_2026-04-1408-39-57.png)
