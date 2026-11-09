@@ -54,7 +54,7 @@ namespace SevenBoldPencil.EquipmentStickers
 		public const string BoneLeftFoot = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot";
 		public const string BoneLeftToe = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot/Base HumanLToe";
 
-		private StartDecalTransform[][] HeadDecalTransforms =
+		private static readonly StartDecalTransform[][] HeadDecalTransforms =
 		[
 			[
 				new("Forehead", BoneHead, new(-0.104f, 0.140f, 0.000f), new(11.173f, 270.000f, 0.000f), new(0.106f, 0.080f, 0.089f)),
@@ -74,7 +74,7 @@ namespace SevenBoldPencil.EquipmentStickers
 			],
 		];
 
-		private StartDecalTransform[][] BodyDecalTransforms =
+		private static readonly StartDecalTransform[][] BodyDecalTransforms =
 		[
 			[
 				new("Chest Front", BoneSpine3, new(-0.089f, 0.239f, 0.000f), new(18.936f, 270.085f, 0.017f), new(0.128f, 0.090f, 0.084f)),
@@ -96,7 +96,14 @@ namespace SevenBoldPencil.EquipmentStickers
 			],
 		];
 
-		private StartDecalTransform[][] FeetDecalTransforms =
+		private static readonly StartDecalTransform[][] ArmBandDecalTransforms =
+		[
+			[
+				new("Upperarm Left", BoneLeftUpperarm, new(-0.159f, -0.029f, -0.096f), new(3.017f, 101.823f, 253.349f), new(0.086f, 0.100f, 0.090f))
+			]
+		];
+
+		private static readonly StartDecalTransform[][] FeetDecalTransforms =
 		[
 			[
 				new("Pelvis", BonePelvis, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
@@ -153,6 +160,7 @@ namespace SevenBoldPencil.EquipmentStickers
 				{ ItemType.Armor, BodyDecalTransforms },
 				{ ItemType.Vest, BodyDecalTransforms },
 				{ ItemType.Backpack, BodyDecalTransforms },
+				{ ItemType.ArmBand, ArmBandDecalTransforms },
 			};
 
             new Patch_OverallScreen_Show().Enable();

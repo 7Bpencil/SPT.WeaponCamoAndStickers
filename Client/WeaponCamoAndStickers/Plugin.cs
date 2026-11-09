@@ -39,6 +39,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Armor,
         Vest,
         Backpack,
+        ArmBand,
     }
 
     public interface IDecalsHost
@@ -2463,6 +2464,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemType.Armor => 1,
                 ItemType.Vest => 1,
                 ItemType.Backpack => 1,
+                ItemType.ArmBand => 1,
                 _ => throw new ArgumentException($"Unknown item type: {itemType}"),
             };
         }
@@ -3053,6 +3055,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Armor => new(ItemType.Armor),
                 Vest => new(ItemType.Vest),
                 Backpack => new(ItemType.Backpack),
+                ArmBand => new(ItemType.ArmBand),
                 _ => default,
             };
         }
