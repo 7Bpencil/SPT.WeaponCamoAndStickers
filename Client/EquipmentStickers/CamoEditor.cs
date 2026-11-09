@@ -760,7 +760,7 @@ namespace SevenBoldPencil.EquipmentStickers
 
 
                 GUI.Label(new Rect(labelX, maxAngleY, nameWidth, buttonHeight), "Max Angle:", CamoEditorStyle.LabelStyleName);
-                var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, maxAngleY + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, 0f, 1f);
+                var newMaxAngle = GUI.HorizontalSlider(new Rect(sliderX, maxAngleY + 11, sliderWidth, buttonHeight), decalInfo.MaxAngle, -0.1f, 1.1f);
                 if (newMaxAngle != decalInfo.MaxAngle)
                 {
                     decalInfo.MaxAngle = newMaxAngle;

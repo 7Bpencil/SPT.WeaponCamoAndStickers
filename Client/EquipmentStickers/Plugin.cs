@@ -363,7 +363,7 @@ namespace SevenBoldPencil.EquipmentStickers
                 LocalPosition = startTransform.LocalPosition,
                 LocalEulerAngles = startTransform.LocalEulerAngles,
                 LocalScale = startTransform.LocalScale,
-                MaxAngle = 0.4f,
+                MaxAngle = -0.1f,
                 IsVisible = true,
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,

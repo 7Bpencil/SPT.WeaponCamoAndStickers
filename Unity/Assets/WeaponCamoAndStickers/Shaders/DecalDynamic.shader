@@ -8,7 +8,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
         _MaskTexUV ("Mask UV", Vector) = (0, 0, 1, 1)
         _Color ("Main color", Color) = (1, 1, 1, 1)
         _Temperature ("_Temperature(min, max, factor)", Vector) = (0.1, 0.13, 0.33, 0)
-        _MaxAngle ("Max angle", Range(0, 1)) = 0.5
+        _MaxAngle ("Max angle", Range(-0.1, 1.1)) = -0.1
     }
     SubShader {
         Pass {
@@ -126,7 +126,7 @@ Shader "WeaponCamoAndStickers/DeferredDecal" {
                 float3 normal = tex2D(_NormalsCopy, screenUV) * 2 - 1;
                 float3 objectAxisY = normalize(i.objectAxisY);
 #if ERASE
-				clip(dot(normal, objectAxisY));
+				clip(dot(normal, objectAxisY) - -0.1);
 
 				float2 uvY = localPosition.xz;
                 float2 maskUV = transformUV(uvY, _MaskTexRotation, _MaskTexUV.xy, _MaskTexUV.zw, _AspectRatio);
