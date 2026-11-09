@@ -24,6 +24,7 @@ using DecalPaintMode = SevenBoldPencil.WeaponCamoAndStickers.DecalPaintMode;
 using DecalInfo = SevenBoldPencil.WeaponCamoAndStickers.DecalInfo;
 using SkinnedDecalsHost = SevenBoldPencil.WeaponCamoAndStickers.SkinnedDecalsHost;
 using HandleType = SevenBoldPencil.WeaponCamoAndStickers.HandleType;
+using ItemType = SevenBoldPencil.WeaponCamoAndStickers.ItemType;
 
 namespace SevenBoldPencil.EquipmentStickers
 {
@@ -53,76 +54,71 @@ namespace SevenBoldPencil.EquipmentStickers
 		public const string BoneLeftFoot = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot";
 		public const string BoneLeftToe = "Root_Joint/Base HumanPelvis/Base HumanLThigh1/Base HumanLThigh2/Base HumanLCalf/Base HumanLFoot/Base HumanLToe";
 
-		private Dictionary<EBodyModelPart, StartDecalTransform[][]> StartDecalTransforms = new()
-		{
-			{
-				EBodyModelPart.Head,
-				[
-					[
-						new("Forehead", BoneHead, new(-0.104f, 0.140f, 0.000f), new(11.173f, 270.000f, 0.000f), new(0.106f, 0.080f, 0.089f)),
-						new("Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.980f, 277.755f, 79.388f), new(0.106f, 0.080f, 0.070f)),
-						new("Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.987f, 264.424f, 273.614f), new(0.106f, 0.080f, 0.070f)),
-						new("Back", BoneHead, new(-0.073f, -0.093f, 0.000f), new(3.200f, 270.000f, 180.000f), new(0.106f, 0.080f, 0.106f)),
-						new("Top", BoneHead, new(-0.184f, 0.048f, 0.000f), new(281.900f, 90.000f, 0.000f), new(0.106f, 0.080f, 0.127f)),
-					],
-					[
-						new("Cheek Right", BoneHead, new(-0.004f, 0.090f, -0.071f), new(351.737f, 263.495f, 69.262f), new(0.077f, 0.080f, 0.077f)),
-						new("Cheek Left", BoneHead, new(-0.004f, 0.090f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.080f, 0.077f)),
-					],
-					[
-						new("Neck Right", BoneNeck, new(-0.076f, -0.010f, -0.070f), new(12.545f, 271.353f, 106.472f), new(0.065f, 0.080f, 0.065f)),
-						new("Neck Left", BoneNeck, new(-0.080f, 0.001f, 0.076f), new(12.545f, 271.353f, 259.871f), new(0.065f, 0.080f, 0.065f)),
-						new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0.000f), new(14.524f, 270.000f, 180.000f), new(0.080f, 0.080f, 0.080f)),
-					]
-				]
-			},
-			{
-				EBodyModelPart.Body,
-				[
-					[
-						new("Chest Front", BoneSpine3, new(-0.089f, 0.239f, 0.000f), new(18.936f, 270.085f, 0.017f), new(0.128f, 0.090f, 0.084f)),
-						new("Chest Back", BoneSpine3, new(-0.061f, -0.113f, 0.000f), new(12.551f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
-					],
-					[
-						new("Abdomen Front", BoneSpine2, new(-0.001f, 0.242f, 0.000f), new(354.967f, 272.249f, 0.000f), new(0.138f, 0.090f, 0.090f)),
-						new("Abdomen Right", BoneSpine2, new(-0.035f, 0.045f, -0.209f), new(351.662f, 270.000f, 94.698f), new(0.090f, 0.090f, 0.090f)),
-						new("Abdomen Left", BoneSpine2, new(-0.035f, 0.045f, 0.209f), new(351.662f, 270.000f, 270.216f), new(0.090f, 0.090f, 0.090f)),
-						new("Abdomen Back", BoneSpine2, new(-0.063f, -0.118f, 0.000f), new(351.662f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
-					],
-					[
-						new("Groin Front", BoneSpine1, new(0.062f, 0.220f, 0.000f), new(352.612f, 270.000f, 0.000f), new(0.155f, 0.090f, 0.102f)),
-						new("Groin Back", BoneSpine2, new(0.113f, -0.152f, 0.000f), new(336.285f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
-					],
-					[
-						new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0.000f, 0.110f), new(0.000f, 83.000f, 84.000f), new(0.068f, 0.100f, 0.068f)),
-						new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.110f), new(356.000f, 100.000f, 282.000f), new(0.068f, 0.100f, 0.068f)),
-					],
-				]
-			},
-			{
-				// TODO finalize placement
-				EBodyModelPart.Feet,
-				[
-					[
-						new("Pelvis", BonePelvis, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					],
-					[
-						new("Right Thigh 1", BoneRightThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Right Thigh 2", BoneRightThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Right Calf", BoneRightCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Right Foot", BoneRightFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Right Toe", BoneRightToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					],
-					[
-						new("Left Thigh 1", BoneLeftThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Left Thigh 2", BoneLeftThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Left Calf", BoneLeftCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Left Foot", BoneLeftFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-						new("Left Toe", BoneLeftToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
-					]
-				]
-			},
-		};
+		private StartDecalTransform[][] HeadDecalTransforms =
+		[
+			[
+				new("Forehead", BoneHead, new(-0.104f, 0.140f, 0.000f), new(11.173f, 270.000f, 0.000f), new(0.106f, 0.080f, 0.089f)),
+				new("Right", BoneHead, new(-0.105f, 0.038f, -0.089f), new(354.980f, 277.755f, 79.388f), new(0.106f, 0.080f, 0.070f)),
+				new("Left", BoneHead, new(-0.105f, 0.038f, 0.089f), new(354.987f, 264.424f, 273.614f), new(0.106f, 0.080f, 0.070f)),
+				new("Back", BoneHead, new(-0.073f, -0.093f, 0.000f), new(3.200f, 270.000f, 180.000f), new(0.106f, 0.080f, 0.106f)),
+				new("Top", BoneHead, new(-0.184f, 0.048f, 0.000f), new(281.900f, 90.000f, 0.000f), new(0.106f, 0.080f, 0.127f)),
+			],
+			[
+				new("Cheek Right", BoneHead, new(-0.004f, 0.090f, -0.071f), new(351.737f, 263.495f, 69.262f), new(0.077f, 0.080f, 0.077f)),
+				new("Cheek Left", BoneHead, new(-0.004f, 0.090f, 0.071f), new(351.173f, 276.424f, 286.962f), new(0.077f, 0.080f, 0.077f)),
+			],
+			[
+				new("Neck Right", BoneNeck, new(-0.076f, -0.010f, -0.070f), new(12.545f, 271.353f, 106.472f), new(0.065f, 0.080f, 0.065f)),
+				new("Neck Left", BoneNeck, new(-0.080f, 0.001f, 0.076f), new(12.545f, 271.353f, 259.871f), new(0.065f, 0.080f, 0.065f)),
+				new("Neck Back", BoneNeck, new(-0.067f, -0.066f, 0.000f), new(14.524f, 270.000f, 180.000f), new(0.080f, 0.080f, 0.080f)),
+			],
+		];
+
+		private StartDecalTransform[][] BodyDecalTransforms =
+		[
+			[
+				new("Chest Front", BoneSpine3, new(-0.089f, 0.239f, 0.000f), new(18.936f, 270.085f, 0.017f), new(0.128f, 0.090f, 0.084f)),
+				new("Chest Back", BoneSpine3, new(-0.061f, -0.113f, 0.000f), new(12.551f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
+			],
+			[
+				new("Abdomen Front", BoneSpine2, new(-0.001f, 0.242f, 0.000f), new(354.967f, 272.249f, 0.000f), new(0.138f, 0.090f, 0.090f)),
+				new("Abdomen Right", BoneSpine2, new(-0.035f, 0.045f, -0.209f), new(351.662f, 270.000f, 94.698f), new(0.090f, 0.090f, 0.090f)),
+				new("Abdomen Left", BoneSpine2, new(-0.035f, 0.045f, 0.209f), new(351.662f, 270.000f, 270.216f), new(0.090f, 0.090f, 0.090f)),
+				new("Abdomen Back", BoneSpine2, new(-0.063f, -0.118f, 0.000f), new(351.662f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
+			],
+			[
+				new("Groin Front", BoneSpine1, new(0.062f, 0.220f, 0.000f), new(352.612f, 270.000f, 0.000f), new(0.155f, 0.090f, 0.102f)),
+				new("Groin Back", BoneSpine2, new(0.113f, -0.152f, 0.000f), new(336.285f, 270.000f, 180.000f), new(0.090f, 0.090f, 0.090f)),
+			],
+			[
+				new("Upperarm Right", BoneRightUpperarm, new(-0.142f, 0.000f, 0.110f), new(0.000f, 83.000f, 84.000f), new(0.068f, 0.100f, 0.068f)),
+				new("Upperarm Left", BoneLeftUpperarm, new(-0.142f, 0.011f, -0.110f), new(356.000f, 100.000f, 282.000f), new(0.068f, 0.100f, 0.068f)),
+			],
+		];
+
+		private StartDecalTransform[][] FeetDecalTransforms =
+		[
+			[
+				new("Pelvis", BonePelvis, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+			],
+			[
+				new("Right Thigh 1", BoneRightThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Right Thigh 2", BoneRightThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Right Calf", BoneRightCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Right Foot", BoneRightFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Right Toe", BoneRightToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+			],
+			[
+				new("Left Thigh 1", BoneLeftThigh1, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Left Thigh 2", BoneLeftThigh2, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Left Calf", BoneLeftCalf, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Left Foot", BoneLeftFoot, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+				new("Left Toe", BoneLeftToe, new(0, 0, 0), new(0, 0, 0), new(0.1f, 0.1f, 0.1f)),
+			],
+		];
+
+		private Dictionary<EBodyModelPart, StartDecalTransform[][]> DecalTransformsPerBodyPart;
+		private Dictionary<ItemType, StartDecalTransform[][]> DecalTransformsPerItemType;
 
         public static Plugin Instance;
 
@@ -143,6 +139,21 @@ namespace SevenBoldPencil.EquipmentStickers
 			BigPlugin = BigPlugin.Instance;
 
             CamoEditorResources = new TypedFieldInfo<BigPlugin, CamoEditorResources>("CamoEditorResources").Get(BigPlugin);
+
+			DecalTransformsPerBodyPart = new()
+			{
+				{ EBodyModelPart.Head, HeadDecalTransforms },
+				{ EBodyModelPart.Body, BodyDecalTransforms },
+				{ EBodyModelPart.Feet, FeetDecalTransforms },
+			};
+			DecalTransformsPerItemType = new()
+			{
+				{ ItemType.Headwear, HeadDecalTransforms },
+				{ ItemType.FaceCover, HeadDecalTransforms },
+				{ ItemType.Armor, BodyDecalTransforms },
+				{ ItemType.Vest, BodyDecalTransforms },
+				{ ItemType.Backpack, BodyDecalTransforms },
+			};
 
             new Patch_OverallScreen_Show().Enable();
             new Patch_PlayerModelView_OnLoadingCompleted().Enable();
@@ -213,11 +224,10 @@ namespace SevenBoldPencil.EquipmentStickers
 			TryBuildSkin(EBodyModelPart.Body, 1, profileId, playerBody, result);
 			TryBuildSkin(EBodyModelPart.Feet, 1, profileId, playerBody, result);
 
-            TryBuildItem(EquipmentSlot.Headwear, EBodyModelPart.Head, playerBody, result);
-            TryBuildItem(EquipmentSlot.FaceCover, EBodyModelPart.Head, playerBody, result);
-            TryBuildItem(EquipmentSlot.ArmorVest, EBodyModelPart.Body, playerBody, result);
-            TryBuildItem(EquipmentSlot.TacticalVest, EBodyModelPart.Body, playerBody, result);
-            TryBuildItem(EquipmentSlot.Backpack, EBodyModelPart.Body, playerBody, result);
+			foreach (var slotView in playerBody.SlotViews.GetValuesEnumerator())
+			{
+	            TryBuildItem(slotView, playerBody, result);
+			}
 
             return result;
 		}
@@ -232,7 +242,7 @@ namespace SevenBoldPencil.EquipmentStickers
 			{
 				return;
 			}
-			if (!StartDecalTransforms.TryGetValue(bodyPart, out var startTransforms))
+			if (!DecalTransformsPerBodyPart.TryGetValue(bodyPart, out var startTransforms))
 			{
 				return;
 			}
@@ -254,36 +264,38 @@ namespace SevenBoldPencil.EquipmentStickers
             ));
 		}
 
-        public void TryBuildItem(EquipmentSlot slotType, EBodyModelPart bodyPart, PlayerBody playerBody, List<CamoEditorItem> result)
+        public void TryBuildItem(PlayerBody.SlotView slotView, PlayerBody playerBody, List<CamoEditorItem> result)
 		{
-			if (!playerBody.SlotViews.TryGetByKey(slotType, out var slot))
+            var model = slotView._model;
+            if (!model)
+            {
+                return;
+            }
+
+            var item = slotView._item;
+			if (!BigPlugin.GetItemType(item).Some(out var itemType))
 			{
 				return;
 			}
-			if (!StartDecalTransforms.TryGetValue(bodyPart, out var startTransforms))
+			if (!DecalTransformsPerItemType.TryGetValue(itemType, out var startTransforms))
 			{
 				return;
 			}
 
-            var go = slot._model;
-            if (!go)
+            if (!model.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
             {
                 return;
             }
-            if (!go.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
-            {
-                return;
-            }
-			if (!go.TryGetComponent<DressItem>(out _))
+			if (!model.TryGetComponent<DressItem>(out _))
 			{
 				// this editor is only for skinned meshes
 				return;
 			}
 
-            var item = slot._item;
 			var itemId = item.Id;
-			var instanceID = go.GetInstanceID();
+			var instanceID = model.GetInstanceID();
 			var decalsHost = new SkinnedDecalsHost(assetPoolObject.transform, playerBody.SkeletonRootJoint);
+            var stencilType = BigPlugin.GetItemStencilType(itemType);
 
             Logger.Log(LogLevel.Info, "CamoEditor", "Setup item", itemId, instanceID);
 
@@ -293,7 +305,7 @@ namespace SevenBoldPencil.EquipmentStickers
                 ItemId: itemId,
                 InstanceID: instanceID,
 				DecalsHost: decalsHost,
-				StencilType: 1,
+				StencilType: stencilType,
 				StartTransforms: startTransforms
             ));
 		}
