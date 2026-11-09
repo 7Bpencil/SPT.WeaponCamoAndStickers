@@ -19,8 +19,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public bool IsOpened;
 		public Rect WindowRect = WeaponCamoAndStickers.CamoEditor.GetDefaultWindowRect();
 
-		public const int errorMargin = (openCloseButtonHeight - buttonHeight) / 2;
-
         public void DrawWindow()
 		{
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
@@ -72,18 +70,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private int CalculateErrorWindowHeight()
 		{
-            return errorMargin + buttonHeight + errorMargin;
+            return openCloseButtonHeight;
 		}
 
 		private void DrawErrorMessageWindow(int windowID)
 		{
             CamoEditor.DrawColor(new Rect(0, 0, windowWidth, WindowRect.height), backgroundColor);
 
-            var x = errorMargin;
-            var y = errorMargin;
-
-            GUI.Label(new Rect(x, y, boxWidth, buttonHeight), ErrorMessage, CamoEditorStyle.LabelStyleValue);
-			y += buttonHeight + errorMargin;
+            GUI.Label(new Rect(bigMargin, 0, boxWidth, WindowRect.height), ErrorMessage, CamoEditorStyle.LabelStyleValue);
 
 			GUI.DragWindow();
 		}
