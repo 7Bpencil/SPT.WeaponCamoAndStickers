@@ -58,9 +58,23 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Texture2D CheckboxOff = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-off.png");
         public Texture2D CheckboxOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/checkbox-on.png");
         public Texture2D LinkOn = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/link-on.png");
+        public Texture2D StaticIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/house.png");
+        public Texture2D EquipmentIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/bullet-proof-vest.png");
+        public Texture2D WeaponIcon = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Icons/submachine-gun.png");
 
         public string[] DecalSettingsToolbar = ["Texture", "Mask"];
         public string[] DecalTypesToolbar = ["Camos", "Stickers"];
+
+        public Texture2D GetStencilTypeIcon(byte stencilType)
+        {
+            return stencilType switch
+            {
+                0 => StaticIcon,
+                1 => EquipmentIcon,
+                2 => WeaponIcon,
+                _ => throw new ArgumentException($"Unknown StencilType: {stencilType}"),
+            };
+        }
     }
 
     public class CamoEditorStyle(GUISkin currentSkin)
@@ -901,7 +915,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             {
                 var lineX = x;
-                var buttonsCount = 3;
+                var buttonsCount = 4;
                 var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * buttonsCount;
                 if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
                 {
@@ -946,6 +960,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     }
                     lineX += buttonHeight + smallMargin;
                 }
+
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.GetStencilTypeIcon(decalInfo.StencilType)))
+                {
+                    Plugin.SwitchStencilType(ItemId, decalIndex, decalInfo);
+                }
+                lineX += buttonHeight + smallMargin;
 
                 var mirrorModeIcon = decalInfo.MirrorMode switch
                 {

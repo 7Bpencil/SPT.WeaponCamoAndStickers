@@ -1428,6 +1428,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             });
         }
 
+        public void ApplyStencilType(string itemId, int decalIndex)
+        {
+            ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
+            {
+                decal.ChangeStencilType(decalInfo.StencilType);
+            });
+        }
+
         public void ApplyTextureUV(string itemId, int decalIndex)
         {
             ModifyDecalOnItems(itemId, decalIndex, static (decal, decalInfo) =>
@@ -1521,6 +1529,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             decalInfo.MirrorMode = (DecalMirrorMode)(((int)decalInfo.MirrorMode + 1) % (int)DecalMirrorMode.MODES_COUNT);
         }
 
+        public void SwitchStencilType(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.StencilType = (byte)((decalInfo.StencilType + 1) % 3);
+            ApplyStencilType(itemId, decalIndex);
+        }
+
         public void SwitchIsVisible(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             decalInfo.IsVisible = !decalInfo.IsVisible;
@@ -1544,6 +1558,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaxAngle(itemId, decalIndex);
 
             decalInfo.MirrorMode = fromDecalInfo.MirrorMode;
+
+            decalInfo.StencilType = fromDecalInfo.StencilType;
+            ApplyStencilType(itemId, decalIndex);
         }
 
         public void ApplyEraserInfo(string itemId, int decalIndex, DecalInfo decalInfo, DecalInfo fromDecalInfo)
@@ -1573,6 +1590,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaxAngle(itemId, decalIndex);
 
             decalInfo.MirrorMode = fromDecalInfo.MirrorMode;
+
+            decalInfo.StencilType = fromDecalInfo.StencilType;
+            ApplyStencilType(itemId, decalIndex);
         }
 
         public void Move(string itemId, int decalIndexOld, int decalIndexNew)

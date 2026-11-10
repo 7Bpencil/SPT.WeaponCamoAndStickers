@@ -536,7 +536,7 @@ namespace SevenBoldPencil.EquipmentStickers
             var x = bigMargin;
             var y = bigMargin;
 
-            DrawDecalEditUI_Header(x, ref y, decalIndex, decalInfo, decal);
+            DrawDecalEditUI_Header(x, ref y, item.ItemId, decalIndex, decalInfo, decal);
 
 			if (IsStartTransformsListOpened)
 			{
@@ -565,14 +565,25 @@ namespace SevenBoldPencil.EquipmentStickers
 			GUI.DragWindow();
 		}
 
-        private void DrawDecalEditUI_Header(int x, ref int y, int decalIndex, DecalInfo decalInfo, Decal decal)
+        private void DrawDecalEditUI_Header(int x, ref int y, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal)
         {
-            if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), "Back"))
-            {
-                CurrentlyEditedDecalIndex = default;
-                DestroyTransformHandle();
-				UnfreezeAnimator();
-            }
+			{
+                var lineX = x;
+                var buttonsCount = 1;
+                var backButtonWidth = boxWidth - (buttonHeight + smallMargin) * buttonsCount;
+	            if (GUI.Button(new Rect(lineX, y, backButtonWidth, buttonHeight), "Back"))
+	            {
+	                CurrentlyEditedDecalIndex = default;
+	                DestroyTransformHandle();
+					UnfreezeAnimator();
+	            }
+                lineX += backButtonWidth + smallMargin;
+
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.GetStencilTypeIcon(decalInfo.StencilType)))
+                {
+                    BigPlugin.SwitchStencilType(itemId, decalIndex, decalInfo);
+                }
+			}
             y += buttonHeight + mediumMargin;
 
 
