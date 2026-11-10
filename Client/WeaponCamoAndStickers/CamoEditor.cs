@@ -111,6 +111,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             wordWrap = false,
         };
 
+        public GUIContent DeleteDecal = new(resources.DeleteIcon, "Delete");
+        public GUIContent DuplicateDecal = new(resources.DuplicateIcon, "Duplicate");
+        public GUIContent HideDecal = new(resources.VisibleIcon, "Change Visibility");
+        public GUIContent ShowDecal = new(resources.HiddenIcon, "Change Visibility");
+        public GUIContent MoveDecalLower = new(resources.MoveUpIcon, "Move Lower");
+        public GUIContent MoveDecalHigher = new(resources.MoveDownIcon, "Move Higher");
+
         public GUIContent CopyPaintData = new(resources.CopyPaintIcon, "Copy Paint Data");
         public GUIContent PastePaintData = new(resources.PastePaintIcon, "Paste Paint Data");
 
@@ -136,6 +143,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public GUIContent MaskUVOffset = new(resources.EditMaskUVOffsetIcon, "Mask UV Offset");
         public GUIContent MaskUVAngle = new(resources.EditMaskUVAngleIcon, "Mask UV Angle");
         public GUIContent MaskUVTiling = new(resources.EditMaskUVTilingIcon, "Mask UV Tiling");
+
+        public GUIContent GetVisibilityIcon(bool isVisible)
+        {
+            return isVisible ? HideDecal : ShowDecal;
+        }
 
         public GUIContent GetStencilTypeIcon(byte stencilType)
         {
@@ -723,6 +735,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
             }
 
+            Tooltip.UpdateTooltipText();
+
 			GUI.DragWindow();
         }
 
@@ -795,31 +809,30 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             GUI.Label(new Rect(labelX, topLineY + 1, 230, iconSize), decalName, CamoEditorStyle.TextureNameStyle);
 
             var lineX = x + boxWidth - (smallMargin + buttonHeight) * 4;
-            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DeleteIcon))
+            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorStyle.DeleteDecal))
             {
                 Plugin.Delete(itemId, decalIndex);
             }
             lineX += buttonHeight + smallMargin;
 
-            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.DuplicateIcon))
+            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorStyle.DuplicateDecal))
             {
                 var newDecalIndex = Plugin.Duplicate(itemId, decalIndex);
                 setCurrentlyEditedDecal(itemId, instanceID, newDecalIndex);
             }
             lineX += buttonHeight + smallMargin;
 
-            var isVisibleIcon = decalInfo.IsVisible ? CamoEditorResources.VisibleIcon : CamoEditorResources.HiddenIcon;
-            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), isVisibleIcon))
+            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorStyle.GetVisibilityIcon(decalInfo.IsVisible)))
             {
                 Plugin.SwitchIsVisible(itemId, decalIndex, decalInfo);
             }
             lineX += buttonHeight + smallMargin;
 
-            if (GUI.Button(new Rect(lineX, topLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveUpIcon))
+            if (GUI.Button(new Rect(lineX, topLineY, buttonHeight, buttonHeight), CamoEditorStyle.MoveDecalLower))
             {
                 Plugin.Move(itemId, decalIndex, decalIndex - 1);
             }
-            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorResources.MoveDownIcon))
+            if (GUI.Button(new Rect(lineX, bottomLineY, buttonHeight, buttonHeight), CamoEditorStyle.MoveDecalHigher))
             {
                 Plugin.Move(itemId, decalIndex, decalIndex + 1);
             }

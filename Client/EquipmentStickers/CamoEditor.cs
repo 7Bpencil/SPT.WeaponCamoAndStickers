@@ -462,6 +462,8 @@ namespace SevenBoldPencil.EquipmentStickers
 				IsStartTransformsListOpened = true;
             }
 
+            Tooltip.UpdateTooltipText();
+
 			GUI.DragWindow();
         }
 
