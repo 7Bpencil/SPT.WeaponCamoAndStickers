@@ -27,6 +27,7 @@ using RotationHandle = SevenBoldPencil.WeaponCamoAndStickers.RotationHandle;
 using ScaleHandle = SevenBoldPencil.WeaponCamoAndStickers.ScaleHandle;
 using SkinnedDecalsHost = SevenBoldPencil.WeaponCamoAndStickers.SkinnedDecalsHost;
 using PresetsWindow = SevenBoldPencil.WeaponCamoAndStickers.PresetsWindow;
+using TooltipWindow = SevenBoldPencil.WeaponCamoAndStickers.TooltipWindow;
 using static SevenBoldPencil.WeaponCamoAndStickers.CamoEditorConstants;
 
 namespace SevenBoldPencil.EquipmentStickers
@@ -143,6 +144,7 @@ namespace SevenBoldPencil.EquipmentStickers
         public bool IsColorPickerOpened;
         public WeaponCamoAndStickers.TextField<Vector3> ColorTextField = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public RuntimeTransformHandle TransformHandle;
+		public TooltipWindow Tooltip;
 		public Rect WindowRect = GetDefaultWindowRect();
 
         // brace for imGUI shitshow
@@ -182,6 +184,8 @@ namespace SevenBoldPencil.EquipmentStickers
                     MaxVisibleHeight = maxMaskIconsVisibleHeight,
                     SelectTexture = SelectMaskTexture,
                 };
+
+				Tooltip = new(20, CamoEditorStyle);
             }
 
             var originalMatrix = GUI.matrix;
@@ -235,6 +239,8 @@ namespace SevenBoldPencil.EquipmentStickers
                 var openButtonWindowRect = new Rect(WindowRect.xMax, WindowRect.y, openCloseButtonWidth, openCloseButtonHeight);
                 GUI.Window(11, openButtonWindowRect, DrawClosedWindowOpenButton, GUIContent.none);
             }
+
+			Tooltip.Draw();
 
             GUI.matrix = originalMatrix;
         }
@@ -562,6 +568,8 @@ namespace SevenBoldPencil.EquipmentStickers
                 }
 			}
 
+			Tooltip.UpdateTooltipText();
+
 			GUI.DragWindow();
 		}
 
@@ -631,7 +639,7 @@ namespace SevenBoldPencil.EquipmentStickers
 			}
             y += buttonHeight + mediumMargin;
 
-            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditPositionIcon))
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorStyle.DecalLocalPosition))
             {
                 SetupTransformHandle(HandleType.Position, itemId, decalIndex, decalInfo, decal);
             }
@@ -649,7 +657,7 @@ namespace SevenBoldPencil.EquipmentStickers
             y += buttonHeight + smallMargin;
 
 
-            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditRotationIcon))
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorStyle.DecalLocalRotation))
             {
                 SetupTransformHandle(HandleType.Rotation, itemId, decalIndex, decalInfo, decal);
             }
@@ -671,7 +679,7 @@ namespace SevenBoldPencil.EquipmentStickers
             }
             y += buttonHeight + smallMargin;
 
-            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorResources.EditScaleIcon))
+            if (GUI.Button(new Rect(x, y, buttonHeight, buttonHeight), CamoEditorStyle.DecalLocalScale))
             {
                 SetupTransformHandle(HandleType.Scale, itemId, decalIndex, decalInfo, decal);
             }
