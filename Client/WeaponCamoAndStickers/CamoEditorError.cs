@@ -24,7 +24,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
             if (CamoEditorStyle == null)
             {
-                CamoEditorStyle = new(GUI.skin);
+                CamoEditorStyle = new(GUI.skin, CamoEditorResources);
             }
 
             var originalMatrix = GUI.matrix;

@@ -155,7 +155,7 @@ namespace SevenBoldPencil.MaterialEditor
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
             if (CamoEditorStyle == null)
             {
-                CamoEditorStyle = new(GUI.skin);
+                CamoEditorStyle = new(GUI.skin, CamoEditorResources);
 
                 ItemPresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {

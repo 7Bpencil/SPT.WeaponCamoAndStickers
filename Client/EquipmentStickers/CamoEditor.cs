@@ -162,7 +162,7 @@ namespace SevenBoldPencil.EquipmentStickers
             // we copy some styles from GUI.skin which can be accessed only from OnGUI call
             if (CamoEditorStyle == null)
             {
-                CamoEditorStyle = new(GUI.skin);
+                CamoEditorStyle = new(GUI.skin, CamoEditorResources);
 
                 PresetsWindow = new(CamoEditorResources, CamoEditorStyle)
                 {
@@ -579,7 +579,7 @@ namespace SevenBoldPencil.EquipmentStickers
 	            }
                 lineX += backButtonWidth + smallMargin;
 
-                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.GetStencilTypeIcon(decalInfo.StencilType)))
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorStyle.GetStencilTypeIcon(decalInfo.StencilType)))
                 {
                     BigPlugin.SwitchStencilType(itemId, decalIndex, decalInfo);
                 }
