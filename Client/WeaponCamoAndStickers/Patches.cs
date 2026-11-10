@@ -63,7 +63,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			{
 				return;
 			}
-			if (!Plugin.CanItemHaveDecals(item))
+			if (!Plugin.Instance.CanItemHaveDecals(item))
 			{
 				return;
 			}
@@ -178,7 +178,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var icon = EFTHardSettings.Instance.StaticIcons.WishlistSprites[EWishlistGroup.Other];
 	        interactions[key] = new Custom_DynamicContextInteraction(item.Id, key, () => OpenApplyPaintWindow(__result), icon)
 			{
-				NonInteractiveTooltip = Plugin.CanItemHaveDecals(item) ? GetRequiresBenchTooltip() : new(new FailedResult("Only following items can be painted: Weapons, Knives, Helmets, Facemasks, Containers")),
+				NonInteractiveTooltip = Plugin.Instance.CanItemHaveDecals(item)
+					? GetRequiresBenchTooltip()
+					: new(new FailedResult("Only following items can be painted: Weapons, Knives, Helmets, Facemasks, Containers, Vests, Backpacks, Armbands, Battle Belts")),
 			};
 	    }
 
@@ -437,7 +439,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(Item __result, Item originalItem, IDatabaseIdGenerator idGenerator = null, bool skipInvisibleContent = false, bool resetSpawnedInSession = false)
 		{
-			if (Plugin.CanItemHaveDecals(originalItem))
+			if (Plugin.Instance.CanItemHaveDecals(originalItem))
 			{
 				Plugin.Instance.OnCloneItem(originalItem.Id, __result.Id);
 			}
@@ -604,7 +606,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		public static bool Prefix(ItemIconCreator __instance, ref ItemIcon __result, Item item, in IntVec2 size, bool forcedGeneration = false)
 		{
 			// only items with decals go through custom route
-			if (Plugin.CanItemHaveDecals(item) &&
+			if (Plugin.Instance.CanItemHaveDecals(item) &&
 				Plugin.Instance.GetDecalsCount(item.Id) > 0)
 			{
 				__result = GetItemIcon(__instance, item, size);
@@ -798,7 +800,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         [PatchPostfix]
         public static void Postfix(Item item, ref int __result)
 		{
-			if (Plugin.CanItemHaveDecals(item) &&
+			if (Plugin.Instance.CanItemHaveDecals(item) &&
 				Plugin.Instance.GetDecalsInfo(item.Id).Some(out var decalsInfo) &&
 				decalsInfo.Count > 0)
 			{

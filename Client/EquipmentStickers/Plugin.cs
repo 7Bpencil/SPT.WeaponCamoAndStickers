@@ -124,6 +124,19 @@ namespace SevenBoldPencil.EquipmentStickers
 			],
 		];
 
+		private static readonly StartDecalTransform[][] BattleBeltDecalTransforms =
+		[
+			[
+				new("Front Left", BonePelvis, new(-0.081f, 0.157f, 0.183f), new(0.516f, 268.336f, 319.322f), new(0.100f, 0.100f, 0.100f)),
+				new("Left", BonePelvis, new(-0.079f, 0.038f, 0.252f), new(0.516f, 268.336f, 276.280f), new(0.100f, 0.100f, 0.100f)),
+				new("Back Left", BonePelvis, new(-0.096f, -0.175f, 0.193f), new(357.896f, 269.062f, 216.101f), new(0.145f, 0.100f, 0.145f)),
+				new("Back", BonePelvis, new(-0.098f, -0.202f, -0.023f), new(356.723f, 270.537f, 173.200f), new(0.100f, 0.100f, 0.100f)),
+				new("Back Right", BonePelvis, new(-0.101f, -0.153f, -0.185f), new(355.518f, 272.775f, 139.814f), new(0.100f, 0.100f, 0.100f)),
+				new("Right", BonePelvis, new(-0.102f, 0.021f, -0.309f), new(357.179f, 270.771f, 90.838f), new(0.100f, 0.100f, 0.100f)),
+				new("Front Right", BonePelvis, new(-0.088f, 0.174f, -0.218f), new(357.179f, 270.771f, 44.108f), new(0.100f, 0.100f, 0.100f)),
+			],
+		];
+
 		private Dictionary<EBodyModelPart, StartDecalTransform[][]> DecalTransformsPerBodyPart;
 		private Dictionary<ItemType, StartDecalTransform[][]> DecalTransformsPerItemType;
 
@@ -161,6 +174,7 @@ namespace SevenBoldPencil.EquipmentStickers
 				{ ItemType.Vest, BodyDecalTransforms },
 				{ ItemType.Backpack, BodyDecalTransforms },
 				{ ItemType.ArmBand, ArmBandDecalTransforms },
+				{ ItemType.PackNStrapCustomBelt, BattleBeltDecalTransforms },
 			};
 
             new Patch_OverallScreen_Show().Enable();

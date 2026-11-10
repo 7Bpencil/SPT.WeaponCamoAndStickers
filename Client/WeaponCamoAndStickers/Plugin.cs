@@ -40,6 +40,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         Vest,
         Backpack,
         ArmBand,
+        PackNStrapCustomBelt
     }
 
     public interface IDecalsHost
@@ -216,6 +217,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     [BepInPlugin("7Bpencil.WeaponCamoAndStickers", "7Bpencil.WeaponCamoAndStickers", PluginVersion)]
     [BepInDependency("com.fika.core", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.wtt.packnstrap", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
         public const string PluginVersion = "1.19.0";
@@ -280,6 +282,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Option<bool> IsFikaServer;
         public Action<Dictionary<string, List<DecalInfo>>> OnBotWeaponCamoGenerated;
         public Dictionary<string, WeaponPrefab> WeaponsWaitingForRemoteCamo;
+
+        public bool IsPackNStrapSupportEnabled;
 
         private void Awake()
         {
@@ -368,6 +372,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_IconsHash_GetItemHash().Enable();
 
             TryEnableFikaSupport(assemblyDir);
+            TryEnablePackNStrapSupport();
 
             // TODO
             // maybe apply camo texture on top of diffuse texture?
@@ -413,6 +418,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var fikaPluginAwake = fikaPluginType.GetMethod("Awake");
             var fikaPlugin = Activator.CreateInstance(fikaPluginType);
             fikaPluginAwake.Invoke(fikaPlugin, null);
+        }
+
+        public void TryEnablePackNStrapSupport()
+        {
+            IsPackNStrapSupportEnabled = Chainloader.PluginInfos.ContainsKey("com.wtt.packnstrap");
         }
 
         public ClosedTexturesDirectories LoadClosedTexturesDirectories()
@@ -2465,6 +2475,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 ItemType.Vest => 1,
                 ItemType.Backpack => 1,
                 ItemType.ArmBand => 1,
+                ItemType.PackNStrapCustomBelt => 1,
                 _ => throw new ArgumentException($"Unknown item type: {itemType}"),
             };
         }
@@ -3037,12 +3048,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             };
         }
 
-        public static bool CanItemHaveDecals(Item item)
+        public bool CanItemHaveDecals(Item item)
         {
             return GetItemType(item).HasValue;
         }
 
-        public static Option<ItemType> GetItemType(Item item)
+        public Option<ItemType> GetItemType(Item item)
         {
             return item switch
             {
@@ -3056,8 +3067,20 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 Vest => new(ItemType.Vest),
                 Backpack => new(ItemType.Backpack),
                 ArmBand => new(ItemType.ArmBand),
-                _ => default,
+                _ => CheckForCustomItem(item),
             };
+        }
+
+        public Option<ItemType> CheckForCustomItem(Item item)
+        {
+            if (IsPackNStrapSupportEnabled &&
+                item is SearchableItem &&
+                item.GetType().FullName == "PackNStrap.Core.Items.CustomBeltItemClass")
+            {
+                return new(ItemType.PackNStrapCustomBelt);
+            }
+
+            return default;
         }
 
     }
