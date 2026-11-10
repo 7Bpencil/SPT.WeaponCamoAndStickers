@@ -75,6 +75,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 _ => throw new ArgumentException($"Unknown StencilType: {stencilType}"),
             };
         }
+
+        public Texture2D GetMirrorModeIcon(DecalMirrorMode mirrorMode)
+        {
+            return mirrorMode switch
+            {
+                DecalMirrorMode.Disabled => MirrorDisabled,
+                DecalMirrorMode.Enabled => MirrorEnabled,
+                DecalMirrorMode.EnabledNoFlip => MirrorEnabledNoFilp,
+            };
+        }
     }
 
     public class CamoEditorStyle(GUISkin currentSkin)
@@ -967,13 +977,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
                 lineX += buttonHeight + smallMargin;
 
-                var mirrorModeIcon = decalInfo.MirrorMode switch
-                {
-                    DecalMirrorMode.Disabled => CamoEditorResources.MirrorDisabled,
-                    DecalMirrorMode.Enabled => CamoEditorResources.MirrorEnabled,
-                    DecalMirrorMode.EnabledNoFlip => CamoEditorResources.MirrorEnabledNoFilp,
-                };
-                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), mirrorModeIcon))
+                if (GUI.Button(new Rect(lineX, y, buttonHeight, buttonHeight), CamoEditorResources.GetMirrorModeIcon(decalInfo.MirrorMode)))
                 {
                     Plugin.SwitchMirrorMode(ItemId, decalIndex, decalInfo);
                 }
