@@ -239,6 +239,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public static ConfigEntry<int> PMCWeaponCamoSpawnChance;
         public static ConfigEntry<int> OtherBossesWeaponCamoSpawnChance;
         public static ConfigEntry<int> ScavsWeaponCamoSpawnChance;
+        public static ConfigEntry<bool> AllowVideosForRandomBotCamos;
 
 		public ManualLogSource LoggerInstance;
 
@@ -300,6 +301,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             PMCWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | PMC", 33, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
             OtherBossesWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Other Bosses", 50, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
             ScavsWeaponCamoSpawnChance = Config.Bind<int>("Main", "Raid | Camo Spawn Chance | Scavs", 0, new ConfigDescription("", new AcceptableValueRange<int>(0, 100)));
+            AllowVideosForRandomBotCamos = Config.Bind<bool>("Main", "Raid | Allow videos for random bot camos", false);
 
             var assemblyDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             TexturesDir = Path.Combine(assemblyDir, "textures");
@@ -2560,7 +2562,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public void SwitchToRandomPreset(string itemId, int instanceID, AssetPoolObject assetPoolObject, IDecalsHost decalsHost, Camera weaponPreviewCamera)
         {
-            if (assetPoolObject is WeaponPrefab weaponPrefab && GenerateRandomCamoForWeapon(weaponPrefab).Some(out var presetDecalsInfo))
+            if (assetPoolObject is WeaponPrefab weaponPrefab && GenerateRandomCamoForWeapon(weaponPrefab, true).Some(out var presetDecalsInfo))
             {
                 SwitchToPreset(itemId, instanceID, decalsHost, weaponPreviewCamera, presetDecalsInfo);
             }
@@ -2946,7 +2948,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             // this method gets called only on non fika clients or fika host, so we can omit checks
-            if (!GenerateRandomCamoForWeapon(weaponPrefab).Some(out var decalsInfo))
+            if (!GenerateRandomCamoForWeapon(weaponPrefab, AllowVideosForRandomBotCamos.Value).Some(out var decalsInfo))
             {
                 Logger.Log(LogLevel.Warning, "RandomCamo", "Generated empty camo", itemId);
                 return;
@@ -2975,13 +2977,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public Option<List<DecalInfo>> GenerateRandomCamoForWeapon(WeaponPrefab weaponPrefab)
+        public Option<List<DecalInfo>> GenerateRandomCamoForWeapon(WeaponPrefab weaponPrefab, bool allowVideos)
         {
-            if (!GetRandomTexture(Camos).Some(out var camo))
+            if (!GetRandomTexture(Camos, allowVideos).Some(out var camo))
             {
                 return default;
             }
-            if (!GetRandomTexture(Masks).Some(out var mask))
+            if (!GetRandomTexture(Masks, allowVideos).Some(out var mask))
             {
                 return default;
             }
@@ -3022,7 +3024,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
 
         private static readonly System.Random random = new();
-        public Option<string> GetRandomTexture(string[] array)
+        public Option<string> GetRandomTexture(string[] array, bool allowVideos)
         {
             // never give builtin pure white texture
             if (array.Length == 1)
@@ -3030,9 +3032,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return default;
             }
 
-            var randomIndex = random.Next(array.Length - 1);
-            var randomElement = array[randomIndex];
-            return new(randomElement);
+            const int retries = 3;
+            for (var i = 0; i < retries; i++)
+            {
+                var randomIndex = random.Next(array.Length - 1);
+                var randomTextureName = array[randomIndex];
+                var textureData = GetTextureData(randomTextureName);
+                if (textureData.Format == DecalTextureFormat.Video && !allowVideos)
+                {
+                    continue;
+                }
+
+                return new(randomTextureName);
+            }
+
+            return default;
         }
 
         public DecalInfo GenerateRandomDecal(
