@@ -186,13 +186,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		public static Option<FailedResult> GetRequiresBenchTooltip()
 		{
-			if (Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
-			{
-				return default;
-			}
-
 			// Razolak liked that paint shop requires bench 1, I think it makes sense too
+			if (!Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
+			{
 			return new(new FailedResult("bonus/UnlockWeaponModification_required"));
+		}
+			return default;
 		}
 
 	    public static bool InRaid()
