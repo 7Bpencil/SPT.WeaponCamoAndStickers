@@ -26,6 +26,8 @@ using SPT.Reflection.Patching;
 using HarmonyLib;
 using UnityEngine;
 
+using WMS = EFT.UI.ItemObserveScreen<EFT.UI.WeaponModding.WeaponModdingScreen.WeaponModdingScreenController, EFT.UI.WeaponModding.WeaponModdingScreen>;
+
 namespace SevenBoldPencil.WeaponCamoAndStickers
 {
 	// this method tries to initialize gui for all slots in weapon,
@@ -34,7 +36,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.CreateModSlotViews));
+            return AccessTools.DeclaredMethod(typeof(WMS), nameof(WMS.CreateModSlotViews));
         }
 
         [PatchPrefix]
@@ -256,7 +258,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Close));
+            return AccessTools.DeclaredMethod(typeof(WMS), nameof(WMS.Close));
         }
 
         [PatchPrefix]

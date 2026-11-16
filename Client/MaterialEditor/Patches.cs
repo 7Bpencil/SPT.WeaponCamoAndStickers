@@ -27,6 +27,7 @@ using HarmonyLib;
 using UnityEngine;
 
 using WeaponPreview_Proxy = SevenBoldPencil.WeaponCamoAndStickers.WeaponPreview_Proxy;
+using WMS = EFT.UI.ItemObserveScreen<EFT.UI.WeaponModding.WeaponModdingScreen.WeaponModdingScreenController, EFT.UI.WeaponModding.WeaponModdingScreen>;
 
 namespace SevenBoldPencil.MaterialEditor
 {
@@ -129,7 +130,7 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.CreateModSlotViews));
+            return AccessTools.DeclaredMethod(typeof(WMS), nameof(WMS.CreateModSlotViews));
         }
 
         [PatchPrefix]
@@ -243,7 +244,7 @@ namespace SevenBoldPencil.MaterialEditor
 	{
         protected override MethodBase GetTargetMethod()
         {
-            return AccessTools.Method(typeof(WeaponModdingScreen), nameof(WeaponModdingScreen.Close));
+            return AccessTools.DeclaredMethod(typeof(WMS), nameof(WMS.Close));
         }
 
         [PatchPrefix]
