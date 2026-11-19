@@ -1,3 +1,6 @@
+// Copyright (c) 2020 Peter @sHTiF Stefcek
+// SPDX-License-Identifier: MIT
+
 using UnityEngine;
 
 namespace RuntimeHandle

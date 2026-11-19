@@ -1,3 +1,7 @@
+// Copyright (c) 2020 Peter @sHTiF Stefcek
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -8,10 +12,6 @@ namespace RuntimeHandle
 		public void SetScale(float scale);
 	}
 
-    /**
-     * Created by Peter @sHTiF Stefcek 20.10.2020
-     * Rewritten by 7Bpencil 22.03.2026
-     */
     public class ScaleAxis : HandleBase
     {
         private const float SIZE = 2;

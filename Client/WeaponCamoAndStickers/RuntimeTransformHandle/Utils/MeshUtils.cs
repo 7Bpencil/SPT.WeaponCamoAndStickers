@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+﻿// Copyright (c) 2020 Peter @sHTiF Stefcek
+// SPDX-License-Identifier: MIT
+
+using UnityEngine;
 
 namespace RuntimeHandle
 {
-	/**
-     * Created by Peter @sHTiF Stefcek 20.10.2020, some functions based on Unity wiki
-     */
+	// some functions based on Unity wiki
 	public class MeshUtils
 	{
 		static public Mesh CreateArc(Vector3 p_center, Vector3 p_startPoint, Vector3 p_axis, float p_radius, float p_angle, int p_segmentCount)

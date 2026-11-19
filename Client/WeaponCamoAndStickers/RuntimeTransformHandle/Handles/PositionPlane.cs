@@ -1,11 +1,11 @@
+// Copyright (c) 2020 Peter @sHTiF Stefcek
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
 using UnityEngine;
 
 namespace RuntimeHandle
 {
-    /**
-     * Created by Peter @sHTiF Stefcek 20.10.2020
-     * Rewritten by 7Bpencil 22.03.2026
-     */
     public class PositionPlane : HandleBase
     {
 		private Transform _transformHandle;

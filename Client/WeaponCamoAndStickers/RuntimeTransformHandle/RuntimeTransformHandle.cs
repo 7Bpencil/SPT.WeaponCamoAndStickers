@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿// Copyright (c) 2021 Peter @sHTiF Stefcek
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
+using UnityEngine;
 
 namespace RuntimeHandle
 {
@@ -26,10 +30,6 @@ namespace RuntimeHandle
 		public Ray GetCameraRay() => _camera.ScreenPointToRay(Input.mousePosition);
 	}
 
-    /**
-     * Created by Peter @sHTiF Stefcek 21.10.2020
-     * Rewritten by 7Bpencil 22.03.2026
-     */
     public class RuntimeTransformHandle : MonoBehaviour
     {
         private const bool _autoScale = true;

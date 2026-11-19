@@ -1,3 +1,7 @@
+// Copyright (c) 2020 Peter @sHTiF Stefcek
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
 using RuntimeHandle;
 using UnityEngine;
 
@@ -18,10 +22,6 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
-    /**
-     * Created by Peter @sHTiF Stefcek 20.10.2020
-     * Rewritten by 7Bpencil 22.03.2026
-     */
     public class PositionHandle(Plugin plugin, string itemId, int decalIndex, DecalInfo decalInfo, Decal decal, Shader handleShader) : ITransformHandle
     {
 		private readonly Plugin _plugin = plugin;
