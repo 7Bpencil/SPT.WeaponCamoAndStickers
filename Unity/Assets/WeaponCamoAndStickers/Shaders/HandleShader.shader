@@ -1,6 +1,5 @@
-﻿/**
- * Created by Peter @sHTiF Stefcek 20.10.2020
- */
+﻿// Copyright (c) 2020 Peter @sHTiF Stefcek
+// SPDX-License-Identifier: MIT
 
 Shader "sHTiF/HandleShader"
 {
@@ -12,7 +11,7 @@ Shader "sHTiF/HandleShader"
     {
         Tags { "RenderType"="Transparent" "Queue"="Transparent+1" }
         LOD 100
-        
+
         ZWrite On
         ZTest Always
         Cull Off
@@ -42,7 +41,7 @@ Shader "sHTiF/HandleShader"
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                
+
                 return o;
             }
 

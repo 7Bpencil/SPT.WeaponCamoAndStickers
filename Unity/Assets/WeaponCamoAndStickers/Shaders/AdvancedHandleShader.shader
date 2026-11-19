@@ -1,6 +1,5 @@
-﻿/**
- * Created by Peter @sHTiF Stefcek 20.10.2020
- */
+﻿// Copyright (c) 2020 Peter @sHTiF Stefcek
+// SPDX-License-Identifier: MIT
 
 Shader "sHTiF/AdvancedHandleShader"
 {
@@ -14,7 +13,7 @@ Shader "sHTiF/AdvancedHandleShader"
     {
         Tags { "RenderType"="Transparent" "Queue"="Transparent+1" }
         LOD 100
-        
+
         ZWrite On
         ZTest Always
         Cull Off
@@ -48,7 +47,7 @@ Shader "sHTiF/AdvancedHandleShader"
                 OUT o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.positionWS = mul(unity_ObjectToWorld, float4(v.vertex.xyz,1.0));
-                
+
                 return o;
             }
 
@@ -56,7 +55,7 @@ Shader "sHTiF/AdvancedHandleShader"
             {
                 if (distance(i.positionWS, _CameraPosition) > _CameraDistance)
                     return float4(0,0,0,0.1f);
-                
+
                 return _Color;
             }
             ENDCG

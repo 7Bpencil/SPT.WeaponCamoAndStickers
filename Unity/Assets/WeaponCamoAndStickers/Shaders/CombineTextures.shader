@@ -1,3 +1,6 @@
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
 Shader "WeaponCamoAndStickers/CombineTextures"
 {
     Properties

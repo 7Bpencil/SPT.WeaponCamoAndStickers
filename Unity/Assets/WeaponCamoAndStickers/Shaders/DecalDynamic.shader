@@ -1,3 +1,6 @@
+// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: MIT
+
 Shader "WeaponCamoAndStickers/DeferredDecal" {
     Properties {
         [MaterialEnum(Static, 0, Characters, 1, Hands, 2)] _StencilType ("_StencilType", Float) = 2
