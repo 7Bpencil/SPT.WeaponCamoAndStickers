@@ -25,3 +25,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ===============================
+
+Weapon Camo And Stickers uses icons:
+
+Delete icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/bin_484611)
+Save icons created by Yogi Aprelliyanto - Flaticon (https://www.flaticon.com/free-icon/diskette_2874050)
+Ui icons created by shin_icons - Flaticon (https://www.flaticon.com/free-icon/copy_9321839)
+Arrow icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/arrow-down-sign-to-navigate_32195)
+Hide icons created by Uniconlabs - Flaticon (https://www.flaticon.com/free-icon/hidden_3287898)
+Visible icons created by Uniconlabs - Flaticon (https://www.flaticon.com/free-icon/visible_3287894)
+Home icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/house-black-silhouette-without-door_20176)
+Share link icons created by bsd - Flaticon (https://www.flaticon.com/free-icon/link_8867582)
+Gun icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/submachine-gun_1233)
+Star icons created by Pixel perfect - Flaticon (https://www.flaticon.com/free-icon/star_1828961)
+Flip icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/flip_734541)
+Video icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/play-button_375)
+Drawing icons created by Magnific - Flaticon (https://www.flaticon.com/free-icon/color-palette_3199937)
+
+===============================
