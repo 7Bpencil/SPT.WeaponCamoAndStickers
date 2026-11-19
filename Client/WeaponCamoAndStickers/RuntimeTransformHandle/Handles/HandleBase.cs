@@ -1,4 +1,3 @@
-using SevenBoldPencil.Common;
 using UnityEngine;
 
 namespace RuntimeHandle
@@ -14,7 +13,7 @@ namespace RuntimeHandle
 
         protected void Init(Shader shader, Color defaultColor)
         {
-			_defaultColor = defaultColor.WithAlpha(0.5f);
+			_defaultColor = new(defaultColor.r, defaultColor.g, defaultColor.b, 0.5f);
             _material = new Material(shader);
             _material.color = _defaultColor;
         }
