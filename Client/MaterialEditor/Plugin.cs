@@ -1,9 +1,5 @@
-﻿//
-// Copyright (c) 2026 7Bpencil
-//
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
-//
+﻿// Copyright (c) 2026 7Bpencil
+// SPDX-License-Identifier: Apache-2.0
 
 using BepInEx;
 using BepInEx.Bootstrap;
