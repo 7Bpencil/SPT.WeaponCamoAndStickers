@@ -83,19 +83,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // TODO use lod group if it exists, otherwise?
 
             var result = new Dictionary<Renderer, RendererData>();
+            var resultPaths = new HashSet<string>();
 
             var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
             var allWeaponContainers = weaponPrefab.ContainerCollectionView.ContainerBones;
             var weaponObject = weaponPrefab._objectInstance;
 
             TryCollectLOD0(weaponObject, decalsRoot, "", true, result);
-            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result);
 
-            var resultPaths = new HashSet<string>(result.Count);
+            // add root renderers to set of paths
+            // because they are technically not in slots,
+            // but player still may want to decide to keep them painted or clean
+
             foreach (var rendererData in result.Values)
             {
                 resultPaths.Add(rendererData.Path);
             }
+
+            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result, resultPaths);
 
             return (result, resultPaths);
         }
@@ -105,7 +110,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             CompoundItem compoundItem,
             Transform decalsRoot,
             string path,
-            Dictionary<Renderer, RendererData> result)
+            Dictionary<Renderer, RendererData> result,
+            HashSet<string> resultPaths)
         {
             foreach (var slot in compoundItem.Slots)
             {
@@ -113,27 +119,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     continue;
                 }
-                if (slotView.Item == null)
-                {
-                    continue;
-                }
-                if (!slotView.ItemView)
-                {
-                    continue;
-                }
+
+                // save paths to slots even if they are empty,
+                // useful if player will attach mag or scope later
 
                 var pathNew = Concat(path, slot.ID);
+                resultPaths.Add(pathNew);
+
+                if (slotView.Item == null || !slotView.ItemView)
+                {
+                    continue;
+                }
 
                 TryCollectLOD0(slotView.ItemView.gameObject, decalsRoot, pathNew, false, result);
 
                 if (slotView.Item is CompoundItem childCompoundItem)
                 {
-                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result);
+                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result, resultPaths);
                 }
             }
         }
 
-        public static void TryCollectLOD0(GameObject gameObject, Transform decalsRoot, string path, bool addRendererNameToPath, Dictionary<Renderer, RendererData> result)
+        public static void TryCollectLOD0(GameObject gameObject, Transform decalsRoot, string path, bool useRendererNameAsPath, Dictionary<Renderer, RendererData> result)
         {
             if (gameObject.TryGetComponent<LODGroup>(out var lodGroup))
             {
@@ -145,7 +152,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     {
                         var rendererToRoot = GetRendererToRootMatrix(renderer, decalsRoot);
     					var meshBounds = meshFilter.sharedMesh.bounds;
-                        var pathNew = addRendererNameToPath ? Concat(path, renderer.name) : path;
+                        var pathNew = useRendererNameAsPath ? renderer.name : path;
                         result.Add(renderer, new(rendererToRoot, meshBounds, pathNew));
                     }
                 }
