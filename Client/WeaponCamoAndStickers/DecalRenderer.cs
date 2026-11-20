@@ -138,6 +138,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecalsOnItem(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
 		{
+			DrawDecalsOnItem_Box(itemWithDecals, decalsInfo, currentCamera, buffer);
+		}
+
+		private void DrawDecalsOnItem_Box(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
+		{
 			var decals = itemWithDecals.Decals;
 			for (var i = 0; i < decals.Count; i++)
 			{
@@ -149,19 +154,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 					{
 						case DecalMirrorMode.Disabled:
 						{
-							DrawDecal(decal, buffer);
+							DrawDecal_Box(decal, buffer);
 							break;
 						}
 						case DecalMirrorMode.Enabled:
 						{
-							DrawDecal(decal, buffer);
-							DrawDecalMirrored(decal, true, buffer);
+							DrawDecal_Box(decal, buffer);
+							DrawDecalMirrored_Box(decal, true, buffer);
 							break;
 						}
 						case DecalMirrorMode.EnabledNoFlip:
 						{
-							DrawDecal(decal, buffer);
-							DrawDecalMirrored(decal, false, buffer);
+							DrawDecal_Box(decal, buffer);
+							DrawDecalMirrored_Box(decal, false, buffer);
 							break;
 						}
 					}
@@ -169,12 +174,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			}
 		}
 
-		private void DrawDecal(Decal decal, CommandBuffer buffer)
+		private void DrawDecal_Box(Decal decal, CommandBuffer buffer)
 		{
-			DrawDecal(decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial, buffer);
+			DrawDecal_Box(decal.DecalTransform.localToWorldMatrix, decal.DecalMaterial, buffer);
 		}
 
-		private void DrawDecalMirrored(Decal decal, bool flipHorizontally, CommandBuffer buffer)
+		private void DrawDecalMirrored_Box(Decal decal, bool flipHorizontally, CommandBuffer buffer)
 		{
 			var localPosition = decal.DecalTransform.localPosition;
 			var localRotation = decal.DecalTransform.localRotation;
@@ -184,10 +189,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var localMatrix = Matrix4x4.TRS(localPosition, localRotation, localScale);
 			var localToWorldMatrix = decal.DecalRoot.localToWorldMatrix * localMatrix;
 
-			DrawDecal(localToWorldMatrix, decal.DecalMaterial, buffer);
+			DrawDecal_Box(localToWorldMatrix, decal.DecalMaterial, buffer);
 		}
 
-		private void DrawDecal(in Matrix4x4 localToWorldMatrix, Material material, CommandBuffer buffer)
+		private void DrawDecal_Box(in Matrix4x4 localToWorldMatrix, Material material, CommandBuffer buffer)
 		{
 			// its easier to accurately place decal when
 			// its transform handle is located on the face
