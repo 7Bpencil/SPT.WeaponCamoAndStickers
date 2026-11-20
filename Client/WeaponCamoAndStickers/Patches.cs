@@ -187,8 +187,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			// Razolak liked that paint shop requires bench 1, I think it makes sense too
 			if (!Singleton<BonusController>.Instance.HasBonus(EBonusType.UnlockWeaponModification))
 			{
-			return new(new FailedResult("bonus/UnlockWeaponModification_required"));
-		}
+				return new(new FailedResult("bonus/UnlockWeaponModification_required"));
+			}
 			return default;
 		}
 
