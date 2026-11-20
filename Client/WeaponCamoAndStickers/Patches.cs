@@ -312,6 +312,34 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		}
 	}
 
+	public class Patch_Firearms_SetupMod : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(Firearms), nameof(Firearms.SetupMod));
+        }
+
+        [PatchPostfix]
+        private static void Postfix(Firearms __instance, Slot slot, GameObject modObject)
+		{
+			Plugin.Instance.OnSetupMod(__instance, slot, modObject);
+		}
+	}
+
+	public class Patch_Firearms_RemoveMod : ModulePatch
+	{
+        protected override MethodBase GetTargetMethod()
+        {
+            return AccessTools.Method(typeof(Firearms), nameof(Firearms.RemoveMod));
+        }
+
+        [PatchPrefix]
+        private static void Prefix(Firearms __instance, Slot slot)
+		{
+			Plugin.Instance.OnRemoveMod(__instance, slot);
+		}
+	}
+
 	public class Patch_PlayerBody_SlotView_CreateAndParent : ModulePatch
 	{
         protected override MethodBase GetTargetMethod()

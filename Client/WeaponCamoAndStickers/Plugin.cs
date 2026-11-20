@@ -68,26 +68,35 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             string Path
         );
 
+        public readonly record struct SlotData
+        (
+            Transform SlotBone,
+            Matrix4x4 SlotToRoot,
+            string Path
+        );
+
         public readonly WeaponPrefab WeaponPrefab;
         public readonly Dictionary<Renderer, RendererData> Renderers;
         public readonly HashSet<string> RendererPaths;
+        public readonly Dictionary<Slot, SlotData> Slots;
 
         public WeaponDecalsHost(Transform decalsRoot, WeaponPrefab weaponPrefab) : base(decalsRoot)
         {
             WeaponPrefab = weaponPrefab;
-            (Renderers, RendererPaths) = GetRendererTransforms(decalsRoot, weaponPrefab);
+            (Renderers, RendererPaths, Slots) = GetRendererTransforms(decalsRoot, weaponPrefab);
         }
 
-        public static (Dictionary<Renderer, RendererData>, HashSet<string>) GetRendererTransforms(Transform decalsRoot, WeaponPrefab weaponPrefab)
+        public static (Dictionary<Renderer, RendererData>, HashSet<string>, Dictionary<Slot, SlotData>) GetRendererTransforms(Transform decalsRoot, WeaponPrefab weaponPrefab)
         {
             // TODO use lod group if it exists, otherwise?
-
-            var result = new Dictionary<Renderer, RendererData>();
-            var resultPaths = new HashSet<string>();
 
             var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
             var allWeaponContainers = weaponPrefab.ContainerCollectionView.ContainerBones;
             var weaponObject = weaponPrefab._objectInstance;
+
+            var result = new Dictionary<Renderer, RendererData>();
+            var resultPaths = new HashSet<string>();
+            var slots = new Dictionary<Slot, SlotData>(allWeaponContainers.Count);
 
             TryCollectLOD0(weaponObject, decalsRoot, "", true, result);
 
@@ -100,9 +109,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 resultPaths.Add(rendererData.Path);
             }
 
-            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result, resultPaths);
+            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result, resultPaths, slots);
 
-            return (result, resultPaths);
+            return (result, resultPaths, slots);
         }
 
         public static void CollectCompoundItemRenderersRecursive(
@@ -111,11 +120,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             Transform decalsRoot,
             string path,
             Dictionary<Renderer, RendererData> result,
-            HashSet<string> resultPaths)
+            HashSet<string> resultPaths,
+            Dictionary<Slot, SlotData> slots)
         {
             foreach (var slot in compoundItem.Slots)
             {
                 if (!allWeaponContainers.TryGetValue(slot, out var slotView))
+                {
+                    continue;
+                }
+                if (!slotView.Bone)
                 {
                     continue;
                 }
@@ -126,6 +140,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var pathNew = Concat(path, slot.ID);
                 resultPaths.Add(pathNew);
 
+                var slotToRoot = GetChildToParentMatrix(slotView.Bone, decalsRoot);
+                slots.Add(slot, new(slotView.Bone, slotToRoot, pathNew));
+
                 if (slotView.Item == null || !slotView.ItemView)
                 {
                     continue;
@@ -135,7 +152,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
                 if (slotView.Item is CompoundItem childCompoundItem)
                 {
-                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result, resultPaths);
+                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result, resultPaths, slots);
                 }
             }
         }
@@ -150,7 +167,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     if (renderer && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
                     {
-                        var rendererToRoot = GetRendererToRootMatrix(renderer, decalsRoot);
+                        var rendererToRoot = GetChildToParentMatrix(renderer.transform, decalsRoot);
     					var meshBounds = meshFilter.sharedMesh.bounds;
                         var pathNew = useRendererNameAsPath ? renderer.name : path;
                         result.Add(renderer, new(rendererToRoot, meshBounds, pathNew));
@@ -165,23 +182,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             return oldString == "" ? newString : $"{oldString}/{newString}";
         }
 
-        public static Matrix4x4 GetRendererToRootMatrix(Renderer renderer, Transform decalsRoot)
+        public static Matrix4x4 GetChildToParentMatrix(Transform child, Transform parent)
         {
-            var transform = renderer.transform;
-            var localPosition = GetLocalPosition(decalsRoot, transform);
-            var localRotation = GetLocalRotation(decalsRoot, transform);
+            var localPosition = child == parent ? child.localPosition : parent.InverseTransformPoint(child.position);
+            var localRotation = child == parent ? child.localRotation : Quaternion.Inverse(parent.rotation) * child.rotation;
 			var rendererToRoot = Matrix4x4.TRS(localPosition, localRotation, Vector3.one);
             return rendererToRoot;
-        }
-
-        public static Vector3 GetLocalPosition(Transform reference, Transform target)
-        {
-            return target == reference ? target.localPosition : reference.InverseTransformPoint(target.position);
-        }
-
-        public static Quaternion GetLocalRotation(Transform reference, Transform target)
-        {
-            return target == reference ? target.localRotation : Quaternion.Inverse(reference.rotation) * target.rotation;
         }
     }
 
@@ -500,6 +506,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_WeaponModdingScreen_Close().Enable();
             new Patch_ObjectsFactory_CreateItemAsync().Enable();
             new Patch_WeaponPrefab_InitHotObjects().Enable();
+            new Patch_Firearms_SetupMod().Enable();
+            new Patch_Firearms_RemoveMod().Enable();
             new Patch_PlayerBody_SlotView_CreateAndParent().Enable();
             new Patch_AssetPoolObject_ReturnToPool().Enable();
             new Patch_AssetPoolObject_OnDestroy().Enable();
@@ -2293,6 +2301,94 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             var decalsRoot = GetDecalsRoot(itemType, weaponPrefab);
             var decalsHost = new WeaponDecalsHost(decalsRoot, weaponPrefab);
             OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
+        }
+
+        public void OnSetupMod(Firearms firearms, Slot slot, GameObject modObject)
+        {
+            var weaponPrefab = firearms.WeaponPrefab;
+            var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
+            var itemId = weapon.Id;
+
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                return;
+            }
+
+            var instanceID = weaponPrefab.gameObject.GetInstanceID();
+            if (!itemsWithDecals.Items.TryGetValue(instanceID, out var itemWithDecals))
+            {
+                return;
+            }
+
+            if (itemWithDecals.DecalsHost is not WeaponDecalsHost weaponDecalsHost)
+            {
+                return;
+            }
+
+            if (!weaponDecalsHost.Slots.TryGetValue(slot, out var slotData))
+            {
+                return;
+            }
+
+            if (modObject.TryGetComponent<LODGroup>(out var lodGroup))
+            {
+                var lods = lodGroup.GetLODs();
+                var lod0 = lods[0].renderers;
+                foreach (var renderer in lod0)
+                {
+                    if (renderer && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                    {
+                        var rendererToSlot = WeaponDecalsHost.GetChildToParentMatrix(renderer.transform, slotData.SlotBone);
+                        var rendererToRoot = slotData.SlotToRoot * rendererToSlot;
+    					var meshBounds = meshFilter.sharedMesh.bounds;
+                        weaponDecalsHost.Renderers.Add(renderer, new(rendererToRoot, meshBounds, slotData.Path));
+                    }
+                }
+            }
+        }
+
+        public void OnRemoveMod(Firearms firearms, Slot slot)
+        {
+            var weaponPrefab = firearms.WeaponPrefab;
+            var itemId = new WeaponPrefab_Proxy(weaponPrefab)._weaponData.Id;
+
+            if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
+            {
+                return;
+            }
+
+            var instanceID = weaponPrefab.gameObject.GetInstanceID();
+            if (!itemsWithDecals.Items.TryGetValue(instanceID, out var itemWithDecals))
+            {
+                return;
+            }
+
+            if (itemWithDecals.DecalsHost is not WeaponDecalsHost weaponDecalsHost)
+            {
+                return;
+            }
+
+            if (!weaponDecalsHost.Slots.ContainsKey(slot))
+            {
+                return;
+            }
+
+			var viewForSlot = firearms.ContainerCollectionView.GetViewForSlot(slot);
+			var index = viewForSlot.Bone.childCount - 1;
+			var modObject = viewForSlot.Bone.GetChild(index);
+
+            if (modObject.TryGetComponent<LODGroup>(out var lodGroup))
+            {
+                var lods = lodGroup.GetLODs();
+                var lod0 = lods[0].renderers;
+                foreach (var renderer in lod0)
+                {
+                    if (renderer && renderer is MeshRenderer)
+                    {
+                        weaponDecalsHost.Renderers.Remove(renderer);
+                    }
+                }
+            }
         }
 
         public void OnDecalsHostCreated_Item(string itemId, ItemType itemType, AssetPoolObject assetPoolObject)
