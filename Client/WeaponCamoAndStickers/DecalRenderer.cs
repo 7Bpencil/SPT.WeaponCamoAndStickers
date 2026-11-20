@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using EFT.CameraControl;
+using SevenBoldPencil.Common;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -223,19 +224,19 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 					{
 						case DecalMirrorMode.Disabled:
 						{
-							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							DrawDecal_Mesh(decal, decalInfo.IncludedPathsOption, buffer, weaponDecalsHost);
 							break;
 						}
 						case DecalMirrorMode.Enabled:
 						{
-							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
-							DrawDecalMirrored_Mesh(decal, true, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							DrawDecal_Mesh(decal, decalInfo.IncludedPathsOption, buffer, weaponDecalsHost);
+							DrawDecalMirrored_Mesh(decal, true, decalInfo.IncludedPathsOption, buffer, weaponDecalsHost);
 							break;
 						}
 						case DecalMirrorMode.EnabledNoFlip:
 						{
-							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
-							DrawDecalMirrored_Mesh(decal, false, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							DrawDecal_Mesh(decal, decalInfo.IncludedPathsOption, buffer, weaponDecalsHost);
+							DrawDecalMirrored_Mesh(decal, false, decalInfo.IncludedPathsOption, buffer, weaponDecalsHost);
 							break;
 						}
 					}
@@ -243,21 +244,21 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			}
 		}
 
-		private void DrawDecal_Mesh(Decal decal, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		private void DrawDecal_Mesh(Decal decal, Option<HashSet<string>> includedPathsOption, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
 		{
 			var localPosition = decal.DecalTransform.localPosition;
 			var localRotation = decal.DecalTransform.localRotation;
 			var localScale = decal.DecalTransform.localScale;
-			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, excludedPaths, buffer, weaponDecalsHost);
+			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, includedPathsOption, buffer, weaponDecalsHost);
 		}
 
-		private void DrawDecalMirrored_Mesh(Decal decal, bool flipHorizontally, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		private void DrawDecalMirrored_Mesh(Decal decal, bool flipHorizontally, Option<HashSet<string>> includedPathsOption, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
 		{
 			var localPosition = decal.DecalTransform.localPosition;
 			var localRotation = decal.DecalTransform.localRotation;
 			var localScale = decal.DecalTransform.localScale;
 			Plugin.MirrorLeftRight(ref localPosition, ref localRotation, ref localScale, flipHorizontally);
-			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, excludedPaths, buffer, weaponDecalsHost);
+			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, includedPathsOption, buffer, weaponDecalsHost);
 		}
 
 		public readonly record struct TransformLocal
@@ -267,7 +268,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			Vector3 Scale
 		);
 
-		private void DrawDecal_Mesh(in TransformLocal decalTransformLocal, Material decalMaterial, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		private void DrawDecal_Mesh(in TransformLocal decalTransformLocal, Material decalMaterial, Option<HashSet<string>> includedPathsOption, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
 		{
 			// its easier to accurately place decal when
 			// its transform handle is located on the face
@@ -278,9 +279,10 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var decalToRoot = Matrix4x4.TRS(newLocalPosition, decalTransformLocal.Rotation, decalTransformLocal.Scale);
 			var rootToDecal = decalToRoot.inverse;
 
+			var hasInclusionMask = includedPathsOption.Some(out var includedPaths);
 			foreach (var (renderer, rendererData) in weaponDecalsHost.Renderers)
 			{
-				if (renderer.isVisible && !excludedPaths.Contains(rendererData.Path))
+				if (renderer.isVisible && (hasInclusionMask && includedPaths.Contains(rendererData.Path) || !hasInclusionMask))
 				{
 					var fromObject = rootToDecal * rendererData.RendererToRoot;
 					if (DecalOverlapsMesh(fromObject, rendererData.MeshBounds))

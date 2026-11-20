@@ -398,7 +398,7 @@ namespace SevenBoldPencil.EquipmentStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
                 StencilType = stencilType,
-				ExcludedPaths = new(),
+				IncludedPathsOption = default,
             };
 
             return decalInfo;

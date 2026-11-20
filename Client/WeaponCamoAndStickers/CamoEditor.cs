@@ -1261,11 +1261,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             {
                 if (GUI.Button(new Rect(x, y, halfBoxWidthButton, buttonHeight), "Enable All"))
                 {
-                    Plugin.ClearExcludedPaths(ItemId, decalIndex, decalInfo);
+                    Plugin.AddAllIncludedPaths(ItemId, decalIndex, decalInfo);
                 }
                 if (GUI.Button(new Rect(x + halfBoxWidthButton + smallMargin, y, halfBoxWidthButton, buttonHeight), "Disable All"))
                 {
-                    Plugin.AddAllExcludedPaths(ItemId, decalIndex, decalInfo, weaponDecalsHost.RendererPaths);
+                    Plugin.ClearIncludedPaths(ItemId, decalIndex, decalInfo);
                 }
                 y += buttonHeight + mediumMargin;
             }
@@ -1281,14 +1281,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
             foreach (var rendererPath in weaponDecalsHost.RendererPaths)
             {
-                var isExcluded = decalInfo.ExcludedPaths.Contains(rendererPath);
-                var buttonBackgroundColor = isExcluded ? colorExcludedPath : colorIncludedPath;
+                var buttonBackgroundColor = decalInfo.IsPathIncluded(rendererPath) ? colorIncludedPath : colorExcludedPath;
                 var previousBackgroundColor = GUI.backgroundColor;
 
                 GUI.backgroundColor = buttonBackgroundColor;
                 if (GUI.Button(new Rect(x, y, boxWidth, buttonHeight), rendererPath, CamoEditorStyle.DirectoryButtonStyle))
                 {
-                    Plugin.ToggleExcludedPath(ItemId, decalIndex, decalInfo, rendererPath);
+                    Plugin.ToggleIncludedPath(ItemId, decalIndex, decalInfo, rendererPath, weaponDecalsHost.RendererPaths);
                 }
                 GUI.backgroundColor = previousBackgroundColor;
                 y += buttonHeight + smallMargin;

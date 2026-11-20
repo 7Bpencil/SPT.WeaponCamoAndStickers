@@ -249,12 +249,24 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalMirrorMode MirrorMode;
         public DecalPaintMode PaintMode;
         public byte StencilType;
-        public HashSet<string> ExcludedPaths;
+        public Option<HashSet<string>> IncludedPathsOption; // Option mainly for compatibility reasons
+
+        public bool IsPathIncluded(string path)
+        {
+            if (IncludedPathsOption.Some(out var includedPaths))
+            {
+                return includedPaths.Contains(path);
+            }
+            return true;
+        }
 
         public DecalInfo GetCopy()
         {
             var newDecalInfo = (DecalInfo)MemberwiseClone();
-            newDecalInfo.ExcludedPaths = new(ExcludedPaths);
+            if (IncludedPathsOption.Some(out var includedPaths))
+            {
+                newDecalInfo.IncludedPathsOption = new(new(includedPaths));
+            }
             return newDecalInfo;
         }
     }
@@ -1145,7 +1157,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 if (decalInfo.SchemaVersion == 9)
                 {
                     decalInfo.SchemaVersion = 10;
-                    decalInfo.ExcludedPaths = new();
+                    decalInfo.IncludedPathsOption = default;
                 }
             }
         }
@@ -1883,7 +1895,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Erase,
                 StencilType = stencilType,
-				ExcludedPaths = new(),
+				IncludedPathsOption = default,
             };
 
             return decalInfo;
@@ -1928,7 +1940,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
                 StencilType = stencilType,
-				ExcludedPaths = new(),
+				IncludedPathsOption = default,
             };
 
             return decalInfo;
@@ -2133,22 +2145,42 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaskUV(itemId, decalIndex);
         }
 
-        public void ToggleExcludedPath(string itemId, int decalIndex, DecalInfo decalInfo, string path)
+        public void ToggleIncludedPath(string itemId, int decalIndex, DecalInfo decalInfo, string path, HashSet<string> paths)
         {
-            decalInfo.ExcludedPaths.Toggle(path);
-        }
-
-        public void ClearExcludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
-        {
-            decalInfo.ExcludedPaths.Clear();
-        }
-
-        public void AddAllExcludedPaths(string itemId, int decalIndex, DecalInfo decalInfo, HashSet<string> paths)
-        {
-            decalInfo.ExcludedPaths.Clear();
-            foreach (var path in paths)
+            if (decalInfo.IncludedPathsOption.Some(out var includedPaths))
             {
-                decalInfo.ExcludedPaths.Add(path);
+                includedPaths.Toggle(path);
+            }
+            else
+            {
+                var newIncludedPaths = new HashSet<string>(paths);
+                newIncludedPaths.Remove(path);
+                decalInfo.IncludedPathsOption = new(newIncludedPaths);
+            }
+        }
+
+        public void ClearIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            if (decalInfo.IncludedPathsOption.Some(out var includedPaths))
+            {
+                includedPaths.Clear();
+            }
+            else
+            {
+                decalInfo.IncludedPathsOption = new(new());
+            }
+        }
+
+        public void AddAllIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            // another option is to add all known paths, not sure which is better,
+            // I think this one is good for presets, and people who just
+            // keep everything enabled are fine with new items being painted
+
+            if (decalInfo.IncludedPathsOption.Some(out var includedPaths))
+            {
+                includedPaths.Clear();
+                decalInfo.IncludedPathsOption = default;
             }
         }
 
@@ -3237,7 +3269,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
                 StencilType = 2,
-				ExcludedPaths = new(),
+				IncludedPathsOption = default,
             };
         }
 

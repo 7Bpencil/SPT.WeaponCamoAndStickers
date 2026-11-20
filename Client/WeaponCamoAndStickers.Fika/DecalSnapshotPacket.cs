@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 using Fika.Core.Networking.LiteNetLib.Utils;
+using SevenBoldPencil.Common;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -67,7 +68,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.PutEnum<DecalMirrorMode>(d.MirrorMode);
             writer.PutEnum<DecalPaintMode>(d.PaintMode);
             writer.Put(d.StencilType);
-            SerializeHashSet(writer, d.ExcludedPaths);
+            SerializeIncludedPaths(writer, d.IncludedPathsOption);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -93,28 +94,37 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 MirrorMode = reader.GetEnum<DecalMirrorMode>(),
                 PaintMode = reader.GetEnum<DecalPaintMode>(),
                 StencilType = reader.GetByte(),
-                ExcludedPaths = DeserializeHashSet(reader),
+                IncludedPathsOption = DeserializeIncludedPaths(reader),
             };
         }
 
-        private static void SerializeHashSet(NetDataWriter writer, HashSet<string> hashSet)
+        private static void SerializeIncludedPaths(NetDataWriter writer, Option<HashSet<string>> includedPathsOption)
         {
-            writer.Put(hashSet.Count);
-            foreach (var path in hashSet)
+            writer.Put(includedPathsOption.HasValue);
+            if (includedPathsOption.Some(out var includedPaths))
             {
-                writer.Put(path);
+                writer.Put(includedPaths.Count);
+                foreach (var path in includedPaths)
+                {
+                    writer.Put(path);
+                }
             }
         }
 
-        private static HashSet<string> DeserializeHashSet(NetDataReader reader)
+        private static Option<HashSet<string>> DeserializeIncludedPaths(NetDataReader reader)
         {
-            var count = reader.GetInt();
-            var result = new HashSet<string>(count);
-            for (var i = 0; i < count; i++)
+            var hasValue = reader.GetBool();
+            if (hasValue)
             {
-                result.Add(reader.GetString());
+                var count = reader.GetInt();
+                var result = new HashSet<string>(count);
+                for (var i = 0; i < count; i++)
+                {
+                    result.Add(reader.GetString());
+                }
+                return new(result);
             }
-            return result;
+            return default;
         }
     }
 }
