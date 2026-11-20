@@ -64,6 +64,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public DecalSettingType[] DecalSettingsToolbarTyped = [DecalSettingType.Texture, DecalSettingType.Mask];
         public DecalSettingType[] DecalSettingsToolbarWeaponsTyped = [DecalSettingType.Items, DecalSettingType.Texture, DecalSettingType.Mask];
+        public DecalTextureType[] DecalTypesToolbarTyped = [DecalTextureType.Camo, DecalTextureType.Sticker];
     }
 
     public class CamoEditorStyle(GUISkin currentSkin, CamoEditorResources resources)
@@ -317,7 +318,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalSettingType[] DecalSettingsToolbarTyped;
         public int DecalSettingTypeIndex;
         public DecalSettingType DecalSettingType => DecalSettingsToolbarTyped[DecalSettingTypeIndex];
-        public DecalTextureType DecalTypeMenu;
+        public int DecalTypeMenuIndex;
+        public DecalTextureType DecalTypeMenu => CamoEditorResources.DecalTypesToolbarTyped[DecalTypeMenuIndex];
         public TexturesWindow CamosWindow;
         public TexturesWindow StickersWindow;
         public TexturesWindow MasksWindow;
@@ -417,13 +419,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     DecalSettingsToolbar = CamoEditorResources.DecalSettingsToolbarWeapons;
                     DecalSettingsToolbarTyped =  CamoEditorResources.DecalSettingsToolbarWeaponsTyped;
-                    DecalSettingTypeIndex = 1; // Texture
+                    DecalSettingTypeIndex = Array.IndexOf(DecalSettingsToolbarTyped, DecalSettingType.Texture);
                 }
                 else
                 {
                     DecalSettingsToolbar = CamoEditorResources.DecalSettingsToolbar;
                     DecalSettingsToolbarTyped = CamoEditorResources.DecalSettingsToolbarTyped;
-                    DecalSettingTypeIndex = 0; // Texture
+                    DecalSettingTypeIndex = Array.IndexOf(DecalSettingsToolbarTyped, DecalSettingType.Texture);
                 }
             }
 
@@ -800,7 +802,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             // so we dont forget to correctly init/clean those fields
 
             CurrentlyEditedDecalIndex = new(decalIndex);
-            DecalTypeMenu = decalInfo.PaintMode == DecalPaintMode.Paint ? textureData.Type : DecalTextureType.Mask; // eraser doesnt care about texture type, but whatever...
+            var newDecalTypeMenu = decalInfo.PaintMode == DecalPaintMode.Paint ? textureData.Type : DecalTextureType.Mask;
+            DecalTypeMenuIndex = Array.IndexOf(CamoEditorResources.DecalTypesToolbarTyped, newDecalTypeMenu);
             ColorTextField.SetValue(decalInfo.ColorHSVA);
         }
 
@@ -1387,7 +1390,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
             y += smallMargin + bigMargin;
 
-            DecalTypeMenu = (DecalTextureType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalTypeMenu, CamoEditorResources.DecalTypesToolbar);
+            DecalTypeMenuIndex = GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), DecalTypeMenuIndex, CamoEditorResources.DecalTypesToolbar);
             y += buttonHeight + smallMargin;
 
             if (DecalTypeMenu == DecalTextureType.Camo)
