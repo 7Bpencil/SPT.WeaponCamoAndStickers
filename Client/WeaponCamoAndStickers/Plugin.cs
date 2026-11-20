@@ -2126,6 +2126,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaskUV(itemId, decalIndex);
         }
 
+        public void ToggleExcludedPath(string itemId, int decalIndex, DecalInfo decalInfo, string path)
+        {
+            decalInfo.ExcludedPaths.Toggle(path);
+        }
+
+        public void ClearExcludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
+        {
+            decalInfo.ExcludedPaths.Clear();
+        }
+
+        public void AddAllExcludedPaths(string itemId, int decalIndex, DecalInfo decalInfo, HashSet<string> paths)
+        {
+            decalInfo.ExcludedPaths.Clear();
+            foreach (var path in paths)
+            {
+                decalInfo.ExcludedPaths.Add(path);
+            }
+        }
+
         // notice that we modify decal on all items
         public void ModifyDecalOnItems(string itemId, int decalIndex, Action<Decal, DecalInfo> changeDecal)
         {
