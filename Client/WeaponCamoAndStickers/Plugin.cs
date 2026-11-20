@@ -2145,7 +2145,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             ApplyMaskUV(itemId, decalIndex);
         }
 
-        public void ToggleIncludedPath(string itemId, int decalIndex, DecalInfo decalInfo, string path, HashSet<string> paths)
+        public static void ToggleIncludedPath(string itemId, int decalIndex, DecalInfo decalInfo, string path, HashSet<string> paths)
         {
             if (decalInfo.IncludedPathsOption.Some(out var includedPaths))
             {
@@ -2159,7 +2159,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void ClearIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
+        public static void ClearIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             if (decalInfo.IncludedPathsOption.Some(out var includedPaths))
             {
@@ -2171,7 +2171,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
         }
 
-        public void AddAllIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
+        public static void AddAllIncludedPaths(string itemId, int decalIndex, DecalInfo decalInfo)
         {
             // another option is to add all known paths, not sure which is better,
             // I think this one is good for presets, and people who just
