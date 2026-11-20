@@ -309,7 +309,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalDynamic.shader");
+            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalBox.shader");
             CombineTexturesShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/CombineTextures.shader");
             ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             ErrorTextureData = new()

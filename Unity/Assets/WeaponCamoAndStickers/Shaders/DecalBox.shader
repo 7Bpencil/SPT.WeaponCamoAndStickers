@@ -1,7 +1,7 @@
 // Copyright (c) 2026 7Bpencil
 // SPDX-License-Identifier: Apache-2.0
 
-Shader "WeaponCamoAndStickers/DeferredDecal" {
+Shader "WeaponCamoAndStickers/DecalBox" {
     Properties {
         [MaterialEnum(Static, 0, Characters, 1, Hands, 2)] _StencilType ("_StencilType", Float) = 2
 		[MaterialEnum(Keep, 0, DecrementWrap, 7)] _StencilPassOperation ("Stencil Pass Operation", Float) = 0
