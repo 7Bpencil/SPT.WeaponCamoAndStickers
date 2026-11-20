@@ -138,7 +138,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 		private void DrawDecalsOnItem(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
 		{
-			DrawDecalsOnItem_Box(itemWithDecals, decalsInfo, currentCamera, buffer);
+			if (itemWithDecals.DecalsHost is WeaponDecalsHost weaponDecalsHost)
+			{
+				DrawDecalsOnItem_Mesh(weaponDecalsHost, itemWithDecals, decalsInfo, currentCamera, buffer);
+			}
+			else
+			{
+				DrawDecalsOnItem_Box(itemWithDecals, decalsInfo, currentCamera, buffer);
+			}
 		}
 
 		private void DrawDecalsOnItem_Box(ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
@@ -202,5 +209,102 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var resultMatrix = localToWorldMatrix * Matrix4x4.Translate(offset);
 			buffer.DrawMesh(Cube, resultMatrix, material);
 		}
+
+		private void DrawDecalsOnItem_Mesh(WeaponDecalsHost weaponDecalsHost, ItemWithDecals itemWithDecals, List<DecalInfo> decalsInfo, Camera currentCamera, CommandBuffer buffer)
+		{
+			var decals = itemWithDecals.Decals;
+			for (var i = 0; i < decals.Count; i++)
+			{
+				var decalInfo = decalsInfo[i];
+				var decal = decals[i];
+				if (decalInfo.IsVisible && decal)
+				{
+					switch (decalInfo.MirrorMode)
+					{
+						case DecalMirrorMode.Disabled:
+						{
+							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							break;
+						}
+						case DecalMirrorMode.Enabled:
+						{
+							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							DrawDecalMirrored_Mesh(decal, true, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							break;
+						}
+						case DecalMirrorMode.EnabledNoFlip:
+						{
+							DrawDecal_Mesh(decal, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							DrawDecalMirrored_Mesh(decal, false, decalInfo.ExcludedPaths, buffer, weaponDecalsHost);
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		private void DrawDecal_Mesh(Decal decal, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		{
+			var localPosition = decal.DecalTransform.localPosition;
+			var localRotation = decal.DecalTransform.localRotation;
+			var localScale = decal.DecalTransform.localScale;
+			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, excludedPaths, buffer, weaponDecalsHost);
+		}
+
+		private void DrawDecalMirrored_Mesh(Decal decal, bool flipHorizontally, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		{
+			var localPosition = decal.DecalTransform.localPosition;
+			var localRotation = decal.DecalTransform.localRotation;
+			var localScale = decal.DecalTransform.localScale;
+			Plugin.MirrorLeftRight(ref localPosition, ref localRotation, ref localScale, flipHorizontally);
+			DrawDecal_Mesh(new(localPosition, localRotation, localScale), decal.DecalMaterial, excludedPaths, buffer, weaponDecalsHost);
+		}
+
+		public readonly record struct TransformLocal
+		(
+			Vector3 Position,
+			Quaternion Rotation,
+			Vector3 Scale
+		);
+
+		private void DrawDecal_Mesh(in TransformLocal decalTransformLocal, Material decalMaterial, HashSet<string> excludedPaths, CommandBuffer buffer, WeaponDecalsHost weaponDecalsHost)
+		{
+			// its easier to accurately place decal when
+			// its transform handle is located on the face
+			// of projector volume, instead of geometric center.
+
+			// TODO rootToDecal can be precomputed on closing the editor
+			var newLocalPosition = decalTransformLocal.Position + decalTransformLocal.Rotation * Vector3.Scale(decalTransformLocal.Scale, new(0, -0.5f, 0));
+			var decalToRoot = Matrix4x4.TRS(newLocalPosition, decalTransformLocal.Rotation, decalTransformLocal.Scale);
+			var rootToDecal = decalToRoot.inverse;
+
+			foreach (var (renderer, rendererData) in weaponDecalsHost.Renderers)
+			{
+				if (renderer.isVisible && !excludedPaths.Contains(rendererData.Path))
+				{
+					var fromObject = rootToDecal * rendererData.RendererToRoot;
+					if (DecalOverlapsMesh(fromObject, rendererData.MeshBounds))
+					{
+						buffer.SetGlobalMatrix("_DecalFromObject", fromObject);
+						buffer.DrawRenderer(renderer, decalMaterial);
+					}
+				}
+			}
+		}
+
+		public static bool DecalOverlapsMesh(in Matrix4x4 fromObject, in Bounds meshBounds)
+		{
+		    var c = fromObject.MultiplyPoint3x4(meshBounds.center);
+		    var e = meshBounds.extents;
+
+		    var ex = Mathf.Abs(fromObject.m00) * e.x + Mathf.Abs(fromObject.m01) * e.y + Mathf.Abs(fromObject.m02) * e.z;
+		    var ey = Mathf.Abs(fromObject.m10) * e.x + Mathf.Abs(fromObject.m11) * e.y + Mathf.Abs(fromObject.m12) * e.z;
+		    var ez = Mathf.Abs(fromObject.m20) * e.x + Mathf.Abs(fromObject.m21) * e.y + Mathf.Abs(fromObject.m22) * e.z;
+
+		    return Mathf.Abs(c.x) <= 0.5f + ex &&
+		           Mathf.Abs(c.y) <= 0.5f + ey &&
+		           Mathf.Abs(c.z) <= 0.5f + ez;
+		}
+
 	}
 }

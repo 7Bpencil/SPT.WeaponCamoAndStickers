@@ -59,6 +59,125 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         }
     }
 
+    public class WeaponDecalsHost : SimpleDecalsHost
+    {
+        public readonly record struct RendererData
+        (
+            Matrix4x4 RendererToRoot,
+            Bounds MeshBounds,
+            string Path
+        );
+
+        public readonly WeaponPrefab WeaponPrefab;
+        public readonly Dictionary<Renderer, RendererData> Renderers;
+        public readonly HashSet<string> RendererPaths;
+
+        public WeaponDecalsHost(Transform decalsRoot, WeaponPrefab weaponPrefab) : base(decalsRoot)
+        {
+            WeaponPrefab = weaponPrefab;
+            (Renderers, RendererPaths) = GetRendererTransforms(decalsRoot, weaponPrefab);
+        }
+
+        public static (Dictionary<Renderer, RendererData>, HashSet<string>) GetRendererTransforms(Transform decalsRoot, WeaponPrefab weaponPrefab)
+        {
+            // TODO use lod group if it exists, otherwise?
+
+            var result = new Dictionary<Renderer, RendererData>();
+
+            var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
+            var allWeaponContainers = weaponPrefab.ContainerCollectionView.ContainerBones;
+            var weaponObject = weaponPrefab._objectInstance;
+
+            TryCollectLOD0(weaponObject, decalsRoot, "", true, result);
+            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result);
+
+            var resultPaths = new HashSet<string>(result.Count);
+            foreach (var rendererData in result.Values)
+            {
+                resultPaths.Add(rendererData.Path);
+            }
+
+            return (result, resultPaths);
+        }
+
+        public static void CollectCompoundItemRenderersRecursive(
+            Dictionary<IContainer, ContainerCollectionView.SlotView> allWeaponContainers,
+            CompoundItem compoundItem,
+            Transform decalsRoot,
+            string path,
+            Dictionary<Renderer, RendererData> result)
+        {
+            foreach (var slot in compoundItem.Slots)
+            {
+                if (!allWeaponContainers.TryGetValue(slot, out var slotView))
+                {
+                    continue;
+                }
+                if (slotView.Item == null)
+                {
+                    continue;
+                }
+                if (!slotView.ItemView)
+                {
+                    continue;
+                }
+
+                var pathNew = Concat(path, slot.ID);
+
+                TryCollectLOD0(slotView.ItemView.gameObject, decalsRoot, pathNew, false, result);
+
+                if (slotView.Item is CompoundItem childCompoundItem)
+                {
+                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result);
+                }
+            }
+        }
+
+        public static void TryCollectLOD0(GameObject gameObject, Transform decalsRoot, string path, bool addRendererNameToPath, Dictionary<Renderer, RendererData> result)
+        {
+            if (gameObject.TryGetComponent<LODGroup>(out var lodGroup))
+            {
+                var lods = lodGroup.GetLODs();
+                var lod0 = lods[0].renderers;
+                foreach (var renderer in lod0)
+                {
+                    if (renderer && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                    {
+                        var rendererToRoot = GetRendererToRootMatrix(renderer, decalsRoot);
+    					var meshBounds = meshFilter.sharedMesh.bounds;
+                        var pathNew = addRendererNameToPath ? Concat(path, renderer.name) : path;
+                        result.Add(renderer, new(rendererToRoot, meshBounds, pathNew));
+                    }
+                }
+            }
+        }
+
+        // TODO horrible!
+        public static string Concat(string oldString, string newString)
+        {
+            return oldString == "" ? newString : $"{oldString}/{newString}";
+        }
+
+        public static Matrix4x4 GetRendererToRootMatrix(Renderer renderer, Transform decalsRoot)
+        {
+            var transform = renderer.transform;
+            var localPosition = GetLocalPosition(decalsRoot, transform);
+            var localRotation = GetLocalRotation(decalsRoot, transform);
+			var rendererToRoot = Matrix4x4.TRS(localPosition, localRotation, Vector3.one);
+            return rendererToRoot;
+        }
+
+        public static Vector3 GetLocalPosition(Transform reference, Transform target)
+        {
+            return target == reference ? target.localPosition : reference.InverseTransformPoint(target.position);
+        }
+
+        public static Quaternion GetLocalRotation(Transform reference, Transform target)
+        {
+            return target == reference ? target.localRotation : Quaternion.Inverse(reference.rotation) * target.rotation;
+        }
+    }
+
     public class SkinnedDecalsHost : IDecalsHost
     {
         public readonly Transform DefaultDecalsRoot;
@@ -2061,7 +2180,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             if (itemGameObject.TryGetComponent<AssetPoolObject>(out var assetPoolObject))
             {
-                if (assetPoolObject is WeaponPrefab weaponPrefab)
+                if (itemType == ItemType.Weapon && assetPoolObject is WeaponPrefab weaponPrefab)
                 {
                     OnDecalsHostCreated_Weapon(item.Id, itemType, weaponPrefab);
                 }
@@ -2114,7 +2233,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             }
 
             var decalsRoot = GetDecalsRoot(itemType, weaponPrefab);
-            var decalsHost = new SimpleDecalsHost(decalsRoot);
+            var decalsHost = new WeaponDecalsHost(decalsRoot, weaponPrefab);
             OnDecalsHostCreated(itemId, instanceID, decalsHost, itemsWithDecals);
         }
 
@@ -2178,7 +2297,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
             var decalRoot = decalsHost.GetDecalRoot(decalInfo.Bone);
-			decal.Init(decalInfo, decalRoot, DecalBoxShader);
+            var decalShader = decalsHost is WeaponDecalsHost ? DecalMeshShader : DecalBoxShader;
+			decal.Init(decalInfo, decalRoot, decalShader);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
             AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
 			return decal;
@@ -2459,7 +2579,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 var itemId = GetOriginalItemId(item.Id);
                 var instanceID = assetPoolObject.gameObject.GetInstanceID();
                 var decalsRoot = GetDecalsRoot(itemType, assetPoolObject);
-                var decalsHost = new SimpleDecalsHost(decalsRoot);
+                var decalsHost = itemType == ItemType.Weapon && assetPoolObject is WeaponPrefab weaponPrefab
+                    ? new WeaponDecalsHost(decalsRoot, weaponPrefab)
+                    : new SimpleDecalsHost(decalsRoot);
                 var stencilType = GetItemStencilType(itemType);
 
                 CamoEditor = new(new CamoEditor()
