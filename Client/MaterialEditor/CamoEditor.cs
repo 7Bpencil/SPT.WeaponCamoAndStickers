@@ -115,7 +115,7 @@ namespace SevenBoldPencil.MaterialEditor
         public int SettingsScreenIndex;
         public SettingsScreen SettingsScreen => SettingsScreensTyped[SettingsScreenIndex];
         public int DecalTypeMenuIndex;
-        public DecalTextureType DecalTypeMenu => CamoEditorResources.DecalTypesToolbarTyped[DecalTypeMenuIndex];
+        public DecalTextureType DecalTypeMenu => DecalTypesToolbarTyped[DecalTypeMenuIndex];
         public WeaponCamoAndStickers.TextField<Vector3> TextField_Color = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_SpecColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
         public WeaponCamoAndStickers.TextField<Vector3> TextField_ReflectColor = new(ColorExtensions.HSVtoHexRGB, ColorExtensions.HexRGBtoHSV, 7);
@@ -921,7 +921,7 @@ namespace SevenBoldPencil.MaterialEditor
                 BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
                 y += smallMargin + bigMargin;
 
-                DecalTypeMenuIndex = GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), DecalTypeMenuIndex, CamoEditorResources.DecalTypesToolbar);
+                DecalTypeMenuIndex = GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), DecalTypeMenuIndex, DecalTypesToolbar);
                 y += buttonHeight + smallMargin;
 
                 if (DecalTypeMenu == DecalTextureType.Camo)

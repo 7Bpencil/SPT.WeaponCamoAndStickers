@@ -133,7 +133,8 @@ namespace SevenBoldPencil.EquipmentStickers
         public Vector2 DecalsScrollPosition;
         public Option<int> CurrentlyEditedItemIndex;
         public Option<int> CurrentlyEditedDecalIndex;
-        public DecalSettingType DecalSettingType;
+        public int DecalSettingTypeIndex;
+        public DecalSettingType DecalSettingType => DecalSettingsToolbarTyped_Paint[DecalSettingTypeIndex];
         public WeaponCamoAndStickers.TexturesWindow StickersWindow;
         public WeaponCamoAndStickers.TexturesWindow MasksWindow;
 		public bool IsStartTransformsListOpened;
@@ -553,7 +554,7 @@ namespace SevenBoldPencil.EquipmentStickers
 	            BigCamoEditor.DrawColor(new Rect(0, y, windowWidth, smallMargin), separatorColor);
 	            y += smallMargin + bigMargin;
 
-                DecalSettingType = (DecalSettingType)GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), (int)DecalSettingType, CamoEditorResources.DecalSettingsToolbar);
+                DecalSettingTypeIndex = GUI.Toolbar(new Rect(x, y, boxWidth, buttonHeight), DecalSettingTypeIndex, DecalSettingsToolbar_Paint);
                 y += buttonHeight + bigMargin;
 
                 if (DecalSettingType == DecalSettingType.Texture)
