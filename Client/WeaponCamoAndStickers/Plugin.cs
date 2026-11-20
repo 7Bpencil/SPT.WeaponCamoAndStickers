@@ -250,7 +250,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         private string PresetsDir;
         private string ClosedDirectoriesPath;
         private string FavouriteTexturesPath;
-        private Shader DecalShader;
+        private Shader DecalBoxShader;
+        private Shader DecalMeshShader;
         private Shader CombineTexturesShader; // used by MaterialEditor
         private Texture2D ErrorTexture;
         private DecalTextureData ErrorTextureData;
@@ -314,7 +315,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			var bundlePath = Path.Combine(assemblyDir, "bundles", "weapon-camo-and-stickers");
             var bundle = AssetBundle.LoadFromFile(bundlePath);
-            DecalShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalBox.shader");
+            DecalBoxShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalBox.shader");
+            DecalMeshShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/DecalMesh.shader");
             CombineTexturesShader = bundle.LoadAsset<Shader>("Assets/WeaponCamoAndStickers/Shaders/CombineTextures.shader");
             ErrorTexture = bundle.LoadAsset<Texture2D>("Assets/WeaponCamoAndStickers/Textures/missing.png");
             ErrorTextureData = new()
@@ -2176,7 +2178,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 		{
             var decal = new GameObject("Decal", typeof(Decal)).GetComponent<Decal>();
             var decalRoot = decalsHost.GetDecalRoot(decalInfo.Bone);
-			decal.Init(decalInfo, decalRoot, DecalShader);
+			decal.Init(decalInfo, decalRoot, DecalBoxShader);
             AcquireDecalTextureAsset(decal, decalInfo.Texture, DecalChangeTexture, DecalChangeTexture);
             AcquireDecalTextureAsset(decal, decalInfo.Mask, DecalChangeMask, DecalChangeMask);
 			return decal;
