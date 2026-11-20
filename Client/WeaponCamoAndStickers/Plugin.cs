@@ -365,7 +365,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
     [BepInDependency("com.wtt.packnstrap", BepInDependency.DependencyFlags.SoftDependency)]
     public class Plugin : BaseUnityPlugin
     {
-        public const string PluginVersion = "1.21.0";
+        public const string PluginVersion = "1.22.0";
         public const string DefaultCamoName = "builtin/camos/default.png";
         public const string DefaultStickerName = "builtin/stickers/default.png";
         public const string DefaultMaskName = "builtin/masks/default.png";
