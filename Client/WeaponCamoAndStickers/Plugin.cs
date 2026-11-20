@@ -518,7 +518,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
             new Patch_PlayerModelView_OnLoadingCompleted().Enable();
             new Patch_PlayerModelView_Destroy().Enable();
             new Patch_PlayerBody_SetSkin().Enable();
-            new Patch_BotCreatorClient_CreateBot().Enable();
+            // new Patch_BotCreatorClient_CreateBot().Enable(); // TODO disabled while I am figuring out optimization
             new Patch_ItemIconCreator_GetItemIcon().Enable();
             new Patch_IconsHash_GetItemHash().Enable();
 
