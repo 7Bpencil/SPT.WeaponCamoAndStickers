@@ -102,7 +102,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
     public class DecalInfo
     {
-        public const int CurrentSchemaVersion = 9;
+        public const int CurrentSchemaVersion = 10;
 
         public int SchemaVersion;
         public long SaveTime;
@@ -123,9 +123,14 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public DecalMirrorMode MirrorMode;
         public DecalPaintMode PaintMode;
         public byte StencilType;
+        public HashSet<string> ExcludedPaths;
 
-        // this is enough for now
-        public DecalInfo GetCopy() => (DecalInfo)MemberwiseClone();
+        public DecalInfo GetCopy()
+        {
+            var newDecalInfo = (DecalInfo)MemberwiseClone();
+            newDecalInfo.ExcludedPaths = new(ExcludedPaths);
+            return newDecalInfo;
+        }
     }
 
     public enum DecalPaintMode : byte
@@ -1009,6 +1014,11 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                     decalInfo.SchemaVersion = 9;
                     decalInfo.Bone = "";
                 }
+                if (decalInfo.SchemaVersion == 9)
+                {
+                    decalInfo.SchemaVersion = 10;
+                    decalInfo.ExcludedPaths = new();
+                }
             }
         }
 
@@ -1745,6 +1755,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Erase,
                 StencilType = stencilType,
+				ExcludedPaths = new(),
             };
 
             return decalInfo;
@@ -1789,6 +1800,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
                 StencilType = stencilType,
+				ExcludedPaths = new(),
             };
 
             return decalInfo;
@@ -3075,6 +3087,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 MirrorMode = DecalMirrorMode.Disabled,
                 PaintMode = DecalPaintMode.Paint,
                 StencilType = 2,
+				ExcludedPaths = new(),
             };
         }
 

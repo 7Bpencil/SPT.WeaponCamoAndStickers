@@ -67,6 +67,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
             writer.PutEnum<DecalMirrorMode>(d.MirrorMode);
             writer.PutEnum<DecalPaintMode>(d.PaintMode);
             writer.Put(d.StencilType);
+            SerializeHashSet(writer, d.ExcludedPaths);
         }
 
         private static DecalInfo DeserializeDecalInfo(NetDataReader reader)
@@ -92,7 +93,28 @@ namespace SevenBoldPencil.WeaponCamoAndStickers.Fika
                 MirrorMode = reader.GetEnum<DecalMirrorMode>(),
                 PaintMode = reader.GetEnum<DecalPaintMode>(),
                 StencilType = reader.GetByte(),
+                ExcludedPaths = DeserializeHashSet(reader),
             };
+        }
+
+        private static void SerializeHashSet(NetDataWriter writer, HashSet<string> hashSet)
+        {
+            writer.Put(hashSet.Count);
+            foreach (var path in hashSet)
+            {
+                writer.Put(path);
+            }
+        }
+
+        private static HashSet<string> DeserializeHashSet(NetDataReader reader)
+        {
+            var count = reader.GetInt();
+            var result = new HashSet<string>(count);
+            for (var i = 0; i < count; i++)
+            {
+                result.Add(reader.GetString());
+            }
+            return result;
         }
     }
 }
