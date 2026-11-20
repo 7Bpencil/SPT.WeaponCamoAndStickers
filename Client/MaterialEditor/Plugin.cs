@@ -464,16 +464,12 @@ namespace SevenBoldPencil.MaterialEditor
             // TODO how to support other shaders? switch with predetermined list in enum
             // TODO poster shaders don't have some parameters which leads to errors, but whatever...
             var materialShaderName = material.shader.name;
-			if (materialShaderName == "p0/Reflective/Bumped Specular SMap" || // most common
+            return
+			    materialShaderName == "p0/Reflective/Bumped Specular SMap" || // most common
                 materialShaderName == "p0/Reflective/Bumped Specular SMap_Decal" || // clothes and equipment
                 materialShaderName == "p0/Reflective/Specular" || // LOD1 shader
                 materialShaderName == "p0/Reflective/Bumped Specular" || // can be seen on some posters
-                materialShaderName == "p0/Cutout/Bumped Diffuse" // can be seen on some posters
-            ) {
-                return true;
-            }
-
-            return false;
+                materialShaderName == "p0/Cutout/Bumped Diffuse"; // can be seen on some posters
         }
 
         public Dictionary<string, MaterialInfo> GetOriginalMaterials(AssetPoolObject assetPoolObject)
