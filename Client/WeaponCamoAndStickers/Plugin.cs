@@ -129,24 +129,16 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 {
                     continue;
                 }
-                if (!slotView.Bone)
+                if (slotView.Item == null || !slotView.Bone || !slotView.ItemView)
                 {
                     continue;
                 }
-
-                // save paths to slots even if they are empty,
-                // useful if player will attach mag or scope later
 
                 var pathNew = Concat(path, slot.ID);
                 resultPaths.Add(pathNew);
 
                 var slotToRoot = GetChildToParentMatrix(slotView.Bone, decalsRoot);
                 slots.Add(slot, new(slotView.Bone, slotToRoot, pathNew));
-
-                if (slotView.Item == null || !slotView.ItemView)
-                {
-                    continue;
-                }
 
                 TryCollectLOD0(slotView.ItemView.gameObject, decalsRoot, pathNew, false, result);
 
