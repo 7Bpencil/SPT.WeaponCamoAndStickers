@@ -88,40 +88,98 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
         public static (Dictionary<Renderer, RendererData>, HashSet<string>, Dictionary<Slot, SlotData>) GetRendererTransforms(Transform decalsRoot, WeaponPrefab weaponPrefab)
         {
-            // TODO use lod group if it exists, otherwise?
-
             var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
             var allWeaponContainers = weaponPrefab.ContainerCollectionView.ContainerBones;
-            var weaponObject = weaponPrefab._objectInstance;
 
             var result = new Dictionary<Renderer, RendererData>();
             var resultPaths = new HashSet<string>();
             var slots = new Dictionary<Slot, SlotData>(allWeaponContainers.Count);
+            var slotTransforms = new Dictionary<Transform, string>(allWeaponContainers.Count);
 
-            TryCollectLOD0(weaponObject, decalsRoot, "", true, result);
+            CollectSlots(allWeaponContainers, weapon, decalsRoot, "", slots, slotTransforms);
 
-            // add root renderers to set of paths
-            // because they are technically not in slots,
-            // but player still may want to decide to keep them painted or clean
-
-            foreach (var rendererData in result.Values)
+            var itemsLods = Plugin.Instance.LodsCache;
+            weaponPrefab.GetComponentsInChildren<LODGroup>(true, itemsLods);
+            var lodRenderers = new HashSet<Renderer>();
+            foreach (var itemLods in itemsLods)
             {
-                resultPaths.Add(rendererData.Path);
+                var lods = itemLods.GetLODs();
+                if (lods.Length > 1)
+                {
+                    for (var i = 1; i < lods.Length; i++)
+                    {
+                        foreach (var renderer in lods[i].renderers)
+                        {
+                            if (renderer)
+                            {
+                                lodRenderers.Add(renderer);
+                            }
+                        }
+                    }
+                }
             }
+            itemsLods.Clear();
 
-            CollectCompoundItemRenderersRecursive(allWeaponContainers, weapon, decalsRoot, "", result, resultPaths, slots);
+            var weaponPrefabTransform = weaponPrefab.transform;
+            var meshRenderers = Plugin.Instance.MeshRenderersCache;
+            weaponPrefab.GetComponentsInChildren<MeshRenderer>(true, meshRenderers);
+            foreach (var renderer in meshRenderers)
+            {
+                if (!renderer)
+                {
+                    continue;
+                }
+                if (lodRenderers.Contains(renderer))
+                {
+                    continue;
+                }
+                if (result.ContainsKey(renderer))
+                {
+                    continue;
+                }
+                if (!renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                {
+                    continue;
+                }
+                var mesh = meshFilter.sharedMesh;
+                if (!mesh)
+                {
+                    continue;
+                }
+
+                var parentTransform = renderer.transform;
+                while (parentTransform)
+                {
+                    if (slotTransforms.TryGetValue(parentTransform, out var slotPath))
+                    {
+                        var rendererToRoot = GetChildToParentMatrix(renderer.transform, decalsRoot);
+                        result.Add(renderer, new(rendererToRoot, mesh.bounds, slotPath));
+                        resultPaths.Add(slotPath);
+                        break;
+                    }
+                    if (parentTransform == weaponPrefabTransform)
+                    {
+                        var rendererToRoot = GetChildToParentMatrix(renderer.transform, decalsRoot);
+                        var path = renderer.name;
+                        result.Add(renderer, new(rendererToRoot, mesh.bounds, path));
+                        resultPaths.Add(path);
+                        break;
+                    }
+                    parentTransform = parentTransform.parent;
+                }
+            }
+            meshRenderers.Clear();
 
             return (result, resultPaths, slots);
         }
 
-        public static void CollectCompoundItemRenderersRecursive(
+        public static void CollectSlots(
             Dictionary<IContainer, ContainerCollectionView.SlotView> allWeaponContainers,
             CompoundItem compoundItem,
             Transform decalsRoot,
             string path,
-            Dictionary<Renderer, RendererData> result,
-            HashSet<string> resultPaths,
-            Dictionary<Slot, SlotData> slots)
+            Dictionary<Slot, SlotData> slots,
+            Dictionary<Transform, string> slotTransforms)
         {
             foreach (var slot in compoundItem.Slots)
             {
@@ -135,35 +193,13 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 }
 
                 var pathNew = Concat(path, slot.ID);
-                resultPaths.Add(pathNew);
-
                 var slotToRoot = GetChildToParentMatrix(slotView.Bone, decalsRoot);
                 slots.Add(slot, new(slotView.Bone, slotToRoot, pathNew));
-
-                TryCollectLOD0(slotView.ItemView.gameObject, decalsRoot, pathNew, false, result);
+                slotTransforms.Add(slotView.Bone, pathNew);
 
                 if (slotView.Item is CompoundItem childCompoundItem)
                 {
-                    CollectCompoundItemRenderersRecursive(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, result, resultPaths, slots);
-                }
-            }
-        }
-
-        public static void TryCollectLOD0(GameObject gameObject, Transform decalsRoot, string path, bool useRendererNameAsPath, Dictionary<Renderer, RendererData> result)
-        {
-            if (gameObject.TryGetComponent<LODGroup>(out var lodGroup))
-            {
-                var lods = lodGroup.GetLODs();
-                var lod0 = lods[0].renderers;
-                foreach (var renderer in lod0)
-                {
-                    if (renderer && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
-                    {
-                        var rendererToRoot = GetChildToParentMatrix(renderer.transform, decalsRoot);
-    					var meshBounds = meshFilter.sharedMesh.bounds;
-                        var pathNew = useRendererNameAsPath ? renderer.name : path;
-                        result.Add(renderer, new(rendererToRoot, meshBounds, pathNew));
-                    }
+                    CollectSlots(allWeaponContainers, childCompoundItem, decalsRoot, pathNew, slots, slotTransforms);
                 }
             }
         }
@@ -423,6 +459,9 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public Dictionary<string, WeaponPrefab> WeaponsWaitingForRemoteCamo;
 
         public bool IsPackNStrapSupportEnabled;
+
+        public List<MeshRenderer> MeshRenderersCache = new();
+        public List<LODGroup> LodsCache = new();
 
         private void Awake()
         {
@@ -2322,21 +2361,61 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
                 return;
             }
 
-            if (modObject.TryGetComponent<LODGroup>(out var lodGroup))
+            // TODO this also grabs subitems which is not good
+
+            var itemsLods = Plugin.Instance.LodsCache;
+            modObject.GetComponentsInChildren<LODGroup>(true, itemsLods);
+            var lodRenderers = new HashSet<Renderer>();
+            foreach (var itemLods in itemsLods)
             {
-                var lods = lodGroup.GetLODs();
-                var lod0 = lods[0].renderers;
-                foreach (var renderer in lod0)
+                var lods = itemLods.GetLODs();
+                if (lods.Length > 1)
                 {
-                    if (renderer && renderer is MeshRenderer && renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                    for (var i = 1; i < lods.Length; i++)
                     {
-                        var rendererToSlot = WeaponDecalsHost.GetChildToParentMatrix(renderer.transform, slotData.SlotBone);
-                        var rendererToRoot = slotData.SlotToRoot * rendererToSlot;
-    					var meshBounds = meshFilter.sharedMesh.bounds;
-                        weaponDecalsHost.Renderers.Add(renderer, new(rendererToRoot, meshBounds, slotData.Path));
+                        foreach (var renderer in lods[i].renderers)
+                        {
+                            if (renderer)
+                            {
+                                lodRenderers.Add(renderer);
+                            }
+                        }
                     }
                 }
             }
+            itemsLods.Clear();
+
+            var meshRenderers = Plugin.Instance.MeshRenderersCache;
+            modObject.GetComponentsInChildren<MeshRenderer>(true, meshRenderers);
+            foreach (var renderer in meshRenderers)
+            {
+                if (!renderer)
+                {
+                    continue;
+                }
+                if (lodRenderers.Contains(renderer))
+                {
+                    continue;
+                }
+                if (weaponDecalsHost.Renderers.ContainsKey(renderer))
+                {
+                    continue;
+                }
+                if (!renderer.TryGetComponent<MeshFilter>(out var meshFilter))
+                {
+                    continue;
+                }
+                var mesh = meshFilter.sharedMesh;
+                if (!mesh)
+                {
+                    continue;
+                }
+
+                var rendererToSlot = WeaponDecalsHost.GetChildToParentMatrix(renderer.transform, slotData.SlotBone);
+                var rendererToRoot = slotData.SlotToRoot * rendererToSlot;
+                weaponDecalsHost.Renderers.Add(renderer, new(rendererToRoot, mesh.bounds, slotData.Path));
+            }
+            meshRenderers.Clear();
         }
 
         public void OnRemoveMod(Firearms firearms, Slot slot)
@@ -2369,16 +2448,12 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			var index = viewForSlot.Bone.childCount - 1;
 			var modObject = viewForSlot.Bone.GetChild(index);
 
-            if (modObject.TryGetComponent<LODGroup>(out var lodGroup))
+            var meshRenderers = modObject.GetComponentsInChildren<MeshRenderer>(includeInactive: true); // TODO preallocate list
+            foreach (var renderer in meshRenderers)
             {
-                var lods = lodGroup.GetLODs();
-                var lod0 = lods[0].renderers;
-                foreach (var renderer in lod0)
+                if (renderer)
                 {
-                    if (renderer && renderer is MeshRenderer)
-                    {
-                        weaponDecalsHost.Renderers.Remove(renderer);
-                    }
+                    weaponDecalsHost.Renderers.Remove(renderer);
                 }
             }
         }
