@@ -2338,7 +2338,7 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         {
             var weaponPrefab = firearms.WeaponPrefab;
             var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
-            var itemId = weapon.Id;
+            var itemId = GetOriginalItemId(weapon.Id);
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
@@ -2421,7 +2421,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
         public void OnRemoveMod(Firearms firearms, Slot slot)
         {
             var weaponPrefab = firearms.WeaponPrefab;
-            var itemId = new WeaponPrefab_Proxy(weaponPrefab)._weaponData.Id;
+            var weapon = new WeaponPrefab_Proxy(weaponPrefab)._weaponData;
+            var itemId = GetOriginalItemId(weapon.Id);
 
             if (!ItemsWithDecals.TryGetValue(itemId, out var itemsWithDecals))
             {
