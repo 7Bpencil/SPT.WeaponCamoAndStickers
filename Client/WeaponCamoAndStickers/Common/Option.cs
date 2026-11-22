@@ -1,6 +1,8 @@
 ﻿// Copyright (c) 2026 7Bpencil
 // SPDX-License-Identifier: Apache-2.0
 
+using Newtonsoft.Json;
+
 namespace SevenBoldPencil.Common
 {
     public readonly struct Option<T>
@@ -9,6 +11,7 @@ namespace SevenBoldPencil.Common
         public readonly bool HasValue;
 
         // do not use this constructor, its meant for serializers
+        [JsonConstructor]
         public Option(T value, bool hasValue)
         {
             Value = value;
