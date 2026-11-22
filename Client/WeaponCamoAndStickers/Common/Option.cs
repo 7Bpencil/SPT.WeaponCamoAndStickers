@@ -8,6 +8,13 @@ namespace SevenBoldPencil.Common
         public readonly T Value;
         public readonly bool HasValue;
 
+        // do not use this constructor, its meant for serializers
+        public Option(T value, bool hasValue)
+        {
+            Value = value;
+            HasValue = hasValue;
+        }
+
         public Option(T value)
         {
             Value = value;
