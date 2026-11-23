@@ -770,20 +770,25 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 
 			var originalPosition = cameraTransform.position;
 			var originalFov = __instance.camera_0.fieldOfView;
+			var originalNearClip = __instance.camera_0.nearClipPlane;
+			var originalFarClip = __instance.camera_0.farClipPlane;
 
-			// by default distance is around 1, make it 15 for more "orthographic" look,
-			// 15 is max, everything higher makes item disappear (there are probably a way to increase that, but 15 looks fine)
- 			var targetDistance = 15;
+ 			var targetDistance = 200; // by default distance is around 1, make it 200 to maintain "orthographic" look,
+			var targetRadius = 10; // very conservative
 			var currentDistance = (modelTransform.position - cameraTransform.position).magnitude;
 			var offset = targetDistance - currentDistance;
 			var newPosition = originalPosition - cameraTransform.forward * offset;
 			var newFov = 2 * Mathf.Atan2(__instance.camera_0.orthographicSize, targetDistance);
+			var newNearClipPlane = Math.Max(originalNearClip, targetDistance - targetRadius);
+			var newFarClipPlane = targetDistance + targetRadius;
 
 			// set
 			__instance.camera_0.orthographic = false;
 			__instance.camera_0.renderingPath = RenderingPath.DeferredShading;
 			cameraTransform.position = newPosition;
 			__instance.camera_0.fieldOfView = newFov * Mathf.Rad2Deg;
+			__instance.camera_0.nearClipPlane = newNearClipPlane;
+			__instance.camera_0.farClipPlane = newFarClipPlane;
 
 			__instance.camera_0.targetTexture = temporary;
 			__instance.camera_0.clearFlags = CameraClearFlags.Color;
@@ -810,6 +815,8 @@ namespace SevenBoldPencil.WeaponCamoAndStickers
 			__instance.camera_0.renderingPath = RenderingPath.Forward;
 			cameraTransform.position = originalPosition;
 			__instance.camera_0.fieldOfView = originalFov;
+			__instance.camera_0.nearClipPlane = originalNearClip;
+			__instance.camera_0.farClipPlane = originalFarClip;
 
 			return texture2D;
 		}
